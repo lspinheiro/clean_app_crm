@@ -1,0 +1,38 @@
+# Agents
+.claude/
+.codex/
+.agents/
+
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# builds
+dist/
+*.tsbuildinfo
+
+# env — keep .env.example tracked
+.env
+.env.*
+!.env.example
+
+# vercel
+.vercel/
+
+# supabase local
+supabase/.temp/
+supabase/.branches/
+
+# misc
+.DS_Store
+coverage/
+
+# local agent/editor state
+.claude/settings.local.json
+.claude/config.local.json
+
+# machine-local research wiki symlink (read-only; targets personal_website — never commit)
+ai-engineering-wiki

@@ -1,0 +1,13 @@
+{
+  "name": "clean-app-crm",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "crm": "pnpm --filter crm",
+    "cleaner": "pnpm --filter cleaner"
+  }
+}

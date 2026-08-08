@@ -7,8 +7,7 @@ prospective co-founders (developer + PM), collaboration not yet formalised (Appe
 **Market:** Commercial cleaning companies, Gold Coast QLD (initial), Australia (later)
 
 Revision v0.2 (2026-08-04) incorporates the deep-research report, the founder voice notes of
-3 August 2026, and the prototype review — see
-[prototype-and-strategy-review.md](prototype-and-strategy-review.md). Headline changes: the
+3 August 2026, and the prototype review (Appendix A). Headline changes: the
 scheduling/CRM core moves from the future paid tier into the free v1 base; the pool/dispatch loop
 from the co-founders' prototype is adopted as the chassis; a WhatsApp share-link bridge precedes the
 group automation agent (which moves to P1, accepted risk unchanged); urgent backfill becomes a
@@ -36,13 +35,13 @@ its own cost to deliver on time; this is the sharpest recurring loss event repor
 Sector evidence confirms this is not one company's problem: staffing shortage and cleaner
 reliability are the industry's dominant operational constraints (76% of hotels reported staffing
 shortages in the AHLA May 2024 survey; nearly 40% of hosts in a 2025 survey of 554 hosts and
-property managers struggled to find dependable local cleaners — see
-[commercial-clearning-report.md](research/commercial-clearning-report.md)). The workforce is
+property managers struggled to find dependable local cleaners — see Appendix A). The workforce
+is
 transient by structure (largely international students who cycle to better jobs), so candidate
 acquisition is a permanent need and any pool decays quickly.
 
-Primary discovery sources: [meeting-with-thiago.md](research/meeting-with-thiago.md) and the founder
-voice notes of 3 August 2026 (Appendix A). Key signals:
+Primary discovery sources: the discovery interview with Thiago and the founder voice notes of
+3 August 2026 (Appendix A). Key signals:
 
 - Candidate communication (WhatsApp) is the sharpest day-to-day pain: missed replies, poor timing.
 - Last-minute dropouts force paid backfill and destroy job margin; fast replacement is where money
@@ -84,7 +83,7 @@ design-partner phase so the savings claim has evidence).
 **Second expansion path: B2B lead generation (future).** Beyond the automation tier, the platform
 can monetise the demand side by recommending member cleaning companies to high-value end clients
 (hotels, construction firms, property managers) for a per-lead or success fee — the intermediary
-role identified as valuable in discovery ([meeting-with-thiago.md](research/meeting-with-thiago.md)).
+role identified as valuable in discovery (Appendix A).
 The differentiator is evidence: platform data (vetted-pool size, vetting-tier mix, fill rates,
 structured reviews) lets a company be pitched with verifiable credentials no generic lead-gen
 service can match, positioned as *compliance-verified suppliers* in a market where underpricing and
@@ -939,7 +938,7 @@ confidence, candidate requests a human, legal/complaint language, repeated misun
 - Availability re-confirmation at match time is sufficient to keep the pool useful despite decay.
 - The free tier generates enough engagement data (schedules, jobs, pay records, comms) to make the
   automation upsell natural rather than a cold cross-sell, and to ground savings-based pricing.
-- Discovery beyond n=1: the questionnaire in [questionnaire.md](research/questionnaire.md) is run
+- Discovery beyond n=1: the requirements-discovery questionnaire (Appendix A) is run
   with 5–10 more operators during the build; findings may reprioritise P1/P2 items — in
   particular the recurring vs booking-driven vs ad hoc mix, which sizes F10 (Appendix B).
 
@@ -952,11 +951,11 @@ confidence, candidate requests a human, legal/complaint language, repeated misun
 | Defamation/blacklist exposure from cleaner reviews | Medium | Structured-only reviews, dispute flow, moderation (F6). No free-text public ratings in v1. |
 | Vetting liability (wrong or stale check results) | Medium | Checks via accredited provider; show status+date, never platform judgements ("safe"); disclaimers; expiry tracking. |
 | Cold start / thin pool | High | **Largely mitigated in v0.2**: private pools are useful with the company's existing workforce on day one; share links recruit from existing groups; seed via Thiago's and the co-founders' companies; Gold Coast only until liquidity. |
-| MVP scope creep (scheduling core is a bigger build than dispatch-only) | Medium | F10 is the deliberate trade (see review doc §6); contain by shipping the roster read-model first (recurring assignments + gaps) and deferring drag-and-drop niceties; validate the recurring share with design partners before deepening (Appendix B). |
-| Co-founder alignment (two visions, one codebase; ownership unresolved) | Medium | Explicit alignment discussion before build (review doc §10); technical due diligence on the prototype; formalise roles/equity/IP before significant joint work. |
+| MVP scope creep (scheduling core is a bigger build than dispatch-only) | Medium | F10 is the deliberate trade (see the prototype review, Appendix A); contain by shipping the roster read-model first (recurring assignments + gaps) and deferring drag-and-drop niceties; validate the recurring share with design partners before deepening (Appendix B). |
+| Co-founder alignment (two visions, one codebase; ownership unresolved) | Medium | Explicit alignment discussion before build (prototype review, Appendix A); technical due diligence on the prototype; formalise roles/equity/IP before significant joint work. |
 | Free-tier cost burn (LLM + infra + checks) | Medium | Police checks at cost pass-through; LLM cost budget per funnel stage monitored (§6 guardrails); model-tier down-shift for routine turns; the P0 build is deliberately light on LLM usage (agents concentrate in P1). |
 | Stale availability undermines trust | Medium | Freshness flag + Level-3 re-confirmation (F5); shortlist/cascade never shows unconfirmed availability as confirmed. |
-| Single-source discovery bias | Medium | Structured interviews with 5–10 operators in parallel (§5.1); cleaner-side interviews too (review doc §11). |
+| Single-source discovery bias | Medium | Structured interviews with 5–10 operators in parallel (§5.1); cleaner-side interviews too (prototype review, Appendix A). |
 | Paid tier never converts (freemium trap) | Medium | Instrument upsell signals from day one (§6.4); measure baseline admin hours at design partners for savings-based pricing; revisit monetisation at month 6 with real data (placement-fee experiment is the fallback, gated on legal review). |
 
 ### 5.3 Constraints and dependencies
@@ -1053,24 +1052,27 @@ measure of the system-of-record thesis. Placements (trial → hired) become an i
 
 ## Appendix A — Source material
 
-- [research/meeting-with-thiago.md](research/meeting-with-thiago.md) — discovery interview.
-- [research/commercial-clearning-report.md](research/commercial-clearning-report.md) — deep
-  research report on job-management issues across hotel, STR, post-construction, and commercial
-  cleaning (sources: BLS, OSHA/NIOSH, AHLA, FWO, CAF, Labour Hire Authority, vendor docs, forums).
-- [research/questionnaire.md](research/questionnaire.md) — requirements-discovery questionnaire
-  (use for the 5–10 operator interviews, §5.1) including the 0–4 agent-autonomy scale (§4.4).
-- Founder voice notes, 3 Aug 2026 —
-  [recorder.google.com/9fde4496-ab84-43e7-accc-548e2f169581](https://recorder.google.com/9fde4496-ab84-43e7-accc-548e2f169581)
-  (origin story, dropout economics, monetisation reasoning, labour-hire ambition, co-founders).
+Research source files live in the founders' private research repository; they are summarised
+here rather than linked.
+
+- Discovery interview with Thiago (industry partner) — CRM willingness-to-pay, vetting and leads
+  demand, WhatsApp communication pain.
+- Deep research report on job-management issues across hotel, STR, post-construction, and
+  commercial cleaning (sources: BLS, OSHA/NIOSH, AHLA, FWO, CAF, Labour Hire Authority, vendor
+  docs, forums).
+- Requirements-discovery questionnaire (used for the 5–10 operator interviews, §5.1), including
+  the 0–4 agent-autonomy scale (§4.4).
+- Founder voice notes, 3 August 2026 (private) — origin story, dropout economics, monetisation
+  reasoning, labour-hire ambition, co-founders.
 - Co-founders' prototype — [clean-app-gamma-inky.vercel.app](https://clean-app-gamma-inky.vercel.app)
-  (two-sided pool/dispatch PWA; walkthrough and assessment in the review below).
-- [prototype-and-strategy-review.md](prototype-and-strategy-review.md) — prototype review, MVP
-  definition, north star, and go-to-market underlying this v0.2 revision.
+  (two-sided pool/dispatch PWA).
+- Prototype and strategy review, 3 August 2026 — prototype walkthrough and assessment, MVP
+  definition, north star, and go-to-market underlying the v0.2 revision.
 
 ## Appendix B — Open questions
 
 1. **Co-founder alignment**: shared vision (chassis + scheduling core + growth layer, per the
-   review doc §5), roles, equity, and ownership of the prototype code — before significant joint
+   prototype review), roles, equity, and ownership of the prototype code — before significant joint
    build.
 2. **Prototype due diligence**: stack, code quality, data model distance from §4.1 — determines
    extend vs rebuild.

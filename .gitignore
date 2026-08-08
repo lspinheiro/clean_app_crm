@@ -16,6 +16,7 @@ dist/
 
 # env — keep .env.example tracked
 .env
+.envrc
 .env.*
 !.env.example
 

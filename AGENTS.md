@@ -86,6 +86,34 @@ preferences:
   records; ID documents in restricted storage; site addresses/access notes are assignment-gated
   and access-logged.
 
+## Design quality
+
+Two sides, one contract. **Generation**: [Stitch](https://stitch.withgoogle.com/) (remote
+MCP, `STITCH_API_KEY` in `.envrc`) produces screen designs before implementation, via the
+repo's **design-explore** skill. **Judgement**: [impeccable](https://impeccable.style/)
+(user-level skill; `.impeccable/` here holds hook consent) reviews both Stitch mockups
+(critique-only) and implemented code, via the repo's **design-review** skill: per-journey
+loops of detect → critique → audit → prioritised fixes → re-verify, findings published to
+Linear at mapped priority. Generation and refinement never share a session; Stitch does not
+re-enter after implementation starts.
+
+The contract is **`DESIGN.md`**: the repo's root file is canonical for all three consumers
+(Stitch generation, impeccable review, the code); the Stitch design-system object is derived
+from it (`upload_design_md` → apply at project level) and re-uploaded after changes, never
+edited in Stitch. The [stitch-skills](https://github.com/google-labs-code/stitch-skills)
+plugin is deliberately **not installed** — its useful process content is adapted into
+design-explore (two prompting reference files vendored, Apache 2.0); its build-plugin code
+generators are unused because Stitch output is reference material, never merged code.
+
+Context-file conventions (impeccable resolves from app root up, never `docs/`):
+
+- Root `DESIGN.md` — the single visual world for both apps, seeded from the prototype's
+  tokens; created via `/impeccable init` + hand-editing once `apps/crm` has first screens.
+- `apps/<app>/PRODUCT.md` — compact surface brief distilled from `docs/PRODUCT.md` (which
+  stays the strategy source of truth).
+- CI gate: `.github/workflows/design-detect.yml.disabled` — rename to enable once real UI
+  exists.
+
 ## Release framing
 
 User journeys (PRODUCT.md §3) are the roadmap unit: a build cycle implements journeys end-to-end

@@ -103,4 +103,8 @@ Environment: copy `.env.example` to `.env.local` inside the app (never commit `.
 
 Scaffold only: workspace, docs, and layout. Next step is `apps/crm` (Next.js) with the alpha data
 model — `Client`, `Site`, `RecurringAssignment`, `Job` (crew size ≥ 1), `Vacancy` — extending the
-prototype's schema.
+prototype's schema. Design exploration can start sooner: seed the root `DESIGN.md` from the
+prototype's design tokens, upload it to Stitch as the design system, and mock the alpha's new
+screens (roster, clients, recurring assignments) for partner validation before build. Once the
+first screens exist in code: run `/impeccable init` and enable the design-detect CI gate (see
+`AGENTS.md` § Design quality).

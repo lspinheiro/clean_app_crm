@@ -439,7 +439,7 @@ a {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1910,7 +1910,7 @@ a {
   position: relative;
   display: block;
   padding-top: 10px;
-  color: var(--color-gray-400);
+  color: var(--color-gray-500);
   text-align: center;
 }
 

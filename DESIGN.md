@@ -87,8 +87,10 @@ the only playful motion. Every async action shows busy state on its trigger. Res
 ## Accessibility
 
 WCAG 2.2 AA target: 4.5:1 text contrast (ink on paper clears it; grey text no lighter
-than gray-600 on white for body, gray-500 for caption), visible focus rings (ink, soft),
-44px minimum touch targets, labels tied to inputs, status conveyed by text + colour.
+than gray-600 for body and caption text on white or gray-50 — gray-500 is 4.29:1 on
+white, under AA at caption sizes, so it is reserved for large text and non-text glyphs
+where 3:1 applies), visible focus rings (ink, soft), 44px minimum touch targets, labels
+tied to inputs, status conveyed by text + colour.
 
 ## Content rules
 

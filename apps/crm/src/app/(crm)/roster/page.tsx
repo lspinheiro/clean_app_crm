@@ -144,10 +144,16 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
     id: profile.id,
     name: profile.full_name,
   }));
-  const sites: RosterSite[] = sitesResult.data.map((site) => ({
-    id: site.id,
-    name: site.name,
-  }));
+  const clientNames = new Map(clientsResult.data.map((client) => [client.id, client.name]));
+  const sites: RosterSite[] = sitesResult.data.map((site) => {
+    const clientName = clientNames.get(site.client_id);
+    if (!clientName) throw new Error(`Roster site ${site.id} has no visible client.`);
+    return {
+      id: site.id,
+      name: site.name,
+      clientName,
+    };
+  });
   const vacancies: RosterVacancy[] = vacanciesResult.data.map((vacancy) => {
     if (
       !vacancy.job_id

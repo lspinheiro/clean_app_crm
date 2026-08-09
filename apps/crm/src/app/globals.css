@@ -1791,6 +1791,11 @@ a {
   font-weight: 600;
 }
 
+.roster-grid tbody th small.roster-row-client {
+  color: var(--color-gray-600);
+  font-weight: 500;
+}
+
 .roster-grid tbody tr:last-child th,
 .roster-grid tbody tr:last-child td {
   border-bottom: 0;

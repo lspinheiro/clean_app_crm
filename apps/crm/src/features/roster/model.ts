@@ -180,6 +180,7 @@ export function buildSiteRoster({
     .map<RosterRow>((site) => ({
       id: `site:${site.id}`,
       label: site.name,
+      sublabel: site.clientName,
       kind: "site",
       cells: emptyCells(days),
     }));

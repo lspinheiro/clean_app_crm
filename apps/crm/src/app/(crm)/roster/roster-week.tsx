@@ -155,6 +155,9 @@ export function RosterWeek({ weekStart, days, model, view, hasFoundation }: Rost
                     <th scope="row">
                       <span>{row.label}</span>
                       {row.kind === "gaps" ? <small>Vacancy view</small> : null}
+                      {row.sublabel ? (
+                        <small className="roster-row-client">{row.sublabel}</small>
+                      ) : null}
                     </th>
                     {days.map((day) => {
                       const items = row.cells[day.dateKey] ?? [];

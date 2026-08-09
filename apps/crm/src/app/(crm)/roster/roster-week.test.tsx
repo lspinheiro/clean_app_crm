@@ -151,13 +151,41 @@ describe("RosterWeek", () => {
     expect(screen.queryByTestId("roster-gap-count")).not.toBeInTheDocument();
   });
 
+  it("disambiguates same-name sites with their client in the row header", () => {
+    const model = buildSiteRoster({
+      days,
+      cleaners: [],
+      sites: [
+        { id: "site-1", name: "Harbour North", clientName: "Harbour Offices" },
+        { id: "site-2", name: "Harbour North", clientName: "Oceanview Property Group" },
+      ],
+      jobs: [],
+      assignments: [],
+      vacancies: [],
+    });
+    render(
+      <RosterWeek
+        days={days}
+        hasFoundation
+        model={model}
+        view="site"
+        weekStart="2026-08-10"
+      />,
+    );
+    const grid = screen.getByRole("region", { name: "Roster by site" });
+    const headers = within(grid).getAllByRole("rowheader", { name: /Harbour North/ });
+    expect(headers).toHaveLength(2);
+    expect(headers[0]).toHaveTextContent("Harbour Offices");
+    expect(headers[1]).toHaveTextContent("Oceanview Property Group");
+  });
+
   it("switches to site rows without losing the selected week", () => {
     const model = buildSiteRoster({
       days,
       cleaners: [{ id: "cleaner-1", name: "Ana Costa" }],
       sites: [
-        { id: "site-1", name: "Harbour Tower" },
-        { id: "site-2", name: "Quiet Retail" },
+        { id: "site-1", name: "Harbour Tower", clientName: "Oceanview Property Group" },
+        { id: "site-2", name: "Quiet Retail", clientName: "Oceanview Property Group" },
       ],
       jobs: [{
         id: "job-1",

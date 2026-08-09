@@ -13,6 +13,7 @@ export type RosterCleaner = {
 export type RosterSite = {
   id: string;
   name: string;
+  clientName: string;
 };
 
 export type RosterJob = {
@@ -64,6 +65,7 @@ export type RosterCellItem = RosterJobItem | RosterGapItem;
 export type RosterRow = {
   id: string;
   label: string;
+  sublabel?: string;
   kind: "cleaner" | "site" | "gaps";
   cells: Record<string, RosterCellItem[]>;
 };

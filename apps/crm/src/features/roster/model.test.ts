@@ -103,9 +103,9 @@ describe("cleaner roster projection", () => {
     const days = buildRosterDays("2026-08-10");
     const cleaners = [{ id: "cleaner-1", name: "Ana" }];
     const sites = [
-      { id: "site-1", name: "Harbour Tower" },
-      { id: "site-2", name: "Ocean Clinic" },
-      { id: "site-3", name: "Quiet Retail" },
+      { id: "site-1", name: "Harbour Tower", clientName: "Oceanview Property Group" },
+      { id: "site-2", name: "Ocean Clinic", clientName: "Creekside Allied Health" },
+      { id: "site-3", name: "Quiet Retail", clientName: "Oceanview Property Group" },
     ];
     const jobs = [
       {

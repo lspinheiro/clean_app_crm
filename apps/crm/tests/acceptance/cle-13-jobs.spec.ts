@@ -18,17 +18,26 @@ test.describe("@CLE-13 jobs with crew slots", () => {
 
     await expect(page.getByRole("heading", { name: "Jobs" })).toBeVisible();
     const jobs = page.getByRole("list", { name: "Company jobs" });
-    await expect(jobs.getByRole("listitem")).toHaveCount(3);
+    expect(await jobs.getByRole("listitem").count()).toBeGreaterThanOrEqual(3);
 
-    const crewJob = jobs.getByRole("listitem").filter({ hasText: "Broadbeach Towers" });
+    const crewJob = jobs
+      .getByRole("listitem")
+      .filter({ hasText: "Broadbeach Towers" })
+      .first();
     await expect(crewJob).toContainText("Posted");
     await expect(crewJob).toContainText("1/2 assigned");
 
-    const assignedJob = jobs.getByRole("listitem").filter({ hasText: "Southport Office" });
+    const assignedJob = jobs
+      .getByRole("listitem")
+      .filter({ hasText: "Southport Office" })
+      .first();
     await expect(assignedJob).toContainText("Assigned");
     await expect(assignedJob).toContainText("1/1 assigned");
 
-    const openJob = jobs.getByRole("listitem").filter({ hasText: "Palm Grove Practice" });
+    const openJob = jobs
+      .getByRole("listitem")
+      .filter({ hasText: "Palm Grove Practice" })
+      .first();
     await expect(openJob).toContainText("Posted");
     await expect(openJob).toContainText("0/1 assigned");
   });

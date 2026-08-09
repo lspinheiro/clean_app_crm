@@ -113,6 +113,11 @@ select ok(
   'authenticated callers can execute only the narrow mutation surface'
 );
 
+delete from public.job_assignments
+where job_id in (
+  select id from public.jobs where recurring_assignment_id is not null
+);
+delete from public.jobs where recurring_assignment_id is not null;
 delete from public.recurring_assignments;
 
 insert into auth.users (

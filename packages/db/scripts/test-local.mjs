@@ -20,3 +20,6 @@ run(process.execPath, [
 run(process.execPath, [
   fileURLToPath(new URL("./test-recurring-assignment-concurrency.mjs", import.meta.url)),
 ]);
+run(process.execPath, [
+  fileURLToPath(new URL("./test-generation-concurrency.mjs", import.meta.url)),
+]);

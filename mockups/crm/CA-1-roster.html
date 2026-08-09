@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Clean App - Roster</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "gray-300": "#d6d6d6",
+                        "on-secondary-container": "#004b65",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#cfc4c5",
+                        "tertiary": "#000000",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "primary-fixed": "#e2e2e2",
+                        "paper": "#ffffff",
+                        "on-tertiary-container": "#848484",
+                        "secondary-container": "#00c1fd",
+                        "surface-variant": "#e2e2e2",
+                        "gray-700": "#3d3d3d",
+                        "surface": "#f9f9f9",
+                        "gray-800": "#262626",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#e2e2e2",
+                        "secondary": "#006688",
+                        "surface-tint": "#5e5e5e",
+                        "surface-container-low": "#f3f3f3",
+                        "error-container": "#ffdad6",
+                        "danger": "#e11900",
+                        "tertiary-container": "#1b1b1b",
+                        "gray-600": "#545454",
+                        "outline": "#7e7576",
+                        "on-primary-fixed": "#1b1b1b",
+                        "on-primary-container": "#848484",
+                        "on-surface-variant": "#4c4546",
+                        "gray-900": "#141414",
+                        "on-background": "#1b1b1b",
+                        "gray-400": "#a8a8a8",
+                        "success": "#06c167",
+                        "inverse-surface": "#303030",
+                        "secondary-fixed": "#c2e8ff",
+                        "on-secondary-fixed-variant": "#004d67",
+                        "inverse-primary": "#c6c6c6",
+                        "secondary-fixed-dim": "#75d1ff",
+                        "gray-200": "#e8e8e8",
+                        "background": "#f9f9f9",
+                        "surface-container": "#eeeeee",
+                        "on-primary": "#ffffff",
+                        "gray-100": "#f5f5f5",
+                        "surface-container-high": "#e8e8e8",
+                        "on-secondary-fixed": "#001e2b",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "primary-container": "#1b1b1b",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "on-primary-fixed-variant": "#474747",
+                        "bubble": "#00c2ff",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-surface": "#1b1b1b",
+                        "surface-dim": "#dadada",
+                        "primary": "#000000",
+                        "surface-bright": "#f9f9f9",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#f1f1f1",
+                        "gray-50": "#fafafa",
+                        "on-error": "#ffffff",
+                        "gray-500": "#7a7a7a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "container-max": "1200px",
+                        "card-padding": "16px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Poppins"],
+                        "title-lg": ["Poppins"],
+                        "data-tabular": ["Poppins"],
+                        "display-hero": ["Poppins"],
+                        "heading-md": ["Poppins"],
+                        "body-base": ["Poppins"]
+                    },
+                    "fontSize": {
+                        "caption": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+                        "title-lg": ["24px", { "lineHeight": "30px", "fontWeight": "700" }],
+                        "data-tabular": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-hero": ["32px", { "lineHeight": "38px", "fontWeight": "800" }],
+                        "heading-md": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .font-tabular { font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-base min-h-screen flex flex-col pb-24">
+<!-- TopNavBar -->
+<header class="bg-paper border-b border-gray-200 full-width top-0 sticky z-50">
+<div class="flex justify-between items-center h-[64px] px-gutter w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-8">
+<a class="font-display-hero text-display-hero text-primary tracking-tight" href="#">Clean App</a>
+<nav class="hidden md:flex gap-6">
+<a class="text-primary border-b-2 border-primary pb-1 font-body-base text-body-base hover:text-primary transition-colors hover:scale-98" href="#">Roster</a>
+<a class="text-gray-500 font-body-base text-body-base hover:text-primary transition-colors hover:scale-98" href="#">Jobs</a>
+<a class="text-gray-500 font-body-base text-body-base hover:text-primary transition-colors hover:scale-98" href="#">Clients</a>
+<a class="text-gray-500 font-body-base text-body-base hover:text-primary transition-colors hover:scale-98" href="#">Pool</a>
+<a class="text-gray-500 font-body-base text-body-base hover:text-primary transition-colors hover:scale-98" href="#">Money</a>
+</nav>
+</div>
+<button class="bg-primary text-on-primary rounded-full px-6 h-[44px] font-body-base text-body-base hover:scale-98 transition-transform duration-100 flex items-center justify-center">+ New job</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-container-max mx-auto px-gutter py-8">
+<!-- Week Header Row -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+<div>
+<h1 class="font-title-lg text-title-lg text-primary mb-2">Roster</h1>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<button aria-label="Previous week" class="p-1 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<span class="font-heading-md text-heading-md text-primary">Week of 10 Aug</span>
+<button aria-label="Next week" class="p-1 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+<div class="bg-error-container text-on-error-container font-caption text-caption px-3 py-1 rounded-full flex items-center border border-danger">
+                        2 unfilled slots
+                    </div>
+</div>
+</div>
+<!-- Segmented Control -->
+<div class="flex bg-gray-100 p-1 rounded-full border border-gray-200">
+<button class="px-4 py-2 rounded-full bg-paper text-primary font-caption text-caption shadow-[0_2px_4px_rgba(0,0,0,0.05)]">By cleaner</button>
+<button class="px-4 py-2 rounded-full text-gray-500 font-caption text-caption hover:text-primary transition-colors">By site</button>
+</div>
+</div>
+<!-- Roster Grid -->
+<div class="bg-paper border border-gray-200 rounded-lg overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[900px]">
+<thead>
+<tr class="border-b border-gray-200 bg-gray-50">
+<th class="py-3 px-4 font-caption text-caption text-gray-600 font-medium sticky left-0 bg-gray-50 border-r border-gray-200 z-10 w-48">Cleaner</th>
+<th class="py-3 px-4 font-caption text-caption text-gray-600 font-medium w-[12%]">Mon 11</th>
+<th class="py-3 px-4 font-caption text-caption text-gray-600 font-medium w-[12%]">Tue 12</th>
+<th class="py-3 px-4 font-caption text-caption text-gray-600 font-medium w-[12%]">Wed 13</th>
+<th class="py-3 px-4 font-caption text-caption text-gray-600 font-medium w-[12%]">Thu 14</th>
+<th class="py-3 px-4 font-caption text-caption text-gray-600 font-medium w-[12%]">Fri 15</th>
+<th class="py-3 px-4 font-caption text-caption text-gray-600 font-medium w-[12%]">Sat 16</th>
+<th class="py-3 px-4 font-caption text-caption text-gray-600 font-medium w-[12%]">Sun 17</th>
+</tr>
+</thead>
+<tbody class="font-data-tabular text-data-tabular">
+<!-- Maria Santos -->
+<tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+<td class="py-3 px-4 sticky left-0 bg-paper border-r border-gray-200 z-10 font-medium">Maria Santos</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 py-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Harbour Tower</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">8:00</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 pb-2 mb-2 border-b border-gray-200">
+<div class="font-caption text-caption text-primary line-clamp-1">Harbour Tower</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">8:00</div>
+</div>
+<div class="px-1 pt-0.5 pb-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Norfolk Ave</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">13:30</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 py-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Harbour Tower</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">8:00</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+</tr>
+<!-- Ana Oliveira -->
+<tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+<td class="py-3 px-4 sticky left-0 bg-paper border-r border-gray-200 z-10 font-medium">Ana Oliveira</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 py-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Seaview Apts 12B</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">9:00</div>
+<div class="font-caption text-caption text-gray-500 text-[11px] mt-1">2 cleaners</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 py-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Seaview Apts 12B</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">9:00</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+</tr>
+<!-- Juliana Costa -->
+<tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+<td class="py-3 px-4 sticky left-0 bg-paper border-r border-gray-200 z-10 font-medium">Juliana Costa</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 py-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Coastal Offices L2</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">6:00</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 py-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Coastal Offices L2</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">6:00</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 py-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Coastal Offices L2</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">6:00</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top">
+<div class="text-danger font-caption text-caption px-1 py-1.5 flex items-center justify-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[16px]">warning</span> GAP
+                            </div>
+</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+</tr>
+<!-- Peter Nguyen -->
+<tr class="hover:bg-gray-50 transition-colors">
+<td class="py-3 px-4 sticky left-0 bg-paper border-r border-gray-200 z-10 font-medium">Peter Nguyen</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 py-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Oceanview Suites</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">15:00</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top">
+<div class="px-1 py-1.5">
+<div class="font-caption text-caption text-primary line-clamp-1">Oceanview Suites</div>
+<div class="font-caption text-caption text-gray-600 font-tabular">15:00</div>
+</div>
+</td>
+<td class="py-2 px-2 align-top">
+<div class="text-danger font-caption text-caption px-1 py-1.5 flex items-center justify-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[16px]">warning</span> GAP
+                            </div>
+</td>
+<td class="py-2 px-2 align-top text-center text-gray-300">-</td>
+</tr>
+</tbody>
+</table>
+</div>
+</main>
+<!-- Footer Action Bar -->
+<footer class="bg-surface-container-lowest border-t border-gray-300 shadow-lg fixed bottom-0 full-width z-40 w-full h-[72px]">
+<div class="flex justify-between items-center px-gutter py-base h-full max-w-container-max mx-auto w-full">
+<div class="flex items-center gap-2 text-danger font-caption text-caption font-medium">
+<span class="material-symbols-outlined text-[20px]">error</span>
+                2 unfilled slots this week
+            </div>
+<button class="bg-paper border border-gray-300 text-primary rounded-full px-6 h-[44px] font-caption text-caption hover:bg-gray-50 transition-colors hover:scale-98">
+                Offer to pool
+            </button>
+</div>
+</footer>
+</body></html>

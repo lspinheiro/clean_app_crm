@@ -1,0 +1,31 @@
+# Deterministic UI-defect gate (impeccable detect) — DISABLED until apps/ has real UI.
+#
+# To enable: rename this file to design-detect.yml (drop the .disabled suffix).
+# GitHub Actions only picks up .yml/.yaml files, so this file is inert as-is.
+#
+# Exit codes from `impeccable detect`: 0 = no findings, 2 = findings (fails the job),
+# 1 = execution error. Add narrow, documented ignores for deliberate exceptions
+# rather than weakening a whole rule — see the design-review skill.
+
+name: Design Detect
+
+on:
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/ui/**"
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+
+      - name: Run impeccable detect
+        run: npx impeccable detect --json apps/

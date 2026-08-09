@@ -54,7 +54,7 @@ features, WhatsApp integration of any kind, payments (the ledger records money; 
 | Framework | Next.js (App Router) + React + TypeScript |
 | Styling | Tailwind CSS v4 |
 | Database | Postgres via Supabase (migrations, RLS, security-definer RPCs) |
-| Auth | Supabase Auth (roles: `boss`, `cleaner`, `admin`) |
+| Auth | Supabase Auth (roles: `company_admin`, `cleaner`, `admin`) |
 | Notifications | Web Push (VAPID) — PWA, no native apps |
 | Hosting | Vercel (apps) + Supabase (database/auth) |
 | Tooling | pnpm workspace monorepo |
@@ -70,10 +70,10 @@ clean_app_crm/
 ├── package.json         # workspace root (private; no app code at the root)
 ├── pnpm-workspace.yaml  # members: apps/*, packages/*
 ├── apps/
-│   ├── crm/             # the CRM (Next.js) — to be created
+│   ├── crm/             # the company-admin CRM (Next.js)
 │   └── cleaner/         # cleaner app — minimal parity port of ../clean-app's cleaner loop
 └── packages/
-    ├── db/              # future: Supabase schema, migrations, generated types shared by apps
+    ├── db/              # Supabase schema, migrations, seed, tests, and shared types
     └── ui/              # future: shared design tokens and components
 ```
 
@@ -81,16 +81,24 @@ clean_app_crm/
 
 ```bash
 pnpm install
+cp apps/crm/.env.example apps/crm/.env.local
+pnpm db:start
+pnpm db:reset
+pnpm crm dev
 ```
 
-App scaffolds are not created yet; once `apps/crm` exists it will be run with:
+The local seed is demo-only. The company-admin login is
+`admin@clean-app.example.test` with password `local-demo-only`; it must never be used in a cloud
+environment.
+
+The CRM is run from the root with:
 
 ```bash
 pnpm crm dev          # alias for: pnpm --filter crm dev
 pnpm crm build
 ```
 
-Local database (mirrors the prototype's workflow; requires Docker):
+Local database (requires Docker):
 
 ```bash
 pnpm crm db:start     # supabase start
@@ -103,12 +111,13 @@ Environment: copy `.env.example` to `.env.local` inside the app (never commit `.
 
 ## Status
 
-Scaffold plus agreed design: the first build cycle is specified in
+M1 delivery is active: the workspace, fresh Supabase baseline, deterministic local seed,
+company-admin auth guard, and CRM shell now live in this monorepo. The first build cycle is
+specified in
 `docs/design/phase-a-adoption.md` (with decisions in `docs/decisions/` and vocabulary in
 `docs/glossary.md`) — a fresh monorepo-owned Supabase project (`packages/db`), `apps/crm`
 (clients/sites, recurring assignments, roster, minimal dispatch) and a minimal `apps/cleaner`
 (parity port of the prototype's cleaner loop with link-first pool join). Design exploration
-precedes build: seed the root `DESIGN.md` from the prototype's design tokens, upload it to
-Stitch as the design system, and mock the new screens (roster, clients, company setup, join
-flow) for partner validation. Once the first screens exist in code: run `/impeccable init` and
-enable the design-detect CI gate (see `AGENTS.md` § Design quality).
+preceded build: root `DESIGN.md` supplies the shared tokens and the approved Stitch screens are
+reference material for implementation. The deterministic design-detect workflow remains disabled
+until the M1 record surfaces are complete (see `AGENTS.md` § Design quality).

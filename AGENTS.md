@@ -38,6 +38,11 @@ pnpm workspace monorepo; members are `apps/*` and `packages/*`. No app code at t
   skill for the design doc = Project / Milestone / Issue mapping and the `linear.py` API helper
   (`LINEAR_API_KEY` from the environment; never commit it). Planning ladder: `grill-with-docs`
   → `to-features` → `to-issues`.
+- **Skills are authored in `.agents/skills/`** (the agent-portable location, mirroring how
+  `CLAUDE.md` imports `AGENTS.md`); `.claude/skills` is a symlink to it, so Claude and Codex
+  read the same files. Author and edit skills under `.agents/skills/` only — never create a
+  real directory at `.claude/skills`, and reference skill files by their `.agents/skills/…`
+  paths.
 - `ai-engineering-wiki` (symlink, gitignored, this machine only) — read-only personal research
   wiki for prior art; never referenced from committed files.
 
@@ -128,6 +133,51 @@ and releases them to the test cohort. Current stage is the **internal alpha** (P
 the six-item
 build delta listed in this repo's README, on top of what the prototype already proves. Do not pull
 MVP/P1 features (share links, vetting, reviews, messaging, AI, WhatsApp) into alpha work.
+
+## Engineering delivery
+
+For any production behaviour change, load and follow the **disciplined-delivery** skill.
+The law, tier-independent:
+
+- **Single writer.** Parallel agents may explore, analyse, and review; only the main
+  agent edits the working tree.
+- **Ceremony scales with blast radius, not ticket size** (tiers T0–T2 in the skill).
+  Product-law surfaces, migrations/RPCs/RLS, and auth are always full-discipline.
+- **No production edits before a demonstrated RED** — a focused test failing *because the
+  behaviour is missing*, not from syntax/imports/fixtures — unless a declared exception
+  applies (docs-only, config-only, generated code, pure refactor under existing tests,
+  test-infra repair).
+- **Never weaken, delete, skip, or broadly mock tests to reach GREEN.**
+- **Scenarios come from the ladder** (issue acceptance criteria, design doc journeys);
+  don't test — or build — beyond the slice's scope without flagging it.
+- **Evidence over claims:** completion requires the tier's evidence note (RED/GREEN
+  commands and exit codes, gates run) in the conversation; never report a check as passed
+  that was not run.
+
+## Code review rules
+
+Applies to all reviews of this repo — Claude `/code-review`, Codex `/review`, and human
+review alike.
+
+- A finding must carry: severity (P0 immediate/catastrophic · P1 serious correctness,
+  security, or data-loss · P2 should fix before merge · P3 non-blocking), confidence,
+  exact file:line or symbol, concrete evidence, real-world impact, and the smallest
+  appropriate remediation.
+- No style-only or formatting findings (CI owns formatting/lint); no "violates SOLID"
+  without naming the concrete coupling, responsibility, substitutability, interface, or
+  dependency consequence.
+- Test findings must explain how the test could pass while the behaviour stays broken;
+  check that tests would fail if the implementation were reverted.
+- Check the surrounding code before claiming validation, authorisation, cleanup, or error
+  handling is absent. Prefer one precise finding over several overlapping ones.
+- **Product-law lens (always on):** flag any change that moves money, exposes client
+  phone/charge/address outside assignment gating, adds free-text public ratings, bypasses
+  the vacancy model, weakens RLS/grants or the `cleaner_*` view boundary, or hard-codes an
+  autonomy level above the PRODUCT.md §4.4 matrix.
+- **TypeScript design bar:** dependency direction UI → domain → data with mutations
+  through RPCs; interfaces no wider than their consumers need; discriminated unions with
+  exhaustive switches; validation at trust boundaries (`zod` or equivalent); no `any`,
+  unsafe casts, or silently-swallowed errors; names from `docs/glossary.md`.
 
 ## Working agreements
 

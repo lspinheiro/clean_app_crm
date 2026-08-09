@@ -154,7 +154,7 @@ export function RosterWeek({ weekStart, days, model, view, hasFoundation }: Rost
                   <tr key={row.id} className={row.kind === "gaps" ? "roster-gap-row" : undefined}>
                     <th scope="row">
                       <span>{row.label}</span>
-                      {row.kind === "gaps" ? <small>Vacancy view</small> : null}
+                      {row.kind === "gaps" ? <small>Vacancies to fill</small> : null}
                       {row.sublabel ? (
                         <small className="roster-row-client">{row.sublabel}</small>
                       ) : null}
@@ -165,7 +165,12 @@ export function RosterWeek({ weekStart, days, model, view, hasFoundation }: Rost
                         <td key={day.dateKey}>
                           {items.length ? items.map((item) => (
                             <RosterEntry item={item} key={item.key} view={view} />
-                          )) : <span className="roster-no-work" aria-label="No work">—</span>}
+                          )) : (
+                            <span className="roster-no-work">
+                              <span aria-hidden="true">—</span>
+                              <span className="visually-hidden">No work</span>
+                            </span>
+                          )}
                         </td>
                       );
                     })}

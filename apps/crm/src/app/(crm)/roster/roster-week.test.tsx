@@ -50,6 +50,8 @@ describe("RosterWeek", () => {
 
     const grid = screen.getByRole("region", { name: "Roster by cleaner" });
     expect(within(grid).getByText("Unfilled slots")).toBeInTheDocument();
+    expect(within(grid).getByText("Vacancies to fill")).toBeInTheDocument();
+    expect(within(grid).queryByText("Vacancy view")).not.toBeInTheDocument();
     expect(within(grid).getByText("Ana Costa")).toBeInTheDocument();
     expect(within(grid).getByText("Bea Lima")).toBeInTheDocument();
     expect(within(grid).getAllByTestId("roster-gap")).toHaveLength(1);
@@ -84,7 +86,10 @@ describe("RosterWeek", () => {
         weekStart="2026-08-10"
       />,
     );
-    expect(screen.getAllByLabelText("No work")).toHaveLength(7);
+    expect(screen.getAllByText("No work")).toHaveLength(7);
+    expect(
+      document.querySelectorAll('.roster-no-work [aria-hidden="true"]'),
+    ).toHaveLength(7);
     const pill = screen.getByTestId("roster-gap-count");
     expect(pill).toHaveTextContent("Nothing scheduled");
     expect(pill).not.toHaveClass("is-clear");
@@ -219,7 +224,7 @@ describe("RosterWeek", () => {
     expect(within(grid).getByRole("columnheader", { name: "Site" })).toBeVisible();
     expect(within(grid).getByText("Ana Costa")).toBeVisible();
     expect(within(within(grid).getByRole("row", { name: /Quiet Retail/ }))
-      .getAllByLabelText("No work")).toHaveLength(7);
+      .getAllByText("No work")).toHaveLength(7);
     expect(screen.getByRole("link", { name: "By site" })).toHaveAttribute(
       "aria-current",
       "page",

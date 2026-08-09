@@ -8,7 +8,9 @@ export default async function CrmLayout({ children }: Readonly<{ children: React
   return (
     <>
       <CrmHeader companyName={company.name} logoUrl={logoUrl} />
-      {children}
+      <div id="main-content" tabIndex={-1}>
+        {children}
+      </div>
     </>
   );
 }

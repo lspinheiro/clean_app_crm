@@ -158,7 +158,7 @@ test("@CLE-17 pivots the same roster week by site without changing vacancy evide
 
   const emptySiteRow = siteGrid.getByRole("row", { name: /Burleigh Retail/ });
   await expect(emptySiteRow).toBeVisible();
-  await expect(emptySiteRow.getByLabel("No work")).toHaveCount(7);
+  await expect(emptySiteRow.getByText("No work")).toHaveCount(7);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect

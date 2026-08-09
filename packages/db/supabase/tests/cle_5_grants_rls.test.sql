@@ -4,7 +4,10 @@ select plan(17);
 
 select ok(has_table_privilege('authenticated', 'public.profiles', 'SELECT'), 'authenticated can select profiles through RLS');
 select ok(has_table_privilege('authenticated', 'public.companies', 'SELECT'), 'authenticated can select companies through RLS');
-select ok(has_table_privilege('authenticated', 'public.companies', 'UPDATE'), 'authenticated can update companies through RLS');
+select ok(
+  not has_table_privilege('authenticated', 'public.companies', 'UPDATE'),
+  'authenticated company writes stay behind narrow security-definer RPCs'
+);
 select ok(has_table_privilege('authenticated', 'public.company_members', 'SELECT'), 'authenticated can select memberships through RLS');
 select ok(has_table_privilege('authenticated', 'public.company_invites', 'SELECT'), 'authenticated can select invites through RLS');
 select ok(has_table_privilege('service_role', 'public.profiles', 'SELECT,INSERT,UPDATE,DELETE'), 'service role owns profile DML');

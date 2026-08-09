@@ -54,7 +54,7 @@ export async function getCompanyAdminContext() {
 
   const { data: company, error: companyError } = await supabase
     .from("companies")
-    .select("id, name, logo_path, status, timezone")
+    .select("id, name, abn, logo_path, status, timezone, updated_at")
     .eq("id", membership.company_id)
     .eq("status", "approved")
     .single();

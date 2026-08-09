@@ -32,9 +32,12 @@ if (!url || !publishableKey) {
 
 console.log(`Using local Supabase at ${url}.`);
 
+const forwardedArguments = process.argv.slice(2);
+if (forwardedArguments[0] === "--") forwardedArguments.shift();
+
 const result = spawnSync(
   "pnpm",
-  ["--filter", "crm", "exec", "playwright", "test", ...process.argv.slice(2)],
+  ["--filter", "crm", "exec", "playwright", "test", ...forwardedArguments],
   {
     cwd: repoRoot,
     env: {

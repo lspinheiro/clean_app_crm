@@ -126,6 +126,10 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      can_manage_company_logo: {
+        Args: { object_name: string };
+        Returns: boolean;
+      };
       current_app_role: {
         Args: Record<PropertyKey, never>;
         Returns: Database["public"]["Enums"]["app_role"];
@@ -133,6 +137,15 @@ export type Database = {
       is_company_admin: {
         Args: { target_company_id: string };
         Returns: boolean;
+      };
+      update_company_identity: {
+        Args: {
+          company_abn: string;
+          company_name: string;
+          logo_uploaded?: boolean;
+          target_company_id: string;
+        };
+        Returns: Database["public"]["Tables"]["companies"]["Row"];
       };
     };
     Enums: {

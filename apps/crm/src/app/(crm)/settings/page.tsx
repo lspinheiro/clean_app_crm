@@ -1,5 +1,21 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { CompanyIdentityForm } from "./company-identity-form";
 
-export default function SettingsPage() {
-  return <PlaceholderPage title="Company settings" description="Company identity arrives in the next M1 slice." />;
+import { requireCompanyAdmin } from "@/lib/auth/session";
+import { getCompanyLogoUrl } from "@/lib/company-logo";
+
+export default async function SettingsPage() {
+  const { company, supabase } = await requireCompanyAdmin();
+  const logoUrl = await getCompanyLogoUrl(supabase, company.logo_path);
+
+  return (
+    <main className="page-shell settings-shell">
+      <header className="page-header-row">
+        <div>
+          <p className="eyebrow">Company record</p>
+          <h1 className="page-heading">Company settings</h1>
+        </div>
+      </header>
+      <CompanyIdentityForm company={company} logoUrl={logoUrl} />
+    </main>
+  );
 }

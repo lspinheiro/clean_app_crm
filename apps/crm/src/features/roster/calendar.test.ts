@@ -49,10 +49,10 @@ describe("roster calendar", () => {
 
   it("formats a week- and pivot-aware document title", () => {
     expect(formatRosterTitle("2026-08-10", "cleaner")).toBe(
-      "Roster · Week of 10–16 Aug 2026 · by cleaner — Clean App",
+      "Roster · Week of 10–16 Aug 2026 · by cleaner",
     );
     expect(formatRosterTitle("2026-08-10", "site")).toBe(
-      "Roster · Week of 10–16 Aug 2026 · by site — Clean App",
+      "Roster · Week of 10–16 Aug 2026 · by site",
     );
   });
 

@@ -135,7 +135,7 @@ export function formatRosterWeekHeading(weekStart: string) {
 }
 
 export function formatRosterTitle(weekStart: string, view: RosterView) {
-  return `Roster · ${formatRosterWeekHeading(weekStart)} · by ${view} — Clean App`;
+  return `Roster · ${formatRosterWeekHeading(weekStart)} · by ${view}`;
 }
 
 export function formatRosterTime(timestamp: string) {

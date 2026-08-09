@@ -5,6 +5,7 @@ import {
   addDays,
   formatRosterTime,
   formatRosterWeekHeading,
+  normaliseWeekStart,
   rosterHref,
 } from "@/features/roster/calendar";
 import type {
@@ -20,6 +21,7 @@ type RosterWeekProps = {
   model: RosterModel;
   view: RosterView;
   hasFoundation: boolean;
+  todayKey: string;
 };
 
 function unfilledLabel(count: number, suffix = "") {
@@ -66,9 +68,17 @@ function RosterEntry({ item, view }: { item: RosterCellItem; view: RosterView })
   );
 }
 
-export function RosterWeek({ weekStart, days, model, view, hasFoundation }: RosterWeekProps) {
+export function RosterWeek({
+  weekStart,
+  days,
+  model,
+  view,
+  hasFoundation,
+  todayKey,
+}: RosterWeekProps) {
   const previousWeek = rosterHref(addDays(weekStart, -7), view);
   const nextWeek = rosterHref(addDays(weekStart, 7), view);
+  const currentWeekStart = normaliseWeekStart(todayKey);
   const gapState = model.vacancyCount > 0
     ? "gaps"
     : model.jobIds.length > 0
@@ -93,6 +103,11 @@ export function RosterWeek({ weekStart, days, model, view, hasFoundation }: Rost
                 <Link className="icon-button roster-week-link" href={nextWeek} aria-label="Next week">
                   <ChevronRight aria-hidden="true" size={20} />
                 </Link>
+                {currentWeekStart && currentWeekStart !== weekStart ? (
+                  <Link className="roster-this-week" href={rosterHref(currentWeekStart, view)}>
+                    This week
+                  </Link>
+                ) : null}
               </div>
               <nav className="roster-view-switch" aria-label="Roster view">
                 <Link
@@ -143,7 +158,12 @@ export function RosterWeek({ weekStart, days, model, view, hasFoundation }: Rost
                 <tr>
                   <th scope="col">{view === "cleaner" ? "Cleaner" : "Site"}</th>
                   {days.map((day) => (
-                    <th key={day.dateKey} scope="col" className="tabular-numerals">
+                    <th
+                      key={day.dateKey}
+                      scope="col"
+                      className={`tabular-numerals${day.dateKey === todayKey ? " is-today" : ""}`}
+                      aria-current={day.dateKey === todayKey ? "date" : undefined}
+                    >
                       {day.headerLabel}
                     </th>
                   ))}

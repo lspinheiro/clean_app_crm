@@ -16,10 +16,20 @@ const dayHeaderFormatter = new Intl.DateTimeFormat("en-AU", {
   weekday: "short",
   day: "numeric",
 });
-const weekHeadingFormatter = new Intl.DateTimeFormat("en-AU", {
+const weekRangeDayFormatter = new Intl.DateTimeFormat("en-AU", {
+  timeZone: "UTC",
+  day: "numeric",
+});
+const weekRangeMonthFormatter = new Intl.DateTimeFormat("en-AU", {
   timeZone: "UTC",
   day: "numeric",
   month: "short",
+});
+const weekRangeFullFormatter = new Intl.DateTimeFormat("en-AU", {
+  timeZone: "UTC",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
 });
 const rosterTimeFormatter = new Intl.DateTimeFormat("en-AU", {
   timeZone: BRISBANE_TIME_ZONE,
@@ -112,9 +122,20 @@ export function getRosterWeekBounds(weekStart: string) {
 }
 
 export function formatRosterWeekHeading(weekStart: string) {
-  const date = fromDateKey(weekStart);
-  if (!date) throw new Error(`Invalid roster week: ${weekStart}`);
-  return `Week of ${weekHeadingFormatter.format(date)}`;
+  const start = fromDateKey(weekStart);
+  const end = fromDateKey(addDays(weekStart, 6));
+  if (!start || !end) throw new Error(`Invalid roster week: ${weekStart}`);
+  if (start.getUTCFullYear() !== end.getUTCFullYear()) {
+    return `Week of ${weekRangeFullFormatter.format(start)} – ${weekRangeFullFormatter.format(end)}`;
+  }
+  if (start.getUTCMonth() !== end.getUTCMonth()) {
+    return `Week of ${weekRangeMonthFormatter.format(start)} – ${weekRangeFullFormatter.format(end)}`;
+  }
+  return `Week of ${weekRangeDayFormatter.format(start)}–${weekRangeFullFormatter.format(end)}`;
+}
+
+export function formatRosterTitle(weekStart: string, view: RosterView) {
+  return `Roster · ${formatRosterWeekHeading(weekStart)} · by ${view} — Clean App`;
 }
 
 export function formatRosterTime(timestamp: string) {

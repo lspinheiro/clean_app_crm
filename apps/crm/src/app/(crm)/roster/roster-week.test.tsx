@@ -45,6 +45,7 @@ describe("RosterWeek", () => {
         model={populatedModel()}
         view="cleaner"
         weekStart="2026-08-10"
+        todayKey="2026-08-12"
       />,
     );
 
@@ -84,6 +85,7 @@ describe("RosterWeek", () => {
         model={model}
         view="cleaner"
         weekStart="2026-08-10"
+        todayKey="2026-08-12"
       />,
     );
     expect(screen.getAllByText("No work")).toHaveLength(7);
@@ -123,6 +125,7 @@ describe("RosterWeek", () => {
         model={model}
         view="cleaner"
         weekStart="2026-08-10"
+        todayKey="2026-08-12"
       />,
     );
     const pill = screen.getByTestId("roster-gap-count");
@@ -148,12 +151,49 @@ describe("RosterWeek", () => {
         })}
         view="cleaner"
         weekStart="2026-08-10"
+        todayKey="2026-08-12"
       />,
     );
     expect(screen.getByRole("heading", { name: "Build your roster foundation" })).toBeVisible();
     expect(screen.queryByRole("region", { name: "Roster by cleaner" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("roster-footer-gap-count")).not.toBeInTheDocument();
     expect(screen.queryByTestId("roster-gap-count")).not.toBeInTheDocument();
+  });
+
+  it("marks today's column and hides the return link inside the current week", () => {
+    render(
+      <RosterWeek
+        days={days}
+        hasFoundation
+        model={populatedModel()}
+        view="cleaner"
+        weekStart="2026-08-10"
+        todayKey="2026-08-12"
+      />,
+    );
+    expect(screen.getByRole("columnheader", { name: /Wed 12/ })).toHaveAttribute(
+      "aria-current",
+      "date",
+    );
+    expect(screen.queryByRole("link", { name: "This week" })).not.toBeInTheDocument();
+  });
+
+  it("offers a return to the current week when viewing another week", () => {
+    render(
+      <RosterWeek
+        days={days}
+        hasFoundation
+        model={populatedModel()}
+        view="site"
+        weekStart="2026-08-10"
+        todayKey="2026-09-16"
+      />,
+    );
+    expect(document.querySelector('[aria-current="date"]')).toBeNull();
+    expect(screen.getByRole("link", { name: "This week" })).toHaveAttribute(
+      "href",
+      "/roster?week=2026-09-14&view=site",
+    );
   });
 
   it("disambiguates same-name sites with their client in the row header", () => {
@@ -175,6 +215,7 @@ describe("RosterWeek", () => {
         model={model}
         view="site"
         weekStart="2026-08-10"
+        todayKey="2026-08-12"
       />,
     );
     const grid = screen.getByRole("region", { name: "Roster by site" });
@@ -217,6 +258,7 @@ describe("RosterWeek", () => {
         model={model}
         view="site"
         weekStart="2026-08-10"
+        todayKey="2026-08-12"
       />,
     );
 

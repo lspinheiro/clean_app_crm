@@ -4,6 +4,8 @@ import {
   addDays,
   buildRosterDays,
   formatRosterTime,
+  formatRosterTitle,
+  formatRosterWeekHeading,
   getBrisbaneDateKey,
   getRosterWeekBounds,
   normaliseWeekStart,
@@ -37,6 +39,21 @@ describe("roster calendar", () => {
       startsAt: "2026-08-09T14:00:00.000Z",
       endsAt: "2026-08-16T14:00:00.000Z",
     });
+  });
+
+  it("formats the week heading as a dated range with year", () => {
+    expect(formatRosterWeekHeading("2026-08-10")).toBe("Week of 10–16 Aug 2026");
+    expect(formatRosterWeekHeading("2026-08-31")).toBe("Week of 31 Aug – 6 Sept 2026");
+    expect(formatRosterWeekHeading("2025-12-29")).toBe("Week of 29 Dec 2025 – 4 Jan 2026");
+  });
+
+  it("formats a week- and pivot-aware document title", () => {
+    expect(formatRosterTitle("2026-08-10", "cleaner")).toBe(
+      "Roster · Week of 10–16 Aug 2026 · by cleaner — Clean App",
+    );
+    expect(formatRosterTitle("2026-08-10", "site")).toBe(
+      "Roster · Week of 10–16 Aug 2026 · by site — Clean App",
+    );
   });
 
   it("preserves week selection in navigation and formats Brisbane times", () => {

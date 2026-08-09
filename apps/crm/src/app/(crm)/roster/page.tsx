@@ -2,6 +2,8 @@ import { RosterWeek } from "./roster-week";
 
 import {
   buildRosterDays,
+  formatRosterTitle,
+  getBrisbaneDateKey,
   getRosterWeekBounds,
   parseRosterView,
   parseRosterWeek,
@@ -27,6 +29,11 @@ const visibleJobStatuses = [
   "in_progress",
   "completed",
 ] as const;
+
+export async function generateMetadata({ searchParams }: RosterPageProps) {
+  const { view, week } = await searchParams;
+  return { title: formatRosterTitle(parseRosterWeek(week), parseRosterView(view)) };
+}
 
 export default async function RosterPage({ searchParams }: RosterPageProps) {
   const [{ view: requestedView, week }, { company, supabase }] = await Promise.all([
@@ -185,6 +192,7 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
       days={days}
       hasFoundation={sitesResult.data.length > 0 || cleaners.length > 0 || jobs.length > 0}
       model={model}
+      todayKey={getBrisbaneDateKey()}
       view={view}
       weekStart={weekStart}
     />

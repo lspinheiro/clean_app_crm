@@ -5,19 +5,30 @@ import { requireCompanyAdmin } from "@/lib/auth/session";
 
 export default async function ClientsPage() {
   const { supabase } = await requireCompanyAdmin();
-  const [{ data: clientRows, error: clientError }, { data: siteRows, error: siteError }] =
-    await Promise.all([
+  const [
+    { data: clientRows, error: clientError },
+    { data: siteRows, error: siteError },
+    { data: serviceRows, error: serviceError },
+  ] = await Promise.all([
       supabase
         .from("clients")
         .select("id, name, contact_name, phone, notes")
         .order("name"),
       supabase
         .from("sites")
-        .select("id, client_id, name, address, suburb, access_notes")
+        .select(
+          "id, client_id, name, address, suburb, access_notes, default_service_id, default_duration_minutes, default_rate_cents",
+        )
         .order("name"),
+      supabase
+        .from("service_catalogue")
+        .select("id, name")
+        .eq("active", true)
+        .order("sort_order"),
     ]);
   if (clientError) throw clientError;
   if (siteError) throw siteError;
+  if (serviceError) throw serviceError;
 
   const clients: ClientWithSites[] = clientRows.map((client) => ({
     id: client.id,
@@ -34,6 +45,10 @@ export default async function ClientsPage() {
         address: site.address,
         suburb: site.suburb,
         accessNotes: site.access_notes,
+        defaultService:
+          serviceRows.find((service) => service.id === site.default_service_id) ?? null,
+        defaultDurationMinutes: site.default_duration_minutes,
+        defaultRateCents: site.default_rate_cents,
       })),
   }));
 

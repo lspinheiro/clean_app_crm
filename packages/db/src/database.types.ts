@@ -156,12 +156,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      service_catalogue: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          id: string;
+          name: string;
+          slug: string;
+          sort_order: number;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          id: string;
+          name: string;
+          slug: string;
+          sort_order: number;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
       sites: {
         Row: {
           access_notes: string | null;
           address: string;
           client_id: string;
           created_at: string;
+          default_duration_minutes: number | null;
+          default_rate_cents: number | null;
+          default_service_id: string | null;
           id: string;
           name: string;
           suburb: string;
@@ -172,6 +202,9 @@ export type Database = {
           address: string;
           client_id: string;
           created_at?: string;
+          default_duration_minutes?: number | null;
+          default_rate_cents?: number | null;
+          default_service_id?: string | null;
           id?: string;
           name: string;
           suburb: string;
@@ -182,6 +215,9 @@ export type Database = {
           address?: string;
           client_id?: string;
           created_at?: string;
+          default_duration_minutes?: number | null;
+          default_rate_cents?: number | null;
+          default_service_id?: string | null;
           id?: string;
           name?: string;
           suburb?: string;
@@ -232,6 +268,29 @@ export type Database = {
           target_company_id: string;
         };
         Returns: Database["public"]["Tables"]["companies"]["Row"];
+      };
+      update_client: {
+        Args: {
+          client_contact_name?: string | null;
+          client_name: string;
+          client_notes?: string | null;
+          client_phone?: string | null;
+          target_client_id: string;
+        };
+        Returns: Database["public"]["Tables"]["clients"]["Row"];
+      };
+      update_site: {
+        Args: {
+          site_access_notes: string | null;
+          site_address: string;
+          site_default_duration_minutes: number;
+          site_default_rate_cents: number;
+          site_default_service_id: string;
+          site_name: string;
+          site_suburb: string;
+          target_site_id: string;
+        };
+        Returns: Database["public"]["Tables"]["sites"]["Row"];
       };
     };
     Enums: {

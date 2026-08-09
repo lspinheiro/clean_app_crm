@@ -105,8 +105,32 @@ values ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-0000000
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
-select is((select count(*)::integer from public.clients), 2, 'company admin sees their seeded clients');
-select is((select count(*)::integer from public.sites), 4, 'company admin sees their seeded sites');
+select is(
+  (
+    select count(*)::integer
+    from public.clients
+    where id in (
+      '10000000-0000-4000-8000-000000000301',
+      '10000000-0000-4000-8000-000000000302'
+    )
+  ),
+  2,
+  'company admin sees their seeded clients'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.sites
+    where id in (
+      '10000000-0000-4000-8000-000000000401',
+      '10000000-0000-4000-8000-000000000402',
+      '10000000-0000-4000-8000-000000000403',
+      '10000000-0000-4000-8000-000000000404'
+    )
+  ),
+  4,
+  'company admin sees their seeded sites'
+);
 select lives_ok(
   $$select public.create_client(
     '10000000-0000-4000-8000-000000000010',

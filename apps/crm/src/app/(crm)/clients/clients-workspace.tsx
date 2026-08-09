@@ -1,6 +1,7 @@
 "use client";
 
 import { Building2, MapPin, Plus, Search, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
@@ -11,6 +12,7 @@ import {
 } from "@/app/actions/clients";
 import { filterClients } from "@/features/clients/filter";
 import type { ClientWithSites } from "@/features/clients/types";
+import { formatSiteDefaults } from "@/features/site-defaults/format";
 
 const emptyResult: RecordMutationResult = {
   ok: false,
@@ -128,7 +130,7 @@ export function ClientsWorkspace({ clients }: ClientsWorkspaceProps) {
               <header className="client-card__header">
                 <div>
                   <p className="record-kicker">Client</p>
-                  <h2>{client.name}</h2>
+                  <h2><Link href={`/clients/${client.id}`}>{client.name}</Link></h2>
                   <p className="client-contact">
                     {client.contactName ?? "No contact recorded"}
                     {client.phone ? ` · ${client.phone}` : ""}
@@ -155,6 +157,7 @@ export function ClientsWorkspace({ clients }: ClientsWorkspaceProps) {
                       <div>
                         <strong>{site.name}</strong>
                         <span>{site.address} · {site.suburb}</span>
+                        <span className="site-default-summary">{formatSiteDefaults(site)}</span>
                       </div>
                     </li>
                   ))}

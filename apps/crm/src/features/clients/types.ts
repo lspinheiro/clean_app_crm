@@ -5,6 +5,14 @@ export type SiteSummary = {
   address: string;
   suburb: string;
   accessNotes: string | null;
+  defaultService: ServiceOption | null;
+  defaultDurationMinutes: number | null;
+  defaultRateCents: number | null;
+};
+
+export type ServiceOption = {
+  id: string;
+  name: string;
 };
 
 export type ClientWithSites = {

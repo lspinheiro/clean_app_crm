@@ -134,3 +134,21 @@ values
     null
   )
 on conflict (id) do nothing;
+
+update public.sites
+set
+  default_service_id = '30000000-0000-4000-8000-000000000002',
+  default_duration_minutes = case
+    when id = '10000000-0000-4000-8000-000000000404' then 90
+    else 120
+  end,
+  default_rate_cents = case
+    when id = '10000000-0000-4000-8000-000000000404' then 12500
+    else 15000
+  end
+where id in (
+  '10000000-0000-4000-8000-000000000401',
+  '10000000-0000-4000-8000-000000000402',
+  '10000000-0000-4000-8000-000000000403',
+  '10000000-0000-4000-8000-000000000404'
+);

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { RosterWeek } from "./roster-week";
 import { buildRosterDays } from "@/features/roster/calendar";
-import { buildCleanerRoster } from "@/features/roster/model";
+import { buildCleanerRoster, buildSiteRoster } from "@/features/roster/model";
 
 const days = buildRosterDays("2026-08-10");
 
@@ -43,6 +43,7 @@ describe("RosterWeek", () => {
         days={days}
         hasFoundation
         model={populatedModel()}
+        view="cleaner"
         weekStart="2026-08-10"
       />,
     );
@@ -75,7 +76,13 @@ describe("RosterWeek", () => {
       vacancies: [],
     });
     render(
-      <RosterWeek days={days} hasFoundation model={model} weekStart="2026-08-10" />,
+      <RosterWeek
+        days={days}
+        hasFoundation
+        model={model}
+        view="cleaner"
+        weekStart="2026-08-10"
+      />,
     );
     expect(screen.getAllByLabelText("No work")).toHaveLength(7);
     expect(screen.getByTestId("roster-gap-count")).toHaveTextContent("0 unfilled slots");
@@ -100,11 +107,67 @@ describe("RosterWeek", () => {
           assignments: [],
           vacancies: [],
         })}
+        view="cleaner"
         weekStart="2026-08-10"
       />,
     );
     expect(screen.getByRole("heading", { name: "Build your roster foundation" })).toBeVisible();
     expect(screen.queryByRole("region", { name: "Roster by cleaner" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("roster-footer-gap-count")).not.toBeInTheDocument();
+  });
+
+  it("switches to site rows without losing the selected week", () => {
+    const model = buildSiteRoster({
+      days,
+      cleaners: [{ id: "cleaner-1", name: "Ana Costa" }],
+      sites: [
+        { id: "site-1", name: "Harbour Tower" },
+        { id: "site-2", name: "Quiet Retail" },
+      ],
+      jobs: [{
+        id: "job-1",
+        siteId: "site-1",
+        siteName: "Harbour Tower",
+        scheduledStart: "2026-08-09T22:00:00Z",
+        crewSize: 2,
+      }],
+      assignments: [{ jobId: "job-1", cleanerId: "cleaner-1", slotNumber: 1 }],
+      vacancies: [{
+        key: "job-1:2",
+        jobId: "job-1",
+        siteId: "site-1",
+        siteName: "Harbour Tower",
+        scheduledStart: "2026-08-09T22:00:00Z",
+        crewSlot: 2,
+        crewSize: 2,
+      }],
+    });
+    render(
+      <RosterWeek
+        days={days}
+        hasFoundation
+        model={model}
+        view="site"
+        weekStart="2026-08-10"
+      />,
+    );
+
+    const grid = screen.getByRole("region", { name: "Roster by site" });
+    expect(within(grid).getByRole("columnheader", { name: "Site" })).toBeVisible();
+    expect(within(grid).getByText("Ana Costa")).toBeVisible();
+    expect(within(within(grid).getByRole("row", { name: /Quiet Retail/ }))
+      .getAllByLabelText("No work")).toHaveLength(7);
+    expect(screen.getByRole("link", { name: "By site" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "By cleaner" })).toHaveAttribute(
+      "href",
+      "/roster?week=2026-08-10",
+    );
+    expect(screen.getByRole("link", { name: "Next week" })).toHaveAttribute(
+      "href",
+      "/roster?week=2026-08-17&view=site",
+    );
   });
 });

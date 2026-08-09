@@ -3,13 +3,15 @@ import { RosterWeek } from "./roster-week";
 import {
   buildRosterDays,
   getRosterWeekBounds,
+  parseRosterView,
   parseRosterWeek,
 } from "@/features/roster/calendar";
-import { buildCleanerRoster } from "@/features/roster/model";
+import { buildCleanerRoster, buildSiteRoster } from "@/features/roster/model";
 import type {
   RosterAssignment,
   RosterCleaner,
   RosterJob,
+  RosterSite,
   RosterVacancy,
 } from "@/features/roster/types";
 import { requireCompanyAdmin } from "@/lib/auth/session";
@@ -27,10 +29,11 @@ const visibleJobStatuses = [
 ] as const;
 
 export default async function RosterPage({ searchParams }: RosterPageProps) {
-  const [{ week }, { company, supabase }] = await Promise.all([
+  const [{ view: requestedView, week }, { company, supabase }] = await Promise.all([
     searchParams,
     requireCompanyAdmin(),
   ]);
+  const view = parseRosterView(requestedView);
   const weekStart = parseRosterWeek(week);
   const days = buildRosterDays(weekStart);
   const { startsAt, endsAt } = getRosterWeekBounds(weekStart);
@@ -141,6 +144,10 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
     id: profile.id,
     name: profile.full_name,
   }));
+  const sites: RosterSite[] = sitesResult.data.map((site) => ({
+    id: site.id,
+    name: site.name,
+  }));
   const vacancies: RosterVacancy[] = vacanciesResult.data.map((vacancy) => {
     if (
       !vacancy.job_id
@@ -163,12 +170,16 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
     };
   });
 
-  const model = buildCleanerRoster({ days, cleaners, jobs, assignments, vacancies });
+  const rosterInput = { days, cleaners, jobs, assignments, vacancies };
+  const model = view === "site"
+    ? buildSiteRoster({ ...rosterInput, sites })
+    : buildCleanerRoster(rosterInput);
   return (
     <RosterWeek
       days={days}
       hasFoundation={sitesResult.data.length > 0 || cleaners.length > 0 || jobs.length > 0}
       model={model}
+      view={view}
       weekStart={weekStart}
     />
   );

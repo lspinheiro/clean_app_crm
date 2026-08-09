@@ -46,6 +46,7 @@ export type RosterJobItem = {
   siteName: string;
   scheduledStart: string;
   crewSize: number;
+  cleanerNames: string[];
 };
 
 export type RosterGapItem = {
@@ -63,13 +64,16 @@ export type RosterCellItem = RosterJobItem | RosterGapItem;
 export type RosterRow = {
   id: string;
   label: string;
-  kind: "cleaner" | "gaps";
+  kind: "cleaner" | "site" | "gaps";
   cells: Record<string, RosterCellItem[]>;
 };
 
-export type CleanerRosterModel = {
+export type RosterModel = {
   rows: RosterRow[];
   vacancyCount: number;
   vacancyKeys: string[];
   jobIds: string[];
 };
+
+export type CleanerRosterModel = RosterModel;
+export type SiteRosterModel = RosterModel;

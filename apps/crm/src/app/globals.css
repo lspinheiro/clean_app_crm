@@ -1627,6 +1627,13 @@ a {
   margin-bottom: 12px;
 }
 
+.roster-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+
 .roster-week-controls {
   display: flex;
   align-items: center;
@@ -1644,6 +1651,51 @@ a {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+.roster-view-switch {
+  display: inline-grid;
+  overflow: hidden;
+  grid-auto-flow: column;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 10px;
+  background: var(--color-paper);
+}
+
+.roster-view-switch a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 15px;
+  color: var(--color-gray-700);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.roster-view-switch a + a {
+  border-left: 1px solid var(--color-gray-300);
+}
+
+.roster-view-switch a[aria-current="page"] {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.roster-view-switch a:hover:not([aria-current="page"]) {
+  background: var(--color-gray-100);
+}
+
+.roster-view-switch a:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--color-ink);
+  outline-offset: -3px;
+}
+
+.roster-view-switch a[aria-current="page"]:focus-visible {
+  outline-color: var(--color-paper);
 }
 
 .roster-gap-count {
@@ -1779,6 +1831,14 @@ a {
   color: var(--color-gray-600);
   font-size: 11px;
   white-space: nowrap;
+}
+
+.roster-entry span.roster-entry__cleaners {
+  overflow: visible;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .roster-entry--gap {

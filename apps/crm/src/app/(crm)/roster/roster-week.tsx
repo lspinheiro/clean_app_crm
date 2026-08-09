@@ -7,12 +7,18 @@ import {
   formatRosterWeekHeading,
   rosterHref,
 } from "@/features/roster/calendar";
-import type { CleanerRosterModel, RosterCellItem, RosterDay } from "@/features/roster/types";
+import type {
+  RosterCellItem,
+  RosterDay,
+  RosterModel,
+  RosterView,
+} from "@/features/roster/types";
 
 type RosterWeekProps = {
   weekStart: string;
   days: RosterDay[];
-  model: CleanerRosterModel;
+  model: RosterModel;
+  view: RosterView;
   hasFoundation: boolean;
 };
 
@@ -20,35 +26,49 @@ function unfilledLabel(count: number, suffix = "") {
   return `${count} unfilled ${count === 1 ? "slot" : "slots"}${suffix}`;
 }
 
-function RosterEntry({ item }: { item: RosterCellItem }) {
+function RosterEntry({ item, view }: { item: RosterCellItem; view: RosterView }) {
   if (item.kind === "gap") {
     return (
       <div
         className="roster-entry roster-entry--gap"
+        data-job-id={item.jobId}
         data-testid="roster-gap"
         data-vacancy-key={item.key}
       >
         <strong><AlertTriangle aria-hidden="true" size={14} /> GAP</strong>
-        <span>{item.siteName}</span>
+        <span>
+          {view === "site" ? formatRosterTime(item.scheduledStart) : item.siteName}
+        </span>
         <small className="tabular-numerals">
-          {formatRosterTime(item.scheduledStart)} · slot {item.crewSlot} of {item.crewSize}
+          {view === "cleaner" ? `${formatRosterTime(item.scheduledStart)} · ` : null}
+          slot {item.crewSlot} of {item.crewSize}
         </small>
       </div>
     );
   }
 
   return (
-    <div className="roster-entry roster-entry--job" data-job-id={item.jobId}>
-      <strong>{item.siteName}</strong>
-      <span className="tabular-numerals">{formatRosterTime(item.scheduledStart)}</span>
+    <div
+      className="roster-entry roster-entry--job"
+      data-job-id={item.jobId}
+      data-testid="roster-job"
+    >
+      <strong>
+        {view === "site" ? formatRosterTime(item.scheduledStart) : item.siteName}
+      </strong>
+      <span className={view === "cleaner" ? "tabular-numerals" : "roster-entry__cleaners"}>
+        {view === "site"
+          ? item.cleanerNames.join(", ") || "No cleaners assigned"
+          : formatRosterTime(item.scheduledStart)}
+      </span>
       {item.crewSize > 1 ? <small>{item.crewSize} cleaners</small> : null}
     </div>
   );
 }
 
-export function RosterWeek({ weekStart, days, model, hasFoundation }: RosterWeekProps) {
-  const previousWeek = rosterHref(addDays(weekStart, -7));
-  const nextWeek = rosterHref(addDays(weekStart, 7));
+export function RosterWeek({ weekStart, days, model, view, hasFoundation }: RosterWeekProps) {
+  const previousWeek = rosterHref(addDays(weekStart, -7), view);
+  const nextWeek = rosterHref(addDays(weekStart, 7), view);
 
   return (
     <>
@@ -57,16 +77,32 @@ export function RosterWeek({ weekStart, days, model, hasFoundation }: RosterWeek
           <div>
             <p className="eyebrow">Company operations</p>
             <h1 className="page-heading">Roster</h1>
-            <div className="roster-week-controls">
-              <Link className="icon-button roster-week-link" href={previousWeek} aria-label="Previous week">
-                <ChevronLeft aria-hidden="true" size={20} />
-              </Link>
-              <p className="roster-week-title tabular-numerals">
-                {formatRosterWeekHeading(weekStart)}
-              </p>
-              <Link className="icon-button roster-week-link" href={nextWeek} aria-label="Next week">
-                <ChevronRight aria-hidden="true" size={20} />
-              </Link>
+            <div className="roster-toolbar">
+              <div className="roster-week-controls">
+                <Link className="icon-button roster-week-link" href={previousWeek} aria-label="Previous week">
+                  <ChevronLeft aria-hidden="true" size={20} />
+                </Link>
+                <p className="roster-week-title tabular-numerals">
+                  {formatRosterWeekHeading(weekStart)}
+                </p>
+                <Link className="icon-button roster-week-link" href={nextWeek} aria-label="Next week">
+                  <ChevronRight aria-hidden="true" size={20} />
+                </Link>
+              </div>
+              <nav className="roster-view-switch" aria-label="Roster view">
+                <Link
+                  aria-current={view === "cleaner" ? "page" : undefined}
+                  href={rosterHref(weekStart, "cleaner")}
+                >
+                  By cleaner
+                </Link>
+                <Link
+                  aria-current={view === "site" ? "page" : undefined}
+                  href={rosterHref(weekStart, "site")}
+                >
+                  By site
+                </Link>
+              </nav>
             </div>
           </div>
           <p
@@ -90,13 +126,13 @@ export function RosterWeek({ weekStart, days, model, hasFoundation }: RosterWeek
           <div
             className="roster-grid-region"
             role="region"
-            aria-label="Roster by cleaner"
+            aria-label={`Roster by ${view}`}
             tabIndex={0}
           >
             <table className="roster-grid">
               <thead>
                 <tr>
-                  <th scope="col">Cleaner</th>
+                  <th scope="col">{view === "cleaner" ? "Cleaner" : "Site"}</th>
                   {days.map((day) => (
                     <th key={day.dateKey} scope="col" className="tabular-numerals">
                       {day.headerLabel}
@@ -116,7 +152,7 @@ export function RosterWeek({ weekStart, days, model, hasFoundation }: RosterWeek
                       return (
                         <td key={day.dateKey}>
                           {items.length ? items.map((item) => (
-                            <RosterEntry item={item} key={item.key} />
+                            <RosterEntry item={item} key={item.key} view={view} />
                           )) : <span className="roster-no-work" aria-label="No work">—</span>}
                         </td>
                       );
@@ -124,9 +160,13 @@ export function RosterWeek({ weekStart, days, model, hasFoundation }: RosterWeek
                   </tr>
                 )) : (
                   <tr>
-                    <th scope="row">No active cleaners</th>
+                    <th scope="row">
+                      {view === "cleaner" ? "No active cleaners" : "No company sites"}
+                    </th>
                     <td colSpan={7} className="roster-grid-message">
-                      Invite a cleaner to add a row to this week.
+                      {view === "cleaner"
+                        ? "Invite a cleaner to add a row to this week."
+                        : "Add a client site to create a roster row."}
                     </td>
                   </tr>
                 )}

@@ -27,7 +27,8 @@ before coding.
 pnpm workspace monorepo; members are `apps/*` and `packages/*`. No app code at the root.
 
 - `apps/crm/` — the CRM (Next.js). Not yet created; first real code lands here.
-- `apps/cleaner/` — reserved for the migrated cleaner app.
+- `apps/cleaner/` — the cleaner app: a minimal parity port of `../clean-app`'s cleaner
+  loop, landing with the first build cycle (`docs/design/phase-a-adoption.md`).
 - `packages/db/` — reserved: Supabase schema, migrations, seed, generated types shared by apps.
 - `packages/ui/` — reserved: shared design tokens/components.
 - `docs/` — hand-authored documentation: `PRODUCT.md` (product strategy), `design/` (design docs
@@ -47,11 +48,17 @@ Run everything through pnpm from the repo root: `pnpm install`, `pnpm --filter c
 
 Next.js (App Router) + React + TypeScript; Tailwind CSS v4; Postgres via **Supabase** (auth,
 migrations, RLS); **Vercel** for hosting. PWA + Web Push for notifications — no native apps.
-Match the prototype's conventions so migration stays cheap; when in doubt, read how
-`../clean-app` does it first. Conventions carried over from the prototype:
+The `../clean-app` prototype is reference material, not runtime and not authority: it
+demonstrates the core job-matching loop, and the alpha runs entirely on monorepo apps
+(`docs/decisions/0002`). Consult it for mechanics (RPC patterns, push plumbing) and for
+visual fidelity on parity screens; wherever its UI/UX and `docs/PRODUCT.md` disagree,
+PRODUCT.md wins. Never carry its "boss" jargon — say *cleaning company* / *company admin*;
+the role enum is `company_admin` / `cleaner` / `admin` and "boss" appears nowhere.
+Conventions carried over from the prototype:
 
 - **UI in English**; currency AUD; timezone `Australia/Brisbane`.
-- **Roles**: `boss` / `cleaner` / `admin` (internal), enforced in layouts and route guards.
+- **Roles**: `company_admin` / `cleaner` / `admin` (internal), enforced in layouts and route
+  guards.
 - **Flow mutations are Postgres RPCs** (security definer, atomic): apply, assign, status changes,
   cancel, mark paid, mark dropped. Assignment races resolve first-accept-wins.
 - **Cleaner privacy boundary**: cleaners read through dedicated views and mutate through RPCs —

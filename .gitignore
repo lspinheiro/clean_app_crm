@@ -37,3 +37,6 @@ coverage/
 
 # machine-local research wiki symlink (read-only; targets personal_website — never commit)
 ai-engineering-wiki
+
+# local Stitch mockup exports (reference material, never merged code — see design-explore skill)
+mockups/

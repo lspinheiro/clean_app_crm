@@ -19,11 +19,13 @@ Gold Coast, QLD, Australia · UI in English · currency AUD · timezone `Austral
 3. **Stay free at the core.** Scheduling, dispatch, and recruitment are permanently free; the data
    they capture is the basis for a later paid tier of AI-assisted admin automation (invoicing,
    calendar ingestion, verification, reminders).
-4. **Converge with the cleaner app.** The sibling repository
-   [`../clean-app`](../clean-app) is the deployed cleaner/boss prototype
-   (https://clean-app-gamma-inky.vercel.app). The intent is for this monorepo to become the single
-   codebase: this CRM absorbs and extends the boss side, and the cleaner-facing app migrates in as
-   `apps/cleaner`.
+4. **One codebase, prototype as reference.** The sibling repository
+   [`../clean-app`](../clean-app) is the deployed two-sided prototype
+   (https://clean-app-gamma-inky.vercel.app). It proves the job-matching loop but is reference
+   material, not runtime: the alpha runs entirely on this monorepo's apps — `apps/crm` for the
+   company side and a minimal `apps/cleaner` carrying the prototype's cleaner loop at parity
+   (see `docs/decisions/0002`). Wherever prototype UI/UX and `docs/PRODUCT.md` disagree,
+   PRODUCT.md wins.
 
 Full product context (product strategy, prototype review, research) lives in the private
 `personal_website` repo under `projects/cleaner-app/` — see `PRODUCT.md` there for features (F1–F13),
@@ -69,7 +71,7 @@ clean_app_crm/
 ├── pnpm-workspace.yaml  # members: apps/*, packages/*
 ├── apps/
 │   ├── crm/             # the CRM (Next.js) — to be created
-│   └── cleaner/         # future home of the migrated cleaner app (../clean-app)
+│   └── cleaner/         # cleaner app — minimal parity port of ../clean-app's cleaner loop
 └── packages/
     ├── db/              # future: Supabase schema, migrations, generated types shared by apps
     └── ui/              # future: shared design tokens and components
@@ -101,10 +103,12 @@ Environment: copy `.env.example` to `.env.local` inside the app (never commit `.
 
 ## Status
 
-Scaffold only: workspace, docs, and layout. Next step is `apps/crm` (Next.js) with the alpha data
-model — `Client`, `Site`, `RecurringAssignment`, `Job` (crew size ≥ 1), `Vacancy` — extending the
-prototype's schema. Design exploration can start sooner: seed the root `DESIGN.md` from the
-prototype's design tokens, upload it to Stitch as the design system, and mock the alpha's new
-screens (roster, clients, recurring assignments) for partner validation before build. Once the
-first screens exist in code: run `/impeccable init` and enable the design-detect CI gate (see
-`AGENTS.md` § Design quality).
+Scaffold plus agreed design: the first build cycle is specified in
+`docs/design/phase-a-adoption.md` (with decisions in `docs/decisions/` and vocabulary in
+`docs/glossary.md`) — a fresh monorepo-owned Supabase project (`packages/db`), `apps/crm`
+(clients/sites, recurring assignments, roster, minimal dispatch) and a minimal `apps/cleaner`
+(parity port of the prototype's cleaner loop with link-first pool join). Design exploration
+precedes build: seed the root `DESIGN.md` from the prototype's design tokens, upload it to
+Stitch as the design system, and mock the new screens (roster, clients, company setup, join
+flow) for partner validation. Once the first screens exist in code: run `/impeccable init` and
+enable the design-detect CI gate (see `AGENTS.md` § Design quality).

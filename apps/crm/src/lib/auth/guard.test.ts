@@ -43,4 +43,20 @@ describe("CLE-5 company-admin access", () => {
   ])("denies $name", ({ input, reason }) => {
     expect(evaluateCrmAccess(input)).toEqual({ kind: "denied", reason });
   });
+
+  it.each([null, "pending", "suspended"] as const)(
+    "denies a company admin when the company status is %s",
+    (companyStatus) => {
+      const input = {
+        userId: "user-1",
+        profile: { id: "user-1", role: "company_admin" as const },
+        companyStatus,
+      };
+
+      expect(evaluateCrmAccess(input)).toEqual({
+        kind: "denied",
+        reason: "company_not_approved",
+      });
+    },
+  );
 });

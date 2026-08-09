@@ -75,6 +75,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      company_logo_upload_reservations: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          object_name: string;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          object_name: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          object_name?: string;
+        };
+        Relationships: [];
+      };
       company_invites: {
         Row: {
           code: string;
@@ -249,8 +267,16 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      can_delete_unreferenced_company_logo: {
+        Args: { object_name: string };
+        Returns: boolean;
+      };
       can_manage_company_logo: {
         Args: { object_name: string };
+        Returns: boolean;
+      };
+      can_upload_reserved_company_logo: {
+        Args: { requested_object_name: string };
         Returns: boolean;
       };
       current_app_role: {
@@ -285,6 +311,13 @@ export type Database = {
         Args: { target_company_id: string };
         Returns: Database["public"]["Tables"]["company_invites"]["Row"];
       };
+      reserve_company_logo_upload: {
+        Args: {
+          requested_object_name: string;
+          target_company_id: string;
+        };
+        Returns: string;
+      };
       set_site_preferred_cleaners: {
         Args: {
           cleaner_ids: string[];
@@ -295,8 +328,8 @@ export type Database = {
       update_company_identity: {
         Args: {
           company_abn: string;
+          company_logo_path?: string | null;
           company_name: string;
-          logo_uploaded?: boolean;
           target_company_id: string;
         };
         Returns: Database["public"]["Tables"]["companies"]["Row"];

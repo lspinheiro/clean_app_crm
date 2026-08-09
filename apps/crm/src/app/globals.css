@@ -520,7 +520,7 @@ a {
 }
 
 .button--small {
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 15px;
   font-size: 13px;
 }
@@ -968,7 +968,7 @@ a {
 }
 
 .preferred-add-row .button {
-  min-height: 42px;
+  min-height: 44px;
 }
 
 .preference-status {

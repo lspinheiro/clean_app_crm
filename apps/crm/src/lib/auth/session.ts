@@ -57,16 +57,51 @@ export async function getCompanyAdminContext() {
     .select("id, name, abn, logo_path, status, timezone, updated_at")
     .eq("id", membership.company_id)
     .eq("status", "approved")
-    .single();
+    .maybeSingle();
   if (companyError) throw companyError;
 
-  return { decision, supabase, user, profile, company } as const;
+  if (!company) {
+    return {
+      decision: {
+        kind: "denied",
+        reason: "company_not_approved",
+      } as const,
+      supabase,
+      user,
+      profile,
+      company: null,
+    } as const;
+  }
+
+  const companyDecision = evaluateCrmAccess({
+    userId: user.id,
+    profile,
+    companyStatus: company.status,
+  });
+  if (companyDecision.kind === "denied") {
+    return {
+      decision: companyDecision,
+      supabase,
+      user,
+      profile,
+      company: null,
+    } as const;
+  }
+
+  return { decision: companyDecision, supabase, user, profile, company } as const;
 }
 
 export async function requireCompanyAdmin() {
   const context = await getCompanyAdminContext();
-  if (context.decision.kind === "denied" || !context.company || !context.profile) {
+  if (context.decision.kind === "denied") {
     redirect("/login?error=not-authorised");
   }
-  return context;
+  if (!context.company || !context.profile) {
+    redirect("/login?error=not-authorised");
+  }
+  return {
+    ...context,
+    company: context.company,
+    profile: context.profile,
+  };
 }

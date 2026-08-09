@@ -39,6 +39,7 @@ import {
   moveCleaner,
   removeCleaner,
 } from "@/features/preferred-cleaners/order";
+import { reloadCurrentPage } from "@/lib/reload-page";
 
 const emptyResult: RecordMutationResult = {
   ok: false,
@@ -147,7 +148,6 @@ export function ClientDetailWorkspace({
     nextOrder: PreferredCleaner[],
     focusSelectAfterSave = false,
   ) {
-    const previousOrder = preferredBySite[site.id] ?? site.preferredCleaners;
     const rankedOrder = nextOrder.map((cleaner, index) => ({ ...cleaner, rank: index + 1 }));
     setPreferredBySite((current) => ({ ...current, [site.id]: rankedOrder }));
     setPreferenceErrors((current) => ({ ...current, [site.id]: "" }));
@@ -156,6 +156,21 @@ export function ClientDetailWorkspace({
       [site.id]: "Saving preferred cleaner order…",
     }));
     setSavingPreferenceSiteId(site.id);
+    let reconcilingCanonicalOrder = false;
+
+    function reconcileCanonicalOrder() {
+      reconcilingCanonicalOrder = true;
+      setPreferenceErrors((current) => ({
+        ...current,
+        [site.id]:
+          "The save could not be confirmed. The page is refreshing to check the saved order.",
+      }));
+      setPreferenceStatuses((current) => ({
+        ...current,
+        [site.id]: "Refreshing the saved preferred cleaner order…",
+      }));
+      reloadCurrentPage();
+    }
 
     try {
       const result = await savePreferredCleanerOrder({
@@ -164,15 +179,7 @@ export function ClientDetailWorkspace({
         cleanerIds: rankedOrder.map((cleaner) => cleaner.id),
       });
       if (!result.ok) {
-        setPreferredBySite((current) => ({ ...current, [site.id]: previousOrder }));
-        setPreferenceErrors((current) => ({
-          ...current,
-          [site.id]: result.formError ?? "The preferred cleaner order could not be saved.",
-        }));
-        setPreferenceStatuses((current) => ({
-          ...current,
-          [site.id]: "Preferred cleaner order was not saved.",
-        }));
+        reconcileCanonicalOrder();
         return;
       }
       setSelectedCleaners((current) => ({ ...current, [site.id]: "" }));
@@ -182,19 +189,13 @@ export function ClientDetailWorkspace({
       }));
       router.refresh();
     } catch {
-      setPreferredBySite((current) => ({ ...current, [site.id]: previousOrder }));
-      setPreferenceErrors((current) => ({
-        ...current,
-        [site.id]: "The preferred cleaner order could not be saved. Please try again.",
-      }));
-      setPreferenceStatuses((current) => ({
-        ...current,
-        [site.id]: "Preferred cleaner order was not saved.",
-      }));
+      reconcileCanonicalOrder();
     } finally {
-      setSavingPreferenceSiteId(null);
-      if (focusSelectAfterSave) {
-        requestAnimationFrame(() => preferenceSelects.current[site.id]?.focus());
+      if (!reconcilingCanonicalOrder) {
+        setSavingPreferenceSiteId(null);
+        if (focusSelectAfterSave) {
+          requestAnimationFrame(() => preferenceSelects.current[site.id]?.focus());
+        }
       }
     }
   }

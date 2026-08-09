@@ -11,3 +11,6 @@ run("supabase", ["--workdir", ".", "test", "db"]);
 run(process.execPath, [
   fileURLToPath(new URL("./test-invite-concurrency.mjs", import.meta.url)),
 ]);
+run(process.execPath, [
+  fileURLToPath(new URL("./test-logo-concurrency.mjs", import.meta.url)),
+]);

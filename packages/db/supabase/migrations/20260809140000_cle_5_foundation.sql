@@ -115,10 +115,12 @@ as $$
     select 1
     from public.profiles p
     join public.company_members cm on cm.profile_id = p.id
+    join public.companies c on c.id = cm.company_id
     where p.id = auth.uid()
       and p.role = 'company_admin'
       and cm.company_id = target_company_id
       and cm.status = 'active'
+      and c.status = 'approved'
   )
 $$;
 

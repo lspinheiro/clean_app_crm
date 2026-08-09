@@ -14,4 +14,11 @@ describe("CLE-5 design-system plumbing", () => {
     expect(css).toContain("--color-success: #06c167");
     expect(css).toContain("--color-danger: #e11900");
   });
+
+  it("keeps compact buttons at the 44px minimum touch target", async () => {
+    const css = await readFile(path.resolve(process.cwd(), "src/app/globals.css"), "utf8");
+
+    expect(css).toMatch(/\.button--small\s*{[^}]*min-height:\s*44px/);
+    expect(css).toMatch(/\.preferred-add-row \.button\s*{[^}]*min-height:\s*44px/);
+  });
 });

@@ -24,12 +24,14 @@ dist/
 .vercel/
 
 # supabase local
-supabase/.temp/
-supabase/.branches/
+**/supabase/.temp/
+**/supabase/.branches/
 
 # misc
 .DS_Store
 coverage/
+playwright-report/
+test-results/
 
 # local agent/editor state
 .claude/settings.local.json

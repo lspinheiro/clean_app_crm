@@ -1,0 +1,51 @@
+import { expect, test } from "@playwright/test";
+
+const adminEmail = "admin@clean-app.example.test";
+const cleanerEmail = "cleaner.one@clean-app.example.test";
+const demoPassword = "local-demo-only";
+
+async function signIn(page: import("@playwright/test").Page, email: string, password: string) {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+}
+
+test.describe("@CLE-5 company-admin sign-in and shell", () => {
+  test("seeded company admin sees the five CRM destinations", async ({ page }) => {
+    await signIn(page, adminEmail, demoPassword);
+
+    await expect(page).toHaveURL(/\/roster$/);
+    for (const label of ["Roster", "Jobs", "Clients", "Pool", "Money"]) {
+      await expect(page.getByRole("navigation").getByRole("link", { name: label })).toHaveCount(1);
+    }
+  });
+
+  test("anonymous deep links never render the protected shell", async ({ page }) => {
+    await page.goto("/clients");
+
+    await expect(page).toHaveURL(/\/login\?error=not-authorised$/);
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+  });
+
+  test("a cleaner account is refused without exposing the shell", async ({ page }) => {
+    await signIn(page, cleanerEmail, demoPassword);
+
+    await expect(page.locator(".form-error")).toContainText("for company admins");
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+  });
+
+  test("invalid credentials keep the protected shell hidden", async ({ page }) => {
+    await signIn(page, adminEmail, "not-the-password");
+
+    await expect(page.locator(".form-error")).toContainText("incorrect");
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+  });
+
+  test("the invite-only alpha exposes no signup route or call to action", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page.getByRole("link", { name: /sign up/i })).toHaveCount(0);
+    await page.goto("/signup");
+    await expect(page.getByText("This page could not be found")).toBeVisible();
+  });
+});

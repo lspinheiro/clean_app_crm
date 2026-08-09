@@ -1,13 +1,13 @@
 # Phase A — company onboarding and pool adoption (alpha)
 
-- **Status:** agreed
+- **Status:** in delivery
 - **Stage:** alpha
 - **Journeys:** CA-1, CL-1, OP-1 designed end-to-end; CA-2…CA-5, CL-2…CL-4 served at
   prototype parity (capability re-housed into monorepo apps, not redesigned)
 - **Features:** F10 (clients, sites, recurring assignments, roster), F11 (pool, board,
   dispatch — parity port), F1 (company record incl. ABN), F4/F5 (consent and availability
   explicitly deferred — see Scope)
-- **Project:** —
+- **Project:** https://linear.app/cleanerapp/project/phase-a-company-onboarding-and-pool-adoption-fa89a1783aad
 - **Design reference:** Stitch `clean-app-crm`
   (stitch.withgoogle.com/projects/14703266792285619940): CA-1-roster `3af77dd5…`,
   CA-1-clients `f956011f…`, CA-1-client-detail `771d4b52…`, CA-1-company-settings

@@ -1,0 +1,16 @@
+{
+  "name": "@clean-app/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:start": "supabase --workdir . start",
+    "db:stop": "supabase --workdir . stop",
+    "db:reset": "node scripts/reset-local.mjs",
+    "db:test": "node scripts/test-local.mjs",
+    "db:types": "supabase --workdir . gen types typescript --local --schema public"
+  },
+  "devDependencies": {
+    "supabase": "^2.106.0"
+  }
+}

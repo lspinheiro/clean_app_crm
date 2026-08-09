@@ -8,6 +8,17 @@
   },
   "scripts": {
     "crm": "pnpm --filter crm",
-    "cleaner": "pnpm --filter cleaner"
+    "cleaner": "pnpm --filter cleaner",
+    "db:start": "pnpm --filter @clean-app/db db:start",
+    "db:stop": "pnpm --filter @clean-app/db db:stop",
+    "db:reset": "pnpm --filter @clean-app/db db:reset",
+    "db:test": "pnpm --filter @clean-app/db db:test",
+    "test": "pnpm --filter crm test:run",
+    "test:e2e": "pnpm --filter crm test:e2e",
+    "lint": "pnpm --filter crm lint",
+    "typecheck": "pnpm --filter crm typecheck",
+    "build": "pnpm --filter crm build",
+    "test:vocabulary": "node scripts/check-vocabulary.mjs",
+    "check": "pnpm test:vocabulary && pnpm test && pnpm db:test && pnpm lint && pnpm typecheck && pnpm build"
   }
 }

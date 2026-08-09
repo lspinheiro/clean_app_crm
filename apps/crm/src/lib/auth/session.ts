@@ -1,0 +1,107 @@
+import { redirect } from "next/navigation";
+
+import { evaluateCrmAccess } from "./access";
+import { createClient } from "@/lib/supabase/server";
+
+export async function getCompanyAdminContext() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError && userError.name !== "AuthSessionMissingError") throw userError;
+  if (!user) {
+    return {
+      decision: evaluateCrmAccess({ userId: null, profile: null }),
+      supabase,
+      user: null,
+      profile: null,
+      company: null,
+    } as const;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, role, full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profileError) throw profileError;
+
+  const decision = evaluateCrmAccess({ userId: user.id, profile });
+  if (decision.kind === "denied") {
+    return { decision, supabase, user, profile, company: null } as const;
+  }
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("company_members")
+    .select("company_id")
+    .eq("profile_id", user.id)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+  if (membershipError) throw membershipError;
+
+  if (!membership) {
+    return {
+      decision: { kind: "denied", reason: "missing_profile" } as const,
+      supabase,
+      user,
+      profile,
+      company: null,
+    } as const;
+  }
+
+  const { data: company, error: companyError } = await supabase
+    .from("companies")
+    .select("id, name, abn, logo_path, status, timezone, updated_at")
+    .eq("id", membership.company_id)
+    .eq("status", "approved")
+    .maybeSingle();
+  if (companyError) throw companyError;
+
+  if (!company) {
+    return {
+      decision: {
+        kind: "denied",
+        reason: "company_not_approved",
+      } as const,
+      supabase,
+      user,
+      profile,
+      company: null,
+    } as const;
+  }
+
+  const companyDecision = evaluateCrmAccess({
+    userId: user.id,
+    profile,
+    companyStatus: company.status,
+  });
+  if (companyDecision.kind === "denied") {
+    return {
+      decision: companyDecision,
+      supabase,
+      user,
+      profile,
+      company: null,
+    } as const;
+  }
+
+  return { decision: companyDecision, supabase, user, profile, company } as const;
+}
+
+export async function requireCompanyAdmin() {
+  const context = await getCompanyAdminContext();
+  if (context.decision.kind === "denied") {
+    redirect("/login?error=not-authorised");
+  }
+  if (!context.company || !context.profile) {
+    redirect("/login?error=not-authorised");
+  }
+  return {
+    ...context,
+    company: context.company,
+    profile: context.profile,
+  };
+}

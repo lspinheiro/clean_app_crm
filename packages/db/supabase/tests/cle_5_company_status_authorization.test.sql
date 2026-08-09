@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(30);
 
 create temporary table company_status_authorization_baseline on commit drop as
 select
@@ -71,6 +71,16 @@ select is(
   0,
   'suspended admin cannot read vacancies'
 );
+select is(
+  (select count(*)::integer from public.recurring_assignments),
+  0,
+  'suspended admin cannot read recurring assignments'
+);
+select is(
+  (select count(*)::integer from public.recurring_assignment_cleaners),
+  0,
+  'suspended admin cannot read named recurring slots'
+);
 select ok(
   not public.can_manage_company_logo('10000000-0000-4000-8000-000000000010/logo-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.webp'),
   'suspended admin cannot manage the company logo'
@@ -138,6 +148,17 @@ select throws_ok(
   '42501',
   'Company admin access required',
   'suspended admin cannot rotate the pool invite'
+);
+select throws_ok(
+  $$select public.create_recurring_assignment(
+    '10000000-0000-4000-8000-000000000401',
+    '30000000-0000-4000-8000-000000000002',
+    'weekly', 2::smallint, '2026-08-11', '08:00', 60, 8000, 1,
+    array[]::uuid[]
+  )$$,
+  '42501',
+  'Only an active company admin can create recurring assignments',
+  'suspended admin cannot create a recurring assignment'
 );
 reset role;
 

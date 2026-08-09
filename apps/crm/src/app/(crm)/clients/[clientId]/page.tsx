@@ -8,6 +8,7 @@ import type {
   PoolCleaner,
   ServiceOption,
 } from "@/features/clients/types";
+import type { RecurringAssignmentsBySite } from "@/features/recurring-assignments/types";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
 type ClientDetailPageProps = {
@@ -59,6 +60,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
   const [
     { data: profileRows, error: profileError },
     { data: preferenceRows, error: preferenceError },
+    { data: recurringRows, error: recurringError },
   ] = await Promise.all([
     memberIds.length
       ? supabase
@@ -75,15 +77,68 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
           .in("site_id", siteIds)
           .order("rank")
       : Promise.resolve({ data: [], error: null }),
+    siteIds.length
+      ? supabase
+          .from("recurring_assignments")
+          .select(
+            "id, site_id, service_id, frequency, weekday, anchor_date, local_start_time, duration_minutes, cleaner_pay_cents, crew_size, active",
+          )
+          .in("site_id", siteIds)
+          .order("weekday")
+          .order("local_start_time")
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (profileError) throw profileError;
   if (preferenceError) throw preferenceError;
+  if (recurringError) throw recurringError;
+
+  const recurringIds = recurringRows.map((rule) => rule.id);
+  const { data: namedCleanerRows, error: namedCleanerError } = recurringIds.length
+    ? await supabase
+        .from("recurring_assignment_cleaners")
+        .select("recurring_assignment_id, slot_number, cleaner_id")
+        .in("recurring_assignment_id", recurringIds)
+        .order("slot_number")
+    : { data: [], error: null };
+  if (namedCleanerError) throw namedCleanerError;
 
   const services: ServiceOption[] = serviceRows;
   const poolCleaners: PoolCleaner[] = profileRows.map((profile) => ({
     id: profile.id,
     name: profile.full_name,
   }));
+  const recurringAssignmentsBySite: RecurringAssignmentsBySite = Object.fromEntries(
+    siteIds.map((siteId) => [
+      siteId,
+      recurringRows
+        .filter((rule) => rule.site_id === siteId)
+        .map((rule) => ({
+          id: rule.id,
+          siteId: rule.site_id,
+          service: services.find((service) => service.id === rule.service_id) ?? {
+            id: rule.service_id,
+            name: "Unavailable service",
+          },
+          frequency: rule.frequency,
+          weekday: rule.weekday,
+          anchorDate: rule.anchor_date,
+          startTime: rule.local_start_time,
+          durationMinutes: rule.duration_minutes,
+          cleanerPayCents: rule.cleaner_pay_cents,
+          crewSize: rule.crew_size,
+          active: rule.active,
+          namedCleaners: namedCleanerRows
+            .filter((named) => named.recurring_assignment_id === rule.id)
+            .map((named) => ({
+              id: named.cleaner_id,
+              name:
+                poolCleaners.find((cleaner) => cleaner.id === named.cleaner_id)?.name ??
+                "Unavailable cleaner",
+              slotNumber: named.slot_number,
+            })),
+        })),
+    ]),
+  );
   const client: ClientWithSites = {
     id: clientRow.id,
     name: clientRow.name,
@@ -118,6 +173,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
       <ClientDetailWorkspace
         client={client}
         poolCleaners={poolCleaners}
+        recurringAssignmentsBySite={recurringAssignmentsBySite}
         services={services}
       />
     </main>

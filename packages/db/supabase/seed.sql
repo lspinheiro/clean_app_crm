@@ -175,6 +175,91 @@ values
 on conflict (site_id, cleaner_id) do update
 set rank = excluded.rank;
 
+insert into public.recurring_assignments (
+  id,
+  site_id,
+  service_id,
+  frequency,
+  weekday,
+  anchor_date,
+  local_start_time,
+  duration_minutes,
+  cleaner_pay_cents,
+  crew_size,
+  active
+)
+values
+  (
+    '10000000-0000-4000-8000-000000000701',
+    '10000000-0000-4000-8000-000000000401',
+    '30000000-0000-4000-8000-000000000002',
+    'weekly',
+    1,
+    date_trunc('week', timezone('Australia/Brisbane', now()))::date,
+    '08:00',
+    120,
+    12000,
+    2,
+    true
+  ),
+  (
+    '10000000-0000-4000-8000-000000000702',
+    '10000000-0000-4000-8000-000000000402',
+    '30000000-0000-4000-8000-000000000001',
+    'fortnightly',
+    2,
+    date_trunc('week', timezone('Australia/Brisbane', now()))::date + 1,
+    '17:30',
+    90,
+    9500,
+    1,
+    true
+  ),
+  (
+    '10000000-0000-4000-8000-000000000703',
+    '10000000-0000-4000-8000-000000000404',
+    '30000000-0000-4000-8000-000000000002',
+    'weekly',
+    4,
+    date_trunc('week', timezone('Australia/Brisbane', now()))::date + 3,
+    '06:00',
+    90,
+    9000,
+    1,
+    true
+  )
+on conflict (id) do update
+set
+  site_id = excluded.site_id,
+  service_id = excluded.service_id,
+  frequency = excluded.frequency,
+  weekday = excluded.weekday,
+  anchor_date = excluded.anchor_date,
+  local_start_time = excluded.local_start_time,
+  duration_minutes = excluded.duration_minutes,
+  cleaner_pay_cents = excluded.cleaner_pay_cents,
+  crew_size = excluded.crew_size,
+  active = excluded.active;
+
+insert into public.recurring_assignment_cleaners (
+  recurring_assignment_id,
+  slot_number,
+  cleaner_id
+)
+values
+  (
+    '10000000-0000-4000-8000-000000000701',
+    1,
+    '10000000-0000-4000-8000-000000000002'
+  ),
+  (
+    '10000000-0000-4000-8000-000000000702',
+    1,
+    '10000000-0000-4000-8000-000000000003'
+  )
+on conflict (recurring_assignment_id, slot_number) do update
+set cleaner_id = excluded.cleaner_id;
+
 insert into public.jobs (
   id,
   site_id,

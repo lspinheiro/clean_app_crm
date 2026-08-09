@@ -65,6 +65,7 @@ describe("CLE-9 preferred-cleaner reconciliation", () => {
           { id: "cleaner-a", name: "Cleaner A" },
           { id: "cleaner-b", name: "Cleaner B" },
         ]}
+        recurringAssignmentsBySite={{ [siteId]: [] }}
         services={[{ id: "service-1", name: "Standard clean" }]}
       />,
     );
@@ -85,9 +86,9 @@ describe("CLE-9 preferred-cleaner reconciliation", () => {
       "Cleaner B",
     );
     expect(screen.getByRole("button", { name: "Move Cleaner B up" })).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent(
+    expect(screen.getByText(
       "Refreshing the saved preferred cleaner order…",
-    );
+    )).toBeInTheDocument();
     expect(mocks.reloadCurrentPage).toHaveBeenCalledOnce();
   });
 });

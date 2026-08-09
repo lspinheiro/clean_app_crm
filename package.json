@@ -18,7 +18,8 @@
     "lint": "pnpm --filter crm lint",
     "typecheck": "pnpm --filter crm typecheck",
     "build": "pnpm --filter crm build",
+    "test:dev-setup": "node --test scripts/run-local-dev.test.mjs",
     "test:vocabulary": "node scripts/check-vocabulary.mjs",
-    "check": "pnpm test:vocabulary && pnpm test && pnpm db:test && pnpm lint && pnpm typecheck && pnpm build"
+    "check": "pnpm test:vocabulary && pnpm test:dev-setup && pnpm test && pnpm db:test && pnpm lint && pnpm typecheck && pnpm build"
   }
 }

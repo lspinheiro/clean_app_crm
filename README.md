@@ -81,11 +81,13 @@ clean_app_crm/
 
 ```bash
 pnpm install
-cp apps/crm/.env.example apps/crm/.env.local
-pnpm db:start
-pnpm db:reset
 pnpm crm dev
 ```
+
+With Docker running, `pnpm crm dev` starts or reuses the local Supabase stack, applies pending
+migrations without resetting existing data, reads the local URL and publishable key, and starts
+the CRM at `http://localhost:3000`. On a fresh Supabase volume, the configured demo seed is loaded
+as part of initialisation.
 
 The local seed is demo-only. The company-admin login is
 `admin@clean-app.example.test` with password `local-demo-only`; it must never be used in a cloud
@@ -94,7 +96,7 @@ environment.
 The CRM is run from the root with:
 
 ```bash
-pnpm crm dev          # alias for: pnpm --filter crm dev
+pnpm crm dev          # local Supabase + migrations + CRM
 pnpm crm build
 ```
 
@@ -106,7 +108,8 @@ pnpm crm db:reset     # apply migrations + seed
 pnpm crm db:types     # regenerate TypeScript types from the schema
 ```
 
-Environment: copy `.env.example` to `.env.local` inside the app (never commit `.env*`; keep
+The development launcher injects the local Supabase credentials automatically. Use
+`apps/crm/.env.local` only for optional local overrides (never commit `.env*`; keep
 `.env.example` current).
 
 ## Status

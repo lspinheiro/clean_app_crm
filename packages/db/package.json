@@ -7,7 +7,7 @@
     "db:start": "supabase --workdir . start",
     "db:stop": "supabase --workdir . stop",
     "db:reset": "node scripts/reset-local.mjs",
-    "db:test": "supabase --workdir . test db",
+    "db:test": "node scripts/test-local.mjs",
     "db:types": "supabase --workdir . gen types typescript --local --schema public"
   },
   "devDependencies": {

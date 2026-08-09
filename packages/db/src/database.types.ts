@@ -281,6 +281,10 @@ export type Database = {
         Args: { target_company_id: string };
         Returns: boolean;
       };
+      rotate_company_invite: {
+        Args: { target_company_id: string };
+        Returns: Database["public"]["Tables"]["company_invites"]["Row"];
+      };
       set_site_preferred_cleaners: {
         Args: {
           cleaner_ids: string[];

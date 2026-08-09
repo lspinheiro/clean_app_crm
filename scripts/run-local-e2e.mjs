@@ -44,6 +44,8 @@ const result = spawnSync(
       ...process.env,
       NEXT_PUBLIC_SUPABASE_URL: url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,
+      NEXT_PUBLIC_CLEANER_APP_URL:
+        process.env.NEXT_PUBLIC_CLEANER_APP_URL ?? "http://127.0.0.1:3001",
     },
     stdio: "inherit",
   },

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(5);
+select plan(6);
 
 select is((select count(*)::integer from public.companies), 1, 'seed has exactly one company');
 select is(
@@ -21,8 +21,17 @@ select cmp_ok(
 );
 select is(
   (select count(*)::integer from auth.users where email like '%@clean-app.example.test'),
-  4,
+  5,
   'seed accounts are deterministic and explicitly local-only'
+);
+select ok(
+  (
+    select count(*) = 1 and bool_and(code ~ '^[A-Z0-9]{6}$')
+    from public.company_invites
+    where company_id = '10000000-0000-4000-8000-000000000010'
+      and revoked_at is null
+  ),
+  'seeded company retains exactly one valid active pool invite'
 );
 
 select * from finish();

@@ -978,6 +978,229 @@ a {
   font-size: 12px;
 }
 
+.pool-page-shell {
+  max-width: 1040px;
+}
+
+.pool-page-header {
+  margin-bottom: 30px;
+}
+
+.pool-page-header .page-description {
+  margin: 8px 0 0;
+}
+
+.pool-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.pool-invite-card,
+.pool-members-card {
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  padding: 24px;
+  background: var(--color-paper);
+}
+
+.pool-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pool-card-heading h2,
+.pool-card-heading p {
+  margin: 0;
+}
+
+.pool-card-heading h2 {
+  font-size: 18px;
+}
+
+.pool-card-heading p {
+  margin-top: 3px;
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.pool-card-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-gray-100);
+}
+
+.invite-display {
+  overflow: hidden;
+  margin-top: 22px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 10px;
+  background: var(--color-gray-50);
+}
+
+.invite-url-row,
+.invite-code-block {
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+}
+
+.invite-url-row {
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.invite-url-row > span,
+.invite-code-block > span {
+  color: var(--color-gray-600);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.invite-url-value {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.invite-url-value a {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--color-gray-400);
+  text-underline-offset: 3px;
+}
+
+.invite-code-block {
+  justify-items: center;
+  padding-block: 26px 28px;
+}
+
+.invite-code-block strong {
+  font-size: clamp(30px, 5vw, 42px);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2em;
+  line-height: 1;
+}
+
+.invite-empty,
+.pool-members-empty {
+  margin-top: 22px;
+  border: 1px dashed var(--color-gray-300);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+}
+
+.invite-empty p,
+.invite-empty span,
+.pool-members-empty p,
+.pool-members-empty span {
+  display: block;
+  margin: 0;
+}
+
+.invite-empty p,
+.pool-members-empty p {
+  font-weight: 700;
+}
+
+.invite-empty span,
+.pool-members-empty span {
+  margin-top: 4px;
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.pool-invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.button-spinner {
+  animation: button-spin 800ms linear infinite;
+}
+
+@keyframes button-spin {
+  to { transform: rotate(360deg); }
+}
+
+.pool-action-status {
+  min-height: 20px;
+  margin: 12px 0 0;
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.pool-action-status--error {
+  color: var(--color-danger);
+}
+
+.invite-rotation-note {
+  margin: 2px 0 0;
+  color: var(--color-gray-500);
+  font-size: 12px;
+}
+
+.pool-members-heading {
+  padding-bottom: 18px;
+}
+
+.pool-member-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pool-member-list li {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  border-top: 1px solid var(--color-gray-200);
+  padding-block: 12px;
+}
+
+.member-initial {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pool-member-list strong,
+.pool-member-list li div > span {
+  display: block;
+}
+
+.pool-member-list strong {
+  font-size: 14px;
+}
+
+.pool-member-list li div > span {
+  margin-top: 2px;
+  color: var(--color-gray-600);
+  font-size: 12px;
+}
+
 .defaults-grid {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr;
@@ -1076,6 +1299,7 @@ a {
   .privacy-caption { align-items: flex-start; }
   .preferred-add-row { grid-template-columns: 1fr; }
   .preferred-add-row .button { justify-self: start; }
+  .pool-layout { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
@@ -1087,6 +1311,11 @@ a {
     border-top: 1px solid var(--color-gray-200);
     padding-top: 6px;
   }
+  .pool-invite-card, .pool-members-card { padding: 18px; }
+  .pool-invite-actions { align-items: stretch; flex-direction: column; }
+  .pool-invite-actions .button { width: 100%; }
+  .invite-code-block strong { letter-spacing: 0.14em; }
+  .invite-url-value { align-items: start; }
 }
 
 @media (prefers-reduced-motion: reduce) {

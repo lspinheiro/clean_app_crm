@@ -43,7 +43,11 @@ select results_eq(
   array['Coastal Demo Cleaning']::text[],
   'company admin sees only their company'
 );
-select is((select count(*)::integer from public.company_invites), 1, 'company admin sees their invite');
+select is(
+  (select count(*)::integer from public.company_invites where revoked_at is null),
+  1,
+  'company admin sees exactly one active invite'
+);
 reset role;
 
 set local role authenticated;

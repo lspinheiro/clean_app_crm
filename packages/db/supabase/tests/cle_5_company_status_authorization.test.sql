@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(24);
+select plan(27);
 
 create temporary table company_status_authorization_baseline on commit drop as
 select
@@ -59,6 +59,17 @@ select is(
   (select count(*)::integer from public.site_preferred_cleaners),
   0,
   'suspended admin cannot read preferred cleaners'
+);
+select is((select count(*)::integer from public.jobs), 0, 'suspended admin cannot read jobs');
+select is(
+  (select count(*)::integer from public.job_assignments),
+  0,
+  'suspended admin cannot read job assignments'
+);
+select is(
+  (select count(*)::integer from public.vacancies),
+  0,
+  'suspended admin cannot read vacancies'
 );
 select ok(
   not public.can_manage_company_logo('10000000-0000-4000-8000-000000000010/logo-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.webp'),

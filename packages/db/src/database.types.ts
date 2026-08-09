@@ -144,6 +144,84 @@ export type Database = {
         };
         Relationships: [];
       };
+      job_assignments: {
+        Row: {
+          assigned_at: string;
+          assignment_end: string;
+          assignment_start: string;
+          cleaner_id: string;
+          id: string;
+          job_id: string;
+          slot_number: number;
+          unassigned_at: string | null;
+        };
+        Insert: {
+          assigned_at?: string;
+          assignment_end: string;
+          assignment_start: string;
+          cleaner_id: string;
+          id?: string;
+          job_id: string;
+          slot_number: number;
+          unassigned_at?: string | null;
+        };
+        Update: {
+          assigned_at?: string;
+          assignment_end?: string;
+          assignment_start?: string;
+          cleaner_id?: string;
+          id?: string;
+          job_id?: string;
+          slot_number?: number;
+          unassigned_at?: string | null;
+        };
+        Relationships: [];
+      };
+      jobs: {
+        Row: {
+          cleaner_pay_cents: number;
+          client_charge_cents: number | null;
+          created_at: string;
+          crew_size: number;
+          duration_minutes: number;
+          id: string;
+          scheduled_end: string;
+          scheduled_start: string;
+          service_id: string;
+          site_id: string;
+          status: Database["public"]["Enums"]["job_status"];
+          updated_at: string;
+        };
+        Insert: {
+          cleaner_pay_cents: number;
+          client_charge_cents?: number | null;
+          created_at?: string;
+          crew_size: number;
+          duration_minutes: number;
+          id?: string;
+          scheduled_end: string;
+          scheduled_start: string;
+          service_id: string;
+          site_id: string;
+          status?: Database["public"]["Enums"]["job_status"];
+          updated_at?: string;
+        };
+        Update: {
+          cleaner_pay_cents?: number;
+          client_charge_cents?: number | null;
+          created_at?: string;
+          crew_size?: number;
+          duration_minutes?: number;
+          id?: string;
+          scheduled_end?: string;
+          scheduled_start?: string;
+          service_id?: string;
+          site_id?: string;
+          status?: Database["public"]["Enums"]["job_status"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -265,7 +343,27 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      vacancies: {
+        Row: {
+          cleaner_pay_cents: number | null;
+          client_id: string | null;
+          client_name: string | null;
+          company_id: string | null;
+          crew_size: number | null;
+          crew_slot: number | null;
+          duration_minutes: number | null;
+          job_id: string | null;
+          preferred_cleaner_ids: string[] | null;
+          scheduled_start: string | null;
+          service_id: string | null;
+          service_name: string | null;
+          site_id: string | null;
+          site_name: string | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       can_delete_unreferenced_company_logo: {
         Args: { object_name: string };
@@ -361,6 +459,14 @@ export type Database = {
     Enums: {
       app_role: "company_admin" | "cleaner" | "admin";
       company_status: "pending" | "approved" | "suspended";
+      job_status:
+        | "draft"
+        | "posted"
+        | "assigned"
+        | "on_the_way"
+        | "in_progress"
+        | "completed"
+        | "cancelled";
       member_status: "active" | "removed";
     };
     CompositeTypes: Record<string, never>;

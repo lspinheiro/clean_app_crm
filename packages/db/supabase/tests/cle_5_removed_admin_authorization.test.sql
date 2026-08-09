@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(7);
+select plan(10);
 
 update public.company_members
 set status = 'removed'
@@ -17,6 +17,13 @@ select ok(
 );
 select is((select count(*)::integer from public.companies), 0, 'removed admin cannot read the company row');
 select is((select count(*)::integer from public.clients), 0, 'removed admin cannot read tenant client data');
+select is((select count(*)::integer from public.jobs), 0, 'removed admin cannot read jobs');
+select is(
+  (select count(*)::integer from public.job_assignments),
+  0,
+  'removed admin cannot read job assignments'
+);
+select is((select count(*)::integer from public.vacancies), 0, 'removed admin cannot read vacancies');
 select ok(
   not public.can_manage_company_logo('10000000-0000-4000-8000-000000000010/logo-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.webp'),
   'removed admin cannot manage the company logo'

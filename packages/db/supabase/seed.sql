@@ -154,3 +154,97 @@ where id in (
   '10000000-0000-4000-8000-000000000403',
   '10000000-0000-4000-8000-000000000404'
 );
+
+insert into public.site_preferred_cleaners (site_id, cleaner_id, rank)
+values
+  (
+    '10000000-0000-4000-8000-000000000401',
+    '10000000-0000-4000-8000-000000000002',
+    1
+  ),
+  (
+    '10000000-0000-4000-8000-000000000401',
+    '10000000-0000-4000-8000-000000000003',
+    2
+  ),
+  (
+    '10000000-0000-4000-8000-000000000402',
+    '10000000-0000-4000-8000-000000000003',
+    1
+  )
+on conflict (site_id, cleaner_id) do update
+set rank = excluded.rank;
+
+insert into public.jobs (
+  id,
+  site_id,
+  service_id,
+  scheduled_start,
+  duration_minutes,
+  cleaner_pay_cents,
+  client_charge_cents,
+  status,
+  crew_size
+)
+values
+  (
+    '10000000-0000-4000-8000-000000000501',
+    '10000000-0000-4000-8000-000000000401',
+    '30000000-0000-4000-8000-000000000002',
+    (
+      date_trunc('week', timezone('Australia/Brisbane', now()))::date
+      + time '08:00'
+    ) at time zone 'Australia/Brisbane',
+    120,
+    12000,
+    28000,
+    'posted',
+    2
+  ),
+  (
+    '10000000-0000-4000-8000-000000000502',
+    '10000000-0000-4000-8000-000000000402',
+    '30000000-0000-4000-8000-000000000001',
+    (
+      date_trunc('week', timezone('Australia/Brisbane', now()))::date
+      + 1
+      + time '17:30'
+    ) at time zone 'Australia/Brisbane',
+    90,
+    9500,
+    22000,
+    'assigned',
+    1
+  ),
+  (
+    '10000000-0000-4000-8000-000000000503',
+    '10000000-0000-4000-8000-000000000404',
+    '30000000-0000-4000-8000-000000000002',
+    (
+      date_trunc('week', timezone('Australia/Brisbane', now()))::date
+      + 3
+      + time '06:00'
+    ) at time zone 'Australia/Brisbane',
+    90,
+    9000,
+    20000,
+    'posted',
+    1
+  )
+on conflict (id) do nothing;
+
+insert into public.job_assignments (id, job_id, slot_number, cleaner_id)
+values
+  (
+    '10000000-0000-4000-8000-000000000601',
+    '10000000-0000-4000-8000-000000000501',
+    1,
+    '10000000-0000-4000-8000-000000000002'
+  ),
+  (
+    '10000000-0000-4000-8000-000000000602',
+    '10000000-0000-4000-8000-000000000502',
+    1,
+    '10000000-0000-4000-8000-000000000003'
+  )
+on conflict (id) do nothing;

@@ -14,3 +14,6 @@ run(process.execPath, [
 run(process.execPath, [
   fileURLToPath(new URL("./test-logo-concurrency.mjs", import.meta.url)),
 ]);
+run(process.execPath, [
+  fileURLToPath(new URL("./test-job-assignment-concurrency.mjs", import.meta.url)),
+]);

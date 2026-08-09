@@ -69,6 +69,11 @@ function RosterEntry({ item, view }: { item: RosterCellItem; view: RosterView })
 export function RosterWeek({ weekStart, days, model, view, hasFoundation }: RosterWeekProps) {
   const previousWeek = rosterHref(addDays(weekStart, -7), view);
   const nextWeek = rosterHref(addDays(weekStart, 7), view);
+  const gapState = model.vacancyCount > 0
+    ? "gaps"
+    : model.jobIds.length > 0
+      ? "clear"
+      : "unscheduled";
 
   return (
     <>
@@ -105,12 +110,16 @@ export function RosterWeek({ weekStart, days, model, view, hasFoundation }: Rost
               </nav>
             </div>
           </div>
-          <p
-            className={`roster-gap-count${model.vacancyCount === 0 ? " is-clear" : ""}`}
-            data-testid="roster-gap-count"
-          >
-            {unfilledLabel(model.vacancyCount)}
-          </p>
+          {hasFoundation ? (
+            <p
+              className={`roster-gap-count${
+                gapState === "clear" ? " is-clear" : gapState === "unscheduled" ? " is-unscheduled" : ""
+              }`}
+              data-testid="roster-gap-count"
+            >
+              {gapState === "unscheduled" ? "Nothing scheduled" : unfilledLabel(model.vacancyCount)}
+            </p>
+          ) : null}
         </header>
 
         {!hasFoundation ? (
@@ -180,14 +189,15 @@ export function RosterWeek({ weekStart, days, model, view, hasFoundation }: Rost
         <footer className="roster-summary-bar">
           <div className="roster-summary-bar__inner">
             <p
-              className={model.vacancyCount === 0 ? "is-clear" : undefined}
-              data-gap-state={model.vacancyCount === 0 ? "clear" : "gaps"}
+              className={gapState === "clear" ? "is-clear" : gapState === "unscheduled" ? "is-unscheduled" : undefined}
+              data-gap-state={gapState}
               data-testid="roster-footer-gap-count"
             >
-              {model.vacancyCount === 0
-                ? <Check aria-hidden="true" size={18} />
-                : <AlertTriangle aria-hidden="true" size={18} />}
-              {unfilledLabel(model.vacancyCount, " this week")}
+              {gapState === "clear" ? <Check aria-hidden="true" size={18} /> : null}
+              {gapState === "gaps" ? <AlertTriangle aria-hidden="true" size={18} /> : null}
+              {gapState === "unscheduled"
+                ? "Nothing scheduled this week yet. Recurring jobs are generated 4 weeks ahead."
+                : unfilledLabel(model.vacancyCount, " this week")}
             </p>
             <div className="roster-offer-control">
               <button className="button button--secondary" type="button" disabled>

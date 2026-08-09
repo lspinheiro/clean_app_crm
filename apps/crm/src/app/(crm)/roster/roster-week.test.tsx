@@ -67,7 +67,7 @@ describe("RosterWeek", () => {
     );
   });
 
-  it("keeps zero-work cleaners as seven explicit dash cells", () => {
+  it("renders a neutral unscheduled state when the week has no generated jobs", () => {
     const model = buildCleanerRoster({
       days,
       cleaners: [{ id: "cleaner-1", name: "Ana Costa" }],
@@ -85,14 +85,48 @@ describe("RosterWeek", () => {
       />,
     );
     expect(screen.getAllByLabelText("No work")).toHaveLength(7);
-    expect(screen.getByTestId("roster-gap-count")).toHaveTextContent("0 unfilled slots");
-    expect(screen.getByTestId("roster-footer-gap-count")).toHaveAttribute(
-      "data-gap-state",
-      "clear",
+    const pill = screen.getByTestId("roster-gap-count");
+    expect(pill).toHaveTextContent("Nothing scheduled");
+    expect(pill).not.toHaveClass("is-clear");
+    const footer = screen.getByTestId("roster-footer-gap-count");
+    expect(footer).toHaveAttribute("data-gap-state", "unscheduled");
+    expect(footer).toHaveTextContent(
+      "Nothing scheduled this week yet. Recurring jobs are generated 4 weeks ahead.",
     );
-    expect(
-      screen.getByTestId("roster-footer-gap-count").querySelector(".lucide-triangle-alert"),
-    ).not.toBeInTheDocument();
+    expect(footer.querySelector(".lucide-check")).not.toBeInTheDocument();
+    expect(footer.querySelector(".lucide-triangle-alert")).not.toBeInTheDocument();
+  });
+
+  it("keeps the green clear state for a covered week", () => {
+    const model = buildCleanerRoster({
+      days,
+      cleaners: [{ id: "cleaner-1", name: "Ana Costa" }],
+      jobs: [{
+        id: "job-1",
+        siteId: "site-1",
+        siteName: "Harbour Tower",
+        scheduledStart: "2026-08-09T22:00:00Z",
+        crewSize: 1,
+      }],
+      assignments: [{ jobId: "job-1", cleanerId: "cleaner-1", slotNumber: 1 }],
+      vacancies: [],
+    });
+    render(
+      <RosterWeek
+        days={days}
+        hasFoundation
+        model={model}
+        view="cleaner"
+        weekStart="2026-08-10"
+      />,
+    );
+    const pill = screen.getByTestId("roster-gap-count");
+    expect(pill).toHaveTextContent("0 unfilled slots");
+    expect(pill).toHaveClass("is-clear");
+    const footer = screen.getByTestId("roster-footer-gap-count");
+    expect(footer).toHaveAttribute("data-gap-state", "clear");
+    expect(footer).toHaveTextContent("0 unfilled slots this week");
+    expect(footer.querySelector(".lucide-check")).toBeInTheDocument();
   });
 
   it("renders the pre-onboarding empty state without a false roster grid", () => {
@@ -114,6 +148,7 @@ describe("RosterWeek", () => {
     expect(screen.getByRole("heading", { name: "Build your roster foundation" })).toBeVisible();
     expect(screen.queryByRole("region", { name: "Roster by cleaner" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("roster-footer-gap-count")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("roster-gap-count")).not.toBeInTheDocument();
   });
 
   it("switches to site rows without losing the selected week", () => {

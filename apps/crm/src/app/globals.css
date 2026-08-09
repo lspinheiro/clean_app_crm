@@ -1719,6 +1719,12 @@ a {
   color: #006735;
 }
 
+.roster-gap-count.is-unscheduled {
+  border-color: var(--color-gray-300);
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+
 .roster-grid-region {
   width: 100%;
   max-width: 100%;
@@ -1930,6 +1936,11 @@ a {
 
 .roster-summary-bar__inner > p.is-clear {
   color: #006735;
+}
+
+.roster-summary-bar__inner > p.is-unscheduled {
+  color: var(--color-gray-600);
+  font-weight: 500;
 }
 
 .roster-offer-control {

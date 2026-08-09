@@ -64,3 +64,73 @@ values (
   'CLEAN1'
 )
 on conflict (id) do nothing;
+
+insert into public.clients (
+  id,
+  company_id,
+  name,
+  contact_name,
+  phone,
+  notes
+)
+values
+  (
+    '10000000-0000-4000-8000-000000000301',
+    '10000000-0000-4000-8000-000000000010',
+    'Oceanview Property Group',
+    'Morgan Ellis',
+    '07 5555 0101',
+    'Local multi-site demo client'
+  ),
+  (
+    '10000000-0000-4000-8000-000000000302',
+    '10000000-0000-4000-8000-000000000010',
+    'Palm Grove Dental',
+    'Riley Chen',
+    '07 5555 0102',
+    'Local single-site demo client'
+  )
+on conflict (id) do nothing;
+
+insert into public.sites (
+  id,
+  client_id,
+  name,
+  address,
+  suburb,
+  access_notes
+)
+values
+  (
+    '10000000-0000-4000-8000-000000000401',
+    '10000000-0000-4000-8000-000000000301',
+    'Broadbeach Towers',
+    '10 Surf Parade',
+    'Broadbeach',
+    'Demo access notes — company admin only'
+  ),
+  (
+    '10000000-0000-4000-8000-000000000402',
+    '10000000-0000-4000-8000-000000000301',
+    'Southport Office',
+    '45 Nerang Street',
+    'Southport',
+    null
+  ),
+  (
+    '10000000-0000-4000-8000-000000000403',
+    '10000000-0000-4000-8000-000000000301',
+    'Burleigh Retail',
+    '88 James Street',
+    'Burleigh Heads',
+    null
+  ),
+  (
+    '10000000-0000-4000-8000-000000000404',
+    '10000000-0000-4000-8000-000000000302',
+    'Palm Grove Practice',
+    '21 Robina Town Centre Drive',
+    'Robina',
+    null
+  )
+on conflict (id) do nothing;

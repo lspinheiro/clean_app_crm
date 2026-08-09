@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      clients: {
+        Row: {
+          company_id: string;
+          contact_name: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          notes: string | null;
+          phone: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          company_id: string;
+          contact_name?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          contact_name?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       companies: {
         Row: {
           abn: string;
@@ -123,6 +156,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      sites: {
+        Row: {
+          access_notes: string | null;
+          address: string;
+          client_id: string;
+          created_at: string;
+          id: string;
+          name: string;
+          suburb: string;
+          updated_at: string;
+        };
+        Insert: {
+          access_notes?: string | null;
+          address: string;
+          client_id: string;
+          created_at?: string;
+          id?: string;
+          name: string;
+          suburb: string;
+          updated_at?: string;
+        };
+        Update: {
+          access_notes?: string | null;
+          address?: string;
+          client_id?: string;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          suburb?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -133,6 +199,26 @@ export type Database = {
       current_app_role: {
         Args: Record<PropertyKey, never>;
         Returns: Database["public"]["Enums"]["app_role"];
+      };
+      create_client: {
+        Args: {
+          client_contact_name?: string | null;
+          client_name: string;
+          client_notes?: string | null;
+          client_phone?: string | null;
+          target_company_id: string;
+        };
+        Returns: Database["public"]["Tables"]["clients"]["Row"];
+      };
+      create_site: {
+        Args: {
+          site_access_notes?: string | null;
+          site_address: string;
+          site_name: string;
+          site_suburb: string;
+          target_client_id: string;
+        };
+        Returns: Database["public"]["Tables"]["sites"]["Row"];
       };
       is_company_admin: {
         Args: { target_company_id: string };

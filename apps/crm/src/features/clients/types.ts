@@ -8,9 +8,21 @@ export type SiteSummary = {
   defaultService: ServiceOption | null;
   defaultDurationMinutes: number | null;
   defaultRateCents: number | null;
+  preferredCleaners: PreferredCleaner[];
 };
 
 export type ServiceOption = {
+  id: string;
+  name: string;
+};
+
+export type PreferredCleaner = {
+  id: string;
+  name: string;
+  rank: number;
+};
+
+export type PoolCleaner = {
   id: string;
   name: string;
 };

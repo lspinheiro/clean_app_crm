@@ -1,12 +1,16 @@
 "use client";
 
 import {
+  ArrowDown,
+  ArrowUp,
   ChevronDown,
   Clock3,
   DollarSign,
   MapPin,
   Pencil,
   ShieldCheck,
+  Trash2,
+  UserPlus,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -16,10 +20,13 @@ import { type FormEvent, useRef, useState } from "react";
 import {
   updateClient,
   updateSite,
+  savePreferredCleanerOrder,
   type RecordMutationResult,
 } from "@/app/actions/clients";
 import type {
   ClientWithSites,
+  PoolCleaner,
+  PreferredCleaner,
   ServiceOption,
   SiteSummary,
 } from "@/features/clients/types";
@@ -28,6 +35,10 @@ import {
   formatDuration,
   formatSiteDefaults,
 } from "@/features/site-defaults/format";
+import {
+  moveCleaner,
+  removeCleaner,
+} from "@/features/preferred-cleaners/order";
 
 const emptyResult: RecordMutationResult = {
   ok: false,
@@ -43,12 +54,25 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   ) : null;
 }
 
+function cleanersForIds(preferred: PreferredCleaner[], cleanerIds: string[]) {
+  const cleanersById = new Map(preferred.map((cleaner) => [cleaner.id, cleaner]));
+  return cleanerIds.flatMap((cleanerId) => {
+    const cleaner = cleanersById.get(cleanerId);
+    return cleaner ? [cleaner] : [];
+  });
+}
+
 type ClientDetailWorkspaceProps = {
   client: ClientWithSites;
+  poolCleaners: PoolCleaner[];
   services: ServiceOption[];
 };
 
-export function ClientDetailWorkspace({ client, services }: ClientDetailWorkspaceProps) {
+export function ClientDetailWorkspace({
+  client,
+  poolCleaners,
+  services,
+}: ClientDetailWorkspaceProps) {
   const router = useRouter();
   const clientDialog = useRef<HTMLDialogElement>(null);
   const siteDialog = useRef<HTMLDialogElement>(null);
@@ -56,6 +80,14 @@ export function ClientDetailWorkspace({ client, services }: ClientDetailWorkspac
   const [clientResult, setClientResult] = useState(emptyResult);
   const [siteResult, setSiteResult] = useState(emptyResult);
   const [busy, setBusy] = useState(false);
+  const [savingPreferenceSiteId, setSavingPreferenceSiteId] = useState<string | null>(null);
+  const [preferenceErrors, setPreferenceErrors] = useState<Record<string, string>>({});
+  const [preferenceStatuses, setPreferenceStatuses] = useState<Record<string, string>>({});
+  const [selectedCleaners, setSelectedCleaners] = useState<Record<string, string>>({});
+  const preferenceSelects = useRef<Record<string, HTMLSelectElement | null>>({});
+  const [preferredBySite, setPreferredBySite] = useState<Record<string, PreferredCleaner[]>>(
+    () => Object.fromEntries(client.sites.map((site) => [site.id, site.preferredCleaners])),
+  );
 
   function openClientDialog() {
     setClientResult(emptyResult);
@@ -110,6 +142,87 @@ export function ClientDetailWorkspace({ client, services }: ClientDetailWorkspac
     }
   }
 
+  async function persistPreferredOrder(
+    site: SiteSummary,
+    nextOrder: PreferredCleaner[],
+    focusSelectAfterSave = false,
+  ) {
+    const previousOrder = preferredBySite[site.id] ?? site.preferredCleaners;
+    const rankedOrder = nextOrder.map((cleaner, index) => ({ ...cleaner, rank: index + 1 }));
+    setPreferredBySite((current) => ({ ...current, [site.id]: rankedOrder }));
+    setPreferenceErrors((current) => ({ ...current, [site.id]: "" }));
+    setPreferenceStatuses((current) => ({
+      ...current,
+      [site.id]: "Saving preferred cleaner order…",
+    }));
+    setSavingPreferenceSiteId(site.id);
+
+    try {
+      const result = await savePreferredCleanerOrder({
+        clientId: client.id,
+        siteId: site.id,
+        cleanerIds: rankedOrder.map((cleaner) => cleaner.id),
+      });
+      if (!result.ok) {
+        setPreferredBySite((current) => ({ ...current, [site.id]: previousOrder }));
+        setPreferenceErrors((current) => ({
+          ...current,
+          [site.id]: result.formError ?? "The preferred cleaner order could not be saved.",
+        }));
+        setPreferenceStatuses((current) => ({
+          ...current,
+          [site.id]: "Preferred cleaner order was not saved.",
+        }));
+        return;
+      }
+      setSelectedCleaners((current) => ({ ...current, [site.id]: "" }));
+      setPreferenceStatuses((current) => ({
+        ...current,
+        [site.id]: "Preferred cleaner order saved.",
+      }));
+      router.refresh();
+    } catch {
+      setPreferredBySite((current) => ({ ...current, [site.id]: previousOrder }));
+      setPreferenceErrors((current) => ({
+        ...current,
+        [site.id]: "The preferred cleaner order could not be saved. Please try again.",
+      }));
+      setPreferenceStatuses((current) => ({
+        ...current,
+        [site.id]: "Preferred cleaner order was not saved.",
+      }));
+    } finally {
+      setSavingPreferenceSiteId(null);
+      if (focusSelectAfterSave) {
+        requestAnimationFrame(() => preferenceSelects.current[site.id]?.focus());
+      }
+    }
+  }
+
+  function addPreferredCleaner(site: SiteSummary, preferred: PreferredCleaner[]) {
+    const cleanerId = selectedCleaners[site.id];
+    const cleaner = poolCleaners.find((candidate) => candidate.id === cleanerId);
+    if (!cleaner) return;
+    void persistPreferredOrder(site, [
+      ...preferred,
+      { id: cleaner.id, name: cleaner.name, rank: preferred.length + 1 },
+    ]);
+  }
+
+  function movePreferred(
+    site: SiteSummary,
+    preferred: PreferredCleaner[],
+    cleanerId: string,
+    direction: "up" | "down",
+  ) {
+    const reorderedIds = moveCleaner(
+      preferred.map((cleaner) => cleaner.id),
+      cleanerId,
+      direction,
+    );
+    void persistPreferredOrder(site, cleanersForIds(preferred, reorderedIds));
+  }
+
   return (
     <>
       <nav className="breadcrumb" aria-label="Breadcrumb">
@@ -137,14 +250,21 @@ export function ClientDetailWorkspace({ client, services }: ClientDetailWorkspac
       </header>
 
       <section className="site-detail-list" aria-label="Client sites">
-        {client.sites.map((site, index) => (
-          <details
-            aria-label={site.name}
-            className="site-detail-card"
-            key={site.id}
-            open={index === 0 ? true : undefined}
-            role="group"
-          >
+        {client.sites.map((site, index) => {
+          const preferred = preferredBySite[site.id] ?? site.preferredCleaners;
+          const availableCleaners = poolCleaners.filter(
+            (cleaner) => !preferred.some((preference) => preference.id === cleaner.id),
+          );
+          const savingPreferences = savingPreferenceSiteId !== null;
+
+          return (
+            <details
+              aria-label={site.name}
+              className="site-detail-card"
+              key={site.id}
+              open={index === 0 ? true : undefined}
+              role="group"
+            >
             <summary>
               <span>
                 <strong>{site.name}</strong>
@@ -168,6 +288,122 @@ export function ClientDetailWorkspace({ client, services }: ClientDetailWorkspac
                 <span>Access notes</span>
                 <p>{site.accessNotes ?? "None recorded"}</p>
               </div>
+
+              <section
+                aria-busy={savingPreferenceSiteId === site.id}
+                className="preferred-cleaners-block"
+              >
+                <div className="preferred-cleaners-heading">
+                  <div>
+                    <h3>Preferred cleaners</h3>
+                    <p>Captured now; roster ordering uses this list in a later Milestone.</p>
+                  </div>
+                </div>
+
+                {preferred.length ? (
+                  <ol
+                    aria-label={`Preferred cleaners for ${site.name}`}
+                    className="preferred-cleaner-list"
+                  >
+                    {preferred.map((cleaner, cleanerIndex) => (
+                      <li key={cleaner.id}>
+                        <span className="preference-rank">{cleanerIndex + 1}</span>
+                        <strong>{cleaner.name}</strong>
+                        <span className="preference-actions">
+                          <button
+                            aria-label={`Move ${cleaner.name} up`}
+                            className="icon-button icon-button--small"
+                            disabled={savingPreferences || cleanerIndex === 0}
+                            onClick={() => movePreferred(site, preferred, cleaner.id, "up")}
+                            type="button"
+                          >
+                            <ArrowUp aria-hidden="true" size={16} />
+                          </button>
+                          <button
+                            aria-label={`Move ${cleaner.name} down`}
+                            className="icon-button icon-button--small"
+                            disabled={savingPreferences || cleanerIndex === preferred.length - 1}
+                            onClick={() => movePreferred(site, preferred, cleaner.id, "down")}
+                            type="button"
+                          >
+                            <ArrowDown aria-hidden="true" size={16} />
+                          </button>
+                          <button
+                            aria-label={`Remove ${cleaner.name}`}
+                            className="icon-button icon-button--small"
+                            disabled={savingPreferences}
+                            onClick={() =>
+                              void persistPreferredOrder(
+                                site,
+                                cleanersForIds(
+                                  preferred,
+                                  removeCleaner(
+                                    preferred.map((item) => item.id),
+                                    cleaner.id,
+                                  ),
+                                ),
+                                true,
+                              )
+                            }
+                            type="button"
+                          >
+                            <Trash2 aria-hidden="true" size={16} />
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="preferred-empty">No preferred cleaners recorded.</p>
+                )}
+
+                <div className="preferred-add-row">
+                  <div className="field">
+                    <label htmlFor={`preferred-cleaner-${site.id}`}>Preferred cleaner</label>
+                    <select
+                      disabled={!availableCleaners.length || savingPreferences}
+                      id={`preferred-cleaner-${site.id}`}
+                      onChange={(event) =>
+                        setSelectedCleaners((current) => ({
+                          ...current,
+                          [site.id]: event.target.value,
+                        }))
+                      }
+                      ref={(select) => {
+                        preferenceSelects.current[site.id] = select;
+                      }}
+                      value={selectedCleaners[site.id] ?? ""}
+                    >
+                      <option value="">
+                        {availableCleaners.length ? "Choose from cleaner pool" : "All pool cleaners added"}
+                      </option>
+                      {availableCleaners.map((cleaner) => (
+                        <option key={cleaner.id} value={cleaner.id}>{cleaner.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    aria-label={`Add preferred cleaner to ${site.name}`}
+                    className="button button--secondary button--small"
+                    disabled={savingPreferences || !selectedCleaners[site.id]}
+                    onClick={() => addPreferredCleaner(site, preferred)}
+                    type="button"
+                  >
+                    <UserPlus aria-hidden="true" size={16} />
+                    Add
+                  </button>
+                </div>
+                {preferenceErrors[site.id] ? (
+                  <p className="form-error" role="alert">{preferenceErrors[site.id]}</p>
+                ) : null}
+                <p
+                  aria-live="polite"
+                  className="preference-status"
+                  role="status"
+                >
+                  {preferenceStatuses[site.id] ?? ""}
+                </p>
+              </section>
 
               <dl className="defaults-grid">
                 <div>
@@ -202,8 +438,9 @@ export function ClientDetailWorkspace({ client, services }: ClientDetailWorkspac
                 </button>
               </div>
             </div>
-          </details>
-        ))}
+            </details>
+          );
+        })}
       </section>
 
       <dialog aria-labelledby="edit-client-title" className="record-dialog" ref={clientDialog}>

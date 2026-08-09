@@ -183,6 +183,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      site_preferred_cleaners: {
+        Row: {
+          cleaner_id: string;
+          created_at: string;
+          rank: number;
+          site_id: string;
+        };
+        Insert: {
+          cleaner_id: string;
+          created_at?: string;
+          rank: number;
+          site_id: string;
+        };
+        Update: {
+          cleaner_id?: string;
+          created_at?: string;
+          rank?: number;
+          site_id?: string;
+        };
+        Relationships: [];
+      };
       sites: {
         Row: {
           access_notes: string | null;
@@ -259,6 +280,13 @@ export type Database = {
       is_company_admin: {
         Args: { target_company_id: string };
         Returns: boolean;
+      };
+      set_site_preferred_cleaners: {
+        Args: {
+          cleaner_ids: string[];
+          target_site_id: string;
+        };
+        Returns: undefined;
       };
       update_company_identity: {
         Args: {

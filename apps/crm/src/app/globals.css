@@ -882,6 +882,102 @@ a {
   font-size: 14px;
 }
 
+.preferred-cleaners-block {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 10px;
+  padding: 18px;
+  background: var(--color-gray-50);
+}
+
+.preferred-cleaners-heading h3,
+.preferred-cleaners-heading p,
+.preferred-empty {
+  margin: 0;
+}
+
+.preferred-cleaners-heading h3 {
+  font-size: 15px;
+}
+
+.preferred-cleaners-heading p,
+.preferred-empty {
+  margin-top: 4px;
+  color: var(--color-gray-600);
+  font-size: 12px;
+}
+
+.preferred-cleaner-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preferred-cleaner-list li {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: var(--color-paper);
+}
+
+.preferred-cleaner-list strong {
+  font-size: 13px;
+}
+
+.preference-rank {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.preference-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-button--small {
+  width: 44px;
+  height: 44px;
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.preferred-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.preferred-add-row .button {
+  min-height: 42px;
+}
+
+.preference-status {
+  min-height: 18px;
+  margin: 0;
+  color: var(--color-gray-600);
+  font-size: 12px;
+}
+
 .defaults-grid {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr;
@@ -978,6 +1074,19 @@ a {
   .defaults-grid > div + div { border-top: 1px solid var(--color-gray-200); border-left: 0; }
   .defaults-form-grid { grid-template-columns: 1fr; }
   .privacy-caption { align-items: flex-start; }
+  .preferred-add-row { grid-template-columns: 1fr; }
+  .preferred-add-row .button { justify-self: start; }
+}
+
+@media (max-width: 560px) {
+  .preferred-cleaners-block { padding: 14px; }
+  .preferred-cleaner-list li { grid-template-columns: 30px minmax(0, 1fr); }
+  .preference-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-gray-200);
+    padding-top: 6px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

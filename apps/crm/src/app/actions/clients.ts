@@ -11,6 +11,7 @@ import {
   updateClientSchema,
   updateSiteSchema,
 } from "@/features/site-defaults/schema";
+import { preferredCleanerOrderSchema } from "@/features/preferred-cleaners/schema";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
 export type RecordMutationResult = {
@@ -151,6 +152,35 @@ export async function updateSite(formData: FormData): Promise<RecordMutationResu
   }
 
   revalidatePath("/clients");
+  revalidatePath(`/clients/${parsed.data.clientId}`);
+  return { ok: true, fieldErrors: {}, formError: null };
+}
+
+export async function savePreferredCleanerOrder(
+  input: unknown,
+): Promise<RecordMutationResult> {
+  const parsed = preferredCleanerOrderSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      fieldErrors: {},
+      formError: parsed.error.issues[0]?.message ?? "The cleaner order is invalid.",
+    };
+  }
+
+  const { supabase } = await requireCompanyAdmin();
+  const { error } = await supabase.rpc("set_site_preferred_cleaners", {
+    target_site_id: parsed.data.siteId,
+    cleaner_ids: parsed.data.cleanerIds,
+  });
+  if (error) {
+    return {
+      ok: false,
+      fieldErrors: {},
+      formError: "The preferred cleaner order could not be saved. Please try again.",
+    };
+  }
+
   revalidatePath(`/clients/${parsed.data.clientId}`);
   return { ok: true, fieldErrors: {}, formError: null };
 }

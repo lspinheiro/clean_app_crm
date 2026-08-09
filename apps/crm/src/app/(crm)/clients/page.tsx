@@ -49,6 +49,7 @@ export default async function ClientsPage() {
           serviceRows.find((service) => service.id === site.default_service_id) ?? null,
         defaultDurationMinutes: site.default_duration_minutes,
         defaultRateCents: site.default_rate_cents,
+        preferredCleaners: [],
       })),
   }));
 

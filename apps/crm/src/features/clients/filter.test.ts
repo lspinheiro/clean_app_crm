@@ -21,6 +21,7 @@ const clients: ClientWithSites[] = [
         defaultService: null,
         defaultDurationMinutes: null,
         defaultRateCents: null,
+        preferredCleaners: [],
       },
       {
         id: "site-2",
@@ -32,6 +33,7 @@ const clients: ClientWithSites[] = [
         defaultService: null,
         defaultDurationMinutes: null,
         defaultRateCents: null,
+        preferredCleaners: [],
       },
     ],
   },

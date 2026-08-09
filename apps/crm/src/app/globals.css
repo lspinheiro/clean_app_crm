@@ -2088,6 +2088,23 @@ a {
   .roster-page-shell { padding-bottom: 184px; }
   .roster-week-controls { gap: 6px; }
   .roster-week-title { min-width: 138px; font-size: 16px; }
+  .roster-grid { min-width: 840px; }
+  .roster-grid thead th:first-child,
+  .roster-grid tbody th { width: 128px; }
+  .roster-grid-region {
+    max-height: calc(100dvh - 300px);
+    overflow-y: auto;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline-start: 128px;
+  }
+  .roster-grid thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+  }
+  .roster-grid thead th:first-child { z-index: 4; }
+  .roster-grid thead th,
+  .roster-grid td { scroll-snap-align: start; }
   .roster-summary-bar__inner { align-items: flex-start; flex-direction: column; gap: 8px; padding: 12px 0; }
   .roster-offer-control { width: 100%; align-items: center; justify-content: space-between; }
   .roster-offer-control span { max-width: 168px; text-align: right; }

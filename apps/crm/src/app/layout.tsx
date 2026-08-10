@@ -31,7 +31,7 @@ const poppins = localFont({
       style: "normal",
     },
   ],
-  display: "swap",
+  display: "optional",
   fallback: ["Arial", "sans-serif"],
   preload: true,
   variable: "--font-poppins",

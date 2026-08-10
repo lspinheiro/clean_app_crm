@@ -11,6 +11,9 @@ describe("RosterLoading", () => {
     expect(main).toHaveAttribute("aria-label", "Loading roster");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    expect(container.querySelectorAll(".roster-loading__row")).toHaveLength(5);
+    expect(screen.getByTestId("roster-loading-week-controls")).toBeInTheDocument();
+    expect(screen.getByTestId("roster-loading-view-switch")).toBeInTheDocument();
+    expect(screen.getByTestId("roster-loading-gap-count")).toBeInTheDocument();
+    expect(container.querySelectorAll(".roster-loading__row")).toHaveLength(6);
   });
 });

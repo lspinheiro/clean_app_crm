@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { evaluateCrmAccess } from "./access";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getCompanyAdminContext() {
+async function loadCompanyAdminContext() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -90,6 +91,8 @@ export async function getCompanyAdminContext() {
 
   return { decision: companyDecision, supabase, user, profile, company } as const;
 }
+
+export const getCompanyAdminContext = cache(loadCompanyAdminContext);
 
 export async function requireCompanyAdmin() {
   const context = await getCompanyAdminContext();

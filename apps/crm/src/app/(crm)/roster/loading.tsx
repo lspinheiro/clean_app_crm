@@ -5,11 +5,32 @@ export default function RosterLoading() {
       aria-busy="true"
       aria-label="Loading roster"
     >
-      <div className="roster-loading__heading roster-skeleton" aria-hidden="true" />
-      <div className="roster-loading__controls roster-skeleton" aria-hidden="true" />
+      <header className="roster-header roster-loading__header" aria-hidden="true">
+        <div className="roster-loading__header-copy">
+          <span className="roster-loading__eyebrow roster-skeleton" />
+          <span className="roster-loading__heading roster-skeleton" />
+          <div className="roster-loading__toolbar">
+            <span
+              className="roster-loading__week-controls roster-skeleton"
+              data-testid="roster-loading-week-controls"
+            />
+            <span
+              className="roster-loading__view-switch roster-skeleton"
+              data-testid="roster-loading-view-switch"
+            />
+          </div>
+        </div>
+        <span
+          className="roster-loading__gap-count roster-skeleton"
+          data-testid="roster-loading-gap-count"
+        />
+      </header>
       <div className="roster-loading__grid" aria-hidden="true">
-        {Array.from({ length: 5 }, (_, index) => (
-          <div className="roster-loading__row" key={index}>
+        {Array.from({ length: 6 }, (_, index) => (
+          <div
+            className={`roster-loading__row${index === 0 ? " roster-loading__row--header" : ""}`}
+            key={index}
+          >
             <span className="roster-skeleton" />
             {Array.from({ length: 7 }, (__, cellIndex) => (
               <span className="roster-skeleton" key={cellIndex} />

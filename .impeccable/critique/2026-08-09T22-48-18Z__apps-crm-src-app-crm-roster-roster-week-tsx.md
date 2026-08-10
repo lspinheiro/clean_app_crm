@@ -2,7 +2,7 @@
 target: CA-1 roster week view (apps/crm /roster)
 total_score: 25
 max_score: 40
-na_heuristics: 
+na_heuristics:
 p0_count: 0
 p1_count: 3
 timestamp: 2026-08-09T22-48-18Z

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 
 const destinations = [
   ["Roster", "/roster"],
@@ -25,5 +26,21 @@ export function CrmNavigation() {
         );
       })}
     </nav>
+  );
+}
+
+export function CrmSettingsLink({ children }: { children: ReactNode }) {
+  const pathname = usePathname() ?? "";
+  const isCurrent = pathname === "/settings" || pathname.startsWith("/settings/");
+
+  return (
+    <Link
+      aria-current={isCurrent ? "page" : undefined}
+      aria-label="Company settings"
+      className="icon-button"
+      href="/settings"
+    >
+      {children}
+    </Link>
   );
 }

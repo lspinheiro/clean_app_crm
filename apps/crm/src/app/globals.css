@@ -146,7 +146,9 @@ a {
   position: relative;
   display: inline-flex;
   min-height: 44px;
+  min-width: 44px;
   align-items: center;
+  justify-content: center;
   color: var(--color-gray-600);
   font-weight: 500;
   white-space: nowrap;
@@ -222,6 +224,11 @@ a {
   border-radius: 999px;
   background: var(--color-paper);
   color: var(--color-ink);
+}
+
+.icon-button[aria-current="page"] {
+  border-color: var(--color-ink);
+  background: var(--color-gray-100);
 }
 
 .page-shell {
@@ -407,7 +414,7 @@ a {
 }
 
 .field-hint {
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
 }
 
 .field-error {
@@ -554,7 +561,7 @@ a {
 }
 
 .save-status {
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 13px;
 }
 
@@ -608,7 +615,7 @@ a {
 }
 
 .search-field input::placeholder {
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
 }
 
 .client-list {
@@ -634,7 +641,7 @@ a {
 
 .record-kicker {
   margin: 0 0 4px;
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -713,7 +720,7 @@ a {
   gap: 9px;
   border-top: 1px solid var(--color-gray-200);
   padding: 18px 24px;
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 14px;
 }
 
@@ -778,7 +785,7 @@ a {
   align-items: center;
   gap: 8px;
   margin-bottom: 30px;
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 13px;
 }
 
@@ -815,7 +822,7 @@ a {
 
 .client-detail-count {
   margin-top: 6px;
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 13px;
 }
 
@@ -903,7 +910,7 @@ a {
   align-items: center;
   gap: 6px;
   margin-top: 7px;
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 12px;
 }
 
@@ -914,7 +921,7 @@ a {
 
 .site-notes-block > span,
 .defaults-grid dt {
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1193,7 +1200,7 @@ a {
 
 .invite-rotation-note {
   margin: 2px 0 0;
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 12px;
 }
 
@@ -1322,7 +1329,7 @@ a {
 }
 
 .recurring-list li.is-inactive {
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
 }
 
 .recurring-icon {
@@ -1617,7 +1624,7 @@ a {
 }
 
 .job-pay > span {
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   font-size: 11px;
   font-weight: 600;
 }
@@ -1810,7 +1817,7 @@ a {
 
 .roster-this-week {
   display: inline-flex;
-  min-height: 32px;
+  min-height: 44px;
   align-items: center;
   margin-left: 4px;
   border: 1px solid var(--color-gray-300);
@@ -1852,7 +1859,7 @@ a {
 
 .roster-grid tbody th small {
   margin-top: 3px;
-  color: var(--color-danger);
+  color: var(--color-status-danger-text);
   font-size: 11px;
   font-weight: 600;
 }
@@ -2230,6 +2237,13 @@ a {
   .roster-grid thead th:first-child { z-index: 4; }
   .roster-grid thead th,
   .roster-grid td { scroll-snap-align: start; }
+  .roster-entry--gap span,
+  .roster-entry--gap small {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+  }
   .roster-summary-bar__inner { align-items: flex-start; flex-direction: column; gap: 8px; padding: 12px 0; }
   .roster-offer-control { width: 100%; align-items: center; justify-content: space-between; }
   .roster-offer-control span { max-width: 168px; text-align: right; }

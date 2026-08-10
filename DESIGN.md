@@ -32,10 +32,12 @@ Semantic status pairs keep readable text separate from the brighter core colour:
 - `status-info-text` `#00566f` on `status-info-tint` (`bubble` at 14%)
 - `status-success-text` `#006735` on `status-success-tint` (`success` at 14%)
 - `status-danger-text` `#9b1100` on `status-danger-tint` (`danger` at 12%)
+- `status-success-border` `rgb(6 193 103 / 0.35)` — outline for successful state chips
+- `status-danger-soft` `rgb(225 25 0 / 0.06)` — unfilled-entry surface
+- `status-danger-faint` `rgb(225 25 0 / 0.025)` — unfilled-row surface
 
-The roster may use named softer danger tints for row and entry surfaces; status labels
-always use the shared semantic text token. Do not repeat status hex or tint literals in
-component rules.
+Status labels always use the shared semantic text token. Do not repeat status hex or tint
+literals in component rules.
 
 Rules: colour is **state, not decoration** — a screen at rest is black, white, and grey.
 `bubble` is never a text colour on white (contrast); use it for fills, bars, and accents
@@ -83,10 +85,11 @@ English: short sentences, no idioms, numerals for times and pay (ESL, phone-only
   primary actions, bottom sheets for detail, thumb-reach first. Screens must survive
   interruption — state is always recoverable.
 - **CRM (desktop-first web, 1280px design width, responsive to tablet/mobile)**: top nav
-  bar — logo, Roster · Jobs · Clients · Pool · Money, primary "+ New job" button right.
-  Content max-width 1200px. Dense data (roster week grid, client tables) uses
-  caption-size headers, body-size cells, generous row height (44px+). The roster is the
-  default screen.
+  bar — logo, Roster · Jobs · Clients · Pool · Money, with the current section marked.
+  Route-specific primary actions appear only once their workflow ships. No dead action
+  placeholders. Content max-width 1200px. Dense data (roster week grid, client tables)
+  uses caption-size headers, body-size cells, generous row height (44px+). The roster is
+  the default screen.
 
 ## Interaction & motion
 

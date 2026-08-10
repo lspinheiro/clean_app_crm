@@ -27,6 +27,13 @@ test("@CLE-33 mobile grid shows a usable day window with snap and sticky headers
   await signIn(page);
   await page.goto(`/roster?week=${weekStart}&view=site`);
 
+  for (const label of ["Jobs", "Pool"]) {
+    const target = page.getByRole("link", { name: label, exact: true });
+    const box = await target.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+  }
+
   const grid = page.getByRole("region", { name: "Roster by site" });
   await expect(grid).toBeVisible();
 
@@ -83,4 +90,22 @@ test("@CLE-33 mobile grid shows a usable day window with snap and sticky headers
   expect(scrollTop).toBeGreaterThan(0);
   const headerTopAfter = (await mondayHeader.boundingBox())?.y ?? 0;
   expect(Math.abs(headerTopAfter - headerTopBefore)).toBeLessThanOrEqual(1);
+
+  // Gap context stays visually recoverable in the narrow cleaner pivot rather
+  // than being clipped behind an ellipsis.
+  await page.goto(`/roster?week=${weekStart}&view=cleaner`);
+  const gapDetails = page.getByTestId("roster-gap").first().locator("span, small");
+  await expect(gapDetails.first()).toBeVisible();
+  const detailLayout = await gapDetails.evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element);
+    return {
+      fitsInline: element.scrollWidth <= element.clientWidth,
+      textOverflow: style.textOverflow,
+      whiteSpace: style.whiteSpace,
+    };
+  }));
+  expect(detailLayout).not.toHaveLength(0);
+  expect(detailLayout.every((detail) => detail.fitsInline)).toBe(true);
+  expect(detailLayout.every((detail) => detail.textOverflow === "clip")).toBe(true);
+  expect(detailLayout.every((detail) => detail.whiteSpace === "normal")).toBe(true);
 });

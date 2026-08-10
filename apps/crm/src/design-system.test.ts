@@ -23,12 +23,23 @@ describe("CLE-41 status token and roster CSS contract", () => {
       expect(css).toContain(`--color-${token}:`);
       expect(designContract).toContain(`\`${token}\``);
     }
+    for (const token of [
+      "status-success-border",
+      "status-danger-soft",
+      "status-danger-faint",
+    ]) {
+      expect(css).toContain(`--color-${token}:`);
+      expect(designContract).toContain(`\`${token}\``);
+    }
 
     expect(occurrences(css, "var(--color-status-success-text)")).toBeGreaterThanOrEqual(2);
     expect(occurrences(css, "var(--color-status-danger-text)")).toBeGreaterThanOrEqual(3);
     expect(occurrences(css, "#006735")).toBe(1);
     expect(occurrences(css, "#9b1100")).toBe(1);
     expect(css).not.toContain("#8b1000");
+    expect(css).toMatch(
+      /\.roster-grid tbody th small\s*\{[^}]*color: var\(--color-status-danger-text\);/,
+    );
   });
 
   it("keeps roster radii, depth, and table declarations on the sanctioned scale", () => {
@@ -44,6 +55,7 @@ describe("CLE-42 font and roster skeleton performance contract", () => {
     expect(rootLayout).toContain('from "next/font/local"');
     expect(rootLayout).not.toMatch(/import\s+["']@fontsource\/poppins\//);
     expect(rootLayout).toContain("preload: true");
+    expect(rootLayout).toContain('display: "optional"');
     expect(rootLayout).toContain("poppins.variable");
     for (const weight of ["400", "500", "600", "700", "800"]) {
       expect(rootLayout).toContain(`weight: \"${weight}\"`);
@@ -57,5 +69,47 @@ describe("CLE-42 font and roster skeleton performance contract", () => {
     expect(css).toMatch(
       /@media \(max-width: 560px\)[\s\S]*\.roster-loading__row\s*\{[^}]*min-width: 840px;[^}]*grid-template-columns: 128px repeat\(7, minmax\(0, 1fr\)\);/,
     );
+  });
+});
+
+describe("design-review conformance contracts", () => {
+  it("keeps caption text on an AA-safe grey while reserving gray-500 for glyphs", () => {
+    for (const selector of [
+      ".field-hint",
+      ".save-status",
+      ".search-field input::placeholder",
+      ".record-kicker",
+      ".client-card__empty",
+      ".breadcrumb",
+      ".client-detail-count",
+      ".privacy-caption",
+      ".invite-rotation-note",
+      ".recurring-list li.is-inactive",
+      ".job-pay > span",
+    ]) {
+      const escapedSelector = selector.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      expect(css).toMatch(
+        new RegExp(`${escapedSelector}\\s*\\{[^}]*color: var\\(--color-gray-600\\);`),
+      );
+    }
+    expect(occurrences(css, "color: var(--color-gray-500);")).toBe(2);
+    expect(css).toMatch(/\.search-field\s*\{[^}]*color: var\(--color-gray-500\);/);
+    expect(css).toMatch(/\.roster-no-work\s*\{[^}]*color: var\(--color-gray-500\);/);
+  });
+
+  it("keeps shell and temporal navigation on the 44px target floor", () => {
+    expect(css).toMatch(/\.primary-navigation a\s*\{[^}]*min-width: 44px;/);
+    expect(css).toMatch(/\.roster-this-week\s*\{[^}]*min-height: 44px;/);
+  });
+
+  it("lets mobile gap context wrap instead of disappearing behind ellipses", () => {
+    expect(css).toMatch(
+      /@media \(max-width: 560px\)[\s\S]*\.roster-entry--gap span,[\s\S]*\.roster-entry--gap small\s*\{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;/,
+    );
+  });
+
+  it("does not require an unshipped New job action in the canonical shell", () => {
+    expect(designContract).not.toContain('primary "+ New job" button right');
+    expect(designContract).toMatch(/No dead action\s+placeholders/);
   });
 });

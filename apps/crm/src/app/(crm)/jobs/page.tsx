@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
+
 import { JobsList } from "./jobs-list";
 
 import type { JobSummary } from "@/features/jobs/types";
 import { requireCompanyAdmin } from "@/lib/auth/session";
+
+export const metadata: Metadata = { title: "Jobs" };
 
 export default async function JobsPage() {
   const { supabase } = await requireCompanyAdmin();

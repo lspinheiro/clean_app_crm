@@ -17,6 +17,7 @@ type QueryResult = {
 };
 
 type ResultOverrides = Partial<Record<string, Partial<QueryResult>>>;
+type QueryBuilder = ReturnType<typeof queryBuilder>;
 
 const defaultResults: Record<string, QueryResult> = {
   clients: {
@@ -36,7 +37,6 @@ const defaultResults: Record<string, QueryResult> = {
   sites: {
     data: [{
       id: "site-1",
-      client_id: "client-1",
       name: "Harbour Tower",
       clients: { name: "Oceanview Property Group" },
     }],
@@ -105,6 +105,25 @@ function queryBuilder(result: QueryResult) {
 function immediateSupabase(overrides: ResultOverrides = {}) {
   return {
     from: vi.fn((table: string) => queryBuilder(resultFor(table, overrides))),
+  };
+}
+
+function trackedSupabase(overrides: ResultOverrides = {}) {
+  const builders = new Map<string, QueryBuilder>();
+  const client = {
+    from: vi.fn((table: string) => {
+      const builder = queryBuilder(resultFor(table, overrides));
+      builders.set(table, builder);
+      return builder;
+    }),
+  };
+  return {
+    client,
+    query(table: string) {
+      const builder = builders.get(table);
+      if (!builder) throw new Error(`No query was made for ${table}`);
+      return builder;
+    },
   };
 }
 
@@ -195,5 +214,36 @@ describe("CLE-35 roster data integrity", () => {
     await page;
 
     expect(waves).toBeLessThanOrEqual(2);
+  });
+
+  it("keeps every projection minimal and scoped to the signed-in company", async () => {
+    const harness = trackedSupabase();
+    await renderPage(harness.client);
+
+    expect(harness.query("sites").select).toHaveBeenCalledWith(
+      "id, name, clients!inner(name)",
+      { count: "exact" },
+    );
+    expect(harness.query("sites").eq).toHaveBeenCalledWith(
+      "clients.company_id",
+      "company-1",
+    );
+    expect(harness.query("company_members").eq).toHaveBeenCalledWith(
+      "company_id",
+      "company-1",
+    );
+    expect(harness.query("vacancies").select).toHaveBeenCalledWith(
+      "job_id, site_id, site_name, scheduled_start, crew_slot, crew_size",
+      { count: "exact" },
+    );
+    expect(harness.query("vacancies").eq).toHaveBeenCalledWith(
+      "company_id",
+      "company-1",
+    );
+    expect(harness.query("jobs").in).toHaveBeenCalledWith("site_id", ["site-1"]);
+    expect(harness.query("job_assignments").in).toHaveBeenCalledWith(
+      "jobs.site_id",
+      ["site-1"],
+    );
   });
 });

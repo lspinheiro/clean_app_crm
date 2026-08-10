@@ -32,7 +32,6 @@ const visibleJobStatuses = [
 
 type SiteQueryRow = {
   id: string;
-  client_id: string;
   name: string;
   clients: { name: string };
 };
@@ -84,7 +83,7 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
   const [sitesResult, membersResult, vacanciesResult] = await Promise.all([
     supabase
       .from("sites")
-      .select("id, client_id, name, clients!inner(name)", { count: "exact" })
+      .select("id, name, clients!inner(name)", { count: "exact" })
       .eq("clients.company_id", company.id)
       .order("name")
       .order("id")
@@ -100,7 +99,7 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
     supabase
       .from("vacancies")
       .select(
-        "job_id, company_id, site_id, site_name, scheduled_start, crew_slot, crew_size",
+        "job_id, site_id, site_name, scheduled_start, crew_slot, crew_size",
         { count: "exact" },
       )
       .eq("company_id", company.id)

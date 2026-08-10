@@ -23,36 +23,64 @@ async function signIn(page: import("@playwright/test").Page) {
 test("@CLE-33 mobile grid shows a usable day window with snap and sticky headers", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 390, height: 480 });
   await signIn(page);
-  await page.goto(`/roster?week=${weekStart}`);
+  await page.goto(`/roster?week=${weekStart}&view=site`);
 
-  const grid = page.getByRole("region", { name: "Roster by cleaner" });
+  const grid = page.getByRole("region", { name: "Roster by site" });
   await expect(grid).toBeVisible();
 
   // At least two full day columns fit beside the label column at 390px.
-  await expect(grid.getByRole("columnheader", { name: /^Mon / })).toBeInViewport({
+  const labelHeader = grid.getByRole("columnheader", { name: "Site" });
+  const mondayHeader = grid.getByRole("columnheader", { name: /^Mon / });
+  const tuesdayHeader = grid.getByRole("columnheader", { name: /^Tue / });
+  await expect(mondayHeader).toBeInViewport({
     ratio: 1,
   });
-  await expect(grid.getByRole("columnheader", { name: /^Tue / })).toBeInViewport({
+  await expect(tuesdayHeader).toBeInViewport({
     ratio: 1,
   });
+  const [gridBox, labelBox, mondayBox, tuesdayBox] = await Promise.all([
+    grid.boundingBox(),
+    labelHeader.boundingBox(),
+    mondayHeader.boundingBox(),
+    tuesdayHeader.boundingBox(),
+  ]);
+  expect(labelBox?.x).toBeGreaterThanOrEqual(gridBox?.x ?? 0);
+  expect(mondayBox?.x).toBeGreaterThanOrEqual(labelBox?.x ?? 0);
+  expect(mondayBox?.x).toBeGreaterThanOrEqual(
+    (labelBox?.x ?? 0) + (labelBox?.width ?? 0) - 1,
+  );
+  expect((tuesdayBox?.x ?? 0) + (tuesdayBox?.width ?? 0))
+    .toBeLessThanOrEqual((gridBox?.x ?? 0) + (gridBox?.width ?? 0) + 1);
 
   // Horizontal panning snaps to day-column boundaries.
   const snapType = await grid.evaluate(
     (element) => getComputedStyle(element).scrollSnapType,
   );
   expect(snapType).toContain("x");
+  const dayWidth = (tuesdayBox?.x ?? 0) - (mondayBox?.x ?? 0);
+  expect(dayWidth).toBeGreaterThan(0);
+  await grid.evaluate((element, target) => {
+    element.scrollTo({ left: target, behavior: "smooth" });
+  }, dayWidth * 1.8);
+  await expect.poll(async () => {
+    const scrollLeft = await grid.evaluate((element) => element.scrollLeft);
+    return Math.abs(scrollLeft / dayWidth - Math.round(scrollLeft / dayWidth)) < 0.05;
+  }).toBe(true);
 
   // The day header row is sticky inside the grid's vertical scroll container,
   // so the Mon–Sun mapping survives scanning tall pivots.
-  const headerPosition = await grid
-    .getByRole("columnheader", { name: /^Mon / })
-    .evaluate((element) => getComputedStyle(element).position);
-  expect(headerPosition).toBe("sticky");
-  const scrollsVertically = await grid.evaluate(
-    (element) => getComputedStyle(element).overflowY !== "visible"
-      && element.scrollHeight >= element.clientHeight,
+  const headerPosition = await mondayHeader.evaluate(
+    (element) => getComputedStyle(element).position,
   );
-  expect(scrollsVertically).toBe(true);
+  expect(headerPosition).toBe("sticky");
+  const headerTopBefore = (await mondayHeader.boundingBox())?.y ?? 0;
+  const scrollTop = await grid.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+    return element.scrollTop;
+  });
+  expect(scrollTop).toBeGreaterThan(0);
+  const headerTopAfter = (await mondayHeader.boundingBox())?.y ?? 0;
+  expect(Math.abs(headerTopAfter - headerTopBefore)).toBeLessThanOrEqual(1);
 });

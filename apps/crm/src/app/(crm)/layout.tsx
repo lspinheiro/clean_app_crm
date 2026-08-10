@@ -7,6 +7,7 @@ export default async function CrmLayout({ children }: Readonly<{ children: React
   const logoUrl = await getCompanyLogoUrl(supabase, company.logo_path);
   return (
     <>
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <CrmHeader companyName={company.name} logoUrl={logoUrl} />
       <div id="main-content" tabIndex={-1}>
         {children}

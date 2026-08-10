@@ -6,8 +6,10 @@ import RosterLoading from "./loading";
 describe("RosterLoading", () => {
   it("announces busy state while keeping skeleton marks non-interactive", () => {
     const { container } = render(<RosterLoading />);
-    expect(container.querySelector("main")).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByRole("status")).toHaveTextContent("Loading roster");
+    const main = container.querySelector("main");
+    expect(main).toHaveAttribute("aria-busy", "true");
+    expect(main).toHaveAttribute("aria-label", "Loading roster");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(container.querySelectorAll(".roster-loading__row")).toHaveLength(5);
   });

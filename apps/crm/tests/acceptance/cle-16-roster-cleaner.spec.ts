@@ -60,6 +60,9 @@ test("@CLE-16 renders the generated week by cleaner with exact vacancy evidence"
   await expect(page.getByRole("heading", { name: "Roster", level: 1 })).toBeVisible();
   const grid = page.getByRole("region", { name: "Roster by cleaner" });
   await expect(grid).toBeVisible();
+  const accessibilityTree = await grid.ariaSnapshot();
+  expect(accessibilityTree).not.toContain("—");
+  expect(accessibilityTree).toContain("No work");
   await expect(grid.getByTestId("roster-gap")).toHaveCount(expectedVacancies);
   await expect(page.getByTestId("roster-gap-count")).toHaveText(
     `${expectedVacancies} unfilled slots`,

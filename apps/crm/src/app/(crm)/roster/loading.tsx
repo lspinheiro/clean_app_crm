@@ -1,7 +1,10 @@
 export default function RosterLoading() {
   return (
-    <main className="page-shell roster-page-shell roster-loading" aria-busy="true">
-      <p className="visually-hidden" role="status">Loading roster…</p>
+    <main
+      className="page-shell roster-page-shell roster-loading"
+      aria-busy="true"
+      aria-label="Loading roster"
+    >
       <div className="roster-loading__heading roster-skeleton" aria-hidden="true" />
       <div className="roster-loading__controls roster-skeleton" aria-hidden="true" />
       <div className="roster-loading__grid" aria-hidden="true">

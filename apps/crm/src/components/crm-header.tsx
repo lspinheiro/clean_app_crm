@@ -12,7 +12,6 @@ type CrmHeaderProps = {
 export function CrmHeader({ companyName, logoUrl }: CrmHeaderProps) {
   return (
     <header className="site-header">
-      <a className="skip-link" href="#main-content">Skip to content</a>
       <div className="site-header__inner">
         <Link className="brand-lockup" href="/roster" aria-label={`${companyName} — Clean App`}>
           {logoUrl ? (

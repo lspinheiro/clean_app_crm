@@ -13,4 +13,10 @@ describe("CrmHeader", () => {
     expect(skipLink.compareDocumentPosition(screen.getByRole("navigation")))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
+
+  it("does not advertise job creation before the workflow ships", () => {
+    render(<CrmHeader companyName="Coastal Demo Cleaning" logoUrl={null} />);
+
+    expect(screen.queryByText("+ New job")).not.toBeInTheDocument();
+  });
 });

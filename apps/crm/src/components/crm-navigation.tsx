@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const destinations = [
   ["Roster", "/roster"],
@@ -9,13 +12,18 @@ const destinations = [
 ] as const;
 
 export function CrmNavigation() {
+  const pathname = usePathname() ?? "";
+
   return (
     <nav aria-label="Primary navigation" className="primary-navigation">
-      {destinations.map(([label, href]) => (
-        <Link href={href} key={href}>
-          {label}
-        </Link>
-      ))}
+      {destinations.map(([label, href]) => {
+        const isCurrent = pathname === href || pathname.startsWith(`${href}/`);
+        return (
+          <Link aria-current={isCurrent ? "page" : undefined} href={href} key={href}>
+            {label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

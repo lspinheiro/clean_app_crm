@@ -147,6 +147,21 @@ a {
   color: var(--color-ink);
 }
 
+.primary-navigation a[aria-current="page"] {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.primary-navigation a[aria-current="page"]::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--color-ink);
+  content: "";
+}
+
 .header-actions {
   display: flex;
   align-items: center;

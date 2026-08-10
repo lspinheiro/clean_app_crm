@@ -26,7 +26,6 @@ export function CrmHeader({ companyName, logoUrl }: CrmHeaderProps) {
         </Link>
         <CrmNavigation />
         <div className="header-actions">
-          <span className="button" aria-disabled="true">+ New job</span>
           <Link className="icon-button" href="/settings" aria-label="Company settings">
             <Settings aria-hidden="true" size={21} strokeWidth={2.25} />
           </Link>

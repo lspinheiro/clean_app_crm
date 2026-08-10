@@ -32,9 +32,9 @@ describe("CLE-41 status token and roster CSS contract", () => {
   });
 
   it("keeps roster radii, depth, and table declarations on the sanctioned scale", () => {
-    expect(css).toMatch(/\.roster-view-switch\s*\{[^}]*border-radius: 8px;/s);
-    expect(css).toMatch(/\.roster-summary-bar\s*\{[^}]*box-shadow: var\(--shadow-floating\);/s);
-    expect(css).not.toMatch(/\.roster-grid tbody th\s*\{[^}]*min-height:/s);
+    expect(css).toMatch(/\.roster-view-switch\s*\{[^}]*border-radius: 8px;/);
+    expect(css).toMatch(/\.roster-summary-bar\s*\{[^}]*box-shadow: var\(--shadow-floating\);/);
+    expect(css).not.toMatch(/\.roster-grid tbody th\s*\{[^}]*min-height:/);
     expect(css).toContain(".roster-grid tbody .roster-gap-row th");
   });
 });
@@ -52,10 +52,10 @@ describe("CLE-42 font and roster skeleton performance contract", () => {
 
   it("matches the loaded roster grid at desktop and phone widths", () => {
     expect(css).toMatch(
-      /\.roster-loading__row\s*\{[^}]*min-width: 960px;[^}]*grid-template-columns: 188px repeat\(7, minmax\(0, 1fr\)\);/s,
+      /\.roster-loading__row\s*\{[^}]*min-width: 960px;[^}]*grid-template-columns: 188px repeat\(7, minmax\(0, 1fr\)\);/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 560px\)[\s\S]*\.roster-loading__row\s*\{[^}]*min-width: 840px;[^}]*grid-template-columns: 128px repeat\(7, minmax\(0, 1fr\)\);/s,
+      /@media \(max-width: 560px\)[\s\S]*\.roster-loading__row\s*\{[^}]*min-width: 840px;[^}]*grid-template-columns: 128px repeat\(7, minmax\(0, 1fr\)\);/,
     );
   });
 });

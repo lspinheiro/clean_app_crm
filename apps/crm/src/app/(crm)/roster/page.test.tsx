@@ -1,0 +1,199 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  requireCompanyAdmin: vi.fn(),
+}));
+
+vi.mock("@/lib/auth/session", () => ({
+  requireCompanyAdmin: mocks.requireCompanyAdmin,
+}));
+
+import RosterPage from "./page";
+
+type QueryResult = {
+  data: Record<string, unknown>[];
+  error: null;
+  count: number | null;
+};
+
+type ResultOverrides = Partial<Record<string, Partial<QueryResult>>>;
+
+const defaultResults: Record<string, QueryResult> = {
+  clients: {
+    data: [{ id: "client-1", name: "Oceanview Property Group" }],
+    error: null,
+    count: 1,
+  },
+  company_members: {
+    data: [{
+      profile_id: "cleaner-1",
+      profiles: { id: "cleaner-1", full_name: "Ana Costa" },
+    }],
+    error: null,
+    count: 1,
+  },
+  vacancies: { data: [], error: null, count: 0 },
+  sites: {
+    data: [{
+      id: "site-1",
+      client_id: "client-1",
+      name: "Harbour Tower",
+      clients: { name: "Oceanview Property Group" },
+    }],
+    error: null,
+    count: 1,
+  },
+  profiles: {
+    data: [{ id: "cleaner-1", full_name: "Ana Costa" }],
+    error: null,
+    count: 1,
+  },
+  jobs: {
+    data: [{
+      id: "job-1",
+      site_id: "site-1",
+      scheduled_start: "2026-08-10T00:00:00Z",
+      crew_size: 1,
+      status: "assigned",
+    }],
+    error: null,
+    count: 1,
+  },
+  job_assignments: {
+    data: [{ job_id: "job-1", cleaner_id: "cleaner-1", slot_number: 1 }],
+    error: null,
+    count: 1,
+  },
+};
+
+function resultFor(table: string, overrides: ResultOverrides): QueryResult {
+  const base = defaultResults[table];
+  if (!base) throw new Error(`Unexpected table ${table}`);
+  return { ...base, ...overrides[table] };
+}
+
+function queryBuilder(result: QueryResult) {
+  const builder = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    in: vi.fn(),
+    gte: vi.fn(),
+    lt: vi.fn(),
+    is: vi.fn(),
+    order: vi.fn(),
+    overrideTypes: vi.fn(),
+    then: <TResult1 = QueryResult, TResult2 = never>(
+      onFulfilled?: ((value: QueryResult) => TResult1 | PromiseLike<TResult1>) | null,
+      onRejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    ) => Promise.resolve(result).then(onFulfilled, onRejected),
+  };
+  for (const method of [
+    builder.select,
+    builder.eq,
+    builder.in,
+    builder.gte,
+    builder.lt,
+    builder.is,
+    builder.order,
+    builder.overrideTypes,
+  ]) {
+    method.mockReturnValue(builder);
+  }
+  return builder;
+}
+
+function immediateSupabase(overrides: ResultOverrides = {}) {
+  return {
+    from: vi.fn((table: string) => queryBuilder(resultFor(table, overrides))),
+  };
+}
+
+async function renderPage(supabase: ReturnType<typeof immediateSupabase>) {
+  mocks.requireCompanyAdmin.mockResolvedValue({
+    company: { id: "company-1" },
+    supabase,
+  });
+  return RosterPage({ searchParams: Promise.resolve({ week: "2026-08-10" }) });
+}
+
+function deferredSupabase() {
+  const pending = new Set<{
+    resolve: (result: QueryResult) => void;
+    result: QueryResult;
+  }>();
+
+  return {
+    client: {
+      from: vi.fn((table: string) => {
+        const result = resultFor(table, {});
+        let resolvePromise!: (value: QueryResult) => void;
+        const promise = new Promise<QueryResult>((resolve) => {
+          resolvePromise = resolve;
+        });
+        const deferred = { resolve: resolvePromise, result };
+        const builder = queryBuilder(result);
+        builder.then = (onFulfilled, onRejected) => {
+          pending.add(deferred);
+          return promise.then(onFulfilled, onRejected);
+        };
+        return builder;
+      }),
+    },
+    resolveWave() {
+      const wave = [...pending];
+      pending.clear();
+      for (const query of wave) query.resolve(query.result);
+      return wave.length;
+    },
+    pendingCount: () => pending.size,
+  };
+}
+
+async function flushQueries() {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+describe("CLE-35 roster data integrity", () => {
+  beforeEach(() => {
+    mocks.requireCompanyAdmin.mockReset();
+  });
+
+  it("fails loudly when the jobs result is truncated", async () => {
+    await expect(renderPage(immediateSupabase({ jobs: { count: 2 } }))).rejects.toThrow(
+      "weekly jobs result exceeded",
+    );
+  });
+
+  it("fails loudly when the assignments result is truncated", async () => {
+    await expect(
+      renderPage(immediateSupabase({ job_assignments: { count: 2 } })),
+    ).rejects.toThrow("weekly assignment result exceeded");
+  });
+
+  it("loads the roster in no more than two sequential query waves after auth", async () => {
+    const harness = deferredSupabase();
+    mocks.requireCompanyAdmin.mockResolvedValue({
+      company: { id: "company-1" },
+      supabase: harness.client,
+    });
+    let settled = false;
+    const page = RosterPage({
+      searchParams: Promise.resolve({ week: "2026-08-10" }),
+    }).finally(() => {
+      settled = true;
+    });
+
+    let waves = 0;
+    while (!settled && waves < 6) {
+      await flushQueries();
+      if (harness.pendingCount() > 0) {
+        harness.resolveWave();
+        waves += 1;
+      }
+    }
+    await page;
+
+    expect(waves).toBeLessThanOrEqual(2);
+  });
+});

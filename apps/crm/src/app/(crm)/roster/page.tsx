@@ -30,6 +30,42 @@ const visibleJobStatuses = [
   "completed",
 ] as const;
 
+type SiteQueryRow = {
+  id: string;
+  client_id: string;
+  name: string;
+  clients: { name: string };
+};
+
+type MemberQueryRow = {
+  profile_id: string;
+  profiles: { id: string; full_name: string };
+};
+
+type AssignmentQueryRow = {
+  job_id: string;
+  cleaner_id: string;
+  slot_number: number;
+  jobs: { site_id: string };
+};
+
+type CountedResult<T> = {
+  data: T[] | null;
+  error: { message: string } | null;
+  count: number | null;
+};
+
+function requireCompleteRows<T>(label: string, result: CountedResult<T>) {
+  if (result.error) throw result.error;
+  if (!result.data || result.count === null) {
+    throw new Error(`The ${label} query did not return an exact row count.`);
+  }
+  if (result.count !== result.data.length) {
+    throw new Error(`The ${label} result exceeded the roster query page size.`);
+  }
+  return result.data;
+}
+
 export async function generateMetadata({ searchParams }: RosterPageProps) {
   const { view, week } = await searchParams;
   return { title: formatRosterTitle(parseRosterWeek(week), parseRosterView(view)) };
@@ -45,18 +81,22 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
   const days = buildRosterDays(weekStart);
   const { startsAt, endsAt } = getRosterWeekBounds(weekStart);
 
-  const [clientsResult, membershipsResult, vacanciesResult] = await Promise.all([
+  const [sitesResult, membersResult, vacanciesResult] = await Promise.all([
     supabase
-      .from("clients")
-      .select("id, name")
-      .eq("company_id", company.id)
+      .from("sites")
+      .select("id, client_id, name, clients!inner(name)", { count: "exact" })
+      .eq("clients.company_id", company.id)
       .order("name")
-      .order("id"),
+      .order("id")
+      .overrideTypes<SiteQueryRow[], { merge: false }>(),
     supabase
       .from("company_members")
-      .select("profile_id")
+      .select("profile_id, profiles!inner(id, full_name)", { count: "exact" })
       .eq("company_id", company.id)
-      .eq("status", "active"),
+      .eq("status", "active")
+      .eq("profiles.role", "cleaner")
+      .order("profile_id")
+      .overrideTypes<MemberQueryRow[], { merge: false }>(),
     supabase
       .from("vacancies")
       .select(
@@ -70,68 +110,41 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
       .order("job_id")
       .order("crew_slot"),
   ]);
-  if (clientsResult.error) throw clientsResult.error;
-  if (membershipsResult.error) throw membershipsResult.error;
-  if (vacanciesResult.error) throw vacanciesResult.error;
-  if (
-    vacanciesResult.count !== null
-    && vacanciesResult.count !== vacanciesResult.data.length
-  ) {
-    throw new Error("The weekly vacancy result exceeded the roster query page size.");
-  }
+  const siteRows = requireCompleteRows("company site", sitesResult);
+  const memberRows = requireCompleteRows("active cleaner membership", membersResult);
+  const vacancyRows = requireCompleteRows("weekly vacancy", vacanciesResult);
 
-  const clientIds = clientsResult.data.map((client) => client.id);
-  const memberIds = membershipsResult.data.map((membership) => membership.profile_id);
-  const [sitesResult, profilesResult] = await Promise.all([
-    clientIds.length
+  const siteIds = siteRows.map((site) => site.id);
+  const [jobsResult, assignmentsResult] = await Promise.all([
+    siteIds.length
       ? supabase
-          .from("sites")
-          .select("id, client_id, name")
-          .in("client_id", clientIds)
-          .order("name")
-          .order("id")
-      : Promise.resolve({ data: [], error: null }),
-    memberIds.length
-      ? supabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", memberIds)
-          .eq("role", "cleaner")
-          .order("full_name")
-          .order("id")
-      : Promise.resolve({ data: [], error: null }),
-  ]);
-  if (sitesResult.error) throw sitesResult.error;
-  if (profilesResult.error) throw profilesResult.error;
-
-  const siteIds = sitesResult.data.map((site) => site.id);
-  const jobsResult = siteIds.length
-    ? await supabase
         .from("jobs")
-        .select("id, site_id, scheduled_start, crew_size, status")
+        .select("id, site_id, scheduled_start, crew_size, status", { count: "exact" })
         .in("site_id", siteIds)
         .gte("scheduled_start", startsAt)
         .lt("scheduled_start", endsAt)
         .in("status", [...visibleJobStatuses])
         .order("scheduled_start")
         .order("id")
-    : { data: [], error: null };
-  if (jobsResult.error) throw jobsResult.error;
-
-  const jobIds = jobsResult.data.map((job) => job.id);
-  const assignmentsResult = jobIds.length
-    ? await supabase
+      : Promise.resolve({ data: [], error: null, count: 0 }),
+    siteIds.length
+      ? supabase
         .from("job_assignments")
-        .select("job_id, cleaner_id, slot_number")
-        .in("job_id", jobIds)
+        .select("job_id, cleaner_id, slot_number, jobs!inner(site_id)", { count: "exact" })
+        .in("jobs.site_id", siteIds)
+        .gte("assignment_start", startsAt)
+        .lt("assignment_start", endsAt)
         .is("unassigned_at", null)
         .order("job_id")
         .order("slot_number")
-    : { data: [], error: null };
-  if (assignmentsResult.error) throw assignmentsResult.error;
+        .overrideTypes<AssignmentQueryRow[], { merge: false }>()
+      : Promise.resolve({ data: [], error: null, count: 0 }),
+  ]);
+  const jobRows = requireCompleteRows("weekly jobs", jobsResult);
+  const assignmentRows = requireCompleteRows("weekly assignment", assignmentsResult);
 
-  const siteNames = new Map(sitesResult.data.map((site) => [site.id, site.name]));
-  const jobs: RosterJob[] = jobsResult.data.map((job) => {
+  const siteNames = new Map(siteRows.map((site) => [site.id, site.name]));
+  const jobs: RosterJob[] = jobRows.map((job) => {
     const siteName = siteNames.get(job.site_id);
     if (!siteName) throw new Error(`Roster job ${job.id} has no visible site.`);
     return {
@@ -142,26 +155,23 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
       crewSize: job.crew_size,
     };
   });
-  const assignments: RosterAssignment[] = assignmentsResult.data.map((assignment) => ({
+  const assignments: RosterAssignment[] = assignmentRows.map((assignment) => ({
     jobId: assignment.job_id,
     cleanerId: assignment.cleaner_id,
     slotNumber: assignment.slot_number,
   }));
-  const cleaners: RosterCleaner[] = profilesResult.data.map((profile) => ({
-    id: profile.id,
-    name: profile.full_name,
+  const cleaners: RosterCleaner[] = memberRows
+    .map((membership) => ({
+      id: membership.profiles.id,
+      name: membership.profiles.full_name,
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id));
+  const sites: RosterSite[] = siteRows.map((site) => ({
+    id: site.id,
+    name: site.name,
+    clientName: site.clients.name,
   }));
-  const clientNames = new Map(clientsResult.data.map((client) => [client.id, client.name]));
-  const sites: RosterSite[] = sitesResult.data.map((site) => {
-    const clientName = clientNames.get(site.client_id);
-    if (!clientName) throw new Error(`Roster site ${site.id} has no visible client.`);
-    return {
-      id: site.id,
-      name: site.name,
-      clientName,
-    };
-  });
-  const vacancies: RosterVacancy[] = vacanciesResult.data.map((vacancy) => {
+  const vacancies: RosterVacancy[] = vacancyRows.map((vacancy) => {
     if (
       !vacancy.job_id
       || !vacancy.site_id
@@ -190,7 +200,7 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
   return (
     <RosterWeek
       days={days}
-      hasFoundation={sitesResult.data.length > 0 || cleaners.length > 0 || jobs.length > 0}
+      hasFoundation={sites.length > 0 || cleaners.length > 0 || jobs.length > 0}
       model={model}
       todayKey={getBrisbaneDateKey()}
       view={view}

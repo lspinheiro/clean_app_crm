@@ -3,6 +3,22 @@ create extension if not exists pgtap with schema extensions;
 select set_config('storage.allow_delete_query', 'true', true);
 select plan(56);
 
+-- Keep the contract test isolated from logo candidates created during local UI
+-- verification. These changes live inside the test transaction and roll back.
+delete from public.company_logo_upload_reservations
+where company_id = '10000000-0000-4000-8000-000000000010';
+
+update public.companies
+set
+  name = 'Coastal Demo Cleaning',
+  abn = '51824753556',
+  logo_path = null
+where id = '10000000-0000-4000-8000-000000000010';
+
+delete from storage.objects
+where bucket_id = 'company-logos'
+  and name like '10000000-0000-4000-8000-000000000010/%';
+
 select is(
   (select count(*)::integer from storage.buckets where id = 'company-logos' and not public),
   1,

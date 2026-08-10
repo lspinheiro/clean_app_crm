@@ -1,11 +1,41 @@
-import "@fontsource/poppins/400.css";
-import "@fontsource/poppins/500.css";
-import "@fontsource/poppins/600.css";
-import "@fontsource/poppins/700.css";
-import "@fontsource/poppins/800.css";
 import "./globals.css";
 
 import type { Metadata } from "next";
+import localFont from "next/font/local";
+
+const poppins = localFont({
+  src: [
+    {
+      path: "../../node_modules/@fontsource/poppins/files/poppins-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/poppins/files/poppins-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/poppins/files/poppins-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2",
+      weight: "800",
+      style: "normal",
+    },
+  ],
+  display: "optional",
+  fallback: ["Arial", "sans-serif"],
+  preload: true,
+  variable: "--font-poppins",
+});
 
 export const metadata: Metadata = {
   title: { default: "Clean App", template: "%s · Clean App" },
@@ -23,7 +53,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-AU">
+    <html className={poppins.variable} lang="en-AU">
       <body>
         <template
           data-design-contract="clean-app-operate-ledger-v1"

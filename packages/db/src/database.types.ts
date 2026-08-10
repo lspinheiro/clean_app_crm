@@ -144,6 +144,105 @@ export type Database = {
         };
         Relationships: [];
       };
+      job_assignments: {
+        Row: {
+          assigned_at: string;
+          assignment_end: string;
+          assignment_start: string;
+          cleaner_id: string;
+          id: string;
+          job_id: string;
+          slot_number: number;
+          source: Database["public"]["Enums"]["assignment_source"];
+          unassigned_at: string | null;
+        };
+        Insert: {
+          assigned_at?: string;
+          assignment_end: string;
+          assignment_start: string;
+          cleaner_id: string;
+          id?: string;
+          job_id: string;
+          slot_number: number;
+          source?: Database["public"]["Enums"]["assignment_source"];
+          unassigned_at?: string | null;
+        };
+        Update: {
+          assigned_at?: string;
+          assignment_end?: string;
+          assignment_start?: string;
+          cleaner_id?: string;
+          id?: string;
+          job_id?: string;
+          slot_number?: number;
+          source?: Database["public"]["Enums"]["assignment_source"];
+          unassigned_at?: string | null;
+        };
+        Relationships: [];
+      };
+      jobs: {
+        Row: {
+          cleaner_pay_cents: number;
+          cancelled_by_rule_deactivation_at: string | null;
+          client_charge_cents: number | null;
+          created_at: string;
+          crew_size: number;
+          duration_minutes: number;
+          generated_at: string | null;
+          generated_rule_version: number | null;
+          id: string;
+          manually_edited_at: string | null;
+          recurring_assignment_id: string | null;
+          scheduled_end: string;
+          scheduled_start: string;
+          service_date: string | null;
+          service_id: string;
+          site_id: string;
+          status: Database["public"]["Enums"]["job_status"];
+          updated_at: string;
+        };
+        Insert: {
+          cleaner_pay_cents: number;
+          cancelled_by_rule_deactivation_at?: string | null;
+          client_charge_cents?: number | null;
+          created_at?: string;
+          crew_size: number;
+          duration_minutes: number;
+          generated_at?: string | null;
+          generated_rule_version?: number | null;
+          id?: string;
+          manually_edited_at?: string | null;
+          recurring_assignment_id?: string | null;
+          scheduled_end: string;
+          scheduled_start: string;
+          service_date?: string | null;
+          service_id: string;
+          site_id: string;
+          status?: Database["public"]["Enums"]["job_status"];
+          updated_at?: string;
+        };
+        Update: {
+          cleaner_pay_cents?: number;
+          cancelled_by_rule_deactivation_at?: string | null;
+          client_charge_cents?: number | null;
+          created_at?: string;
+          crew_size?: number;
+          duration_minutes?: number;
+          generated_at?: string | null;
+          generated_rule_version?: number | null;
+          id?: string;
+          manually_edited_at?: string | null;
+          recurring_assignment_id?: string | null;
+          scheduled_end?: string;
+          scheduled_start?: string;
+          service_date?: string | null;
+          service_id?: string;
+          site_id?: string;
+          status?: Database["public"]["Enums"]["job_status"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -171,6 +270,99 @@ export type Database = {
           phone?: string | null;
           role?: Database["public"]["Enums"]["app_role"];
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      recurring_generation_failures: {
+        Row: {
+          error_code: string;
+          error_message: string;
+          failed_at: string;
+          recurring_assignment_id: string;
+        };
+        Insert: {
+          error_code: string;
+          error_message: string;
+          failed_at?: string;
+          recurring_assignment_id: string;
+        };
+        Update: {
+          error_code?: string;
+          error_message?: string;
+          failed_at?: string;
+          recurring_assignment_id?: string;
+        };
+        Relationships: [];
+      };
+      recurring_assignment_cleaners: {
+        Row: {
+          cleaner_id: string;
+          created_at: string;
+          recurring_assignment_id: string;
+          slot_number: number;
+        };
+        Insert: {
+          cleaner_id: string;
+          created_at?: string;
+          recurring_assignment_id: string;
+          slot_number: number;
+        };
+        Update: {
+          cleaner_id?: string;
+          created_at?: string;
+          recurring_assignment_id?: string;
+          slot_number?: number;
+        };
+        Relationships: [];
+      };
+      recurring_assignments: {
+        Row: {
+          active: boolean;
+          anchor_date: string;
+          cleaner_pay_cents: number;
+          created_at: string;
+          crew_size: number;
+          duration_minutes: number;
+          frequency: Database["public"]["Enums"]["recurrence_frequency"];
+          generation_version: number;
+          id: string;
+          local_start_time: string;
+          service_id: string;
+          site_id: string;
+          updated_at: string;
+          weekday: number;
+        };
+        Insert: {
+          active?: boolean;
+          anchor_date: string;
+          cleaner_pay_cents: number;
+          created_at?: string;
+          crew_size: number;
+          duration_minutes: number;
+          frequency: Database["public"]["Enums"]["recurrence_frequency"];
+          generation_version?: number;
+          id?: string;
+          local_start_time: string;
+          service_id: string;
+          site_id: string;
+          updated_at?: string;
+          weekday: number;
+        };
+        Update: {
+          active?: boolean;
+          anchor_date?: string;
+          cleaner_pay_cents?: number;
+          created_at?: string;
+          crew_size?: number;
+          duration_minutes?: number;
+          frequency?: Database["public"]["Enums"]["recurrence_frequency"];
+          generation_version?: number;
+          id?: string;
+          local_start_time?: string;
+          service_id?: string;
+          site_id?: string;
+          updated_at?: string;
+          weekday?: number;
         };
         Relationships: [];
       };
@@ -265,7 +457,27 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      vacancies: {
+        Row: {
+          cleaner_pay_cents: number | null;
+          client_id: string | null;
+          client_name: string | null;
+          company_id: string | null;
+          crew_size: number | null;
+          crew_slot: number | null;
+          duration_minutes: number | null;
+          job_id: string | null;
+          preferred_cleaner_ids: string[] | null;
+          scheduled_start: string | null;
+          service_id: string | null;
+          service_name: string | null;
+          site_id: string | null;
+          site_name: string | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       can_delete_unreferenced_company_logo: {
         Args: { object_name: string };
@@ -283,6 +495,21 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: Database["public"]["Enums"]["app_role"];
       };
+      create_recurring_assignment: {
+        Args: {
+          named_cleaner_ids: string[];
+          target_anchor_date: string;
+          target_cleaner_pay_cents: number;
+          target_crew_size: number;
+          target_duration_minutes: number;
+          target_frequency: Database["public"]["Enums"]["recurrence_frequency"];
+          target_local_start_time: string;
+          target_service_id: string;
+          target_site_id: string;
+          target_weekday: number;
+        };
+        Returns: string;
+      };
       create_client: {
         Args: {
           client_contact_name?: string | null;
@@ -292,6 +519,17 @@ export type Database = {
           target_company_id: string;
         };
         Returns: Database["public"]["Tables"]["clients"]["Row"];
+      };
+      generate_recurring_jobs: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
+      generate_recurring_jobs_at: {
+        Args: {
+          as_of: string;
+          target_recurring_assignment_id?: string | null;
+        };
+        Returns: number;
       };
       create_site: {
         Args: {
@@ -317,6 +555,20 @@ export type Database = {
           target_company_id: string;
         };
         Returns: string;
+      };
+      reconcile_recurring_assignment_jobs: {
+        Args: {
+          as_of: string;
+          target_recurring_assignment_id: string;
+        };
+        Returns: number;
+      };
+      set_recurring_assignment_active: {
+        Args: {
+          target_active: boolean;
+          target_recurring_assignment_id: string;
+        };
+        Returns: undefined;
       };
       set_site_preferred_cleaners: {
         Args: {
@@ -344,6 +596,21 @@ export type Database = {
         };
         Returns: Database["public"]["Tables"]["clients"]["Row"];
       };
+      update_recurring_assignment: {
+        Args: {
+          named_cleaner_ids: string[];
+          target_anchor_date: string;
+          target_cleaner_pay_cents: number;
+          target_crew_size: number;
+          target_duration_minutes: number;
+          target_frequency: Database["public"]["Enums"]["recurrence_frequency"];
+          target_local_start_time: string;
+          target_recurring_assignment_id: string;
+          target_service_id: string;
+          target_weekday: number;
+        };
+        Returns: undefined;
+      };
       update_site: {
         Args: {
           site_access_notes: string | null;
@@ -359,9 +626,19 @@ export type Database = {
       };
     };
     Enums: {
+      assignment_source: "manual" | "recurring";
       app_role: "company_admin" | "cleaner" | "admin";
       company_status: "pending" | "approved" | "suspended";
+      job_status:
+        | "draft"
+        | "posted"
+        | "assigned"
+        | "on_the_way"
+        | "in_progress"
+        | "completed"
+        | "cancelled";
       member_status: "active" | "removed";
+      recurrence_frequency: "weekly" | "fortnightly";
     };
     CompositeTypes: Record<string, never>;
   };

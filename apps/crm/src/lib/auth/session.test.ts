@@ -1,10 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ createClient: vi.fn() }));
+const mocks = vi.hoisted(() => {
+  const resetters: Array<() => void> = [];
+  return {
+    createClient: vi.fn(),
+    reactCache: vi.fn((loader: (...args: unknown[]) => unknown) => {
+      let cachedValue: unknown;
+      let hasCachedValue = false;
+      resetters.push(() => {
+        cachedValue = undefined;
+        hasCachedValue = false;
+      });
+      return (...args: unknown[]) => {
+        if (!hasCachedValue) {
+          cachedValue = loader(...args);
+          hasCachedValue = true;
+        }
+        return cachedValue;
+      };
+    }),
+    resetRequestCache() {
+      for (const reset of resetters) reset();
+    },
+  };
+});
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
+vi.mock("react", async (importOriginal) => ({
+  ...await importOriginal<typeof import("react")>(),
+  cache: mocks.reactCache,
+}));
 
-import { getCompanyAdminContext } from "./session";
+import { getCompanyAdminContext, requireCompanyAdmin } from "./session";
 
 function queryReturning(data: unknown, singleError: unknown = null) {
   const query = {
@@ -22,6 +49,7 @@ function queryReturning(data: unknown, singleError: unknown = null) {
 
 describe("company-admin session context", () => {
   beforeEach(() => {
+    mocks.resetRequestCache();
     vi.clearAllMocks();
   });
 
@@ -58,5 +86,44 @@ describe("company-admin session context", () => {
     });
     expect(companyQuery.maybeSingle).toHaveBeenCalledOnce();
     expect(companyQuery.single).not.toHaveBeenCalled();
+  });
+
+  it("initialises the company-admin context once for two request consumers", async () => {
+    const profileQuery = queryReturning({
+      id: "user-1",
+      role: "company_admin",
+      full_name: "Company Admin",
+    });
+    const membershipQuery = queryReturning({ company_id: "company-1" });
+    const companyQuery = queryReturning({
+      id: "company-1",
+      name: "Coastal Demo Cleaning",
+      status: "approved",
+    });
+    const supabase = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+          error: null,
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") return profileQuery;
+        if (table === "company_members") return membershipQuery;
+        if (table === "companies") return companyQuery;
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+    };
+    mocks.createClient.mockResolvedValue(supabase);
+
+    const [layoutContext, pageContext] = await Promise.all([
+      requireCompanyAdmin(),
+      requireCompanyAdmin(),
+    ]);
+
+    expect(layoutContext.company.id).toBe("company-1");
+    expect(pageContext.company.id).toBe("company-1");
+    expect(mocks.createClient).toHaveBeenCalledOnce();
+    expect(supabase.auth.getUser).toHaveBeenCalledOnce();
   });
 });

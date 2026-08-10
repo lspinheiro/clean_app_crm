@@ -1,0 +1,81 @@
+export type RosterView = "cleaner" | "site";
+
+export type RosterDay = {
+  dateKey: string;
+  headerLabel: string;
+};
+
+export type RosterCleaner = {
+  id: string;
+  name: string;
+};
+
+export type RosterSite = {
+  id: string;
+  name: string;
+  clientName: string;
+};
+
+export type RosterJob = {
+  id: string;
+  siteId: string;
+  siteName: string;
+  scheduledStart: string;
+  crewSize: number;
+};
+
+export type RosterAssignment = {
+  jobId: string;
+  cleanerId: string;
+  slotNumber: number;
+};
+
+export type RosterVacancy = {
+  key: string;
+  jobId: string;
+  siteId: string;
+  siteName: string;
+  scheduledStart: string;
+  crewSlot: number;
+  crewSize: number;
+};
+
+export type RosterJobItem = {
+  kind: "job";
+  key: string;
+  jobId: string;
+  siteName: string;
+  scheduledStart: string;
+  crewSize: number;
+  cleanerNames: string[];
+};
+
+export type RosterGapItem = {
+  kind: "gap";
+  key: string;
+  jobId: string;
+  siteName: string;
+  scheduledStart: string;
+  crewSlot: number;
+  crewSize: number;
+};
+
+export type RosterCellItem = RosterJobItem | RosterGapItem;
+
+export type RosterRow = {
+  id: string;
+  label: string;
+  sublabel?: string;
+  kind: "cleaner" | "site" | "gaps";
+  cells: Record<string, RosterCellItem[]>;
+};
+
+export type RosterModel = {
+  rows: RosterRow[];
+  vacancyCount: number;
+  vacancyKeys: string[];
+  jobIds: string[];
+};
+
+export type CleanerRosterModel = RosterModel;
+export type SiteRosterModel = RosterModel;

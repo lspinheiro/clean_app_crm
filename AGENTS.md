@@ -134,6 +134,35 @@ the six-item
 build delta listed in this repo's README, on top of what the prototype already proves. Do not pull
 MVP/P1 features (share links, vetting, reviews, messaging, AI, WhatsApp) into alpha work.
 
+## Stage discipline — build fast, never invent requirements
+
+Four cofounders are ideating and validating designs and features; nothing is
+customer-facing yet. The delivery progression is deliberate, and each step is entered
+only when the founders say so:
+
+1. **Prototype fast** — a first pass built for speed, exercised on dev machines.
+2. **Internal testing** — cofounders try it locally; qualitative feedback drives changes.
+3. **Single internal deployment** — one environment, manual deploys, still
+   internal-facing only.
+4. **Product launch** — only here do end-customer telemetry/analytics (e.g. PostHog),
+   observability, CI/CD, and multi-environment setups get investment. The founders will
+   raise productionisation explicitly (most likely in a grilling session) when the time
+   comes — never schedule or scaffold it on your own initiative.
+
+Two standing rules follow, for every agent at every rung of the ladder:
+
+- **A requirement exists only if the founders stated it** — in `docs/PRODUCT.md`, a
+  design doc, or the conversation itself. Never add analytics, telemetry, metrics
+  collection, observability, monitoring, CI/CD, staging environments, or other
+  productionisation work to a design doc, Milestone, Issue, or code because it seems
+  like best practice. (Tests are unaffected: they stay in every slice as
+  definition-of-done, run locally.)
+- **Ask intent — don't fill the gap.** When a plan seems to need something the founders
+  haven't said, ask a clarifying question instead of writing an assumption into a
+  document. An assumption written into a design doc propagates down the whole planning
+  ladder (design doc → Milestones → Issues → code) and is hard to spot in a long
+  document, so it must be caught at the question stage.
+
 ## Engineering delivery
 
 For any production behaviour change, load and follow the **disciplined-delivery** skill.

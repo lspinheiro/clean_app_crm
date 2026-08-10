@@ -2,7 +2,7 @@ import { Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { CrmNavigation } from "./crm-navigation";
+import { CrmNavigation, CrmSettingsLink } from "./crm-navigation";
 
 type CrmHeaderProps = {
   companyName: string;
@@ -25,10 +25,9 @@ export function CrmHeader({ companyName, logoUrl }: CrmHeaderProps) {
         </Link>
         <CrmNavigation />
         <div className="header-actions">
-          <span className="button" aria-disabled="true">+ New job</span>
-          <Link className="icon-button" href="/settings" aria-label="Company settings">
+          <CrmSettingsLink>
             <Settings aria-hidden="true" size={21} strokeWidth={2.25} />
-          </Link>
+          </CrmSettingsLink>
         </div>
       </div>
     </header>

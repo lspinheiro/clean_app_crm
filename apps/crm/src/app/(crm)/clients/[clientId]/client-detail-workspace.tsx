@@ -39,7 +39,10 @@ import {
   moveCleaner,
   removeCleaner,
 } from "@/features/preferred-cleaners/order";
+import type { RecurringAssignmentsBySite } from "@/features/recurring-assignments/types";
 import { reloadCurrentPage } from "@/lib/reload-page";
+
+import { SiteRecurringAssignments } from "./site-recurring-assignments";
 
 const emptyResult: RecordMutationResult = {
   ok: false,
@@ -66,12 +69,14 @@ function cleanersForIds(preferred: PreferredCleaner[], cleanerIds: string[]) {
 type ClientDetailWorkspaceProps = {
   client: ClientWithSites;
   poolCleaners: PoolCleaner[];
+  recurringAssignmentsBySite: RecurringAssignmentsBySite;
   services: ServiceOption[];
 };
 
 export function ClientDetailWorkspace({
   client,
   poolCleaners,
+  recurringAssignmentsBySite,
   services,
 }: ClientDetailWorkspaceProps) {
   const router = useRouter();
@@ -426,6 +431,17 @@ export function ClientDetailWorkspace({
                   </dd>
                 </div>
               </dl>
+
+              <SiteRecurringAssignments
+                assignments={recurringAssignmentsBySite[site.id] ?? []}
+                clientId={client.id}
+                defaultDurationMinutes={site.defaultDurationMinutes}
+                defaultServiceId={site.defaultService?.id ?? null}
+                poolCleaners={poolCleaners}
+                services={services}
+                siteId={site.id}
+                siteName={site.name}
+              />
 
               <div className="site-detail-actions">
                 <button

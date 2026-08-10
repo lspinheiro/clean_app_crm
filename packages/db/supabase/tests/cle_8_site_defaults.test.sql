@@ -2,6 +2,15 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(24);
 
+-- Local UI verification may edit the demo site's defaults. Re-establish the
+-- fixture inside this transaction so the test does not depend on dev state.
+update public.sites
+set
+  default_service_id = '30000000-0000-4000-8000-000000000002',
+  default_duration_minutes = 120,
+  default_rate_cents = 15000
+where id = '10000000-0000-4000-8000-000000000401';
+
 select ok(to_regclass('public.service_catalogue') is not null, 'service catalogue exists');
 select is(
   (

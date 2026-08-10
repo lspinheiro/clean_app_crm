@@ -27,6 +27,18 @@ Neutral scale (surfaces, borders, secondary text): gray-50 `#fafafa`, gray-100 `
 gray-200 `#e8e8e8`, gray-300 `#d6d6d6`, gray-400 `#a8a8a8`, gray-500 `#7a7a7a`,
 gray-600 `#545454`, gray-700 `#3d3d3d`, gray-800 `#262626`, gray-900 `#141414`.
 
+Semantic status pairs keep readable text separate from the brighter core colour:
+
+- `status-info-text` `#00566f` on `status-info-tint` (`bubble` at 14%)
+- `status-success-text` `#006735` on `status-success-tint` (`success` at 14%)
+- `status-danger-text` `#9b1100` on `status-danger-tint` (`danger` at 12%)
+- `status-success-border` `rgb(6 193 103 / 0.35)` — outline for successful state chips
+- `status-danger-soft` `rgb(225 25 0 / 0.06)` — unfilled-entry surface
+- `status-danger-faint` `rgb(225 25 0 / 0.025)` — unfilled-row surface
+
+Status labels always use the shared semantic text token. Do not repeat status hex or tint
+literals in component rules.
+
 Rules: colour is **state, not decoration** — a screen at rest is black, white, and grey.
 `bubble` is never a text colour on white (contrast); use it for fills, bars, and accents
 beside ink text. Status colours always pair with a text label, never colour alone.
@@ -73,10 +85,11 @@ English: short sentences, no idioms, numerals for times and pay (ESL, phone-only
   primary actions, bottom sheets for detail, thumb-reach first. Screens must survive
   interruption — state is always recoverable.
 - **CRM (desktop-first web, 1280px design width, responsive to tablet/mobile)**: top nav
-  bar — logo, Roster · Jobs · Clients · Pool · Money, primary "+ New job" button right.
-  Content max-width 1200px. Dense data (roster week grid, client tables) uses
-  caption-size headers, body-size cells, generous row height (44px+). The roster is the
-  default screen.
+  bar — logo, Roster · Jobs · Clients · Pool · Money, with the current section marked.
+  Route-specific primary actions appear only once their workflow ships. No dead action
+  placeholders. Content max-width 1200px. Dense data (roster week grid, client tables)
+  uses caption-size headers, body-size cells, generous row height (44px+). The roster is
+  the default screen.
 
 ## Interaction & motion
 
@@ -87,8 +100,10 @@ the only playful motion. Every async action shows busy state on its trigger. Res
 ## Accessibility
 
 WCAG 2.2 AA target: 4.5:1 text contrast (ink on paper clears it; grey text no lighter
-than gray-600 on white for body, gray-500 for caption), visible focus rings (ink, soft),
-44px minimum touch targets, labels tied to inputs, status conveyed by text + colour.
+than gray-600 for body and caption text on white or gray-50 — gray-500 is 4.29:1 on
+white, under AA at caption sizes, so it is reserved for large text and non-text glyphs
+where 3:1 applies), visible focus rings (ink, soft), 44px minimum touch targets, labels
+tied to inputs, status conveyed by text + colour.
 
 ## Content rules
 

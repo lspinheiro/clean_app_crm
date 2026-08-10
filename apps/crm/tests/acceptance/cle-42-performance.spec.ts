@@ -28,10 +28,17 @@ test("@CLE-42 preloads the local Poppins face used on first roster paint", async
       .getPropertyValue("--font-poppins")
       .trim();
     const primaryFamily = familyVariable.split(",")[0]?.replaceAll(/["']/g, "").trim() ?? "";
+    const headingStyle = getComputedStyle(heading);
+    const headingWeight = headingStyle.fontWeight;
     const matchingFaces = [...document.fonts].filter((face) => (
       face.family.replaceAll(/["']/g, "").trim() === primaryFamily
     ));
-    const displayModes: string[] = [];
+    const loadedHeadingFaces = matchingFaces.filter((face) => (
+      face.status === "loaded"
+      && face.weight === headingWeight
+      && face.style === headingStyle.fontStyle
+    ));
+    const headingDisplayModes: string[] = [];
     for (const sheet of [...document.styleSheets]) {
       let rules: CSSRuleList;
       try {
@@ -44,16 +51,19 @@ test("@CLE-42 preloads the local Poppins face used on first roster paint", async
           rule instanceof CSSFontFaceRule
           && rule.style.getPropertyValue("font-family").replaceAll(/["']/g, "").trim()
             === primaryFamily
+          && rule.style.getPropertyValue("font-weight") === headingWeight
+          && rule.style.getPropertyValue("font-style") === headingStyle.fontStyle
         ) {
-          displayModes.push(rule.style.getPropertyValue("font-display"));
+          headingDisplayModes.push(rule.style.getPropertyValue("font-display"));
         }
       }
     }
     return {
       familyVariable,
-      headingFamily: getComputedStyle(heading).fontFamily,
-      loadedMatchingFaces: matchingFaces.filter((face) => face.status === "loaded").length,
-      displayModes,
+      headingFamily: headingStyle.fontFamily,
+      headingWeight,
+      loadedHeadingFaces: loadedHeadingFaces.length,
+      headingDisplayModes,
       status: document.fonts.status,
     };
   });
@@ -66,8 +76,9 @@ test("@CLE-42 preloads the local Poppins face used on first roster paint", async
     .trim();
   expect(primaryFamily).toBeTruthy();
   expect(fontState.headingFamily.toLowerCase()).toContain(primaryFamily?.toLowerCase());
-  expect(fontState.loadedMatchingFaces).toBeGreaterThan(0);
-  expect(fontState.displayModes).toContain("optional");
+  expect(fontState.headingWeight).toBe("800");
+  expect(fontState.loadedHeadingFaces).toBeGreaterThan(0);
+  expect(fontState.headingDisplayModes).toContain("optional");
   expect(fontResponses.some((response) => response.status >= 200 && response.status < 300))
     .toBe(true);
   await expect(page.locator('link[rel="preload"][as="font"]')).not.toHaveCount(0);

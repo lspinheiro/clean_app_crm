@@ -10,6 +10,8 @@ vi.mock("@/lib/auth/session", () => ({
 
 import RosterPage from "./page";
 
+import { getRosterWeekBounds } from "@/features/roster/calendar";
+
 type QueryResult = {
   data: Record<string, unknown>[];
   error: null;
@@ -219,6 +221,7 @@ describe("CLE-35 roster data integrity", () => {
   it("keeps every projection minimal and scoped to the signed-in company", async () => {
     const harness = trackedSupabase();
     await renderPage(harness.client);
+    const { startsAt, endsAt } = getRosterWeekBounds("2026-08-10");
 
     expect(harness.query("sites").select).toHaveBeenCalledWith(
       "id, name, clients!inner(name)",
@@ -232,6 +235,15 @@ describe("CLE-35 roster data integrity", () => {
       "company_id",
       "company-1",
     );
+    expect(harness.query("company_members").select).toHaveBeenCalledWith(
+      "profile_id, profiles!inner(id, full_name)",
+      { count: "exact" },
+    );
+    expect(harness.query("company_members").eq).toHaveBeenCalledWith("status", "active");
+    expect(harness.query("company_members").eq).toHaveBeenCalledWith(
+      "profiles.role",
+      "cleaner",
+    );
     expect(harness.query("vacancies").select).toHaveBeenCalledWith(
       "job_id, site_id, site_name, scheduled_start, crew_slot, crew_size",
       { count: "exact" },
@@ -240,10 +252,41 @@ describe("CLE-35 roster data integrity", () => {
       "company_id",
       "company-1",
     );
+    expect(harness.query("vacancies").gte).toHaveBeenCalledWith("scheduled_start", startsAt);
+    expect(harness.query("vacancies").lt).toHaveBeenCalledWith("scheduled_start", endsAt);
+    expect(harness.query("jobs").select).toHaveBeenCalledWith(
+      "id, site_id, scheduled_start, crew_size, status",
+      { count: "exact" },
+    );
     expect(harness.query("jobs").in).toHaveBeenCalledWith("site_id", ["site-1"]);
+    expect(harness.query("jobs").gte).toHaveBeenCalledWith("scheduled_start", startsAt);
+    expect(harness.query("jobs").lt).toHaveBeenCalledWith("scheduled_start", endsAt);
+    expect(harness.query("jobs").in).toHaveBeenCalledWith("status", [
+      "posted",
+      "assigned",
+      "on_the_way",
+      "in_progress",
+      "completed",
+    ]);
+    expect(harness.query("job_assignments").select).toHaveBeenCalledWith(
+      "job_id, cleaner_id, slot_number, jobs!inner(site_id)",
+      { count: "exact" },
+    );
     expect(harness.query("job_assignments").in).toHaveBeenCalledWith(
       "jobs.site_id",
       ["site-1"],
+    );
+    expect(harness.query("job_assignments").gte).toHaveBeenCalledWith(
+      "assignment_start",
+      startsAt,
+    );
+    expect(harness.query("job_assignments").lt).toHaveBeenCalledWith(
+      "assignment_start",
+      endsAt,
+    );
+    expect(harness.query("job_assignments").is).toHaveBeenCalledWith(
+      "unassigned_at",
+      null,
     );
   });
 });

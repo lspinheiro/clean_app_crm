@@ -6,6 +6,15 @@
   --color-bubble: #00c2ff;
   --color-success: #06c167;
   --color-danger: #e11900;
+  --color-status-info-text: #00566f;
+  --color-status-info-tint: rgb(0 194 255 / 0.14);
+  --color-status-success-text: #006735;
+  --color-status-success-tint: rgb(6 193 103 / 0.14);
+  --color-status-success-border: rgb(6 193 103 / 0.35);
+  --color-status-danger-text: #9b1100;
+  --color-status-danger-tint: rgb(225 25 0 / 0.12);
+  --color-status-danger-soft: rgb(225 25 0 / 0.06);
+  --color-status-danger-faint: rgb(225 25 0 / 0.025);
   --color-gray-50: #fafafa;
   --color-gray-100: #f5f5f5;
   --color-gray-200: #e8e8e8;
@@ -23,6 +32,7 @@
   color-scheme: light;
   --shell-max: 1200px;
   --header-height: 76px;
+  --shadow-floating: 0 4px 16px rgb(0 0 0 / 0.08);
 }
 
 * {
@@ -1564,14 +1574,14 @@ a {
 }
 
 .status-chip--posted {
-  background: rgb(0 194 255 / 0.14);
-  color: #00566f;
+  background: var(--color-status-info-tint);
+  color: var(--color-status-info-text);
 }
 
 .status-chip--assigned,
 .status-chip--completed {
-  background: rgb(6 193 103 / 0.14);
-  color: #006735;
+  background: var(--color-status-success-tint);
+  color: var(--color-status-success-text);
 }
 
 .status-chip--on_the_way,
@@ -1581,8 +1591,8 @@ a {
 }
 
 .status-chip--cancelled {
-  background: rgb(225 25 0 / 0.12);
-  color: #9b1100;
+  background: var(--color-status-danger-tint);
+  color: var(--color-status-danger-text);
 }
 
 .job-facts {
@@ -1691,7 +1701,7 @@ a {
   overflow: hidden;
   grid-auto-flow: column;
   border: 1px solid var(--color-gray-300);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--color-paper);
 }
 
@@ -1739,17 +1749,17 @@ a {
   border: 1px solid var(--color-danger);
   border-radius: 999px;
   padding: 5px 12px;
-  background: rgb(225 25 0 / 0.08);
-  color: #9b1100;
+  background: var(--color-status-danger-tint);
+  color: var(--color-status-danger-text);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
 
 .roster-gap-count.is-clear {
-  border-color: rgb(6 193 103 / 0.35);
-  background: rgb(6 193 103 / 0.1);
-  color: #006735;
+  border-color: var(--color-status-success-border);
+  background: var(--color-status-success-tint);
+  color: var(--color-status-success-text);
 }
 
 .roster-gap-count.is-unscheduled {
@@ -1830,7 +1840,6 @@ a {
 }
 
 .roster-grid tbody th {
-  min-height: 64px;
   background: var(--color-paper);
   font-size: 14px;
   font-weight: 700;
@@ -1858,13 +1867,13 @@ a {
   border-bottom: 0;
 }
 
-.roster-gap-row th,
+.roster-grid tbody .roster-gap-row th,
 .roster-gap-row td {
-  background: rgb(225 25 0 / 0.025);
+  background: var(--color-status-danger-faint);
 }
 
 .roster-gap-row th {
-  color: #8b1000;
+  color: var(--color-status-danger-text);
 }
 
 .roster-entry {
@@ -1910,14 +1919,14 @@ a {
 }
 
 .roster-entry--gap {
-  background: rgb(225 25 0 / 0.06);
+  background: var(--color-status-danger-soft);
 }
 
 .roster-entry--gap strong {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #9b1100;
+  color: var(--color-status-danger-text);
   letter-spacing: 0.03em;
 }
 
@@ -1972,7 +1981,7 @@ a {
   left: 0;
   border-top: 1px solid var(--color-gray-300);
   background: rgb(255 255 255 / 0.97);
-  box-shadow: 0 -4px 16px rgb(0 0 0 / 0.06);
+  box-shadow: var(--shadow-floating);
 }
 
 .roster-summary-bar__inner {
@@ -1991,14 +2000,14 @@ a {
   align-items: center;
   gap: 7px;
   margin: 0;
-  color: #9b1100;
+  color: var(--color-status-danger-text);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
 
 .roster-summary-bar__inner > p.is-clear {
-  color: #006735;
+  color: var(--color-status-success-text);
 }
 
 .roster-summary-bar__inner > p.is-unscheduled {
@@ -2094,7 +2103,6 @@ a {
   .site-header__inner { gap: 16px; padding: 0 16px; }
   .primary-navigation { order: 3; flex-basis: 100%; }
   .site-header__inner { flex-wrap: wrap; padding-block: 12px; }
-  .header-actions .button { display: none; }
   .page-shell { width: min(calc(100% - 32px), var(--shell-max)); padding-top: 32px; }
   .settings-card { padding: 22px; }
   .identity-grid { grid-template-columns: 1fr; }

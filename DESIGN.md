@@ -27,6 +27,16 @@ Neutral scale (surfaces, borders, secondary text): gray-50 `#fafafa`, gray-100 `
 gray-200 `#e8e8e8`, gray-300 `#d6d6d6`, gray-400 `#a8a8a8`, gray-500 `#7a7a7a`,
 gray-600 `#545454`, gray-700 `#3d3d3d`, gray-800 `#262626`, gray-900 `#141414`.
 
+Semantic status pairs keep readable text separate from the brighter core colour:
+
+- `status-info-text` `#00566f` on `status-info-tint` (`bubble` at 14%)
+- `status-success-text` `#006735` on `status-success-tint` (`success` at 14%)
+- `status-danger-text` `#9b1100` on `status-danger-tint` (`danger` at 12%)
+
+The roster may use named softer danger tints for row and entry surfaces; status labels
+always use the shared semantic text token. Do not repeat status hex or tint literals in
+component rules.
+
 Rules: colour is **state, not decoration** — a screen at rest is black, white, and grey.
 `bubble` is never a text colour on white (contrast); use it for fills, bars, and accents
 beside ink text. Status colours always pair with a text label, never colour alone.

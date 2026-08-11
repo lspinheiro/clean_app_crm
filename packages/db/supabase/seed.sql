@@ -263,3 +263,31 @@ set cleaner_id = excluded.cleaner_id;
 -- Jobs are generated from the recurring rules so fresh demo databases exercise
 -- the same 28-day roster path as production data.
 select public.generate_recurring_jobs();
+
+-- Keep the dispatch screens useful before the cleaner app is connected: the nearest
+-- generated vacancy has two real applicants while its recurring slot assignment stays
+-- intact. Applications are inserted as seed state, so no manual-notification record is
+-- created and the generation path remains silent.
+with first_open_job as (
+  select job.id
+  from public.jobs job
+  where job.status = 'posted'
+    and job.scheduled_start > now()
+    and exists (
+      select 1
+      from public.vacancies vacancy
+      where vacancy.job_id = job.id
+    )
+  order by job.scheduled_start, job.id
+  limit 1
+)
+insert into public.job_applications (job_id, cleaner_id)
+select
+  first_open_job.id,
+  applicant.cleaner_id
+from first_open_job
+cross join (values
+  ('10000000-0000-4000-8000-000000000003'::uuid),
+  ('10000000-0000-4000-8000-000000000004'::uuid)
+) as applicant(cleaner_id)
+on conflict (job_id, cleaner_id) do nothing;

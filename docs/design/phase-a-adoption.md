@@ -54,6 +54,10 @@ early decisions had been working around.
   database](../decisions/0002-alpha-runs-on-monorepo-apps-only.md).
 - [0003 — Vacancy is a view over unfilled crew slots, not a
   table](../decisions/0003-vacancy-as-projection.md).
+- [0004 — `apps/cleaner` is a wrapper-ready PWA: client-first and static-exportable, so a
+  Capacitor store shell stays a bolt-on if alpha iOS push evidence demands it; acquisition
+  always stays web](../decisions/0004-cleaner-surface-wrapper-ready-pwa.md) *(added
+  2026-08-12)*.
 - **Clean vocabulary from the first migration:** `clients` (commercial party) and `sites`
   (address, access notes, defaults) as separate tables, jobs FK to the site,
   `recurring_assignments`, role enum `company_admin` / `cleaner` / `admin`.
@@ -116,6 +120,10 @@ capability parity with visual fidelity: board of open vacancies across joined po
 one-tap apply and withdraw with a visible waiting state, my jobs with assignment-gated
 address/access notes and maps handoff, status taps (on the way / in progress / done),
 money view (to receive / received), push opt-in and web-push delivery, profile with pools.
+Build constraint (decision 0004, 2026-08-12): client-first and static-exportable — client
+Supabase SDK against the cleaner views/RPCs, PKCE client auth (not the SSR cookie
+pattern), push registration behind one abstraction module, app-shell offline caching via
+the service worker.
 
 **Parity port — `apps/crm` dispatch (minimal).** Job detail with applicant list and
 per-slot assign; one-off job creation (client → site, service, time, crew size, pay);
@@ -170,9 +178,10 @@ board consume).
   code or deployment, but adapting the prototype's schema and UI patterns into this repo
   belongs in the IP/roles conversation — have it before the cohort (their employers)
   onboards.
-- PRODUCT.md §3.4 wording ("layered directly on the prototype", "kept from the prototype
-  as-is") should be revised upstream in `personal_website` to reflect decision 0002 —
-  never hand-edit the synced copy here.
+- Resolved 2026-08-12: `docs/PRODUCT.md` is now canonical in this repo (the
+  `personal_website` sync is retired) and revision v0.4 applies both pending changes —
+  §3.2/§3.4 reworded per decision 0002, and the exit-criteria list replaced by qualitative
+  partner validation (product decision 2026-08-10).
 - Does any alpha company need daily-frequency recurring assignments? Weekly/fortnightly
   covers the known cohort; extend on evidence (feeds Appendix B q3 sizing).
 - Generation horizon (28 days) and notification discipline to be sanity-checked against

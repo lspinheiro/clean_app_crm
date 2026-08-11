@@ -3,10 +3,11 @@
 <!-- impeccable:product-schema 1 -->
 
 Compact product record for design work across `apps/crm` and `apps/cleaner`. Strategy,
-features (F1–F13), journeys (CA-*/CL-*/OP-*), and release stages live in
-`docs/PRODUCT.md` (synced from the founders' private repo — never hand-edited here);
-vocabulary in `docs/glossary.md`; build-cycle scope in `docs/design/`. When this file and
-`docs/PRODUCT.md` disagree, `docs/PRODUCT.md` wins and this file gets fixed.
+features (F1–F14), journeys (CA-*/CL-*/OP-*), and release stages live in
+`docs/PRODUCT.md` (canonical in this repository since v0.4; the former `personal_website`
+sync is retired); vocabulary in `docs/glossary.md`; build-cycle scope in `docs/design/`.
+When this file and `docs/PRODUCT.md` disagree, `docs/PRODUCT.md` wins and this file gets
+fixed.
 
 ## Platform
 
@@ -16,7 +17,8 @@ web
 
 Fixed (AGENTS.md): Next.js App Router + React + TypeScript, Tailwind CSS v4, Supabase
 (Postgres, auth, RLS, security-definer RPCs), Vercel, pnpm workspace monorepo. Cleaner
-surface is a PWA with Web Push — no native apps in v1.
+surface is a wrapper-ready PWA with Web Push — no separate native codebase in v1; store
+distribution, if evidence demands it, wraps the web app (decision 0004).
 
 ## Users
 
@@ -37,8 +39,10 @@ surface is a PWA with Web Push — no native apps in v1.
 Free system of record for commercial cleaning operations: clients, sites, recurring
 assignments, rosters — and the pool/dispatch loop that keeps the schedule staffed. Success
 (north star): completed jobs run through the platform per week. Current stage: internal
-alpha — 2–3 companies from the founding team's network running real weeks in-app;
-exit criteria in `docs/PRODUCT.md` §3.4.
+alpha — two partner companies from the founding team's network running real weeks in-app.
+**The alpha is validated by the partner companies' experience**: qualitative feedback
+collected to support design — never analytics. There are no alpha exit criteria (product
+decision 2026-08-10; applied in `docs/PRODUCT.md` v0.4 §3.4).
 
 ## Positioning
 

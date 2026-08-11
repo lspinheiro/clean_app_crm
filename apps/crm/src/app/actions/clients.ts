@@ -35,9 +35,9 @@ export async function createClient(formData: FormData): Promise<RecordMutationRe
   const { error } = await supabase.rpc("create_client", {
     target_company_id: company.id,
     client_name: parsed.data.name,
-    client_contact_name: parsed.data.contactName,
-    client_phone: parsed.data.phone,
-    client_notes: parsed.data.notes,
+    client_contact_name: parsed.data.contactName ?? undefined,
+    client_phone: parsed.data.phone ?? undefined,
+    client_notes: parsed.data.notes ?? undefined,
   });
   if (error) {
     return {
@@ -69,7 +69,7 @@ export async function createSite(formData: FormData): Promise<RecordMutationResu
     site_name: parsed.data.name,
     site_address: parsed.data.address,
     site_suburb: parsed.data.suburb,
-    site_access_notes: parsed.data.accessNotes,
+    site_access_notes: parsed.data.accessNotes ?? undefined,
   });
   if (error) {
     return {
@@ -99,9 +99,9 @@ export async function updateClient(formData: FormData): Promise<RecordMutationRe
   const { error } = await supabase.rpc("update_client", {
     target_client_id: parsed.data.clientId,
     client_name: parsed.data.name,
-    client_contact_name: parsed.data.contactName,
-    client_phone: parsed.data.phone,
-    client_notes: parsed.data.notes,
+    client_contact_name: parsed.data.contactName ?? undefined,
+    client_phone: parsed.data.phone ?? undefined,
+    client_notes: parsed.data.notes ?? undefined,
   });
   if (error) {
     return {
@@ -138,7 +138,7 @@ export async function updateSite(formData: FormData): Promise<RecordMutationResu
     site_name: parsed.data.name,
     site_address: parsed.data.address,
     site_suburb: parsed.data.suburb,
-    site_access_notes: parsed.data.accessNotes,
+    site_access_notes: parsed.data.accessNotes ?? "",
     site_default_service_id: parsed.data.defaultServiceId,
     site_default_duration_minutes: parsed.data.durationMinutes,
     site_default_rate_cents: parsed.data.rateCents,

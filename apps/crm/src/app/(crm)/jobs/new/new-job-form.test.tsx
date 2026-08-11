@@ -111,6 +111,7 @@ describe("CLE-23 new job form", () => {
       (mocks.createOneOffJob.mock.calls[0]?.[0] as FormData).entries(),
     );
     expect(submitted).toMatchObject({
+      clientId: clients[0].id,
       siteId: clients[0].sites[1].id,
       serviceId: "30000000-0000-4000-8000-000000000003",
       durationHours: "2.5",
@@ -122,6 +123,34 @@ describe("CLE-23 new job form", () => {
     expect(mocks.push).toHaveBeenCalledWith(
       "/jobs/23000000-0000-4000-8000-000000000501",
     );
+  });
+
+  it("puts a missing-selection error on Client while Site remains disabled", async () => {
+    mocks.createOneOffJob.mockResolvedValue({
+      ok: false,
+      fieldErrors: { clientId: "Choose a client." },
+      formError: null,
+      jobId: null,
+    });
+    const user = userEvent.setup();
+    render(<NewJobForm clients={clients} services={services} />);
+
+    expect(
+      screen.getByRole("heading", { name: "Choose the site" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+
+    const client = screen.getByLabelText("Client");
+    const site = screen.getByLabelText("Site");
+    expect(await screen.findByText("Choose a client.")).toBeInTheDocument();
+    expect(client).toHaveAttribute("aria-invalid", "true");
+    expect(client).toHaveAttribute(
+      "aria-describedby",
+      "new-job-clientId-error",
+    );
+    expect(site).toBeDisabled();
+    expect(site).not.toHaveAttribute("aria-invalid");
+    expect(screen.queryByText("Choose a site.")).not.toBeInTheDocument();
   });
 
   it("leaves missing defaults empty and renders field-level recovery guidance", async () => {

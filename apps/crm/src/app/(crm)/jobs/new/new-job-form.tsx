@@ -1,6 +1,5 @@
 "use client";
 
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 
@@ -44,11 +43,17 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   ) : null;
 }
 
-function errorProps(field: string, result: JobMutationResult) {
+function errorProps(
+  field: string,
+  result: JobMutationResult,
+): {
+  "aria-describedby": string | undefined;
+  "aria-invalid": true | undefined;
+} {
   const message = result.fieldErrors[field];
   return {
     "aria-describedby": message ? `new-job-${field}-error` : undefined,
-    "aria-invalid": message ? (true as const) : undefined,
+    "aria-invalid": message ? true : undefined,
   };
 }
 
@@ -119,9 +124,11 @@ export function NewJobForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    const submitter = (event.nativeEvent as SubmitEvent).submitter as
-      | HTMLButtonElement
-      | null;
+    const submitter =
+      "submitter" in event.nativeEvent &&
+      event.nativeEvent.submitter instanceof HTMLButtonElement
+        ? event.nativeEvent.submitter
+        : null;
     const formData = new FormData(form);
     formData.set("mode", submitter?.value === "draft" ? "draft" : "post");
     setBusy(true);
@@ -130,7 +137,7 @@ export function NewJobForm({
       const nextResult = await createOneOffJob(formData);
       setResult(nextResult);
       if (nextResult.ok && nextResult.jobId) {
-        router.push(`/jobs/${nextResult.jobId}` as Route);
+        router.push(`/jobs/${nextResult.jobId}`);
       }
     } catch {
       setResult({
@@ -144,17 +151,19 @@ export function NewJobForm({
 
   return (
     <form className="new-job-form" noValidate onSubmit={handleSubmit}>
-      <section aria-labelledby="new-job-location-heading" className="new-job-section">
+      <section aria-labelledby="new-job-site-heading" className="new-job-section">
         <div className="new-job-section__heading">
           <p className="record-kicker">Step 1</p>
-          <h2 id="new-job-location-heading">Choose the location</h2>
+          <h2 id="new-job-site-heading">Choose the site</h2>
           <p>The client sets the available sites. Site defaults are a starting point only.</p>
         </div>
         <div className="new-job-grid new-job-grid--two">
           <div className="field">
             <label htmlFor="new-job-clientId">Client</label>
             <select
+              {...errorProps("clientId", result)}
               id="new-job-clientId"
+              name="clientId"
               onChange={(event) => selectClient(event.target.value)}
               value={clientId}
             >
@@ -165,6 +174,10 @@ export function NewJobForm({
                 </option>
               ))}
             </select>
+            <FieldError
+              id="new-job-clientId-error"
+              message={result.fieldErrors.clientId}
+            />
           </div>
           <div className="field">
             <label htmlFor="new-job-siteId">Site</label>

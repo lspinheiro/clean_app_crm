@@ -3,6 +3,7 @@ import type {
   JobAssignmentRecord,
   JobPoolCandidate,
   JobSlot,
+  JobStatus,
 } from "./types";
 
 export function sortJobApplicants(applicants: JobApplicant[]) {
@@ -33,36 +34,67 @@ export function sortPoolCandidates(candidates: JobPoolCandidate[]) {
 }
 
 export function buildJobSlots(
-  crewSize: number,
-  assignments: JobAssignmentRecord[],
+  {
+    assignments,
+    crewSize,
+    status,
+  }: {
+    assignments: JobAssignmentRecord[];
+    crewSize: number;
+    status: JobStatus;
+  },
 ): JobSlot[] {
   return Array.from({ length: crewSize }, (_, index) => {
     const slotNumber = index + 1;
     const slotAssignments = assignments
       .filter((assignment) => assignment.slotNumber === slotNumber)
       .sort((left, right) => right.assignedAt.localeCompare(left.assignedAt));
-    const assignment =
-      slotAssignments.find((candidate) => candidate.unassignedAt === null) ??
-      slotAssignments.sort((left, right) =>
-        (right.unassignedAt ?? "").localeCompare(left.unassignedAt ?? ""),
-      )[0];
+    const activeAssignment = slotAssignments.find(
+      (candidate) => candidate.unassignedAt === null,
+    );
 
-    if (!assignment) {
+    if (activeAssignment) {
       return {
         slotNumber,
-        state: "open" as const,
-        cleanerId: null,
-        cleanerName: null,
-        source: null,
+        state: "assigned",
+        assignment: {
+          cleanerId: activeAssignment.cleanerId,
+          cleanerName: activeAssignment.cleanerName,
+          source: activeAssignment.source,
+          assignedAt: activeAssignment.assignedAt,
+        },
       };
     }
 
+    const previousAssignment = slotAssignments
+      .filter(
+        (candidate): candidate is JobAssignmentRecord & { unassignedAt: string } =>
+          candidate.unassignedAt !== null,
+      )
+      .sort((left, right) =>
+        right.unassignedAt.localeCompare(left.unassignedAt),
+      )[0];
+    const previous = previousAssignment
+      ? {
+          cleanerId: previousAssignment.cleanerId,
+          cleanerName: previousAssignment.cleanerName,
+          source: previousAssignment.source,
+          assignedAt: previousAssignment.assignedAt,
+          releasedAt: previousAssignment.unassignedAt,
+        }
+      : null;
+
+    if (status === "draft" || status === "posted") {
+      return {
+        slotNumber,
+        state: "open",
+        previousAssignment: previous,
+      };
+    }
     return {
       slotNumber,
-      state: assignment.unassignedAt === null ? ("assigned" as const) : ("released" as const),
-      cleanerId: assignment.cleanerId,
-      cleanerName: assignment.cleanerName,
-      source: assignment.source,
+      state: "closed",
+      previousAssignment: previous,
     };
   });
 }

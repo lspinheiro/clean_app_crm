@@ -33,7 +33,8 @@ const optionalAudAmount = z
 
 export const oneOffJobSchema = z
   .object({
-    siteId: z.string().uuid("Choose a site."),
+    clientId: z.string().uuid("Choose a client."),
+    siteId: z.string(),
     serviceId: z.string().uuid("Choose a service."),
     date: isoDate,
     startTime: z
@@ -58,6 +59,18 @@ export const oneOffJobSchema = z
       .trim()
       .max(2000, "Use 2,000 characters or fewer."),
     mode: z.enum(["draft", "post"]),
+  })
+  .superRefine((value, context) => {
+    if (
+      z.string().uuid().safeParse(value.clientId).success &&
+      !z.string().uuid().safeParse(value.siteId).success
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Choose a site.",
+        path: ["siteId"],
+      });
+    }
   })
   .transform((value) => ({
     ...value,

@@ -25,6 +25,7 @@ export async function createOneOffJob(
   formData: FormData,
 ): Promise<JobMutationResult> {
   const parsed = oneOffJobSchema.safeParse({
+    clientId: String(formData.get("clientId") ?? ""),
     siteId: String(formData.get("siteId") ?? ""),
     serviceId: String(formData.get("serviceId") ?? ""),
     date: String(formData.get("date") ?? ""),
@@ -63,7 +64,7 @@ export async function createOneOffJob(
       target_notes: parsed.data.notes ?? undefined,
     }));
   } catch {
-    revalidatePath("/jobs");
+    revalidateJobCollections();
     return {
       ok: false,
       fieldErrors: {},
@@ -74,7 +75,7 @@ export async function createOneOffJob(
   }
 
   if (error && status === 0) {
-    revalidatePath("/jobs");
+    revalidateJobCollections();
     return {
       ok: false,
       fieldErrors: {},
@@ -94,7 +95,7 @@ export async function createOneOffJob(
   }
 
   if (!data) {
-    revalidatePath("/jobs");
+    revalidateJobCollections();
     return {
       ok: false,
       fieldErrors: {},
@@ -104,9 +105,7 @@ export async function createOneOffJob(
     };
   }
 
-  revalidatePath("/jobs");
-  revalidatePath(`/jobs/${data}`);
-  revalidatePath("/roster");
+  revalidateJobConsumers(data);
   return {
     ok: true,
     fieldErrors: {},
@@ -236,6 +235,10 @@ export async function cancelJob(jobId: string): Promise<JobOperationResult> {
 
 function revalidateJobConsumers(jobId: string) {
   revalidatePath(`/jobs/${jobId}`);
+  revalidateJobCollections();
+}
+
+function revalidateJobCollections() {
   revalidatePath("/jobs");
   revalidatePath("/roster");
 }

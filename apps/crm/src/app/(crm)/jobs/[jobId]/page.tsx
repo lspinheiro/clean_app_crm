@@ -124,7 +124,11 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       suburb: jobRow.sites.suburb,
       accessNotes: jobRow.sites.access_notes,
     },
-    slots: buildJobSlots(jobRow.crew_size, assignments),
+    slots: buildJobSlots({
+      assignments,
+      crewSize: jobRow.crew_size,
+      status: jobRow.status,
+    }),
     applicants,
     poolCandidates,
   };

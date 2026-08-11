@@ -17,6 +17,7 @@ import type {
   JobApplicationStatus,
   JobDetail,
   JobPoolCandidate,
+  JobSlot,
 } from "@/features/jobs/types";
 
 const applicationLabels: Record<JobApplicationStatus, string> = {
@@ -40,12 +41,70 @@ function candidateLabel(candidate: JobPoolCandidate) {
     : `${candidate.cleanerName} — preferred #${candidate.preferredRank}`;
 }
 
+function assertNever(value: never): never {
+  throw new Error(`Unexpected job slot state: ${JSON.stringify(value)}`);
+}
+
+function slotPresentation(slot: JobSlot) {
+  switch (slot.state) {
+    case "assigned":
+      return {
+        label: "Assigned",
+        detail: slot.assignment.cleanerName,
+      };
+    case "open":
+      return {
+        label: "Open",
+        detail: slot.previousAssignment
+          ? `Previously assigned to ${slot.previousAssignment.cleanerName}`
+          : "Choose an applicant or pool cleaner",
+      };
+    case "closed":
+      return {
+        label: "Closed",
+        detail: slot.previousAssignment
+          ? `Previously assigned to ${slot.previousAssignment.cleanerName}`
+          : "No active assignment",
+      };
+    default:
+      return assertNever(slot);
+  }
+}
+
+function slotLifecycleKey(jobId: string, slot: JobSlot) {
+  switch (slot.state) {
+    case "assigned":
+      return [
+        jobId,
+        slot.slotNumber,
+        slot.state,
+        slot.assignment.cleanerId,
+        slot.assignment.assignedAt,
+      ].join(":");
+    case "open":
+    case "closed":
+      return [
+        jobId,
+        slot.slotNumber,
+        slot.state,
+        slot.previousAssignment?.cleanerId ?? "none",
+        slot.previousAssignment?.assignedAt ?? "none",
+        slot.previousAssignment?.releasedAt ?? "none",
+      ].join(":");
+    default:
+      return assertNever(slot);
+  }
+}
+
 export function JobDetailWorkspace({ job }: { job: JobDetail }) {
   const router = useRouter();
   const cancelDialog = useRef<HTMLDialogElement>(null);
-  const [selectedBySlot, setSelectedBySlot] = useState<Record<number, string>>({});
-  const [busySlot, setBusySlot] = useState<number | null>(null);
-  const [slotError, setSlotError] = useState<{ slot: number; message: string } | null>(null);
+  const [selectedBySlot, setSelectedBySlot] = useState<Record<string, string>>({});
+  const [busySlot, setBusySlot] = useState<string | null>(null);
+  const [slotError, setSlotError] = useState<{
+    slotKey: string;
+    message: string;
+  } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
 
@@ -84,24 +143,32 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
   const canAssign = job.status === "draft" || job.status === "posted";
   const canCancel = cancellableStatuses.includes(job.status);
 
-  async function handleAssign(event: FormEvent<HTMLFormElement>, slotNumber: number) {
+  async function handleAssign(
+    event: FormEvent<HTMLFormElement>,
+    slotKey: string,
+  ) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    setBusySlot(slotNumber);
+    setBusySlot(slotKey);
     setSlotError(null);
     try {
       const result = await assignJobSlot(formData);
       if (!result.ok) {
-        setSlotError({ slot: slotNumber, message: result.formError });
+        setSlotError({ slotKey, message: result.formError });
       }
     } catch {
       setSlotError({
-        slot: slotNumber,
+        slotKey,
         message:
           "The assignment could not be confirmed. Review the refreshed crew slots before trying again.",
       });
     } finally {
       router.refresh();
+      setSelectedBySlot((current) => {
+        const next = { ...current };
+        delete next[slotKey];
+        return next;
+      });
       setBusySlot(null);
     }
   }
@@ -232,43 +299,28 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
         </div>
         <div aria-label="Crew slots" className="job-slot-list" role="region">
           {job.slots.map((slot) => {
-            const selectedCleanerId = selectedBySlot[slot.slotNumber] ?? "";
+            const slotKey = slotLifecycleKey(job.id, slot);
+            const selectedCleanerId = selectedBySlot[slotKey] ?? "";
             const selectedCleaner = candidatesById.get(selectedCleanerId);
-            const showAssignment = canAssign && slot.state !== "assigned";
-            const slotStateLabel =
-              job.status === "cancelled" && slot.state === "open"
-                ? "Closed"
-                : showAssignment
-                  ? "Open"
-                : slot.state === "assigned"
-                  ? "Assigned"
-                  : slot.state === "released"
-                    ? "Released"
-                    : "Open";
-            const slotStateDetail =
-              showAssignment && slot.state === "released" && slot.cleanerName
-                ? `Previously assigned to ${slot.cleanerName}`
-                : slot.cleanerName ??
-                  (showAssignment
-                    ? "Choose an applicant or pool cleaner"
-                    : "No active assignment");
+            const showAssignment = canAssign && slot.state === "open";
+            const presentation = slotPresentation(slot);
             return (
               <article
                 aria-label={`Crew slot ${slot.slotNumber}`}
                 className="job-slot-row"
-                key={slot.slotNumber}
+                key={slotKey}
               >
                 <div className="job-slot-number" aria-hidden="true">
                   {slot.slotNumber}
                 </div>
                 <div className="job-slot-state">
-                  <strong>{slotStateLabel}</strong>
-                  <span>{slotStateDetail}</span>
+                  <strong>{presentation.label}</strong>
+                  <span>{presentation.detail}</span>
                 </div>
                 {showAssignment && allCandidates.length ? (
                   <form
                     className="job-slot-assignment"
-                    onSubmit={(event) => handleAssign(event, slot.slotNumber)}
+                    onSubmit={(event) => handleAssign(event, slotKey)}
                   >
                     <input name="jobId" type="hidden" value={job.id} />
                     <input name="slotNumber" type="hidden" value={slot.slotNumber} />
@@ -281,7 +333,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
                       onChange={(event) =>
                         setSelectedBySlot((current) => ({
                           ...current,
-                          [slot.slotNumber]: event.target.value,
+                          [slotKey]: event.target.value,
                         }))
                       }
                       value={selectedCleanerId}
@@ -316,7 +368,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
                       disabled={!selectedCleaner || busySlot !== null}
                       type="submit"
                     >
-                      {busySlot === slot.slotNumber ? "Assigning…" : "Assign"}
+                      {busySlot === slotKey ? "Assigning…" : "Assign"}
                     </button>
                   </form>
                 ) : showAssignment ? (
@@ -324,7 +376,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
                     No active pool cleaners are available to assign.
                   </p>
                 ) : null}
-                {slotError?.slot === slot.slotNumber && showAssignment ? (
+                {slotError?.slotKey === slotKey && showAssignment ? (
                   <p className="job-operation-error job-slot-error" role="alert">
                     {slotError.message}
                   </p>

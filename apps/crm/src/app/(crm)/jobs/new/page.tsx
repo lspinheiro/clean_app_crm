@@ -13,18 +13,23 @@ import { requireCompanyAdmin } from "@/lib/auth/session";
 export const metadata: Metadata = { title: "New job" };
 
 export default async function NewJobPage() {
-  const { supabase } = await requireCompanyAdmin();
+  const { company, supabase } = await requireCompanyAdmin();
   const [
     { data: clientRows, error: clientError },
     { data: siteRows, error: siteError },
     { data: serviceRows, error: serviceError },
   ] = await Promise.all([
-    supabase.from("clients").select("id, name").order("name"),
+    supabase
+      .from("clients")
+      .select("id, name")
+      .eq("company_id", company.id)
+      .order("name"),
     supabase
       .from("sites")
       .select(
-        "id, client_id, name, suburb, default_service_id, default_duration_minutes, default_rate_cents",
+        "id, client_id, name, suburb, default_service_id, default_duration_minutes, default_rate_cents, clients!inner(company_id)",
       )
+      .eq("clients.company_id", company.id)
       .order("name"),
     supabase
       .from("service_catalogue")

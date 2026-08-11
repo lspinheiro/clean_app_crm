@@ -42,13 +42,33 @@ export type JobAssignmentRecord = {
   unassignedAt: string | null;
 };
 
-export type JobSlot = {
-  slotNumber: number;
-  state: "assigned" | "released" | "open";
-  cleanerId: string | null;
-  cleanerName: string | null;
-  source: JobAssignmentSource | null;
+export type ActiveJobSlotAssignment = {
+  cleanerId: string;
+  cleanerName: string;
+  source: JobAssignmentSource;
+  assignedAt: string;
 };
+
+export type PreviousJobSlotAssignment = ActiveJobSlotAssignment & {
+  releasedAt: string;
+};
+
+export type JobSlot =
+  | {
+      slotNumber: number;
+      state: "assigned";
+      assignment: ActiveJobSlotAssignment;
+    }
+  | {
+      slotNumber: number;
+      state: "open";
+      previousAssignment: PreviousJobSlotAssignment | null;
+    }
+  | {
+      slotNumber: number;
+      state: "closed";
+      previousAssignment: PreviousJobSlotAssignment | null;
+    };
 
 export type JobDetail = {
   id: string;

@@ -42,16 +42,17 @@ const job: JobDetail = {
     {
       slotNumber: 1,
       state: "assigned",
-      cleanerId: "10000000-0000-4000-8000-000000000002",
-      cleanerName: "Demo Cleaner One",
-      source: "recurring",
+      assignment: {
+        cleanerId: "10000000-0000-4000-8000-000000000002",
+        cleanerName: "Demo Cleaner One",
+        source: "recurring",
+        assignedAt: "2026-08-11T08:00:00Z",
+      },
     },
     {
       slotNumber: 2,
       state: "open",
-      cleanerId: null,
-      cleanerName: null,
-      source: null,
+      previousAssignment: null,
     },
   ],
   applicants: [
@@ -100,6 +101,26 @@ const job: JobDetail = {
     },
   ],
 };
+
+function closeSlots(slots: JobDetail["slots"]): JobDetail["slots"] {
+  return slots.map((slot) => {
+    if (slot.state === "assigned") {
+      return {
+        slotNumber: slot.slotNumber,
+        state: "closed",
+        previousAssignment: {
+          ...slot.assignment,
+          releasedAt: "2026-08-11T09:00:00Z",
+        },
+      };
+    }
+    return {
+      slotNumber: slot.slotNumber,
+      state: "closed",
+      previousAssignment: slot.previousAssignment,
+    };
+  });
+}
 
 describe("CLE-22 job detail workspace", () => {
   beforeEach(() => {
@@ -190,10 +211,14 @@ describe("CLE-22 job detail workspace", () => {
             job.slots[0],
             {
               slotNumber: 2,
-              state: "released",
-              cleanerId: "10000000-0000-4000-8000-000000000008",
-              cleanerName: "Removed Pool Cleaner",
-              source: "manual",
+              state: "open",
+              previousAssignment: {
+                cleanerId: "10000000-0000-4000-8000-000000000008",
+                cleanerName: "Removed Pool Cleaner",
+                source: "manual",
+                assignedAt: "2026-08-10T08:00:00Z",
+                releasedAt: "2026-08-10T09:00:00Z",
+              },
             },
           ],
         }}
@@ -223,6 +248,70 @@ describe("CLE-22 job detail workspace", () => {
     });
   });
 
+  it("does not carry a cleaner selection into a reopened slot lifecycle", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<JobDetailWorkspace job={job} />);
+
+    await user.selectOptions(
+      screen.getByLabelText("Cleaner for slot 2"),
+      "10000000-0000-4000-8000-000000000007",
+    );
+    expect(
+      screen.getByRole("button", {
+        name: "Assign Direct Pool Cleaner to slot 2",
+      }),
+    ).toBeEnabled();
+
+    rerender(
+      <JobDetailWorkspace
+        job={{
+          ...job,
+          status: "assigned",
+          slots: [
+            job.slots[0],
+            {
+              slotNumber: 2,
+              state: "assigned",
+              assignment: {
+                cleanerId: "10000000-0000-4000-8000-000000000007",
+                cleanerName: "Direct Pool Cleaner",
+                source: "manual",
+                assignedAt: "2026-08-11T10:00:00Z",
+              },
+            },
+          ],
+        }}
+      />,
+    );
+    rerender(
+      <JobDetailWorkspace
+        job={{
+          ...job,
+          status: "posted",
+          slots: [
+            job.slots[0],
+            {
+              slotNumber: 2,
+              state: "open",
+              previousAssignment: {
+                cleanerId: "10000000-0000-4000-8000-000000000007",
+                cleanerName: "Direct Pool Cleaner",
+                source: "manual",
+                assignedAt: "2026-08-11T10:00:00Z",
+                releasedAt: "2026-08-11T11:00:00Z",
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Cleaner for slot 2")).toHaveValue("");
+    expect(
+      screen.getByRole("button", { name: "Assign cleaner to slot 2" }),
+    ).toBeDisabled();
+  });
+
   it("keeps a safe inline error and refreshes after a losing assignment", async () => {
     mocks.assignJobSlot.mockResolvedValue({
       ok: false,
@@ -248,11 +337,14 @@ describe("CLE-22 job detail workspace", () => {
           slots: job.slots.map((slot) =>
             slot.slotNumber === 2
               ? {
-                  ...slot,
+                  slotNumber: slot.slotNumber,
                   state: "assigned",
-                  cleanerId: "10000000-0000-4000-8000-000000000007",
-                  cleanerName: "Direct Pool Cleaner",
-                  source: "manual",
+                  assignment: {
+                    cleanerId: "10000000-0000-4000-8000-000000000007",
+                    cleanerName: "Direct Pool Cleaner",
+                    source: "manual",
+                    assignedAt: "2026-08-11T10:00:00Z",
+                  },
                 }
               : slot,
           ),
@@ -328,9 +420,7 @@ describe("CLE-22 job detail workspace", () => {
         job={{
           ...job,
           status: "cancelled",
-          slots: job.slots.map((slot) =>
-            slot.state === "assigned" ? { ...slot, state: "released" } : slot,
-          ),
+          slots: closeSlots(job.slots),
           applicants: job.applicants.map((applicant, index) => ({
             ...applicant,
             status: index === 0 ? "assigned" : "not_selected",
@@ -340,7 +430,12 @@ describe("CLE-22 job detail workspace", () => {
     );
     expect(screen.queryByRole("button", { name: "Cancel job" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Cleaner for slot 2")).not.toBeInTheDocument();
-    expect(screen.getByText("Released")).toBeInTheDocument();
+    const releasedSlot = screen.getByRole("article", { name: "Crew slot 1" });
+    expect(within(releasedSlot).getByText("Closed")).toBeInTheDocument();
+    expect(releasedSlot).toHaveTextContent(
+      "Previously assigned to Demo Cleaner One",
+    );
+    expect(screen.queryByText("Released")).not.toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Crew slot 2" })).toHaveTextContent(
       "Closed",
     );
@@ -370,9 +465,7 @@ describe("CLE-22 job detail workspace", () => {
         job={{
           ...job,
           status: "cancelled",
-          slots: job.slots.map((slot) =>
-            slot.state === "assigned" ? { ...slot, state: "released" } : slot,
-          ),
+          slots: closeSlots(job.slots),
         }}
       />,
     );

@@ -56,16 +56,34 @@ select results_eq(
   $$values (2, 1)$$,
   'seed includes a crew-two recurring rule with one named cleaner'
 );
-select results_eq(
-  $$select job.recurring_assignment_id, count(*)::integer
-    from public.job_applications application
-    join public.jobs job on job.id = application.job_id
-    where application.cleaner_id in (
-      '10000000-0000-4000-8000-000000000003',
-      '10000000-0000-4000-8000-000000000004'
-    )
-    group by job.recurring_assignment_id$$,
-  $$values ('10000000-0000-4000-8000-000000000701'::uuid, 2)$$,
+select is(
+  (
+    select count(*)::integer
+    from public.jobs job
+    where job.recurring_assignment_id = '10000000-0000-4000-8000-000000000701'
+      and job.status = 'posted'
+      and job.crew_size = 2
+      and (
+        select array_agg(application.cleaner_id order by application.cleaner_id)
+        from public.job_applications application
+        where application.job_id = job.id
+      ) = array[
+        '10000000-0000-4000-8000-000000000003'::uuid,
+        '10000000-0000-4000-8000-000000000004'::uuid
+      ]
+      and (
+        select count(*)
+        from public.job_assignments assignment
+        where assignment.job_id = job.id
+          and assignment.unassigned_at is null
+      ) = 1
+      and (
+        select count(*)
+        from public.vacancies vacancy
+        where vacancy.job_id = job.id
+      ) = 1
+  ),
+  1,
   'seed applicants exercise the partially assigned crew-two dispatch job'
 );
 

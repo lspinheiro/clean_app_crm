@@ -1,5 +1,4 @@
 import { Clock3, Users } from "lucide-react";
-import type { Route } from "next";
 import Link from "next/link";
 
 import {
@@ -31,7 +30,7 @@ export function JobsList({ jobs }: JobsListProps) {
         <li className="job-list-item" key={job.id}>
           <Link
             className="job-list-link"
-            href={`/jobs/${job.id}` as Route}
+            href={`/jobs/${job.id}`}
           >
             <time className="job-date" dateTime={job.scheduledStart}>
               {formatJobDate(job.scheduledStart)}

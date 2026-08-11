@@ -96,27 +96,65 @@ describe("CLE-22 job detail model", () => {
       },
     ];
 
-    expect(buildJobSlots(3, assignments)).toEqual([
+    expect(
+      buildJobSlots({ assignments, crewSize: 3, status: "posted" }),
+    ).toEqual([
       {
         slotNumber: 1,
         state: "assigned",
-        cleanerId: assignments[0].cleanerId,
-        cleanerName: "Active Cleaner",
-        source: "manual",
+        assignment: {
+          cleanerId: assignments[0].cleanerId,
+          cleanerName: "Active Cleaner",
+          source: "manual",
+          assignedAt: "2026-08-11T08:00:00Z",
+        },
       },
       {
         slotNumber: 2,
-        state: "released",
-        cleanerId: assignments[1].cleanerId,
-        cleanerName: "Released Cleaner",
-        source: "manual",
+        state: "open",
+        previousAssignment: {
+          cleanerId: assignments[1].cleanerId,
+          cleanerName: "Released Cleaner",
+          source: "manual",
+          assignedAt: "2026-08-10T08:00:00Z",
+          releasedAt: "2026-08-10T09:00:00Z",
+        },
       },
       {
         slotNumber: 3,
         state: "open",
-        cleanerId: null,
-        cleanerName: null,
-        source: null,
+        previousAssignment: null,
+      },
+    ]);
+
+    expect(
+      buildJobSlots({ assignments, crewSize: 3, status: "cancelled" }),
+    ).toEqual([
+      {
+        slotNumber: 1,
+        state: "assigned",
+        assignment: {
+          cleanerId: assignments[0].cleanerId,
+          cleanerName: "Active Cleaner",
+          source: "manual",
+          assignedAt: "2026-08-11T08:00:00Z",
+        },
+      },
+      {
+        slotNumber: 2,
+        state: "closed",
+        previousAssignment: {
+          cleanerId: assignments[1].cleanerId,
+          cleanerName: "Released Cleaner",
+          source: "manual",
+          assignedAt: "2026-08-10T08:00:00Z",
+          releasedAt: "2026-08-10T09:00:00Z",
+        },
+      },
+      {
+        slotNumber: 3,
+        state: "closed",
+        previousAssignment: null,
       },
     ]);
   });

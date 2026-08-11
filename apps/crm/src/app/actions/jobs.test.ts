@@ -17,6 +17,7 @@ const jobId = "23000000-0000-4000-8000-000000000501";
 
 function validFormData() {
   const formData = new FormData();
+  formData.set("clientId", "10000000-0000-4000-8000-000000000301");
   formData.set("siteId", "10000000-0000-4000-8000-000000000401");
   formData.set("serviceId", "30000000-0000-4000-8000-000000000003");
   formData.set("date", "2026-08-19");
@@ -100,6 +101,22 @@ describe("CLE-23 one-off job action", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
+  it("reports the selectable client when both client and disabled site are missing", async () => {
+    const formData = validFormData();
+    formData.delete("clientId");
+    formData.delete("siteId");
+
+    const result = await createOneOffJob(formData);
+
+    expect(result).toMatchObject({
+      ok: false,
+      fieldErrors: { clientId: "Choose a client." },
+    });
+    expect(result.fieldErrors.siteId).toBeUndefined();
+    expect(mocks.requireCompanyAdmin).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
   it("returns a retryable form error when the database rejects the request", async () => {
     mocks.rpc.mockResolvedValue({
       data: null,
@@ -122,6 +139,7 @@ describe("CLE-23 one-off job action", () => {
       formError: expect.stringContaining("could not be confirmed"),
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
   });
 
   it("treats a status-zero transport error as an indeterminate commit", async () => {
@@ -137,6 +155,19 @@ describe("CLE-23 one-off job action", () => {
       formError: expect.stringContaining("could not be confirmed"),
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
+  });
+
+  it("treats a rejected RPC client as an indeterminate commit", async () => {
+    mocks.rpc.mockRejectedValueOnce(new Error("custom client rejected"));
+
+    await expect(createOneOffJob(validFormData())).resolves.toMatchObject({
+      ok: false,
+      jobId: null,
+      formError: expect.stringContaining("could not be confirmed"),
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
   });
 });
 

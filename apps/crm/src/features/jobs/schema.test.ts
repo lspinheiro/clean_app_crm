@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { oneOffJobSchema } from "./schema";
 
 const validInput = {
+  clientId: "10000000-0000-4000-8000-000000000301",
   siteId: "10000000-0000-4000-8000-000000000401",
   serviceId: "30000000-0000-4000-8000-000000000002",
   date: "2026-08-19",
@@ -43,6 +44,8 @@ describe("CLE-23 one-off job validation", () => {
   });
 
   it.each([
+    ["clientId", ""],
+    ["siteId", ""],
     ["serviceId", ""],
     ["date", "2026-02-30"],
     ["startTime", "25:00"],
@@ -57,6 +60,28 @@ describe("CLE-23 one-off job validation", () => {
     expect(parsed.success).toBe(false);
     if (!parsed.success) {
       expect(parsed.error.issues.some((issue) => issue.path[0] === field)).toBe(true);
+    }
+  });
+
+  it("guides a missing client before validating its disabled site field", () => {
+    const parsed = oneOffJobSchema.safeParse({
+      ...validInput,
+      clientId: "",
+      siteId: "",
+    });
+
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(parsed.error.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: ["clientId"],
+            message: "Choose a client.",
+          }),
+        ]),
+      );
+      expect(parsed.error.issues.some((issue) => issue.path[0] === "siteId"))
+        .toBe(false);
     }
   });
 });

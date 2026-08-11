@@ -319,6 +319,7 @@ export type Database = {
           generated_rule_version: number | null
           id: string
           manually_edited_at: string | null
+          notes: string | null
           recurring_assignment_id: string | null
           scheduled_end: string
           scheduled_start: string
@@ -339,6 +340,7 @@ export type Database = {
           generated_rule_version?: number | null
           id?: string
           manually_edited_at?: string | null
+          notes?: string | null
           recurring_assignment_id?: string | null
           scheduled_end: string
           scheduled_start: string
@@ -359,6 +361,7 @@ export type Database = {
           generated_rule_version?: number | null
           id?: string
           manually_edited_at?: string | null
+          notes?: string | null
           recurring_assignment_id?: string | null
           scheduled_end?: string
           scheduled_start?: string
@@ -1000,6 +1003,21 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_one_off_job: {
+        Args: {
+          target_cleaner_pay_cents: number
+          target_client_charge_cents?: number
+          target_crew_size: number
+          target_duration_minutes: number
+          target_local_date: string
+          target_local_start_time: string
+          target_notes?: string
+          target_post_now: boolean
+          target_service_id: string
+          target_site_id: string
+        }
+        Returns: string
       }
       create_recurring_assignment: {
         Args: {

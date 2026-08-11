@@ -1,4 +1,5 @@
 import { Clock3, Users } from "lucide-react";
+import Link from "next/link";
 
 import {
   formatCleanerPay,
@@ -27,38 +28,43 @@ export function JobsList({ jobs }: JobsListProps) {
     <ul aria-label="Company jobs" className="job-list">
       {jobs.map((job) => (
         <li className="job-list-item" key={job.id}>
-          <time className="job-date" dateTime={job.scheduledStart}>
-            {formatJobDate(job.scheduledStart)}
-          </time>
-          <div className="job-primary">
-            <div className="job-title-line">
-              <h2>{job.siteName}</h2>
-              <span className={`status-chip status-chip--${job.status}`}>
-                {formatJobStatus(job.status)}
-              </span>
-            </div>
-            <p>{job.clientName} · {job.serviceName}</p>
-            <div className="job-facts">
-              <span>
-                <Clock3 aria-hidden="true" size={16} />
-                <span className="tabular-numerals">
-                  {formatJobTime(job.scheduledStart)} · {formatJobDuration(job.durationMinutes)}
+          <Link
+            className="job-list-link"
+            href={`/jobs/${job.id}`}
+          >
+            <time className="job-date" dateTime={job.scheduledStart}>
+              {formatJobDate(job.scheduledStart)}
+            </time>
+            <div className="job-primary">
+              <div className="job-title-line">
+                <h2>{job.siteName}</h2>
+                <span className={`status-chip status-chip--${job.status}`}>
+                  {formatJobStatus(job.status)}
                 </span>
-              </span>
-              <span>
-                <Users aria-hidden="true" size={16} />
-                <span className="tabular-numerals">
-                  {job.assignedSlots}/{job.crewSize} assigned
+              </div>
+              <p>{job.clientName} · {job.serviceName}</p>
+              <div className="job-facts">
+                <span>
+                  <Clock3 aria-hidden="true" size={16} />
+                  <span className="tabular-numerals">
+                    {formatJobTime(job.scheduledStart)} · {formatJobDuration(job.durationMinutes)}
+                  </span>
                 </span>
-              </span>
+                <span>
+                  <Users aria-hidden="true" size={16} />
+                  <span className="tabular-numerals">
+                    {job.assignedSlots}/{job.crewSize} assigned
+                  </span>
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="job-pay">
-            <span>Cleaner pay</span>
-            <strong className="tabular-numerals">
-              {formatCleanerPay(job.cleanerPayCents)}<small>/slot</small>
-            </strong>
-          </div>
+            <div className="job-pay">
+              <span>Cleaner pay</span>
+              <strong className="tabular-numerals">
+                {formatCleanerPay(job.cleanerPayCents)}<small>/slot</small>
+              </strong>
+            </div>
+          </Link>
         </li>
       ))}
     </ul>

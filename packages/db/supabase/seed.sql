@@ -264,14 +264,15 @@ set cleaner_id = excluded.cleaner_id;
 -- the same 28-day roster path as production data.
 select public.generate_recurring_jobs();
 
--- Keep the dispatch screens useful before the cleaner app is connected: the nearest
--- generated vacancy has two real applicants while its recurring slot assignment stays
+-- Keep the dispatch screens useful before the cleaner app is connected: the next
+-- Broadbeach crew-two vacancy has two real applicants while slot one stays assigned
 -- intact. Applications are inserted as seed state, so no manual-notification record is
 -- created and the generation path remains silent.
-with first_open_job as (
+with dispatch_job as (
   select job.id
   from public.jobs job
   where job.status = 'posted'
+    and job.recurring_assignment_id = '10000000-0000-4000-8000-000000000701'
     and job.scheduled_start > now()
     and exists (
       select 1
@@ -283,9 +284,9 @@ with first_open_job as (
 )
 insert into public.job_applications (job_id, cleaner_id)
 select
-  first_open_job.id,
+  dispatch_job.id,
   applicant.cleaner_id
-from first_open_job
+from dispatch_job
 cross join (values
   ('10000000-0000-4000-8000-000000000003'::uuid),
   ('10000000-0000-4000-8000-000000000004'::uuid)

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Plus } from "lucide-react";
+import Link from "next/link";
 
 import { JobsList } from "./jobs-list";
 
@@ -67,9 +69,15 @@ export default async function JobsPage() {
             Every scheduled clean, its staffing state, and the pay agreed per crew slot.
           </p>
         </div>
-        <p className="jobs-count tabular-numerals">
-          {jobs.length} {jobs.length === 1 ? "job" : "jobs"}
-        </p>
+        <div className="jobs-page-actions">
+          <p className="jobs-count tabular-numerals">
+            {jobs.length} {jobs.length === 1 ? "job" : "jobs"}
+          </p>
+          <Link className="button" href="/jobs/new">
+            <Plus aria-hidden="true" size={18} />
+            New job
+          </Link>
+        </div>
       </header>
       <JobsList jobs={jobs} />
     </main>

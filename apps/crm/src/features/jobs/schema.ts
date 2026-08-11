@@ -71,6 +71,14 @@ export const oneOffJobSchema = z
     postNow: value.mode === "post",
   }));
 
+export const assignJobSlotSchema = z.object({
+  jobId: z.string().uuid(),
+  slotNumber: z.coerce.number<number>().int().min(1),
+  cleanerId: z.string().uuid(),
+});
+
+export const jobIdSchema = z.string().uuid();
+
 export function firstJobFieldErrors(error: z.ZodError) {
   const fieldErrors: Record<string, string> = {};
   for (const issue of error.issues) {

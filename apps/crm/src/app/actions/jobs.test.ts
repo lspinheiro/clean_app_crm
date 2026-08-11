@@ -11,7 +11,7 @@ vi.mock("@/lib/auth/session", () => ({
   requireCompanyAdmin: mocks.requireCompanyAdmin,
 }));
 
-import { createOneOffJob } from "./jobs";
+import { assignJobSlot, cancelJob, createOneOffJob } from "./jobs";
 
 const jobId = "23000000-0000-4000-8000-000000000501";
 
@@ -27,6 +27,14 @@ function validFormData() {
   formData.set("crewSize", "2");
   formData.set("notes", "  Focus on the kitchen  ");
   formData.set("mode", "post");
+  return formData;
+}
+
+function validAssignmentFormData() {
+  const formData = new FormData();
+  formData.set("jobId", jobId);
+  formData.set("slotNumber", "2");
+  formData.set("cleanerId", "10000000-0000-4000-8000-000000000003");
   return formData;
 }
 
@@ -129,5 +137,115 @@ describe("CLE-23 one-off job action", () => {
       formError: expect.stringContaining("could not be confirmed"),
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
+  });
+});
+
+describe("CLE-22 job dispatch actions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.rpc.mockResolvedValue({ data: null, error: null, status: 200 });
+    mocks.requireCompanyAdmin.mockResolvedValue({
+      supabase: { rpc: mocks.rpc },
+    });
+  });
+
+  it("assigns the chosen cleaner to the exact crew slot and refreshes every consumer", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: "49000000-0000-4000-8000-000000000701",
+      error: null,
+      status: 200,
+    });
+
+    await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
+      ok: true,
+      formError: null,
+    });
+
+    expect(mocks.rpc).toHaveBeenCalledWith("assign_job_slot", {
+      target_job_id: jobId,
+      target_slot_number: 2,
+      target_cleaner_id: "10000000-0000-4000-8000-000000000003",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/jobs/${jobId}`);
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
+  });
+
+  it("rejects invalid assignment payloads before authentication", async () => {
+    const formData = validAssignmentFormData();
+    formData.set("slotNumber", "0");
+
+    await expect(assignJobSlot(formData)).resolves.toMatchObject({
+      ok: false,
+      formError: expect.stringContaining("valid assignment"),
+    });
+    expect(mocks.requireCompanyAdmin).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("shows only the safe availability domain error", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Cleaner is unavailable for this time" },
+      status: 400,
+    });
+
+    await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
+      ok: false,
+      formError: "This cleaner is unavailable for the job time.",
+    });
+  });
+
+  it("refreshes stale assignment state without exposing database details", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Crew slot is already assigned" },
+      status: 409,
+    });
+
+    await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
+      ok: false,
+      formError: "This job changed while you were assigning it. Review the refreshed crew slots.",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/jobs/${jobId}`);
+  });
+
+  it("cancels through the loop RPC and refreshes vacancies and roster state", async () => {
+    await expect(cancelJob(jobId)).resolves.toEqual({ ok: true, formError: null });
+
+    expect(mocks.rpc).toHaveBeenCalledWith("cancel_job", {
+      target_job_id: jobId,
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/jobs/${jobId}`);
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
+  });
+
+  it("returns one generic cancellation failure for foreign, missing, or closed jobs", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Company admin access required" },
+      status: 403,
+    });
+
+    await expect(cancelJob(jobId)).resolves.toEqual({
+      ok: false,
+      formError: "The job could not be cancelled. Review the refreshed job and try again.",
+    });
+  });
+
+  it("treats a status-zero cancellation response as an indeterminate commit", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Failed to fetch" },
+      status: 0,
+    });
+
+    await expect(cancelJob(jobId)).resolves.toEqual({
+      ok: false,
+      formError:
+        "The cancellation could not be confirmed. Review the refreshed job before trying again.",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/jobs/${jobId}`);
   });
 });

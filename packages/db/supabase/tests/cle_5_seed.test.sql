@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(9);
 
 select is((select count(*)::integer from public.companies), 1, 'seed has exactly one company');
 select is(
@@ -55,6 +55,18 @@ select results_eq(
     group by rule.crew_size$$,
   $$values (2, 1)$$,
   'seed includes a crew-two recurring rule with one named cleaner'
+);
+select results_eq(
+  $$select job.recurring_assignment_id, count(*)::integer
+    from public.job_applications application
+    join public.jobs job on job.id = application.job_id
+    where application.cleaner_id in (
+      '10000000-0000-4000-8000-000000000003',
+      '10000000-0000-4000-8000-000000000004'
+    )
+    group by job.recurring_assignment_id$$,
+  $$values ('10000000-0000-4000-8000-000000000701'::uuid, 2)$$,
+  'seed applicants exercise the partially assigned crew-two dispatch job'
 );
 
 select * from finish();

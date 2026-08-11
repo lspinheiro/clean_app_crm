@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 
@@ -129,7 +130,7 @@ export function NewJobForm({
       const nextResult = await createOneOffJob(formData);
       setResult(nextResult);
       if (nextResult.ok && nextResult.jobId) {
-        router.push("/jobs");
+        router.push(`/jobs/${nextResult.jobId}` as Route);
       }
     } catch {
       setResult({

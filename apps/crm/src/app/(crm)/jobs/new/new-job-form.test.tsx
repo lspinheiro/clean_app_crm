@@ -119,7 +119,9 @@ describe("CLE-23 new job form", () => {
       notes: "Kitchen detail",
       mode: "post",
     });
-    expect(mocks.push).toHaveBeenCalledWith("/jobs");
+    expect(mocks.push).toHaveBeenCalledWith(
+      "/jobs/23000000-0000-4000-8000-000000000501",
+    );
   });
 
   it("leaves missing defaults empty and renders field-level recovery guidance", async () => {

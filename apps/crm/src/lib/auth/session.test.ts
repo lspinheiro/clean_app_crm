@@ -1,3 +1,8 @@
+import {
+  AuthApiError,
+  AuthRetryableFetchError,
+  AuthSessionMissingError,
+} from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => {
@@ -86,6 +91,65 @@ describe("company-admin session context", () => {
     });
     expect(companyQuery.maybeSingle).toHaveBeenCalledOnce();
     expect(companyQuery.single).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "refresh_token_not_found",
+    "refresh_token_already_used",
+    "session_expired",
+  ])("treats a dead session with code %s as anonymous", async (code) => {
+    const from = vi.fn();
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: null },
+          error: new AuthApiError("Dead session", 400, code),
+        }),
+      },
+      from,
+    });
+
+    await expect(getCompanyAdminContext()).resolves.toMatchObject({
+      decision: { kind: "denied", reason: "anonymous" },
+      user: null,
+      profile: null,
+      company: null,
+    });
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("treats a missing session as anonymous", async () => {
+    const from = vi.fn();
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: null },
+          error: new AuthSessionMissingError(),
+        }),
+      },
+      from,
+    });
+
+    await expect(getCompanyAdminContext()).resolves.toMatchObject({
+      decision: { kind: "denied", reason: "anonymous" },
+    });
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    new AuthApiError("Unexpected auth response", 400, "invalid_credentials"),
+    new AuthRetryableFetchError("Auth service unavailable", 503),
+  ])("surfaces an unrelated auth failure: $name", async (error) => {
+    const from = vi.fn();
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null }, error }),
+      },
+      from,
+    });
+
+    await expect(getCompanyAdminContext()).rejects.toBe(error);
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("initialises the company-admin context once for two request consumers", async () => {

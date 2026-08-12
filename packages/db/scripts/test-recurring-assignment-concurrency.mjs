@@ -56,6 +56,9 @@ function runSqlConcurrently(sql) {
 }
 
 const cleanupSql = `
+  -- jobs.recurring_assignment_id is ON DELETE RESTRICT by design, so the instances the rule
+  -- generated have to go first or teardown fails once generation has run.
+  delete from public.jobs where site_id = '${siteId}';
   delete from public.recurring_assignments where site_id = '${siteId}';
   delete from public.companies where id = '${companyId}';
   delete from auth.users where id in ('${adminId}', '${cleanerId}');

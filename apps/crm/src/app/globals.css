@@ -1546,6 +1546,213 @@ a {
   gap: 16px;
 }
 
+.money-page-shell {
+  max-width: 1040px;
+}
+
+.money-page-header {
+  margin-bottom: 36px;
+}
+
+.money-page-header .page-heading {
+  margin-bottom: 0;
+}
+
+.money-page-header .page-description {
+  margin: 10px 0 0;
+}
+
+.money-totals {
+  margin-bottom: 40px;
+  border-block: 1px solid var(--color-gray-300);
+}
+
+.money-totals dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.money-totals dl > div {
+  min-width: 0;
+  padding: 26px 0;
+}
+
+.money-totals dl > div + div {
+  border-left: 1px solid var(--color-gray-200);
+  padding-left: 32px;
+}
+
+.money-totals dt {
+  margin-bottom: 6px;
+  color: var(--color-gray-600);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.money-totals dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin: 0;
+}
+
+.money-totals strong {
+  font-size: clamp(28px, 4vw, 36px);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.money-totals dd span {
+  color: var(--color-gray-600);
+  font-size: 12px;
+}
+
+.money-history-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 14px;
+}
+
+.money-history-header h2,
+.money-empty h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.money-entry-count {
+  margin: 0;
+  color: var(--color-gray-600);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.money-table-region {
+  overflow-x: auto;
+  border-block: 1px solid var(--color-gray-300);
+  background: var(--color-paper);
+}
+
+.money-table-region:focus-visible {
+  outline-offset: 4px;
+}
+
+.money-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.money-table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.money-table th {
+  height: 46px;
+  padding: 0 18px;
+  color: var(--color-gray-600);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.money-table td {
+  min-height: 68px;
+  border-top: 1px solid var(--color-gray-200);
+  padding: 14px 18px;
+  color: var(--color-gray-700);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.money-table th:first-child,
+.money-table td:first-child {
+  padding-left: 0;
+}
+
+.money-table th:last-child,
+.money-table td:last-child {
+  padding-right: 0;
+  text-align: right;
+}
+
+.money-table .money-cleaner-name {
+  overflow-wrap: anywhere;
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.money-job-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--color-ink);
+}
+
+.money-job-link:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.money-job-link time {
+  display: grid;
+  gap: 1px;
+}
+
+.money-job-link time span {
+  color: var(--color-gray-600);
+  font-size: 12px;
+}
+
+.money-amount {
+  color: var(--color-ink);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.money-status {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.money-status--owed {
+  background: var(--color-status-info-tint);
+  color: var(--color-status-info-text);
+}
+
+.money-status--paid {
+  background: var(--color-status-success-tint);
+  color: var(--color-status-success-text);
+}
+
+.money-empty {
+  border-block: 1px solid var(--color-gray-300);
+  padding: 48px 0;
+}
+
+.money-empty p {
+  max-width: 58ch;
+  margin: 8px 0 0;
+  color: var(--color-gray-600);
+}
+
 .new-job-page-shell {
   max-width: 920px;
 }
@@ -2622,6 +2829,7 @@ a {
   .pool-layout { grid-template-columns: 1fr; }
   .job-list-link { grid-template-columns: 88px minmax(0, 1fr); }
   .job-pay { grid-column: 2; justify-items: start; }
+  .money-totals dl > div + div { padding-left: 24px; }
   .new-job-section { grid-template-columns: 1fr; gap: 20px; }
   .new-job-section > .field,
   .new-job-defaults-status { grid-column: 1; }
@@ -2678,6 +2886,13 @@ a {
   .job-list-link { grid-template-columns: 1fr; gap: 10px; padding: 18px 16px; }
   .job-date, .job-pay { grid-column: auto; }
   .job-pay { justify-items: start; }
+  .money-totals dl { grid-template-columns: 1fr; }
+  .money-totals dl > div + div {
+    border-top: 1px solid var(--color-gray-200);
+    border-left: 0;
+    padding-left: 0;
+  }
+  .money-history-header { align-items: flex-start; }
   .roster-page-shell { padding-bottom: 184px; }
   .roster-week-controls { gap: 6px; }
   .roster-week-title { min-width: 138px; font-size: 16px; }

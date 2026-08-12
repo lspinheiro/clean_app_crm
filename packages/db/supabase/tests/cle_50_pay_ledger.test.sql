@@ -608,6 +608,16 @@ select is(
 );
 reset role;
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000002', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select is(
+  (select count(*)::integer from public.company_ledger_entries),
+  0,
+  'an active cleaner cannot read the company ledger view'
+);
+reset role;
+
 update public.company_members
 set status = 'removed'
 where company_id = '10000000-0000-4000-8000-000000000010'

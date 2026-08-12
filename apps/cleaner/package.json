@@ -1,0 +1,46 @@
+{
+  "name": "cleaner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../scripts/run-local-dev.mjs --app cleaner --port 3001",
+    "build": "next build --webpack",
+    "start": "next start -p 3001",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:e2e": "node ../../scripts/run-local-e2e.mjs --app cleaner",
+    "db:start": "pnpm --dir ../../packages/db db:start",
+    "db:stop": "pnpm --dir ../../packages/db db:stop",
+    "db:reset": "pnpm --dir ../../packages/db db:reset",
+    "db:test": "pnpm --dir ../../packages/db db:test",
+    "db:types": "pnpm --dir ../../packages/db db:types"
+  },
+  "dependencies": {
+    "@fontsource/poppins": "^5.3.0",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.8",
+    "next": "16.2.11",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.11",
+    "jsdom": "^30.0.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  }
+}

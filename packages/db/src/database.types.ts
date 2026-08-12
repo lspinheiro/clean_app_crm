@@ -251,6 +251,7 @@ export type Database = {
           id: string;
           phone: string | null;
           role: Database["public"]["Enums"]["app_role"];
+          suburb: string | null;
           updated_at: string;
         };
         Insert: {
@@ -260,6 +261,7 @@ export type Database = {
           id: string;
           phone?: string | null;
           role?: Database["public"]["Enums"]["app_role"];
+          suburb?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -269,6 +271,7 @@ export type Database = {
           id?: string;
           phone?: string | null;
           role?: Database["public"]["Enums"]["app_role"];
+          suburb?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -491,6 +494,14 @@ export type Database = {
         Args: { requested_object_name: string };
         Returns: boolean;
       };
+      cleaner_invite_preview: {
+        Args: { invite_code: string };
+        Returns: {
+          company_name: string;
+          pool_size: number;
+          state: string;
+        }[];
+      };
       current_app_role: {
         Args: Record<PropertyKey, never>;
         Returns: Database["public"]["Enums"]["app_role"];
@@ -544,6 +555,18 @@ export type Database = {
       is_company_admin: {
         Args: { target_company_id: string };
         Returns: boolean;
+      };
+      join_company_pool: {
+        Args: {
+          full_name: string;
+          invite_code: string;
+          phone: string;
+          suburb: string;
+        };
+        Returns: {
+          joined_company_id: string;
+          joined_company_name: string;
+        }[];
       };
       rotate_company_invite: {
         Args: { target_company_id: string };

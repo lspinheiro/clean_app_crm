@@ -28,9 +28,14 @@ port = 55324
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["http://localhost:3000"]
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3001",
+  "http://localhost:3001",
+]
 jwt_expiry = 3600
-enable_signup = false
+# CL-1 registers cleaners from the invite link, so the cleaner app needs sign-up.
+enable_signup = true
 
 [storage]
 enabled = true

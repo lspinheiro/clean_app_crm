@@ -86,6 +86,8 @@ select ok(
   'the vacancy projection honours caller RLS'
 );
 
+delete from public.notifications where ledger_entry_id is not null;
+delete from public.ledger_entries;
 delete from public.job_assignments;
 delete from public.jobs;
 delete from public.site_preferred_cleaners

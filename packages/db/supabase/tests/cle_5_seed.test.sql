@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(11);
 
 select is((select count(*)::integer from public.companies), 1, 'seed has exactly one company');
 select is(
@@ -85,6 +85,54 @@ select is(
   ),
   1,
   'seed applicants exercise the partially assigned crew-two dispatch job'
+);
+
+select results_eq(
+  $$select
+      job.status::text,
+      job.crew_size,
+      job.cleaner_pay_cents,
+      entry.cleaner_id,
+      entry.amount_cents,
+      entry.status::text,
+      entry.payment_note
+    from public.jobs job
+    join public.ledger_entries entry on entry.job_id = job.id
+    where job.id = '10000000-0000-4000-8000-000000000801'
+    order by entry.cleaner_id$$,
+  $$values
+    (
+      'completed'::text,
+      2,
+      12000,
+      '10000000-0000-4000-8000-000000000002'::uuid,
+      12000,
+      'paid'::text,
+      'bank transfer'::text
+    ),
+    (
+      'completed'::text,
+      2,
+      12000,
+      '10000000-0000-4000-8000-000000000003'::uuid,
+      12000,
+      'owed'::text,
+      null::text
+    )$$,
+  'seed includes one completed crew-two job with exact paid and owed slot records'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.notifications notification
+    join public.ledger_entries entry on entry.id = notification.ledger_entry_id
+    where entry.job_id = '10000000-0000-4000-8000-000000000801'
+      and entry.cleaner_id = '10000000-0000-4000-8000-000000000002'
+      and notification.recipient_id = entry.cleaner_id
+      and notification.type = 'payment_marked_paid'
+  ),
+  1,
+  'the seeded paid slot has exactly one linked settlement notification'
 );
 
 select * from finish();

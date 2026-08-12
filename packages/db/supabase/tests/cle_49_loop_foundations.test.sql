@@ -37,8 +37,9 @@ select results_eq(
   $$values
     ('job_assigned'::text collate "C"),
     ('job_posted'::text collate "C"),
-    ('job_cancelled'::text collate "C")$$,
-  'notification records cover the three CLE-49 delivery events'
+    ('job_cancelled'::text collate "C"),
+    ('payment_marked_paid'::text collate "C")$$,
+  'notification records retain every CLE-49 event after settlement is added'
 );
 select is(
   (

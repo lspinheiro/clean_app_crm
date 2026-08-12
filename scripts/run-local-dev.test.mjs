@@ -8,6 +8,18 @@ const successfulStatus = [
   'PUBLISHABLE_KEY="local-publishable-key"',
 ].join("\n");
 
+function recordingSpawnSync(calls) {
+  return (command, args, options) => {
+    calls.push({ command, args, options });
+
+    if (args.includes("status")) {
+      return { status: 0, stdout: successfulStatus };
+    }
+
+    return { status: 0 };
+  };
+}
+
 test("starts Supabase, applies migrations, and launches CRM with local credentials", () => {
   const calls = [];
   const spawnSync = (command, args, options) => {
@@ -68,6 +80,88 @@ test("starts Supabase, applies migrations, and launches CRM with local credentia
     calls.at(-1).options.env.NEXT_PUBLIC_CLEANER_APP_URL,
     "http://127.0.0.1:3001",
   );
+});
+
+test("launches the requested workspace app with its own next arguments", () => {
+  const calls = [];
+
+  const exitCode = runLocalDev({
+    spawnSync: recordingSpawnSync(calls),
+    environment: { PATH: "/test/bin" },
+    app: "cleaner",
+    nextArguments: ["--port", "3001"],
+    write() {},
+  });
+
+  assert.equal(exitCode, 0);
+  assert.deepEqual(calls.at(-1).args, [
+    "--filter",
+    "cleaner",
+    "exec",
+    "next",
+    "dev",
+    "--port",
+    "3001",
+  ]);
+});
+
+test("reads the target app from --app and forwards the rest to next", async () => {
+  const { parseArguments } = await import("./run-local-dev.mjs");
+
+  assert.equal(typeof parseArguments, "function");
+  assert.deepEqual(parseArguments([]), { app: "crm", nextArguments: [] });
+  assert.deepEqual(parseArguments(["--app", "cleaner", "--port", "3001"]), {
+    app: "cleaner",
+    nextArguments: ["--port", "3001"],
+  });
+  assert.deepEqual(parseArguments(["--app=cleaner"]), {
+    app: "cleaner",
+    nextArguments: [],
+  });
+});
+
+test("spawns through a shell on Windows so the pnpm launcher resolves", () => {
+  const calls = [];
+
+  runLocalDev({
+    spawnSync: recordingSpawnSync(calls),
+    environment: { PATH: "/test/bin" },
+    platform: "win32",
+    write() {},
+  });
+
+  assert.ok(calls.length > 0);
+  assert.ok(calls.every(({ options }) => options.shell === true));
+});
+
+test("does not spawn through a shell on POSIX platforms", () => {
+  const calls = [];
+
+  runLocalDev({
+    spawnSync: recordingSpawnSync(calls),
+    environment: { PATH: "/test/bin" },
+    platform: "linux",
+    write() {},
+  });
+
+  assert.ok(calls.length > 0);
+  assert.ok(calls.every(({ options }) => options.shell !== true));
+});
+
+test("reports the underlying spawn failure instead of a generic message", () => {
+  const messages = [];
+
+  const exitCode = runLocalDev({
+    spawnSync: () => ({
+      status: null,
+      error: new Error("spawnSync pnpm ENOENT"),
+    }),
+    environment: { PATH: "/test/bin" },
+    write: (message) => messages.push(message),
+  });
+
+  assert.equal(exitCode, 1);
+  assert.match(messages.join(""), /spawnSync pnpm ENOENT/);
 });
 
 test("does not launch CRM when Supabase fails to start", () => {

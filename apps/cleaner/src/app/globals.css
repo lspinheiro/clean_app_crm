@@ -247,6 +247,74 @@ a {
   line-height: 18px;
 }
 
+.vacancy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vacancy-card {
+  padding: 16px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  background: var(--color-paper);
+}
+
+.vacancy-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vacancy-card__company {
+  margin: 0;
+  color: var(--color-gray-600);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.vacancy-card__when {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vacancy-card__where {
+  margin: 2px 0 0;
+  color: var(--color-gray-600);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.vacancy-card__pay {
+  flex-shrink: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 30px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.vacancy-card__slots {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--color-status-info-tint);
+  color: var(--color-status-info-text);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;

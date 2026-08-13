@@ -1,12 +1,23 @@
-import type { Metadata } from "next";
+"use client";
 
-import { signOutAction } from "@/app/actions/auth";
-import { requireCleaner } from "@/lib/auth/session";
+import { useRouter } from "next/navigation";
 
-export const metadata: Metadata = { title: "Open jobs" };
+import { useCleaner } from "@/lib/auth/use-cleaner";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
-export default async function BoardPage() {
-  const { profile } = await requireCleaner();
+export default function BoardPage() {
+  const router = useRouter();
+  const cleaner = useCleaner();
+
+  // The layout holds the gate; this only renders once it has allowed the cleaner through.
+  if (cleaner.status !== "allowed") return null;
+
+  const { profile } = cleaner;
+
+  async function signOut() {
+    await getSupabaseClient().auth.signOut();
+    router.replace("/login");
+  }
 
   return (
     <main className="screen">
@@ -20,11 +31,15 @@ export default async function BoardPage() {
         <p>No open jobs yet.</p>
         <p>When a company you work with posts a job, it appears here.</p>
       </div>
-      <form action={signOutAction} className="screen-footer">
-        <button className="button button--secondary button--small" type="submit">
+      <div className="screen-footer">
+        <button
+          className="button button--secondary button--small"
+          onClick={signOut}
+          type="button"
+        >
           Sign out
         </button>
-      </form>
+      </div>
     </main>
   );
 }

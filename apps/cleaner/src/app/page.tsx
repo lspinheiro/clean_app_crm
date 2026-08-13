@@ -1,5 +1,18 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function HomePage() {
-  redirect("/board");
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/board");
+  }, [router]);
+
+  return (
+    <main className="screen">
+      <p className="screen-lead">Loading…</p>
+    </main>
+  );
 }

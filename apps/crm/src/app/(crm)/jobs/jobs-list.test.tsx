@@ -25,6 +25,10 @@ describe("JobsList", () => {
     );
 
     const job = within(screen.getByRole("listitem"));
+    expect(job.getByRole("link", { name: /Broadbeach Towers/ })).toHaveAttribute(
+      "href",
+      "/jobs/job-1",
+    );
     expect(job.getByRole("heading", { name: "Broadbeach Towers" })).toBeInTheDocument();
     expect(job.getByText("Posted")).toBeInTheDocument();
     expect(job.getByText("1/2 assigned")).toBeInTheDocument();

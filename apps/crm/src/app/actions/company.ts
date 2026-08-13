@@ -148,7 +148,7 @@ export async function updateCompanyIdentity(
       target_company_id: company.id,
       company_name: parsed.data.name,
       company_abn: parsed.data.abn,
-      company_logo_path: candidateLogoPath,
+      company_logo_path: candidateLogoPath ?? undefined,
     });
     updateError = result.error;
   } catch {

@@ -67,6 +67,17 @@ values (
 )
 on conflict (id) do nothing;
 
+-- A superseded link, so the cleaner app's "no longer in use" state has a fixture that no
+-- other suite has to rotate the live code away to produce.
+insert into public.company_invites (id, company_id, code, revoked_at)
+values (
+  '10000000-0000-4000-8000-000000000202',
+  '10000000-0000-4000-8000-000000000010',
+  'ZOLD01',
+  '2026-08-01T00:00:00+10'
+)
+on conflict (id) do nothing;
+
 insert into public.clients (
   id,
   company_id,

@@ -459,6 +459,7 @@ export type Database = {
           id: string
           phone: string | null
           role: Database["public"]["Enums"]["app_role"]
+          suburb: string | null
           updated_at: string
         }
         Insert: {
@@ -468,6 +469,7 @@ export type Database = {
           id: string
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          suburb?: string | null
           updated_at?: string
         }
         Update: {
@@ -477,6 +479,7 @@ export type Database = {
           id?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          suburb?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -975,6 +978,14 @@ export type Database = {
         Returns: boolean
       }
       cancel_job: { Args: { target_job_id: string }; Returns: undefined }
+      cleaner_invite_preview: {
+        Args: { invite_code: string }
+        Returns: {
+          company_name: string
+          pool_size: number
+          state: string
+        }[]
+      }
       compact_recurring_assignment_cleaners: {
         Args: { target_recurring_assignment_id: string }
         Returns: undefined
@@ -1081,6 +1092,18 @@ export type Database = {
       is_company_admin: {
         Args: { target_company_id: string }
         Returns: boolean
+      }
+      join_company_pool: {
+        Args: {
+          full_name: string
+          invite_code: string
+          phone: string
+          suburb: string
+        }
+        Returns: {
+          joined_company_id: string
+          joined_company_name: string
+        }[]
       }
       post_job: { Args: { target_job_id: string }; Returns: undefined }
       reconcile_recurring_assignment_jobs: {
@@ -1389,3 +1412,4 @@ export const Constants = {
     },
   },
 } as const
+

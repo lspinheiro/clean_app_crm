@@ -2,7 +2,10 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 function run(command, args) {
-  const result = spawnSync(command, args, { stdio: "inherit" });
+  // On Windows `supabase` is a `.cmd` launcher, which spawnSync cannot resolve without a
+  // shell. `process.execPath` is a real executable and needs no shell either way.
+  const shell = process.platform === "win32" && command !== process.execPath;
+  const result = spawnSync(command, args, { stdio: "inherit", shell });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
 }

@@ -26,33 +26,74 @@ function parseEnvironment(output) {
   );
 }
 
+const defaultApp = "crm";
+
 function exitCode(result) {
   if (typeof result.status === "number") return result.status;
   return result.signal === "SIGINT" ? 130 : 1;
+}
+
+export function parseArguments(argv = []) {
+  const nextArguments = [];
+  let app = defaultApp;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const value = argv[index];
+
+    if (value === "--app") {
+      app = argv[index + 1] ?? app;
+      index += 1;
+      continue;
+    }
+
+    if (value.startsWith("--app=")) {
+      app = value.slice("--app=".length);
+      continue;
+    }
+
+    nextArguments.push(value);
+  }
+
+  return { app, nextArguments };
 }
 
 export function runLocalDev({
   spawnSync = nodeSpawnSync,
   environment = process.env,
   nextArguments = [],
+  app = defaultApp,
+  platform = process.platform,
   write = (message) => process.stderr.write(message),
 } = {}) {
-  const run = (args, options = {}) =>
-    spawnSync("pnpm", args, {
+  const prefix = `[${app}:dev]`;
+  // On Windows pnpm is a `.cmd` launcher, which spawnSync cannot execute without a shell:
+  // it fails with ENOENT, leaves `status` null, and every step looks like a Supabase failure.
+  const shell = platform === "win32";
+
+  const run = (args, options = {}) => {
+    const result = spawnSync("pnpm", args, {
       cwd: repositoryRoot,
       env: environment,
       stdio: "inherit",
+      shell,
       ...options,
     });
 
-  write("[crm:dev] Starting or reusing the local Supabase stack...\n");
+    if (result.error) {
+      write(`${prefix} Could not run pnpm: ${result.error.message}\n`);
+    }
+
+    return result;
+  };
+
+  write(`${prefix} Starting or reusing the local Supabase stack...\n`);
   const startResult = run(["--dir", "packages/db", "db:start"]);
   if (exitCode(startResult) !== 0) {
-    write("[crm:dev] Supabase did not start; CRM was not launched.\n");
+    write(`${prefix} Supabase did not start; ${app} was not launched.\n`);
     return exitCode(startResult);
   }
 
-  write("[crm:dev] Applying pending local database migrations...\n");
+  write(`${prefix} Applying pending local database migrations...\n`);
   const migrationResult = run([
     "--dir",
     "packages/db",
@@ -65,7 +106,7 @@ export function runLocalDev({
     "--local",
   ]);
   if (exitCode(migrationResult) !== 0) {
-    write("[crm:dev] Database migrations failed; CRM was not launched.\n");
+    write(`${prefix} Database migrations failed; ${app} was not launched.\n`);
     return exitCode(migrationResult);
   }
 
@@ -84,7 +125,9 @@ export function runLocalDev({
     { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
   );
   if (exitCode(statusResult) !== 0) {
-    write("[crm:dev] Could not read local Supabase credentials; CRM was not launched.\n");
+    write(
+      `${prefix} Could not read local Supabase credentials; ${app} was not launched.\n`,
+    );
     return exitCode(statusResult);
   }
 
@@ -94,13 +137,15 @@ export function runLocalDev({
     localEnvironment.PUBLISHABLE_KEY ?? localEnvironment.ANON_KEY;
 
   if (!supabaseUrl || !publishableKey) {
-    write("[crm:dev] Local Supabase URL or publishable key is missing; CRM was not launched.\n");
+    write(
+      `${prefix} Local Supabase URL or publishable key is missing; ${app} was not launched.\n`,
+    );
     return 1;
   }
 
-  write("[crm:dev] Starting CRM...\n");
-  const crmResult = run(
-    ["--filter", "crm", "exec", "next", "dev", ...nextArguments],
+  write(`${prefix} Starting ${app}...\n`);
+  const appResult = run(
+    ["--filter", app, "exec", "next", "dev", ...nextArguments],
     {
       env: {
         ...environment,
@@ -112,9 +157,9 @@ export function runLocalDev({
     },
   );
 
-  return exitCode(crmResult);
+  return exitCode(appResult);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
-  process.exitCode = runLocalDev({ nextArguments: process.argv.slice(2) });
+  process.exitCode = runLocalDev(parseArguments(process.argv.slice(2)));
 }

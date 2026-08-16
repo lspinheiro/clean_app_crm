@@ -303,3 +303,71 @@ cross join (values
   ('10000000-0000-4000-8000-000000000004'::uuid)
 ) as applicant(cleaner_id)
 on conflict (job_id, cleaner_id) do nothing;
+
+-- A deterministic historical crew-two completion keeps the Money list useful:
+-- one cleaner has been paid while the other remains owed. The same completion
+-- trigger and settlement RPC used by the apps create these records; the seed does
+-- not write ledger or notification rows by hand.
+insert into public.jobs (
+  id,
+  site_id,
+  service_id,
+  scheduled_start,
+  duration_minutes,
+  cleaner_pay_cents,
+  client_charge_cents,
+  status,
+  crew_size
+) values (
+  '10000000-0000-4000-8000-000000000801',
+  '10000000-0000-4000-8000-000000000401',
+  '30000000-0000-4000-8000-000000000002',
+  '2026-08-08T08:00:00+10',
+  120,
+  12000,
+  21000,
+  'in_progress',
+  2
+)
+on conflict (id) do nothing;
+
+insert into public.job_assignments (job_id, slot_number, cleaner_id)
+select assignment.job_id, assignment.slot_number, assignment.cleaner_id
+from (values
+  (
+    '10000000-0000-4000-8000-000000000801'::uuid,
+    1,
+    '10000000-0000-4000-8000-000000000002'::uuid
+  ),
+  (
+    '10000000-0000-4000-8000-000000000801'::uuid,
+    2,
+    '10000000-0000-4000-8000-000000000003'::uuid
+  )
+) as assignment(job_id, slot_number, cleaner_id)
+where not exists (
+  select 1
+  from public.job_assignments existing
+  where existing.job_id = assignment.job_id
+    and existing.slot_number = assignment.slot_number
+    and existing.unassigned_at is null
+);
+
+update public.jobs
+set status = 'completed'
+where id = '10000000-0000-4000-8000-000000000801'
+  and status <> 'completed';
+
+select set_config(
+  'request.jwt.claim.sub',
+  '10000000-0000-4000-8000-000000000001',
+  false
+);
+select set_config('request.jwt.claim.role', 'authenticated', false);
+select public.mark_ledger_paid(entry.id, 'bank transfer')
+from public.ledger_entries entry
+where entry.job_id = '10000000-0000-4000-8000-000000000801'
+  and entry.cleaner_id = '10000000-0000-4000-8000-000000000002'
+  and entry.status = 'owed';
+reset request.jwt.claim.sub;
+reset request.jwt.claim.role;

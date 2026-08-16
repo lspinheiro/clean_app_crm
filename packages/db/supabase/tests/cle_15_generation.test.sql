@@ -172,6 +172,8 @@ select ok(
   'only the service boundary can inspect or mutate generation failures'
 );
 
+delete from public.notifications where ledger_entry_id is not null;
+delete from public.ledger_entries;
 delete from public.job_assignments;
 delete from public.jobs;
 delete from public.recurring_assignments;
@@ -802,6 +804,8 @@ select is(
   'compaction leaves only the trailing crew slot vacant'
 );
 
+delete from public.notifications where ledger_entry_id is not null;
+delete from public.ledger_entries;
 delete from public.job_assignments;
 delete from public.jobs;
 delete from public.recurring_assignments;

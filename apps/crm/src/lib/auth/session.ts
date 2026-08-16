@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { evaluateCrmAccess } from "./access";
+import { isRecoverableAuthSessionError } from "./errors";
 import { createClient } from "@/lib/supabase/server";
 
 async function loadCompanyAdminContext() {
@@ -11,7 +12,7 @@ async function loadCompanyAdminContext() {
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError && userError.name !== "AuthSessionMissingError") throw userError;
+  if (userError && !isRecoverableAuthSessionError(userError)) throw userError;
   if (!user) {
     return {
       decision: evaluateCrmAccess({ userId: null, profile: null }),

@@ -395,11 +395,84 @@ export type Database = {
           },
         ]
       }
+      ledger_entries: {
+        Row: {
+          amount_cents: number
+          cleaner_id: string
+          company_id: string
+          created_at: string
+          id: string
+          job_id: string
+          paid_at: string | null
+          payment_note: string | null
+          status: Database["public"]["Enums"]["ledger_status"]
+        }
+        Insert: {
+          amount_cents: number
+          cleaner_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          job_id: string
+          paid_at?: string | null
+          payment_note?: string | null
+          status?: Database["public"]["Enums"]["ledger_status"]
+        }
+        Update: {
+          amount_cents?: number
+          cleaner_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          paid_at?: string | null
+          payment_note?: string | null
+          status?: Database["public"]["Enums"]["ledger_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_job_board"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["job_id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
           id: string
           job_id: string
+          ledger_entry_id: string | null
           read_at: string | null
           recipient_id: string
           type: Database["public"]["Enums"]["notification_type"]
@@ -408,6 +481,7 @@ export type Database = {
           created_at?: string
           id?: string
           job_id: string
+          ledger_entry_id?: string | null
           read_at?: string | null
           recipient_id: string
           type: Database["public"]["Enums"]["notification_type"]
@@ -416,6 +490,7 @@ export type Database = {
           created_at?: string
           id?: string
           job_id?: string
+          ledger_entry_id?: string | null
           read_at?: string | null
           recipient_id?: string
           type?: Database["public"]["Enums"]["notification_type"]
@@ -441,6 +516,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vacancies"
             referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "notifications_ledger_entry_id_fkey"
+            columns: ["ledger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_ledger_entries"
+            referencedColumns: ["ledger_entry_id"]
+          },
+          {
+            foreignKeyName: "notifications_ledger_entry_id_fkey"
+            columns: ["ledger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "company_ledger_entries"
+            referencedColumns: ["ledger_entry_id"]
+          },
+          {
+            foreignKeyName: "notifications_ledger_entry_id_fkey"
+            columns: ["ledger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_entries"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "notifications_recipient_id_fkey"
@@ -850,6 +946,27 @@ export type Database = {
           },
         ]
       }
+      cleaner_ledger_entries: {
+        Row: {
+          amount_cents: number | null
+          company_id: string | null
+          company_logo_path: string | null
+          company_name: string | null
+          created_at: string | null
+          ledger_entry_id: string | null
+          paid_at: string | null
+          status: Database["public"]["Enums"]["ledger_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_my_jobs: {
         Row: {
           assigned_at: string | null
@@ -903,6 +1020,67 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "service_catalogue"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_ledger_entries: {
+        Row: {
+          amount_cents: number | null
+          cleaner_id: string | null
+          cleaner_name: string | null
+          company_id: string | null
+          created_at: string | null
+          job_id: string | null
+          ledger_entry_id: string | null
+          paid_at: string | null
+          payment_note: string | null
+          scheduled_start: string | null
+          site_id: string | null
+          site_name: string | null
+          status: Database["public"]["Enums"]["ledger_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_job_board"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["job_id"]
           },
         ]
       }
@@ -964,6 +1142,10 @@ export type Database = {
           target_slot_number: number
         }
         Returns: string
+      }
+      backfill_completed_job_ledger_entries: {
+        Args: { target_job_id: string }
+        Returns: number
       }
       can_delete_unreferenced_company_logo: {
         Args: { object_name: string }
@@ -1104,6 +1286,10 @@ export type Database = {
           joined_company_id: string
           joined_company_name: string
         }[]
+      }
+      mark_ledger_paid: {
+        Args: { target_ledger_entry_id: string; target_payment_note?: string }
+        Returns: undefined
       }
       post_job: { Args: { target_job_id: string }; Returns: undefined }
       reconcile_recurring_assignment_jobs: {
@@ -1263,8 +1449,13 @@ export type Database = {
         | "in_progress"
         | "completed"
         | "cancelled"
+      ledger_status: "owed" | "paid"
       member_status: "active" | "removed"
-      notification_type: "job_assigned" | "job_posted" | "job_cancelled"
+      notification_type:
+        | "job_assigned"
+        | "job_posted"
+        | "job_cancelled"
+        | "payment_marked_paid"
       recurrence_frequency: "weekly" | "fortnightly"
     }
     CompositeTypes: {
@@ -1406,8 +1597,14 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      ledger_status: ["owed", "paid"],
       member_status: ["active", "removed"],
-      notification_type: ["job_assigned", "job_posted", "job_cancelled"],
+      notification_type: [
+        "job_assigned",
+        "job_posted",
+        "job_cancelled",
+        "payment_marked_paid",
+      ],
       recurrence_frequency: ["weekly", "fortnightly"],
     },
   },

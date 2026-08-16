@@ -4,11 +4,12 @@ okf_version: "0.1"
 
 # Files
 
-- [Clean App CRM Wiki Quickstart](quickstart.md) - Navigate the present scaffold, documented cleaning-CRM model, workspace commands, and OpenWiki operations safely. Use this page to route a change to its current evidence, future owner, focused validation, and implementation boundary.
-- [pnpm Workspace and Development Surface](workspace.md) - The current executable surface is a private pnpm workspace with root filter aliases and reserved app/package directories. This page records the supported commands, ownership boundaries, hygiene rules, and the absence of runnable product code.
+- [Clean App CRM Wiki Quickstart](quickstart.md) - Navigate the implemented company-admin CRM, Supabase job loop, product direction, and focused validation commands. Use this page to route changes to their owning symbols, tests, and narrowest checks.
+- [pnpm Workspace and Development Surface](workspace.md) - The repository is a private pnpm workspace with executable CRM and Supabase database packages. This page records root routing scripts, package-owned commands, generated-type workflow, and focused versus broad validation.
 
 # Directories
 
 - [architecture](architecture/)
 - [operations](operations/)
 - [product](product/)
+- [workflows](workflows/)

@@ -38,10 +38,12 @@ This diagram shows the workflow configured in the repository; it does not imply 
 4. It invokes `openwiki code --update --print` with `OPENWIKI_PROVIDER=openrouter` and `OPENWIKI_MODEL_ID=z-ai/glm-5.2`. Required secret-backed variables are `OPENROUTER_API_KEY` and `OPENWIKI_LANGSMITH_API_KEY`; the latter authenticates the LangSmith connector's code-mode pull. Optional tracing variables are `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT=openwiki`, and `LANGCHAIN_TRACING_V2=true`.
 5. The pinned `peter-evans/create-pull-request` action adds `openwiki`, `AGENTS.md`, `CLAUDE.md`, and the workflow itself, targets branch `openwiki/update`, and uses `docs: update OpenWiki` for both the commit message and PR title. Its PR body is `Automated OpenWiki documentation update.`
 
+<!-- openwiki: broken internal link [../workspace.md#development-rules-that-already-apply] heading anchor "development-rules-that-already-apply" does not exist in "../workspace.md". Fix the href or restore the target, then delete this comment. -->
 The YAML exposes variable names only. Never place their values in source, wiki pages, logs, raw connector artefacts, test fixtures, or configuration. Repository `.gitignore` excludes normal `.env*` files; see [Workspace hygiene](../workspace.md#development-rules-that-already-apply).
 
 ## Local tool hooks
 
+<!-- openwiki: broken internal link [../workspace.md#development-rules-that-already-apply] heading anchor "development-rules-that-already-apply" does not exist in "../workspace.md". Fix the href or restore the target, then delete this comment. -->
 The working tree also contains untracked `.claude/settings.local.json`, `.codex/hooks.json`, and `.cursor/hooks.json`, plus `.impeccable/config.local.json`. Their hooks conditionally run external Impeccable UI-check scripts after editing or at agent stop; the Cursor hook runs before tool use. They are not CRM runtime, CI, or OpenWiki automation, and their host-specific script locations are not portable project dependencies. The `.gitignore` currently lists only specific `.claude` local settings, so contributors should decide whether Codex/Cursor configuration is deliberate portable tooling or local state to ignore; see [workspace hygiene](../workspace.md#development-rules-that-already-apply).
 
 ## Mermaid authoring and validation

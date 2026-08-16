@@ -31,11 +31,13 @@ pnpm workspace monorepo; members are `apps/*` and `packages/*`. No app code at t
   loop, landing with the first build cycle (`docs/design/phase-a-adoption.md`).
 - `packages/db/` — reserved: Supabase schema, migrations, seed, generated types shared by apps.
 - `packages/ui/` — reserved: shared design tokens/components.
-- `docs/` — hand-authored documentation: `PRODUCT.md` (product strategy), `design/` (design docs
-  from grilling sessions — see the **grill-with-docs** skill), `decisions/` (ADRs),
-  `glossary.md`. The generated `openwiki/` index is separate — see the **openwiki** skill.
+- `docs/` — hand-authored documentation: `PRODUCT.md` (product strategy), `design/` (one folder
+  per build cycle holding its PRD/HLD/LLD, written by grilling sessions — see the
+  **grill-with-docs** and **writing-design-docs** skills; each document ends with its decision
+  log), `decisions/` (frozen archive of the old standalone ADRs — read-only), `glossary.md`.
+  The generated `openwiki/` index is separate — see the **openwiki** skill.
 - Execution tracking lives in **Linear** (workspace `cleanerapp`) — see the **issue-tracker**
-  skill for the design doc = Project / Milestone / Issue mapping and the `linear.py` API helper
+  skill for the build cycle (PRD) = Project / Milestone / Issue mapping and the `linear.py` API helper
   (`LINEAR_API_KEY` from the environment; never commit it). Planning ladder: `grill-with-docs`
   → `to-features` → `to-issues`.
 - **Skills are authored in `.agents/skills/`** (the agent-portable location, mirroring how

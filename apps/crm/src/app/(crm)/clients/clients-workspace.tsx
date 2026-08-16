@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, MapPin, Plus, Search, X } from "lucide-react";
+import { Building2, FileUp, MapPin, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useRef, useState } from "react";
@@ -117,10 +117,16 @@ export function ClientsWorkspace({ clients }: ClientsWorkspaceProps) {
             value={searchTerm}
           />
         </label>
-        <button className="button" onClick={openClientDialog} type="button">
-          <Plus aria-hidden="true" size={18} />
-          Add client
-        </button>
+        <div className="clients-toolbar__actions">
+          <Link className="button button--secondary" href="/clients/import">
+            <FileUp aria-hidden="true" size={18} />
+            Import CSV
+          </Link>
+          <button className="button" onClick={openClientDialog} type="button">
+            <Plus aria-hidden="true" size={18} />
+            Add client
+          </button>
+        </div>
       </div>
 
       {filteredClients.length ? (

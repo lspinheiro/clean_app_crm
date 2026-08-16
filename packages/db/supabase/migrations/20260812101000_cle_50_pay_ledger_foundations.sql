@@ -46,12 +46,14 @@ create unique index notifications_one_settlement_per_ledger_entry_idx
   on public.notifications (ledger_entry_id)
   where ledger_entry_id is not null;
 
-create function public.record_completed_job_ledger_entries()
-returns trigger
+create function public.backfill_completed_job_ledger_entries(target_job_id uuid)
+returns integer
 language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  inserted_count integer;
 begin
   insert into public.ledger_entries (
     company_id,
@@ -62,15 +64,33 @@ begin
   select
     client.company_id,
     assignment.cleaner_id,
-    new.id,
-    new.cleaner_pay_cents
-  from public.sites site
+    job.id,
+    job.cleaner_pay_cents
+  from public.jobs job
+  join public.sites site on site.id = job.site_id
   join public.clients client on client.id = site.client_id
-  join public.job_assignments assignment on assignment.job_id = new.id
-  where site.id = new.site_id
+  join public.job_assignments assignment on assignment.job_id = job.id
+  where job.id = target_job_id
+    and job.status = 'completed'
     and assignment.unassigned_at is null
   on conflict (job_id, cleaner_id) do nothing;
 
+  get diagnostics inserted_count = row_count;
+  return inserted_count;
+end;
+$$;
+
+revoke all on function public.backfill_completed_job_ledger_entries(uuid)
+  from public, anon, authenticated, service_role;
+
+create function public.record_completed_job_ledger_entries()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.backfill_completed_job_ledger_entries(new.id);
   return new;
 end;
 $$;
@@ -83,6 +103,21 @@ when (
   and old.status is distinct from new.status
 )
 execute function public.record_completed_job_ledger_entries();
+
+do $$
+declare
+  completed_job_id uuid;
+begin
+  for completed_job_id in
+    select job.id
+    from public.jobs job
+    where job.status = 'completed'
+    order by job.id
+  loop
+    perform public.backfill_completed_job_ledger_entries(completed_job_id);
+  end loop;
+end;
+$$;
 
 create function public.protect_ledger_entry_history()
 returns trigger

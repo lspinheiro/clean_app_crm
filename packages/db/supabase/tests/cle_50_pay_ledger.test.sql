@@ -106,6 +106,26 @@ select ok(
     ),
   'settlement is available only through the narrow authenticated RPC boundary'
 );
+select ok(
+  to_regprocedure('public.backfill_completed_job_ledger_entries(uuid)') is not null
+    and not coalesce(
+      has_function_privilege(
+        'authenticated',
+        to_regprocedure('public.backfill_completed_job_ledger_entries(uuid)'),
+        'EXECUTE'
+      ),
+      false
+    )
+    and not coalesce(
+      has_function_privilege(
+        'service_role',
+        to_regprocedure('public.backfill_completed_job_ledger_entries(uuid)'),
+        'EXECUTE'
+      ),
+      false
+    ),
+  'completed-job backfill exists as an internal-only migration boundary'
+);
 select is(
   pg_get_function_result('public.mark_ledger_paid(uuid,text)'::regprocedure),
   'void',
@@ -191,6 +211,12 @@ insert into public.jobs (
     '10000000-0000-4000-8000-000000000401',
     '30000000-0000-4000-8000-000000000002',
     '2099-10-01T15:00:00+10', 60, 8000, 14000, 'posted', 1
+  ),
+  (
+    '50000000-0000-4000-8000-000000000504',
+    '10000000-0000-4000-8000-000000000401',
+    '30000000-0000-4000-8000-000000000002',
+    '2099-10-02T08:00:00+10', 60, 11000, 17000, 'completed', 1
   );
 insert into public.job_assignments (job_id, slot_number, cleaner_id)
 values
@@ -208,6 +234,11 @@ values
     '50000000-0000-4000-8000-000000000502',
     1,
     '10000000-0000-4000-8000-000000000002'
+  ),
+  (
+    '50000000-0000-4000-8000-000000000504',
+    1,
+    '10000000-0000-4000-8000-000000000002'
   );
 insert into public.job_assignments (
   job_id,
@@ -215,12 +246,55 @@ insert into public.job_assignments (
   cleaner_id,
   assigned_at,
   unassigned_at
-) values (
-  '50000000-0000-4000-8000-000000000501',
+) values
+  (
+    '50000000-0000-4000-8000-000000000501',
+    1,
+    '10000000-0000-4000-8000-000000000004',
+    '2099-09-30T08:00:00+10',
+    '2099-09-30T09:00:00+10'
+  ),
+  (
+    '50000000-0000-4000-8000-000000000504',
+    1,
+    '10000000-0000-4000-8000-000000000004',
+    '2099-10-01T08:00:00+10',
+    '2099-10-01T09:00:00+10'
+  );
+
+select is(
+  (
+    select count(*)::integer
+    from public.ledger_entries
+    where job_id = '50000000-0000-4000-8000-000000000504'
+  ),
+  0,
+  'a job already completed before ledger installation starts without a ledger entry'
+);
+select is(
+  public.backfill_completed_job_ledger_entries(
+    '50000000-0000-4000-8000-000000000504'
+  ),
   1,
-  '10000000-0000-4000-8000-000000000004',
-  '2099-09-30T08:00:00+10',
-  '2099-09-30T09:00:00+10'
+  'backfill records each active crew slot from an already-completed job'
+);
+select results_eq(
+  $$select cleaner_id, amount_cents, status::text
+    from public.ledger_entries
+    where job_id = '50000000-0000-4000-8000-000000000504'$$,
+  $$values (
+    '10000000-0000-4000-8000-000000000002'::uuid,
+    11000,
+    'owed'::text
+  )$$,
+  'backfill uses job-record pay and ignores released assignment history'
+);
+select is(
+  public.backfill_completed_job_ledger_entries(
+    '50000000-0000-4000-8000-000000000504'
+  ),
+  0,
+  'completed-job backfill is idempotent'
 );
 
 select is(

@@ -1,5 +1,7 @@
 import type { MoneyStatus } from "./types";
 
+import { formatBrisbaneTime } from "@/lib/format/schedule";
+
 const amountFormatter = new Intl.NumberFormat("en-AU", {
   style: "currency",
   currency: "AUD",
@@ -12,13 +14,6 @@ const brisbaneDateFormatter = new Intl.DateTimeFormat("en-AU", {
   day: "numeric",
   month: "short",
   year: "numeric",
-});
-
-const brisbaneTimeFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "Australia/Brisbane",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
 });
 
 function assertNever(value: never): never {
@@ -34,7 +29,7 @@ export function formatMoneyJobDate(value: string) {
 }
 
 export function formatMoneyJobTime(value: string) {
-  return brisbaneTimeFormatter.format(new Date(value)).toLowerCase();
+  return formatBrisbaneTime(value);
 }
 
 export function formatMoneyStatus(status: MoneyStatus) {

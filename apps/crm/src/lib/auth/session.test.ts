@@ -97,6 +97,9 @@ describe("company-admin session context", () => {
     "refresh_token_not_found",
     "refresh_token_already_used",
     "session_expired",
+    "session_not_found",
+    "user_not_found",
+    "bad_jwt",
   ])("treats a dead session with code %s as anonymous", async (code) => {
     const from = vi.fn();
     mocks.createClient.mockResolvedValue({

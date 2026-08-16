@@ -75,6 +75,9 @@ describe("Supabase session proxy", () => {
     "refresh_token_not_found",
     "refresh_token_already_used",
     "session_expired",
+    "session_not_found",
+    "user_not_found",
+    "bad_jwt",
   ])("recovers a dead session with code %s in one response", async (code) => {
     configureAuthResult(new AuthApiError("Dead session", 400, code), true);
 

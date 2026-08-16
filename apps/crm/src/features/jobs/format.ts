@@ -1,17 +1,12 @@
 import type { JobStatus } from "./types";
 
+import { formatBrisbaneTime } from "@/lib/format/schedule";
+
 const brisbaneDateFormatter = new Intl.DateTimeFormat("en-AU", {
   timeZone: "Australia/Brisbane",
   weekday: "short",
   day: "numeric",
   month: "short",
-});
-
-const brisbaneTimeFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "Australia/Brisbane",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
 });
 
 const jobStatusLabels: Record<JobStatus, string> = {
@@ -29,7 +24,7 @@ export function formatJobDate(value: string) {
 }
 
 export function formatJobTime(value: string) {
-  return brisbaneTimeFormatter.format(new Date(value)).toLowerCase();
+  return formatBrisbaneTime(value);
 }
 
 export function formatJobDuration(minutes: number) {

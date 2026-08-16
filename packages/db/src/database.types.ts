@@ -1143,6 +1143,10 @@ export type Database = {
         }
         Returns: string
       }
+      backfill_completed_job_ledger_entries: {
+        Args: { target_job_id: string }
+        Returns: number
+      }
       can_delete_unreferenced_company_logo: {
         Args: { object_name: string }
         Returns: boolean

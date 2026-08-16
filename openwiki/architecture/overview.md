@@ -1,74 +1,51 @@
 ---
-type: architecture overview
-title: Present Architecture and Intended Boundaries
-description: The working tree is a pnpm workspace scaffold for a future cleaning-operator CRM, not yet an implemented application. This page separates present runtime facts from the documented target architecture and product direction.
-tags: [architecture, workspace, crm, scaffold]
+type: Architecture overview
+title: Clean App CRM Architecture Overview
+description: The repository is a pnpm monorepo with an implemented Next.js company-admin CRM and Supabase data package. This page maps their boundaries, identifies the planned cleaner surface, and routes changes to the canonical runtime and data documentation.
+tags: [architecture, crm, supabase, workspace]
+openwiki:
+  roles: [architecture, repository]
+  source_paths: [package.json, apps/crm/package.json, packages/db/package.json, pnpm-workspace.yaml]
+  validation_commands: [pnpm typecheck]
 ---
 
-# Present Architecture and Intended Boundaries
+# Clean App CRM Architecture Overview
 
-## Status: scaffold, not an application
+## Current components
 
-At inspection time, the Git repository has no commits or tracked files; the files described here are present only in the working tree. The working tree contains a root pnpm workspace, two empty placeholder directories (`apps/` and `packages/` each contain only `.gitkeep`), contributor guidance, and an OpenWiki refresh workflow. There are **no** package manifests below the root, Next.js files, TypeScript files, route handlers, React components, database schema, Supabase configuration, migrations, generated types, API endpoints, tests, or deploy configuration. Consequently, there is no current application request path, public API, persistence implementation, or executable CRM behaviour to trace.
-
-`README.md` and `AGENTS.md` describe the intended system. Treat those documents as product and contributor direction, not evidence that the named services already run. [Workspace and commands](../workspace.md) documents the executable surface that does exist; [the proposed domain](../product/domain-model.md) is the canonical home for the product model and constraints.
-
-## Present working-tree composition
+The repository is no longer a scaffold. Its two implemented workspace components are a Next.js 16 CRM (`apps/crm`) and a Supabase owner package (`packages/db`). The CRM reads company-scoped records and invokes server actions; those actions call database RPCs for mutations. Migrations, SQL tests, seed data, and the generated `Database` type live in the database package. [CRM runtime](crm-runtime.md) and [data and security](data-and-security.md) are the canonical detailed pages.
 
 ```mermaid
-flowchart TD
-    Root["Repository root"] --> Manifest["package.json"]
-    Root --> Workspace["pnpm-workspace.yaml"]
-    Workspace --> Apps["apps/* reserved"]
-    Workspace --> Packages["packages/* reserved"]
-    Root --> Workflow["OpenWiki update workflow"]
-    Apps --> CRM["apps/crm not created"]
-    Apps --> Cleaner["apps/cleaner not created"]
-    Packages --> Database["packages/db not created"]
-    Packages --> UI["packages/ui not created"]
+flowchart LR
+    Browser["Company admin browser"] --> Next["apps/crm App Router"]
+    Next --> Session["requireCompanyAdmin"]
+    Next --> Read["Company-scoped Supabase reads"]
+    Next --> Action["Server action"]
+    Action --> RPC["Security-definer RPC"]
+    Read --> Supabase["Supabase Postgres"]
+    RPC --> Supabase
+    Migrations["packages/db migrations"] --> Supabase
+    SQLTests["SQL and concurrency tests"] --> Supabase
 ```
 
-This depicts workspace membership and planned ownership, not import or runtime relationships.
+The route/action boundary depends on [data and security](data-and-security.md) for persisted contracts, while the job-specific path is explained by [job dispatch](../workflows/job-dispatch.md).
 
-- Root `package.json` is private, requires Node `>=20`, selects `pnpm@9.15.3`, and exposes only the `crm` and `cleaner` pnpm filter aliases.
-- `pnpm-workspace.yaml` includes `apps/*` and `packages/*`.
-- `pnpm-lock.yaml` has an empty root importer; it records no installed application dependency graph.
-- The only GitHub Actions workflow present is [OpenWiki automation](../operations/openwiki-automation.md); local editor hooks are a separate, non-portable development aid documented there.
+| Component | Responsibility | Public/runtime boundary | Primary validation |
+|---|---|---|---|
+| `apps/crm` | Company-admin CRM: authentication, client/site and roster surfaces, job list/detail/new-job screens, and server actions. | Browser routes and Next server actions; its application imports database types through `@clean-app/db`. | Focused Vitest route/action/model tests; `pnpm typecheck`; `pnpm build` when shipped route/build surface changes. |
+| `packages/db` | Supabase CLI owner for schema migrations, seed, generated `Database` type, SQL regression tests, and concurrency probes. | Database tables, policies, views, functions/RPCs, and generated type surface. | `pnpm db:test` with local Docker/Supabase. |
+| `apps/cleaner` | Intended cleaner-facing consumer. | No package or runtime exists. ADR 0004 defines future constraints only. | Evidence-blocked; see [product direction](../product/domain-model.md#future-cleaner-surface-adr-0004). |
+| `packages/ui` | Reserved shared UI owner. | No package or public exports exist. | Evidence-blocked. |
 
-## Intended application boundaries
+## Dependency and ownership rules
 
-The stated target is a company-side system of record for commercial cleaning operators. The repository is intended to converge the existing companion cleaner/boss prototype into one monorepo, but that sibling repository is outside this repository and was not inspected.
+- UI/domain code belongs under `apps/crm/src`; current job types import `Database` from `@clean-app/db`, rather than duplicating database enums. A new database-facing type therefore crosses a shipped internal-package boundary: update the canonical generated type and verify the CRM consumer with type checking.
+- `packages/db/supabase/migrations/` is canonical for database behaviour. Do not hand-edit `packages/db/src/database.types.ts`; regenerate it with `pnpm crm db:types` after schema changes, then validate its CRM consumers.
+- CRM server mutations require `requireCompanyAdmin` before calling RPCs. Route reads must retain company scoping rather than relying on UI filtering. See [CRM runtime](crm-runtime.md#company-scoping-and-mutations).
+- The database owns integrity and authorization contracts that cannot be trusted to a browser: RLS, grants, status transitions, slot uniqueness, and overlap checks. [Job dispatch](../workflows/job-dispatch.md) shows the application-facing effects.
 
-| Reserved owner | Intended responsibility | Current evidence |
-|---|---|---|
-| `apps/crm/` | Next.js App Router CRM for companies to manage clients, sites, schedules, rosters, and vacancies. | Planned path; not created. There is no app entrypoint or package manifest. |
-| `apps/cleaner/` | Future home for the cleaner-facing application migrated from the sibling prototype. | Planned path; not created. There is no consumer UI or route surface. |
-| `packages/db/` | Future shared Supabase schema, migrations, seed data, and generated types. | Planned path; not created. No SQL, types, RPCs, RLS, or schema ownership exists. |
-| `packages/ui/` | Future shared design tokens and components. | Planned path; not created. No exports or consuming application exists. |
+## Change navigation
 
-The companion `../clean-app` is described as the cleaner-facing vacancy-pickup consumer and migration source, but it is outside this repository and was not inspected. The README names a target stack—Next.js, React, TypeScript, Tailwind CSS v4, Supabase/Postgres/Auth, Web Push PWA, and Vercel—but no stack dependency or configuration is currently present in the working tree. Do not add or describe implementation-specific conventions as existing behaviour until their code and focused tests exist.
+Consult this page when a change crosses a package or runtime boundary. Start in [CRM runtime](crm-runtime.md) for a route or authenticated read, in [data and security](data-and-security.md) for any schema/RPC/policy change, and in [job dispatch](../workflows/job-dispatch.md) for the current dispatch slice.
 
-## Proposed deployment and trust split
-
-Contributor guidance fixes several intended boundaries for future work:
-
-- Supabase is planned to provide Postgres, authentication, migrations, RLS, and security-definer RPCs; Vercel is the intended application host.
-- The eventual roles are `boss`, `cleaner`, and internal `admin`.
-- Flow-changing mutations are intended to use atomic Postgres RPCs, with assignment races resolved first-accept-wins.
-- Cleaners should read dedicated views and use RPCs rather than direct company-table queries. A site address and access notes should become visible only after assignment; client phone numbers, client charges, and internal notes must remain unavailable to cleaners.
-- New future database tables must receive explicit grants to `authenticated` and `service_role`; the contributor guidance calls out otherwise-silent `42501` failures under the targeted Supabase PG17 image.
-
-These are design constraints rather than implemented enforcement points. Their eventual source of truth should be migrations, policies, views, RPC definitions, generated contracts, and tests under `packages/db/`, with callers in applications. Until those exist, validation is limited to workspace-level checks described in [Workspace](../workspace.md).
-
-## Change map
-
-| Intent | Start with | Then locate when implemented |
-|---|---|---|
-| Add the CRM | [Workspace](../workspace.md) and [domain model](../product/domain-model.md) | `apps/crm` package manifest, App Router composition, route/layout guards, and its tests. |
-| Add database-backed scheduling or dispatch | [Domain model](../product/domain-model.md) | `packages/db` migrations, RLS/views/RPCs, generated types, caller mutation path, and race/privacy tests. |
-| Migrate cleaner-facing features | This page and [domain model](../product/domain-model.md) | `apps/cleaner` package/entrypoints and cross-app contracts. |
-| Add shared UI | [Workspace](../workspace.md) | `packages/ui` public exports plus both consumer imports and focused rendering/interaction tests. |
-
-## Scope boundary
-
-The repository documents an internal-alpha product direction, including future notification behaviour and a later recruitment/AI roadmap. Those are not deployed or testable systems here. The [domain page](../product/domain-model.md) records the alpha boundary so planning does not become a false claim about implementation.
+A database public-surface change is incomplete if its migration passes alone: regenerate the `Database` type, retain/update the `@clean-app/db` consumer import, and run the narrow CRM type or focused test that reaches the changed contract. A CRM-only rendering change normally does not need `pnpm db:test`; reserve the database suite for migration, RPC, RLS, seed, or generated-type changes. `pnpm check` is the broad conditional gate for changes spanning multiple layers or release readiness, not the default focused check.

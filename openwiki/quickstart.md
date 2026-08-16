@@ -1,63 +1,64 @@
 ---
-type: wiki quickstart
+type: Wiki quickstart
 title: Clean App CRM Wiki Quickstart
-description: Navigate the present scaffold, documented cleaning-CRM model, workspace commands, and OpenWiki operations safely. Use this page to route a change to its current evidence, future owner, focused validation, and implementation boundary.
+description: Navigate the implemented company-admin CRM, Supabase job loop, product direction, and focused validation commands. Use this page to route changes to their owning symbols, tests, and narrowest checks.
 tags: [quickstart, navigation, crm, workspace]
+openwiki:
+  roles: [repository, workflow]
+  source_paths: [package.json, apps/crm/package.json, packages/db/package.json]
+  validation_commands: [pnpm test:vocabulary]
 ---
 
 # Clean App CRM Wiki Quickstart
 
-## Start with the repository's actual status
+## What this knowledge base covers
 
-This is a **scaffolded pnpm workspace**, not a runnable CRM. At inspection time the Git repository has no commits or tracked files; the root manifest, contributor guidance, workflow, and placeholder directories are present in the working tree. There are no application packages, routes, database configuration/migrations, generated contracts, tests, or deployed-service configuration. Product descriptions are intentional direction, not implemented behaviour.
+Clean App CRM is a pnpm monorepo for a commercial-cleaning company system of record. The working implementation includes a Next.js company-admin CRM and a Supabase-backed data package; the current job slice supports one-off jobs, crew slots, assignment, and cancellation. The cleaner app remains planned rather than present. Product requirements in `docs/PRODUCT.md` are canonical direction, while source and tests establish current behaviour.
 
 ```mermaid
-flowchart TD
-    Intent["Engineering intent"] --> Workspace["Workspace and commands"]
-    Intent --> Domain["Product model and guardrails"]
-    Intent --> Architecture["Present and intended architecture"]
-    Intent --> Operations["OpenWiki workflow and local tools"]
-    Workspace --> FutureCRM["Future apps/crm"]
-    Domain --> FutureDB["Future packages/db"]
-    Architecture --> FutureCleaner["Future apps/cleaner"]
+flowchart LR
+    CRM["apps/crm Next.js CRM"] --> Actions["Job server actions"]
+    Actions --> RPCs["Supabase RPCs"]
+    CRM --> Reads["Company-scoped reads"]
+    RPCs --> DB["packages/db migrations and policies"]
+    Reads --> DB
+    DB --> Tests["SQL and concurrency tests"]
+    Product["Product requirements"] -. guides future work .-> CRM
+    Product -. guides future work .-> Cleaner["apps/cleaner planned"]
 ```
 
-This is a navigation map of present evidence and planned ownership, not a runtime dependency graph.
+This is the implemented CRM-to-database boundary plus product direction; it does not imply that the cleaner app or all product features are shipped.
 
 ## Main sections
 
-| Page | Canonical use | Read it when |
-|---|---|---|
-| [Present Architecture and Intended Boundaries](architecture/overview.md) | Distinguishes working-tree facts from target application, deployment, trust, and package boundaries. | Planning the first CRM, database, cleaner migration, or shared-UI implementation. |
-| [Cleaning CRM Product Model and Guardrails](product/domain-model.md) | Defines the intended scheduling chain, vacancy-centred dispatch model, roles, privacy, and alpha limits. | Changing clients/sites/jobs, staffing, vacancy handling, availability, outcome capture, or future policy/RPC design. |
-| [pnpm Workspace and Development Surface](workspace.md) | Documents current root commands, Node/pnpm constraints, placeholders, hygiene, and what can actually be validated. | Adding a package, script, configuration, environment example, or development-tool convention. |
-| [OpenWiki Automation, Diagram Validation, and Connector Contract](operations/openwiki-automation.md) | Documents the GitHub workflow, diagram validation, local editor hooks, and instruction-only connector contract. | Changing wiki automation, Mermaid diagrams, or repository-local developer tooling. |
+- [Architecture overview](architecture/overview.md) explains the workspace components, runtime boundaries, and current scope.
+- [CRM runtime](architecture/crm-runtime.md) is the entry point for routes, authentication, company scoping, and app-level validation.
+- [Data and security](architecture/data-and-security.md) covers migration ownership, RLS/RPC contracts, generated types, and database tests.
+- [Job dispatch workflow](workflows/job-dispatch.md) is canonical for one-off job creation, crew-slot lifecycle, assignment, cancellation, and cache invalidation.
+- [Product model and roadmap guardrails](product/domain-model.md) separates implemented job-loop facts from v0.4 requirements for agenda, preferences, field events/chat, and the future cleaner PWA.
+- [Workspace and commands](workspace.md) documents package scripts and validation tiers.
+- [OpenWiki automation](operations/openwiki-automation.md) covers repository wiki tooling rather than product runtime.
 
 ## Task routing
 
-| Change area or intent | Canonical wiki page | Current source entrypoints/symbols | Focused tests or validation | Current limit |
-|---|---|---|---|---|
-| Root workspace or package bootstrap | [Workspace](workspace.md) | `package.json` scripts `crm`/`cleaner`; `pnpm-workspace.yaml` member globs | `pnpm install`; then the new package’s own pnpm script once defined | No package-level scripts/tests exist. |
-| Create the CRM app | [Architecture](architecture/overview.md), then [domain model](product/domain-model.md) | Intended path `apps/crm/`; no entrypoint exists | Add and run a focused app build/type/test command in the same implementation change | `apps/crm/` is not created. |
-| Add scheduling, roster, job, or vacancy behaviour | [Domain model](product/domain-model.md) | Product concepts `Client`, `Site`, `RecurringAssignment`, `Job`, `Vacancy`; no exported types | Introduce migration/RPC/view/app tests for crew size, vacancy derivation, privacy, and races as applicable | No `packages/db/`, schema, RLS, RPCs, or tests exist. |
-| Build a cleaner-facing surface or migrate the prototype | [Architecture](architecture/overview.md), [domain model](product/domain-model.md) | Intended path `apps/cleaner/`; sibling `../clean-app` is outside this repository | Define consumer contracts and add focused cleaner app tests after migration | The path is not created and the sibling repository was not inspected. |
-| Add shared database or UI package | [Architecture](architecture/overview.md), [Workspace](workspace.md) | Intended `packages/db/` or `packages/ui/` | Verify public exports, consumer imports, and focused behaviour tests | Neither package path exists. |
-| Change OpenWiki CI, Mermaid, or local hooks | [Operations](operations/openwiki-automation.md) | `.github/workflows/openwiki-update.yml`; `skills/mermaid-diagrams/SKILL.md`; local hook configuration | Review permissions, pins, secret names, and Mermaid source-grounding; use hosted workflow when appropriate | No local workflow test suite exists. |
+| Change area or user intent | Relevant wiki page | Exact source entry points | Important symbols or types | Focused tests | Minimal validation command |
+|---|---|---|---|---|---|
+| Add or alter a CRM route, auth guard, or company-scoped server read | [CRM runtime](architecture/crm-runtime.md) | `apps/crm/src/app/`; `apps/crm/src/lib/auth/session.ts` | `requireCompanyAdmin` | adjacent `*.test.tsx`; `apps/crm/src/lib/auth/session.test.ts` | `pnpm --filter crm test:run -- <test-file>` |
+| Change one-off creation, dispatch, slot assignment, or cancellation | [Job dispatch workflow](workflows/job-dispatch.md) | `apps/crm/src/app/actions/jobs.ts`; `apps/crm/src/features/jobs/` | `createOneOffJob`, `assignJobSlot`, `cancelJob`, `buildJobSlots` | `apps/crm/src/app/actions/jobs.test.ts`; `apps/crm/src/features/jobs/{schema,model}.test.ts`; job route tests | `pnpm --filter crm test:run -- src/app/actions/jobs.test.ts` |
+| Change job persistence, constraints, RLS, or RPC semantics | [Data and security](architecture/data-and-security.md), then [job dispatch](workflows/job-dispatch.md) | `packages/db/supabase/migrations/`; `packages/db/src/database.types.ts` | `create_one_off_job`, `assign_job_slot`, `cancel_job` | `packages/db/supabase/tests/cle_23_one_off_jobs.test.sql`; `cle_49_loop_foundations.test.sql` | `pnpm db:test` (Docker/Supabase required); then `pnpm crm db:types` if contract changes |
+| Change recurring generation, named cleaners, or roster-derived vacancies | [Data and security](architecture/data-and-security.md), [product model](product/domain-model.md) | `20260809210000_cle_14_recurring_assignments.sql`; `20260809220000_cle_15_recurring_job_generation.sql` | recurring assignment and generation RPCs | `cle_14_recurring_assignments.test.sql`; `cle_15_generation.test.sql` | `pnpm db:test` (Docker/Supabase required) |
+| Change product scope for agenda, preferences, chat/events, or cleaner surface | [Product model](product/domain-model.md) | `docs/PRODUCT.md`; `docs/decisions/0004-cleaner-surface-wrapper-ready-pwa.md` | F5, F11, F14; ADR 0004 | No cleaner implementation tests exist | Documentation review only; add implementation checks with code |
+| Change workspace scripts or package tooling | [Workspace](workspace.md) | `package.json`; `apps/crm/package.json`; `packages/db/package.json` | root pnpm filter aliases | `scripts/run-local-dev.test.mjs` where launcher behaviour changes | `pnpm test:dev-setup` |
 
-## Concepts that govern future implementation
+## Invariants worth preserving
 
-- **Vacancy is the connecting object.** Roster gaps, uncovered jobs, and dropouts must create a vacancy; outbound distribution should consume it rather than bypass it. See [the domain model](product/domain-model.md#core-scheduling-chain).
-- **A job has crew size of at least one and per-slot staffing.** Recurrence generates job instances, while one-off jobs are directly scheduled. See [entities and responsibilities](product/domain-model.md#entities-and-responsibilities).
-- **Cleaner visibility is assignment-gated.** Future implementation must use privacy-filtered views/RPCs, with address/access disclosure only after assignment and no client phone, charge, or internal notes exposed. See [roles, visibility, and safety rules](product/domain-model.md#roles-visibility-and-safety-rules).
-- **The alpha is deliberately narrow.** Public signup, share links, vetting, reviews, messaging, AI, WhatsApp, and payments are not alpha work. See [boundary of the alpha](product/domain-model.md#boundary-of-the-alpha).
+- Job mutations are company-admin-only and delegate state-changing persistence to database RPCs; see [CRM runtime](architecture/crm-runtime.md) and [data/security](architecture/data-and-security.md).
+- A job has numbered crew slots. `buildJobSlots` exposes open slots only while status is `draft` or `posted`; assignment history is retained for released slots. See [the dispatch lifecycle](workflows/job-dispatch.md#crew-slot-lifecycle).
+- Assignment and cancellation refresh both the job detail and collection consumers (`/jobs`, `/roster`) so a stale UI is not treated as authoritative. See [cache and failure handling](workflows/job-dispatch.md#cache-and-failure-handling).
+- Vacancy remains a projection of unfilled crew slots, not a separate persistence object. See [the product model](product/domain-model.md#implemented-job-loop-and-product-direction).
 
 ## Backlog: evidence-blocked documentation
 
-The following must gain source code and focused tests before this wiki can document their real entrypoints, schemas, APIs, lifecycles, or validation commands:
-
-- `apps/crm/` and `apps/cleaner/` are planned paths named in `README.md` and `AGENTS.md`, but do not exist in the working tree.
-- `packages/db/` and `packages/ui/` are planned owners, but no package manifests, migrations, RLS policies, RPCs, exports, or test harnesses exist.
-- The README describes aspirational `pnpm crm dev`, build, Supabase reset, and type-generation commands; root configuration has no corresponding CRM package/scripts.
-- There are no product API endpoints, database contracts, auth implementation, notification implementation, deployment configuration, or test files to document.
-
-When any item begins implementation, update the relevant canonical page with the composition root, public surface, upstream/downstream relationships, state/persistence boundaries, representative failure tests, and the narrowest validation command.
+- `apps/cleaner/` is specified by ADR 0004 but has no package, source, routes, PWA configuration, or tests. Its client-first/static-exportable constraints are documented as future direction in [the product model](product/domain-model.md#future-cleaner-surface-adr-0004).
+- F14 free-text job threads, photos, and AI assistance are product requirements, not current tables, RPCs, or UI. `docs/PRODUCT.md` §F14 is the source anchor.
+- Job-type preference ordering and a cross-pool cleaner weekly agenda are product requirements; no current cleaner consumer implements them. `docs/PRODUCT.md` F5/F11 is the source anchor.

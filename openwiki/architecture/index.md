@@ -1,3 +1,5 @@
 # Files
 
-- [Present Architecture and Intended Boundaries](overview.md) - The working tree is a pnpm workspace scaffold for a future cleaning-operator CRM, not yet an implemented application. This page separates present runtime facts from the documented target architecture and product direction.
+- [CRM Runtime, Authentication, and Company Scope](crm-runtime.md) - The Next.js CRM uses App Router route groups, company-admin session enforcement, and company-scoped Supabase reads. Job mutations are server actions that validate input and hand critical state transitions to database RPCs.
+- [Supabase Data, Security, and Generated Contract](data-and-security.md) - packages/db owns Supabase migrations, seed data, SQL regression tests, concurrency checks, and the generated Database type consumed by the CRM. Database RPCs enforce workflow mutations and data-access rules that application code cannot safely own.
+- [Clean App CRM Architecture Overview](overview.md) - The repository is a pnpm monorepo with an implemented Next.js company-admin CRM and Supabase data package. This page maps their boundaries, identifies the planned cleaner surface, and routes changes to the canonical runtime and data documentation.

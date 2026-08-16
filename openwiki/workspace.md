@@ -1,60 +1,48 @@
 ---
-type: workspace reference
+type: Workspace reference
 title: pnpm Workspace and Development Surface
-description: The current executable surface is a private pnpm workspace with root filter aliases and reserved app/package directories. This page records the supported commands, ownership boundaries, hygiene rules, and the absence of runnable product code.
-tags: [workspace, pnpm, tooling, repository-hygiene]
+description: The repository is a private pnpm workspace with executable CRM and Supabase database packages. This page records root routing scripts, package-owned commands, generated-type workflow, and focused versus broad validation.
+tags: [workspace, pnpm, tooling, validation]
+openwiki:
+  roles: [repository, testing]
+  source_paths: [package.json, apps/crm/package.json, packages/db/package.json, scripts/run-local-dev.mjs]
+  validation_commands: [pnpm test:vocabulary, pnpm test:dev-setup, pnpm check]
 ---
 
 # pnpm Workspace and Development Surface
 
-## What can run today
+## Workspace layout
 
-The root `package.json` is the only package manifest. It declares a private package named `clean-app-crm`, Node `>=20`, and `pnpm@9.15.3`. The repository uses pnpm workspaces exclusively; `pnpm-workspace.yaml` discovers `apps/*` and `packages/*`.
+The root `package.json` defines private package `clean-app-crm`, Node `>=20`, and `pnpm@9.15.3`; `pnpm-workspace.yaml` discovers `apps/*` and `packages/*`. `apps/crm` is a Next.js application named `crm`; `packages/db` is the `@clean-app/db` Supabase CLI and generated-type package. [Architecture](architecture/overview.md) explains their runtime relationship.
 
-| Root script | Expands to | Current result |
+| Command | Owner and purpose | Use it when |
 |---|---|---|
-| `pnpm crm <command>` | `pnpm --filter crm <command>` | No `crm` package exists, so there is no script or application to run. |
-| `pnpm cleaner <command>` | `pnpm --filter cleaner <command>` | No `cleaner` package exists, so there is no script or application to run. |
-| `pnpm install` | Installs workspace dependencies | Valid workspace setup command; the present lockfile has only an empty root importer, so no app dependency graph is currently declared. |
+| `pnpm crm <command>` | Root alias for `pnpm --filter crm`; CRM scripts include `dev`, `build`, `lint`, `typecheck`, `test:run`, and `test:e2e`. | Running or validating CRM work. |
+| `pnpm db:start`, `pnpm db:stop`, `pnpm db:reset` | Root aliases for the `@clean-app/db` local Supabase lifecycle. | Local database lifecycle work; Docker is required. |
+| `pnpm db:test` | Runs SQL tests and all registered Node concurrency probes through `packages/db/scripts/test-local.mjs`. | Migrations, RPCs, RLS/grants, seed, or concurrency changes. |
+| `pnpm crm db:types` | Forwards to the database package and generates `packages/db/src/database.types.ts` from the local public schema. | A database schema/type contract changes. |
+| `pnpm test` | Runs CRM Vitest in non-watch mode. | Broad CRM regression validation, after focused tests. |
+| `pnpm lint`, `pnpm typecheck`, `pnpm build` | CRM lint, route-aware type check, and production build. | Respectively lint/type/build boundaries change. |
+| `pnpm test:dev-setup` | Executes `scripts/run-local-dev.test.mjs`. | Editing the local launcher or its setup behaviour. |
+| `pnpm test:vocabulary` | Executes `scripts/check-vocabulary.mjs`. | Product-facing vocabulary is changed. |
+| `pnpm check` | Vocabulary + launcher + CRM tests + database tests + lint + typecheck + build. | Conditional whole-surface gate, not ordinary focused validation. |
 
-The README lists aspirational commands such as `pnpm crm dev`, `pnpm crm build`, `pnpm crm db:start`, `pnpm crm db:reset`, and `pnpm crm db:types`. They are expected only after `apps/crm` and its scripts are created. Do not use their mention as evidence that a Next.js app or Supabase tooling is configured.
+## Local development and boundaries
 
-## Current workspace ownership
+`pnpm crm dev` runs `scripts/run-local-dev.mjs` through the CRM package. The README describes its role: start/reuse local Supabase, apply pending migrations without resetting existing data, load a configured demo seed on a fresh volume, and start the CRM. Database commands are package-owned and forwarded by CRM scripts as well as root aliases.
 
-| Path | Intended owner | Present contents | What is absent |
-|---|---|---|---|
-| `/` | Workspace orchestration | root manifest, pnpm workspace file and lockfile | Application source, test runner configuration, shared package exports. |
-| `apps/crm/` | Company-side CRM | Path is not created; intended ownership is documented in `README.md` and `AGENTS.md`. | Package manifest, App Router entrypoint, routes, components, environment example, tests. |
-| `apps/cleaner/` | Future migrated cleaner app | Path is not created; intended ownership is documented in `README.md` and `AGENTS.md`. | Package manifest, routes, consumer interfaces, tests. |
-| `packages/db/` | Future Supabase/shared data owner | Directory not created | Migrations, schema, SQL views/RPCs, seeds, type generation, contracts, tests. |
-| `packages/ui/` | Future UI sharing owner | Directory not created | Package manifest, design tokens, component exports, consumer tests. |
+Do not read or commit `.env*` files. `apps/crm/.env.local` is for optional local overrides; setup documentation and examples must contain placeholders only. The local seed is demo-only and must not become production credentials or real client data.
 
-The tree means there is no current import graph to preserve. [Present Architecture](architecture/overview.md) explains the proposed inter-package split, while [the domain model](product/domain-model.md) describes the product constraints future packages need to realise.
+`packages/db/src/database.types.ts` is generated. The canonical source is migration SQL, not the generated file. A schema change crosses the [data contract](architecture/data-and-security.md): generate types with `pnpm crm db:types` (or the package-owned `pnpm --dir packages/db db:types`), update the CRM consumer where needed, then typecheck the consumer import path.
 
-## Development rules that already apply
+## Focused validation guidance
 
-`AGENTS.md` establishes constraints for future development:
+Use the smallest check that exercises the changed boundary:
 
-- Run package work from the repository root with pnpm; do not use npm or yarn and do not add a lockfile other than `pnpm-lock.yaml`. The npm invocation in the GitHub Action is an intentional, separate global-tool installation on an ephemeral runner; see [OpenWiki automation](operations/openwiki-automation.md).
-- Use English UI prose, AUD currency, and `Australia/Brisbane` timezone. Contributor prose uses en-GB/Australian spelling.
-- Do not commit secrets. `.gitignore` excludes `.env` and `.env.*` but keeps `.env.example` trackable; use an in-app `.env.example` with placeholders when an application is created.
-- The working tree has untracked `.claude/`, `.codex/`, and `.cursor/` local hook configuration. If these are local state, add an ignore rule; if they are intended as portable tooling, deliberately version and document them. Current `.gitignore` ignores only the listed `.claude` local files.
-- Keep demo credentials clearly marked and use no real client data in fixtures.
-- Avoid adding later-stage features to the internal alpha; the exact product boundary is in [Cleaning CRM Product Model and Guardrails](product/domain-model.md).
+- CRM action/model/schema test: `pnpm --filter crm test:run -- <relative-test-path>`.
+- Database migration/RPC/RLS/seed: `pnpm db:test` (requires Docker/local Supabase).
+- Changed generated schema contract: `pnpm crm db:types && pnpm --filter crm typecheck`.
+- Local development launcher: `pnpm test:dev-setup`.
+- Vocabulary-only content: `pnpm test:vocabulary`.
 
-The contributor contract also prescribes explicit Supabase grants for future tables and server-side/RPC enforcement for critical state changes. Those requirements have no source implementation yet and should be owned with future database migrations rather than root scripts.
-
-## Narrow validation by change type
-
-| Change | Narrowest current validation | What cannot yet be validated |
-|---|---|---|
-| Root workspace metadata | `pnpm install` under the required Node version | There are no workspace package scripts, type checks, linters, or tests. |
-| Add an app/package manifest | `pnpm --filter <new-package-name> <its-script>` once defined | No conventional script names are established yet. |
-| Add schema, RPCs, RLS, or generated types | The future database package’s focused migration/type/test command | There is no Supabase configuration, migration runner, or database test harness. |
-| Change generated wiki automation | Inspect `.github/workflows/openwiki-update.yml`; use [OpenWiki automation](operations/openwiki-automation.md) | This repository contains no local workflow test suite. |
-
-Do not claim broad `test`, `lint`, `typecheck`, build, database reset, or deployment commands until their package scripts/configurations are checked in. The repository has no test files; thus there are no representative assertions or failure cases to cite.
-
-## Safe extension sequence
-
-When implementing the first real component, establish its complete surface in the same change: package manifest and script contract, runtime entrypoint, typed public exports if shared, configuration with placeholder-only examples, focused tests, and root-compatible pnpm invocation. For database-backed product work, pair application code with the future `packages/db` schema/policy/RPC/type surface and the privacy/race invariants described in [the domain model](product/domain-model.md).
+`pnpm check`, E2E tests, and the production build are intentionally broader. Run them when a change crosses multiple package/runtime boundaries, changes a release-facing route/build contract, or the task explicitly requires whole-repository confidence. Do not use them by default for a single component or SQL assertion change.

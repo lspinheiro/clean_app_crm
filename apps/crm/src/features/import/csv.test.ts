@@ -41,6 +41,12 @@ describe("CLE-71 CSV contract", () => {
     expect(preview.rows).toEqual([
       {
         rowNumber: 2,
+        sourceCells: [
+          "North, Corp",
+          "A \"quoted\" contact",
+          "07 5555 0101",
+          "First line\nSecond line",
+        ],
         state: "ready",
         values: {
           name: "North, Corp",
@@ -111,6 +117,13 @@ describe("CLE-71 CSV contract", () => {
     );
     expect(preview.rows[1]).toEqual({
       rowNumber: 3,
+      sourceCells: [
+        "Harbour Offices",
+        "Broadbeach Towers",
+        "20 Marine Parade",
+        "Southport",
+        "",
+      ],
       state: "ready",
       values: {
         clientName: "Harbour Offices",
@@ -138,15 +151,63 @@ describe("CLE-71 CSV contract", () => {
   it("serialises failed values with the published headers and safe CSV quoting", () => {
     expect(
       serialiseImportRows("clients", [
-        {
-          name: "North, Corp",
-          contactName: "A \"quoted\" contact",
-          phone: "",
-          notes: "First line\nSecond line",
-        },
+        ["North, Corp", "A \"quoted\" contact", "", "First line\nSecond line"],
       ]),
     ).toBe(
       "name,contact_name,phone,notes\r\n\"North, Corp\",\"A \"\"quoted\"\" contact\",,\"First line\nSecond line\"\r\n",
     );
+  });
+
+  it("keeps every source cell when an over-wide row is exported for retry", () => {
+    const preview = parseSiteImportCsv(
+      [
+        "client_name,name,address,suburb,access_notes",
+        "Oceanview Property Group,Main Office,10 Surf Parade, Broadbeach,Southport,Rear door",
+      ].join("\n"),
+      [
+        {
+          id: "10000000-0000-4000-8000-000000000301",
+          name: "Oceanview Property Group",
+          siteNames: [],
+        },
+      ],
+    );
+
+    expect(preview.rows[0]).toEqual(
+      expect.objectContaining({
+        rowNumber: 2,
+        sourceCells: [
+          "Oceanview Property Group",
+          "Main Office",
+          "10 Surf Parade",
+          " Broadbeach",
+          "Southport",
+          "Rear door",
+        ],
+        state: "invalid",
+      }),
+    );
+    expect(serialiseImportRows("sites", [preview.rows[0]!.sourceCells])).toBe(
+      "client_name,name,address,suburb,access_notes\r\n" +
+        "Oceanview Property Group,Main Office,10 Surf Parade, Broadbeach,Southport,Rear door\r\n",
+    );
+  });
+
+  it("ignores interior blank records without shifting later row numbers", () => {
+    const preview = parseClientImportCsv(
+      [
+        "name,contact_name,phone,notes",
+        "North Offices,, ,",
+        "   ",
+        "Harbour Offices,, ,",
+      ].join("\n"),
+      [],
+    );
+
+    expect(preview.rows.map((row) => row.rowNumber)).toEqual([2, 4]);
+    expect(preview.rows.map((row) => row.values.name)).toEqual([
+      "North Offices",
+      "Harbour Offices",
+    ]);
   });
 });

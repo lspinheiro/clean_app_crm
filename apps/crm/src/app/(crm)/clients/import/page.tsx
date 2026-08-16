@@ -20,6 +20,7 @@ async function loadClients(supabase: Supabase, companyId: string) {
       .select("id, name")
       .eq("company_id", companyId)
       .order("name")
+      .order("id")
       .range(offset, offset + pageSize - 1);
     if (error) throw error;
     clients.push(...(data ?? []));
@@ -36,6 +37,7 @@ async function loadSites(supabase: Supabase, companyId: string) {
       .select("client_id, name, clients!inner(company_id)")
       .eq("clients.company_id", companyId)
       .order("name")
+      .order("id")
       .range(offset, offset + pageSize - 1);
     if (error) throw error;
     sites.push(

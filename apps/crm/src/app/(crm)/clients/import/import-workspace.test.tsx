@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -219,5 +219,95 @@ describe("CLE-71 import workspace", () => {
       });
     });
     expect(mocks.importClientRow).not.toHaveBeenCalled();
+  });
+
+  it("exports every original cell from an over-wide failed row", async () => {
+    const user = userEvent.setup();
+    render(<ImportWorkspace clients={clients} />);
+
+    await user.click(screen.getByRole("radio", { name: "Sites" }));
+    await user.upload(
+      screen.getByLabelText("Site CSV file"),
+      new File(
+        [
+          "client_name,name,address,suburb,access_notes\n",
+          "Oceanview Property Group,Main Office,10 Surf Parade, Broadbeach,Southport,Rear door\n",
+          "Oceanview Property Group,Valid Office,20 Marine Parade,Southport,Use rear door\n",
+        ],
+        "sites.csv",
+        { type: "text/csv" },
+      ),
+    );
+    await user.click(await screen.findByRole("button", { name: "Confirm import" }));
+
+    const results = await screen.findByRole("region", { name: "Import results" });
+    const failedDownload = within(results).getByRole("link", {
+      name: "Download 1 failed row",
+    });
+    expect(decodeURIComponent(failedDownload.getAttribute("href") ?? "")).toContain(
+      "client_name,name,address,suburb,access_notes\r\n" +
+        "Oceanview Property Group,Main Office,10 Surf Parade, Broadbeach,Southport,Rear door\r\n",
+    );
+  });
+
+  it("rejects non-UTF-8 files instead of previewing corrupted values", async () => {
+    const user = userEvent.setup();
+    render(<ImportWorkspace clients={clients} />);
+    const prefix = new TextEncoder().encode(
+      "name,contact_name,phone,notes\nCaf",
+    );
+    const suffix = new TextEncoder().encode(" Nero,,,\n");
+    const bytes = new Uint8Array(prefix.length + 1 + suffix.length);
+    bytes.set(prefix);
+    bytes[prefix.length] = 0xe9;
+    bytes.set(suffix, prefix.length + 1);
+
+    await user.upload(
+      screen.getByLabelText("Client CSV file"),
+      new File([bytes], "clients.csv", { type: "text/csv" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Re-save it as CSV UTF-8 and choose it again.",
+    );
+    expect(screen.queryByRole("table", { name: "Client import preview" })).not.toBeInTheDocument();
+  });
+
+  it("ignores a file read that finishes after the record type changes", async () => {
+    let finishText: ((value: string) => void) | undefined;
+    let finishBuffer: ((value: ArrayBuffer) => void) | undefined;
+    const text = "name,contact_name,phone,notes\nNorth Offices,,,\n";
+    const file = new File([text], "clients.csv", { type: "text/csv" });
+    Object.defineProperties(file, {
+      text: {
+        value: vi.fn(
+          () =>
+            new Promise<string>((resolve) => {
+              finishText = resolve;
+            }),
+        ),
+      },
+      arrayBuffer: {
+        value: vi.fn(
+          () =>
+            new Promise<ArrayBuffer>((resolve) => {
+              finishBuffer = resolve;
+            }),
+        ),
+      },
+    });
+    const user = userEvent.setup();
+    render(<ImportWorkspace clients={clients} />);
+
+    await user.upload(screen.getByLabelText("Client CSV file"), file);
+    await waitFor(() => expect(finishText ?? finishBuffer).toBeTypeOf("function"));
+    await user.click(screen.getByRole("radio", { name: "Sites" }));
+    await act(async () => {
+      finishText?.(text);
+      finishBuffer?.(new TextEncoder().encode(text).buffer);
+    });
+
+    expect(screen.getByRole("radio", { name: "Sites" })).toBeChecked();
+    expect(screen.queryByRole("table", { name: "Client import preview" })).not.toBeInTheDocument();
   });
 });

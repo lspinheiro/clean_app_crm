@@ -32,6 +32,7 @@ export type ExistingImportClient = {
 
 export type ImportPreviewRow<TValues, TActionInput = TValues> = {
   rowNumber: number;
+  sourceCells: string[];
   values: TValues;
 } & (
   | { state: "ready"; actionInput: TActionInput }
@@ -53,13 +54,15 @@ const siteHeaders = [
   "access_notes",
 ] as const;
 
-type ParsedCsv = { rows: string[][]; error: string | null };
+type ParsedCsvRow = { cells: string[]; rowNumber: number };
+type ParsedCsv = { rows: ParsedCsvRow[]; error: string | null };
 
 function parseCsv(source: string): ParsedCsv {
-  const rows: string[][] = [];
+  const rows: ParsedCsvRow[] = [];
   let row: string[] = [];
   let cell = "";
   let quoted = false;
+  let rowNumber = 1;
 
   for (let index = 0; index < source.length; index += 1) {
     const character = source[index];
@@ -84,9 +87,10 @@ function parseCsv(source: string): ParsedCsv {
       cell = "";
     } else if (character === "\n") {
       row.push(cell);
-      rows.push(row);
+      rows.push({ cells: row, rowNumber });
       row = [];
       cell = "";
+      rowNumber += 1;
     } else if (character !== "\r") {
       cell += character;
     }
@@ -98,13 +102,15 @@ function parseCsv(source: string): ParsedCsv {
 
   row.push(cell);
   if (row.some((value) => value.length > 0) || rows.length === 0) {
-    rows.push(row);
-  }
-  while (rows.at(-1)?.every((value) => value.trim().length === 0)) {
-    rows.pop();
+    rows.push({ cells: row, rowNumber });
   }
 
-  return { rows, error: null };
+  return {
+    rows: rows.filter(({ cells }) =>
+      cells.some((value) => value.trim().length > 0),
+    ),
+    error: null,
+  };
 }
 
 function headersMatch(actual: string[] | undefined, expected: readonly string[]) {
@@ -148,7 +154,7 @@ export function parseClientImportCsv(
 ): ImportPreview<ClientImportValues> {
   const parsedCsv = parseCsv(source);
   if (parsedCsv.error) return { fileError: parsedCsv.error, rows: [] };
-  if (!headersMatch(parsedCsv.rows[0], clientHeaders)) {
+  if (!headersMatch(parsedCsv.rows[0]?.cells, clientHeaders)) {
     return {
       fileError:
         "Use the client template columns: name, contact_name, phone, notes.",
@@ -162,12 +168,12 @@ export function parseClientImportCsv(
   const namesInFile = new Map<string, string>();
   const rows: ImportPreviewRow<ClientImportValues>[] = [];
 
-  parsedCsv.rows.slice(1).forEach((cells, index) => {
+  parsedCsv.rows.slice(1).forEach(({ cells, rowNumber }) => {
     const values = clientValues(cells);
-    const rowNumber = index + 2;
     if (cells.length !== clientHeaders.length) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "invalid",
         values,
         reason: "Expected " + clientHeaders.length + " columns.",
@@ -179,6 +185,7 @@ export function parseClientImportCsv(
     if (!validation.success) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "invalid",
         values,
         reason: firstReason(validation.error.issues),
@@ -197,6 +204,7 @@ export function parseClientImportCsv(
     if (existingName) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "duplicate",
         values: cleanValues,
         reason: "A client named " + existingName + " already exists.",
@@ -207,6 +215,7 @@ export function parseClientImportCsv(
     if (earlierName) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "duplicate",
         values: cleanValues,
         reason: "A client named " + earlierName + " is already in this file.",
@@ -217,6 +226,7 @@ export function parseClientImportCsv(
     namesInFile.set(normalised, cleanValues.name);
     rows.push({
       rowNumber,
+      sourceCells: [...cells],
       state: "ready",
       values: cleanValues,
       actionInput: cleanValues,
@@ -232,7 +242,7 @@ export function parseSiteImportCsv(
 ): ImportPreview<SiteImportValues, SiteImportActionInput> {
   const parsedCsv = parseCsv(source);
   if (parsedCsv.error) return { fileError: parsedCsv.error, rows: [] };
-  if (!headersMatch(parsedCsv.rows[0], siteHeaders)) {
+  if (!headersMatch(parsedCsv.rows[0]?.cells, siteHeaders)) {
     return {
       fileError:
         "Use the site template columns: client_name, name, address, suburb, access_notes.",
@@ -248,12 +258,12 @@ export function parseSiteImportCsv(
   const sitesInFile = new Map<string, string>();
   const rows: ImportPreviewRow<SiteImportValues, SiteImportActionInput>[] = [];
 
-  parsedCsv.rows.slice(1).forEach((cells, index) => {
+  parsedCsv.rows.slice(1).forEach(({ cells, rowNumber }) => {
     const values = siteValues(cells);
-    const rowNumber = index + 2;
     if (cells.length !== siteHeaders.length) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "invalid",
         values,
         reason: "Expected " + siteHeaders.length + " columns.",
@@ -263,6 +273,7 @@ export function parseSiteImportCsv(
     if (!values.clientName) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "invalid",
         values,
         reason: "Enter a client name.",
@@ -275,6 +286,7 @@ export function parseSiteImportCsv(
     if (matchingClients.length === 0) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "invalid",
         values,
         reason: "No client named " + values.clientName + " exists.",
@@ -284,6 +296,7 @@ export function parseSiteImportCsv(
     if (matchingClients.length > 1) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "invalid",
         values,
         reason:
@@ -305,6 +318,7 @@ export function parseSiteImportCsv(
     if (!validation.success) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "invalid",
         values,
         reason: firstReason(validation.error.issues),
@@ -327,6 +341,7 @@ export function parseSiteImportCsv(
     if (existingName) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "duplicate",
         values: cleanValues,
         reason: existingName + " already exists for " + client.name + ".",
@@ -337,6 +352,7 @@ export function parseSiteImportCsv(
     if (earlierSiteName) {
       rows.push({
         rowNumber,
+        sourceCells: [...cells],
         state: "duplicate",
         values: cleanValues,
         reason:
@@ -351,6 +367,7 @@ export function parseSiteImportCsv(
     sitesInFile.set(key, cleanValues.name);
     rows.push({
       rowNumber,
+      sourceCells: [...cells],
       state: "ready",
       values: cleanValues,
       actionInput: {
@@ -377,39 +394,21 @@ function assertNever(value: never): never {
 
 export function serialiseImportRows(
   entity: ImportEntity,
-  rows: Array<ClientImportValues | SiteImportValues>,
+  rows: string[][],
 ): string {
-  const output: string[][] = [];
+  let headers: readonly string[];
   switch (entity) {
     case "clients":
-      output.push([...clientHeaders]);
-      for (const row of rows) {
-        if ("clientName" in row) {
-          throw new Error("A site row cannot be exported as a client row.");
-        }
-        output.push([row.name, row.contactName, row.phone, row.notes]);
-      }
+      headers = clientHeaders;
       break;
     case "sites":
-      output.push([...siteHeaders]);
-      for (const row of rows) {
-        if (!("clientName" in row)) {
-          throw new Error("A client row cannot be exported as a site row.");
-        }
-        output.push([
-          row.clientName,
-          row.name,
-          row.address,
-          row.suburb,
-          row.accessNotes,
-        ]);
-      }
+      headers = siteHeaders;
       break;
     default:
       assertNever(entity);
   }
 
-  return output
+  return [[...headers], ...rows]
     .map((cells) => cells.map(escapeCsv).join(","))
     .join("\r\n") + "\r\n";
 }

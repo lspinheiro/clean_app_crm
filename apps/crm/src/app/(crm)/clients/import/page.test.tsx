@@ -80,6 +80,8 @@ describe("CLE-71 import route", () => {
       "company_id",
       "10000000-0000-4000-8000-000000000010",
     );
+    expect(clientsQuery.order).toHaveBeenNthCalledWith(1, "name");
+    expect(clientsQuery.order).toHaveBeenNthCalledWith(2, "id");
     expect(sitesQuery.select).toHaveBeenCalledWith(
       "client_id, name, clients!inner(company_id)",
     );
@@ -87,6 +89,8 @@ describe("CLE-71 import route", () => {
       "clients.company_id",
       "10000000-0000-4000-8000-000000000010",
     );
+    expect(sitesQuery.order).toHaveBeenNthCalledWith(1, "name");
+    expect(sitesQuery.order).toHaveBeenNthCalledWith(2, "id");
     expect(mocks.importWorkspace).toHaveBeenCalledWith(
       {
         clients: [

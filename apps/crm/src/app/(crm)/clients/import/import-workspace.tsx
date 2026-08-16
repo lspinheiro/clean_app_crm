@@ -44,6 +44,7 @@ type ResultState = "created" | "skipped" | "failed";
 type ImportResultRow<TValues> = {
   message: string;
   rowNumber: number;
+  sourceCells: string[];
   state: ResultState;
   values: TValues;
 };
@@ -185,16 +186,10 @@ function resultCounts(rows: ImportResultRow<unknown>[]) {
 function ImportResultsPanel({ results }: { results: ImportResults }) {
   const counts = resultCounts(results.rows);
   const failedRows = results.rows.filter((row) => row.state === "failed");
-  const csv =
-    results.entity === "clients"
-      ? serialiseImportRows(
-          "clients",
-          failedRows.map((row) => row.values),
-        )
-      : serialiseImportRows(
-          "sites",
-          failedRows.map((row) => row.values),
-        );
+  const csv = serialiseImportRows(
+    results.entity,
+    failedRows.map((row) => row.sourceCells),
+  );
   const href =
     "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
 
@@ -248,6 +243,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<Progress>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileReadRequestRef = useRef(0);
   const readyCount = useMemo(
     () =>
       previewState?.preview.rows.filter((row) => row.state === "ready").length ??
@@ -257,6 +253,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
 
   function chooseEntity(nextEntity: "clients" | "sites") {
     if (busy) return;
+    fileReadRequestRef.current += 1;
     setEntity(nextEntity);
     setPreviewState(null);
     setResults(null);
@@ -268,34 +265,58 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
     const input = event.currentTarget;
     const file = input.files?.[0];
     if (!file) return;
+    const requestId = fileReadRequestRef.current + 1;
+    fileReadRequestRef.current = requestId;
+    const targetEntity = entity;
     setResults(null);
     setProgress(null);
+    let buffer: ArrayBuffer;
     try {
-      const source = await file.text();
-      if (entity === "clients") {
-        setPreviewState({
-          entity,
-          fileName: file.name,
-          preview: parseClientImportCsv(
-            source,
-            clients.map((client) => client.name),
-          ),
-        });
-      } else {
-        setPreviewState({
-          entity,
-          fileName: file.name,
-          preview: parseSiteImportCsv(source, clients),
-        });
-      }
+      buffer = await file.arrayBuffer();
     } catch {
+      if (requestId !== fileReadRequestRef.current) return;
       setPreviewState({
-        entity,
+        entity: targetEntity,
         fileName: file.name,
         preview: {
           fileError: "The CSV could not be read. Choose the file again.",
           rows: [],
         },
+      });
+      return;
+    }
+    if (requestId !== fileReadRequestRef.current) return;
+
+    let source: string;
+    try {
+      source = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+    } catch {
+      setPreviewState({
+        entity: targetEntity,
+        fileName: file.name,
+        preview: {
+          fileError:
+            "This file isn't UTF-8. Re-save it as CSV UTF-8 and choose it again.",
+          rows: [],
+        },
+      });
+      return;
+    }
+
+    if (targetEntity === "clients") {
+      setPreviewState({
+        entity: targetEntity,
+        fileName: file.name,
+        preview: parseClientImportCsv(
+          source,
+          clients.map((client) => client.name),
+        ),
+      });
+    } else {
+      setPreviewState({
+        entity: targetEntity,
+        fileName: file.name,
+        preview: parseSiteImportCsv(source, clients),
       });
     }
   }
@@ -310,6 +331,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
       if (row.state === "invalid") {
         rows.push({
           rowNumber: row.rowNumber,
+          sourceCells: row.sourceCells,
           values: row.values,
           state: "failed",
           message: row.reason,
@@ -317,6 +339,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
       } else if (row.state === "duplicate") {
         rows.push({
           rowNumber: row.rowNumber,
+          sourceCells: row.sourceCells,
           values: row.values,
           state: "skipped",
           message: row.reason,
@@ -328,6 +351,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
           const result = await importClientRow(row.actionInput);
           rows.push({
             rowNumber: row.rowNumber,
+            sourceCells: row.sourceCells,
             values: row.values,
             state: result.ok ? "created" : "failed",
             message: result.ok
@@ -340,6 +364,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
         } catch {
           rows.push({
             rowNumber: row.rowNumber,
+            sourceCells: row.sourceCells,
             values: row.values,
             state: "failed",
             message: "The client could not be created. Please try again.",
@@ -360,6 +385,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
       if (row.state === "invalid") {
         rows.push({
           rowNumber: row.rowNumber,
+          sourceCells: row.sourceCells,
           values: row.values,
           state: "failed",
           message: row.reason,
@@ -367,6 +393,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
       } else if (row.state === "duplicate") {
         rows.push({
           rowNumber: row.rowNumber,
+          sourceCells: row.sourceCells,
           values: row.values,
           state: "skipped",
           message: row.reason,
@@ -378,6 +405,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
           const result = await importSiteRow(row.actionInput);
           rows.push({
             rowNumber: row.rowNumber,
+            sourceCells: row.sourceCells,
             values: row.values,
             state: result.ok ? "created" : "failed",
             message: result.ok
@@ -390,6 +418,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
         } catch {
           rows.push({
             rowNumber: row.rowNumber,
+            sourceCells: row.sourceCells,
             values: row.values,
             state: "failed",
             message: "The site could not be created. Please try again.",

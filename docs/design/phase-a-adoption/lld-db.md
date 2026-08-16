@@ -27,6 +27,86 @@ row `for update`, check admin, raise `insufficient_privilege` / `check_violation
 human-readable message the app matches verbatim"; pgTAP test file plus a concurrency
 harness where a race exists.
 
+## Entity-relationship overview
+
+The new and changed entities of this cycle and how they attach to the delivered core
+(delivered entities carry only their linking keys here):
+
+```mermaid
+erDiagram
+    COMPANIES ||--o{ COMPANY_INVITES : "many links"
+    COMPANY_INVITES |o..o{ COMPANY_MEMBERS : "admitted (attribution)"
+    COMPANIES ||--o{ OFFERS : ""
+    PROFILES ||--o{ OFFERS : "offered cleaner"
+    JOBS |o--o{ OFFERS : "target (job kind)"
+    RECURRING_ASSIGNMENTS |o--o{ OFFERS : "target (series kind)"
+    RECURRING_ASSIGNMENTS ||--o{ RECURRING_ASSIGNMENT_CLEANERS : "named slots"
+    JOBS ||--o{ LEDGER_ENTRIES : "born at completion"
+    PROFILES ||--o{ LEDGER_ENTRIES : ""
+    PROFILES ||--o{ PUSH_SUBSCRIPTIONS : ""
+    PROFILES ||--o{ NOTIFICATIONS : "recipient"
+
+    COMPANY_INVITES {
+        text title "nullable"
+        pay_basis pay_basis "nullable pair"
+        int pay_value_cents "nullable pair"
+        timestamptz expires_at "nullable"
+        int max_registrations "nullable"
+        timestamptz revoked_at "nullable"
+    }
+    COMPANY_MEMBERS {
+        uuid invite_id "nullable FK, new"
+    }
+    OFFERS {
+        uuid job_id "exactly one target"
+        uuid recurring_assignment_id "exactly one target"
+        offer_status status "pending|accepted|declined|revoked"
+        timestamptz resolved_at "null iff pending"
+    }
+    RECURRING_ASSIGNMENT_CLEANERS {
+        timestamptz accepted_at "new: standing consent"
+    }
+    LEDGER_ENTRIES {
+        pay_basis pay_basis "snapshot"
+        int pay_value_cents "snapshot"
+        int amount_cents "admin-stated"
+        timestamptz paid_at "nullable"
+    }
+    PUSH_SUBSCRIPTIONS {
+        text endpoint "unique"
+    }
+```
+
+*`product_events` is omitted: it references everything weakly (nullable, set-null) and
+nothing references it. Jobs, sites, and recurring assignments additionally gain the
+`pay_basis` + `pay_value_cents` pair (see the pay-basis section).*
+
+The delivered job lifecycle, unchanged by this cycle, with the two projections and the
+new completion hook overlaid:
+
+```mermaid
+stateDiagram-v2
+    [*] --> draft : create_one_off_job
+    [*] --> posted : generation (no consent yet /<br/>unnamed slots)
+    [*] --> assigned : generation (consented series)
+    draft --> posted : post_job (pool push)
+    posted --> assigned : slots filled (assign,<br/>accept_offer)
+    assigned --> on_the_way
+    on_the_way --> in_progress
+    in_progress --> completed : ledger rows born here
+    draft --> cancelled : cancel_job
+    posted --> cancelled : cancel_job
+    assigned --> cancelled : cancel_job (notifies +<br/>revokes pending offers)
+    note left of posted
+        per unfilled slot, projected:
+        VACANCY (no pending offer)
+        OFFERED (pending offer)
+    end note
+```
+
+*No `offered` status exists on the job — the note is the projection rule (HLD decision
+10). Completion is the only state that creates ledger rows (LLD-db decision 5).*
+
 ## Data model — offers (S28, S29)
 
 New table `offers`:
@@ -47,6 +127,37 @@ New table `offers`:
 - Invariant per job: active assignments + pending job offers ≤ `crew_size`, enforced in
   the offer RPCs under the job row lock (same serialisation pattern as
   `assign_job_slot`)
+
+Offer lifecycle, with what each transition projects onto the board and roster:
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending : offer_job / offer_series
+    pending --> accepted : accept_offer (cleaner)
+    pending --> declined : decline_offer (cleaner)
+    pending --> revoked : revoke_offer (admin)<br/>or cascade (cancel, membership loss, rule edit)
+    accepted --> [*]
+    declined --> [*]
+    revoked --> [*]
+    note right of pending
+        slot projects as OFFERED
+        off the board, not a vacancy
+    end note
+    note right of accepted
+        job kind: slot assigned (lowest open)
+        series kind: accepted_at set,
+        instances generate assigned
+    end note
+    note left of declined
+        slot projects as VACANCY
+        on the board immediately (HLD 14)
+        series kind: named-cleaner row removed
+    end note
+```
+
+*One lifecycle for both target kinds; every terminal state stamps `resolved_at`, and no
+transition leaves `pending` twice — the row lock on the offer serialises racing
+answers.*
 
 Series consent mark: `recurring_assignment_cleaners.accepted_at timestamptz` (null =
 not consented). The generation job reads it: named-cleaner rows with `accepted_at`
@@ -245,7 +356,8 @@ instances with Ana's slot unassigned (projected as offered; off the board) → p
 reconcile assigns her slot on future untouched instances → roster shows assigned.
 Failure path: if reconcile hits Ana's overlap exclusion on some instance, that rule's
 failure is recorded in `recurring_generation_failures` (delivered mechanism); the
-acceptance itself stands.
+acceptance itself stands. (Sequence diagram: the HLD's critical-path diagram in its
+[Data flow](hld.md#data-flow) section draws exactly this path.)
 
 **Job offer vs board applicant (S28, S22).** Crew-size-2 job, one pending offer to
 Ana, Ben applies. `assign_job_slot(Ben)` takes the job lock, sees 0 assigned + 1
@@ -254,15 +366,71 @@ assignment; job becomes `assigned`. If Thiago instead tries to assign two applic
 the second `assign_job_slot` fails the invariant with "revoke the pending offer
 first".
 
+```mermaid
+sequenceDiagram
+    participant T as Thiago (CRM)
+    participant DB as Postgres (job row lock)
+    participant A as Ana (cleaner)
+    Note over DB: crew_size 2, 0 assigned,<br/>1 pending offer (Ana)
+    T->>DB: assign_job_slot(Ben)
+    DB->>DB: lock job; 0 assigned + 1 pending < 2 ✓
+    DB-->>T: Ben → slot 1
+    A->>DB: accept_offer
+    DB->>DB: lock job; lowest open slot = 2
+    DB-->>A: assigned slot 2; job → assigned
+    T--xDB: assign_job_slot(3rd cleaner)
+    DB-->>T: error: "Revoke the pending offer first" (invariant)
+```
+
+*The job row lock is the only serialisation point; the invariant (assignments +
+pending offers ≤ crew size) is checked under it on both paths.*
+
 **Join at the cap (S8, S9).** Two cleaners submit with one place left. Both call
 `join_company_pool`; the invite row lock serialises them; the first inserts a
 membership stamped with `invite_id`; the second re-counts, sees the cap met, and gets
 the "invite no longer active" error. The link's state derives to `limit_reached`.
 
+```mermaid
+sequenceDiagram
+    participant C1 as Cleaner 1
+    participant C2 as Cleaner 2
+    participant DB as Postgres (invite row lock)
+    Note over DB: cap 10, 9 registered
+    C1->>DB: join_company_pool(code)
+    C2->>DB: join_company_pool(code)
+    DB->>DB: C1 holds the lock; count 9 < 10 ✓<br/>membership + invite_id; commit
+    DB-->>C1: joined
+    DB->>DB: C2 acquires the lock; count 10 = cap
+    DB-->>C2: error: "Invite is no longer active"
+    Note over DB: link state derives to limit_reached
+```
+
+*Exactly one winner for the last place; the loser sees the same dead-link state a late
+visitor sees.*
+
 **Completion to settlement (S18, S19, S24).** Ana taps done → `update_job_status`
 `in_progress → completed` → ledger rows born (hourly: rate, no amount) →
 `product_events` completion row → Thiago marks paid with the amount → `paid_at` set →
 `job_paid` notification → push.
+
+```mermaid
+sequenceDiagram
+    participant A as Ana (cleaner)
+    participant DB as Postgres
+    participant E as push-dispatch (Edge Fn)
+    participant T as Thiago (CRM)
+    A->>DB: update_job_status(done)
+    DB->>DB: in_progress → completed<br/>ledger row born (hourly: rate, no amount)<br/>product_events: completion
+    T->>DB: mark_paid(job, Ana, $210)
+    DB->>DB: amount recorded, paid_at set
+    DB--)E: webhook: notifications insert (job_paid)
+    E--)A: push "Payment recorded"
+    T--xDB: mark_paid without amount (hourly)
+    DB-->>T: error: "Amount is required for hourly jobs"
+```
+
+*The ledger row exists before any push; dispatch is fire-and-forget and never gates the
+mutation.*
 
 ## Error handling
 

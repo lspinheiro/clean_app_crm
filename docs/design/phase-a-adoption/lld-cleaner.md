@@ -23,6 +23,45 @@ describe-failure mappers (delivered `describeJoinFailure` pattern).
 
 ## Internal structure — changes by area
 
+The app's module map after this cycle (plain boxes delivered, the rest new; every read
+is a view, every mutation an RPC — the client never selects a company table):
+
+```mermaid
+flowchart LR
+    subgraph screens["app routes (client components)"]
+        JOIN["join"]
+        LOGIN["(auth)/login"]
+        CB["(auth)/callback (new)"]
+        BOARD["board"]
+        OFFS["offers (new)"]
+        JOBS["jobs (new)"]
+        MONEY["money (new)"]
+        PROF["profile (new)"]
+    end
+    subgraph lib["lib modules"]
+        WV["webview.ts (new)<br/>in-app-browser detect"]
+        PUSH["push.ts (new)<br/>opt-in + subscription"]
+        SB["supabase client<br/>(PKCE singleton)"]
+    end
+    SW["service worker (new)<br/>app shell + push events"]
+    subgraph db["packages/db"]
+        V[("views: cleaner_job_board,<br/>cleaner_my_jobs, cleaner_offers,<br/>cleaner_money")]
+        R["RPCs: join, apply/withdraw,<br/>accept/decline_offer, status,<br/>address, push subscription"]
+    end
+    JOIN --> WV
+    JOIN & LOGIN --> SB
+    CB --> SB
+    BOARD & OFFS & JOBS & MONEY & PROF --> V
+    BOARD & OFFS & JOBS & JOIN & PROF --> R
+    PROF --> PUSH
+    PUSH --> SW
+    PUSH --> R
+    SW -.->|push tap deep-links| OFFS
+```
+
+*The PKCE singleton is the only auth surface; the service worker's push handler routes
+by notification type (offers → `/offers`, otherwise `/jobs` or `/board`).*
+
 - **Join (`app/join`)** — renders the link content from the extended
   `cleaner_invite_preview` (title, description, pay shape) with the bare-link
   fallback (company name + pool size); new `limit_reached` dead state joins
@@ -70,6 +109,29 @@ describe-failure mappers (delivered `describeJoinFailure` pattern).
 renders the offer → Ana picks email + password (primary there) → registers → phone +
 suburb → `join_company_pool` → board. Had she wanted Google: guidance opens the same
 URL in the system browser; the flow restarts there with the code intact.
+
+```mermaid
+sequenceDiagram
+    participant W as WhatsApp webview
+    participant SYS as System browser
+    participant SB as Supabase Auth
+    participant DB as join_company_pool
+    Note over W: /join?code=X — webview detected
+    alt email + password (always works in place)
+        W->>SB: signUp(email, password)
+        W->>DB: join(code, name, phone, suburb)
+        DB-->>W: pool joined → board
+    else Google (blocked in the webview)
+        W-->>SYS: "open in your browser" — same URL, code intact
+        SYS->>SB: signInWithOAuth(google) → /callback?code=X
+        SYS->>SYS: join screen: phone + suburb<br/>(name prefilled from Google)
+        SYS->>DB: join(code, phone, suburb)
+        DB-->>SYS: pool joined → board
+    end
+```
+
+*The invite code lives in the URL on every hop, so no state survives-the-browser-switch
+machinery is needed; a dead link shows its state instead of either form.*
 
 **Offer from the lock screen (S29, S20).** Push `offer_received` → tap →
 `/offers` → accept → `accept_offer` → my jobs shows the assignment. Failure: offer

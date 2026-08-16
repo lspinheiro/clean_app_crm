@@ -19,6 +19,59 @@ security-definer RPCs; cleaners read through dedicated views only; "offered" and
 admin-stated (HLD decision 12); every table gets explicit grants and company-scoped RLS;
 all schedule computation in `Australia/Brisbane`.
 
+## Component delta
+
+What this LLD set adds or changes, and how the new pieces relate — delivered components
+in plain boxes, new components bold. Details per component in the part files.
+
+```mermaid
+flowchart LR
+    subgraph crm["apps/crm"]
+        POOL["pool: multi-link<br/>workspace"]
+        JOBD["job detail<br/>+ offer route"]
+        MONEY["money +<br/>hourly mark-paid"]
+        BELL["notification<br/>bell"]
+        IMP["bulk CSV<br/>import"]
+        FORMS["forms +<br/>pay basis"]
+    end
+    subgraph db["packages/db"]
+        OFR["offers entity<br/>+ offer RPCs"]
+        INV["company_invites<br/>multi-link"]
+        LED["ledger_entries<br/>+ mark_paid"]
+        GEN["generation<br/>(consent-gated)"]
+        VIEWS["views: board, vacancies,<br/>cleaner_offers, cleaner_money"]
+        NOTIF["notifications<br/>+ push_subscriptions"]
+        EDGE["push-dispatch<br/>Edge Function"]
+        EVT["product_events"]
+    end
+    subgraph cleaner["apps/cleaner"]
+        JOIN["join + OAuth<br/>callback"]
+        BOARD["board<br/>(apply wired)"]
+        OFFS["offers<br/>surface"]
+        MYJOBS["my jobs +<br/>status taps"]
+        CMONEY["money"]
+        SW["service worker<br/>+ push opt-in"]
+    end
+    JOBD & FORMS --> OFR
+    POOL --> INV
+    JOIN --> INV
+    MONEY --> LED
+    CMONEY --> VIEWS
+    IMP --> FORMS
+    OFR --> GEN
+    OFR --> VIEWS
+    BOARD & OFFS & MYJOBS --> VIEWS
+    OFFS --> OFR
+    BELL --> NOTIF
+    OFR & LED --> NOTIF
+    NOTIF --> EDGE
+    EDGE -.->|web push| SW
+    GEN --> EVT
+```
+
+*The offers entity is the hub of the delta: both apps write to it, the generation job
+and every projection read from it, and notifications fan out from its transitions.*
+
 ## Gap map — delivered vs design
 
 The delivered system on `origin/main` (2026-08-16) against the HLD. "Delivered" facts

@@ -20,6 +20,43 @@ mapping → `revalidatePath` → discriminated result.
 
 ## Internal structure — changes by area
 
+New and reworked modules in the delivered layout (route → server action → RPC; the
+delivered pattern is unchanged, plain boxes are delivered modules gaining behaviour):
+
+```mermaid
+flowchart LR
+    subgraph routes["app/(crm) routes"]
+        RPOOL["pool"]
+        RJOB["jobs/[jobId]"]
+        RROSTER["roster"]
+        RMONEY["money"]
+        RIMP["clients/import (new)"]
+        RBELL["layout header:<br/>bell (new)"]
+    end
+    subgraph actions["app/actions (server)"]
+        APOOL["pool.ts<br/>(reworked)"]
+        AOFF["offers.ts (new)"]
+        AMONEY["money.ts (new)"]
+        AIMP["import.ts (new)"]
+        ANOTIF["notifications.ts (new)"]
+    end
+    subgraph rpcs["packages/db RPCs"]
+        R1["create_pool_invite<br/>revoke_pool_invite"]
+        R2["offer_job / offer_series<br/>revoke_offer"]
+        R3["mark_paid"]
+        R4["existing create RPCs<br/>(clients, sites, rules)"]
+    end
+    RPOOL --> APOOL --> R1
+    RJOB --> AOFF --> R2
+    RMONEY --> AMONEY --> R3
+    RIMP --> AIMP --> R4
+    RBELL --> ANOTIF -->|read + mark read| NDB[("notifications<br/>(RLS reads)")]
+    RROSTER -->|company-scoped reads<br/>+ offers join| VDB[("tables + views")]
+```
+
+*Reads keep the delivered pattern (company-scoped selects under RLS, the roster gaining
+the pending-offers join); every mutation stays a server action calling one RPC.*
+
 - **Pool (`(crm)/pool`, `actions/pool.ts`)** — reworked: a link list (state chip,
   registration count, age, revoke button) and a creation form. The form leads with the
   offer-details path (title, description, pay basis + value) and offers "bare link" as
@@ -63,6 +100,27 @@ mapping → `revalidatePath` → discriminated result.
 reasons) → confirm → sequential submits with a progress count → result list (created
 / skipped-duplicate / failed with the action's error) → failed rows exportable for
 fix-and-retry.
+
+```mermaid
+sequenceDiagram
+    participant T as Thiago
+    participant B as Browser (import screen)
+    participant S as Server actions
+    participant DB as create RPCs
+    T->>B: choose file
+    B->>B: parse + validate against the template<br/>duplicate match vs loaded clients/sites
+    B-->>T: preview: 39 green, 1 red ("unknown service type")
+    T->>B: confirm
+    loop each green row, sequential
+        B->>S: create action (row)
+        S->>DB: create_client / create_site / create_recurring_assignment
+        DB-->>B: created | error
+    end
+    B-->>T: results: created / skipped-duplicate / failed<br/>failed rows exportable for retry
+```
+
+*Nothing is written before confirm; a mid-batch failure is a per-row outcome, never an
+abort.*
 
 **Mark paid, hourly (S24).** Money list → unpaid hourly row → dialog demands amount →
 `mark_paid` → list refreshes; error "Amount is required for hourly jobs" surfaces on

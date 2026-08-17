@@ -29,7 +29,7 @@ export default async function PoolPage() {
   ] = await Promise.all([
     supabase
       .from("company_invites")
-      .select("code, expires_at")
+      .select("id, code, expires_at")
       .eq("company_id", company.id)
       .is("revoked_at", null)
       .maybeSingle(),
@@ -77,6 +77,7 @@ export default async function PoolPage() {
         cleanerAppUrl={cleanerAppOrigin}
         companyName={company.name}
         initialCode={displayedInvite?.code ?? null}
+        initialInviteId={displayedInvite?.id ?? null}
         key={displayedInvite?.code ?? "no-active-invite"}
         members={members}
       />

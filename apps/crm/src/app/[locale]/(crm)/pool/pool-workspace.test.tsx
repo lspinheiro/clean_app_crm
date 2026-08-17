@@ -13,6 +13,7 @@ import { PoolWorkspace } from "./pool-workspace";
 const baseProps = {
   cleanerAppUrl: "https://cleaner.example.test",
   companyName: "Coastal Demo Cleaning",
+  initialInviteId: "10000000-0000-4000-8000-000000000201",
   members: [],
 };
 
@@ -60,5 +61,26 @@ describe("CLE-78 WhatsApp pool invitation", () => {
     );
     expect(target).toBe("_blank");
     expect(features).toBe("noopener,noreferrer");
+  });
+});
+
+describe("CLE-79 bulk pool invitation by email", () => {
+  it("offers a CSV email invitation flow when an active invite exists", () => {
+    render(<PoolWorkspace {...baseProps} initialCode="AB12CD" />);
+
+    expect(
+      screen.getByRole("button", { name: "Invite by email" }),
+    ).toBeEnabled();
+    expect(
+      screen.getByText("Upload a CSV with email and optional name columns."),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps email invitation unavailable without an active invite", () => {
+    render(<PoolWorkspace {...baseProps} initialCode={null} />);
+
+    expect(
+      screen.getByRole("button", { name: "Invite by email" }),
+    ).toBeDisabled();
   });
 });

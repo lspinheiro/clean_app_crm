@@ -7,7 +7,8 @@ The company-admin app of the [Phase A HLD](hld.md), against the db contract in
 new pool), S22 (job detail + offers), S23 (pay basis picker), S24 (money), S25
 (cancel — delivered), S28 (send/revoke offers), S30 (bulk import), S31 (jobs list —
 delivered). Delivered internals (route layout, server-action pattern, zod convention,
-`requireCompanyAdmin`) are the authority for anything this file does not change.
+`requireCompanyAdmin`) are the authority for anything this file does not change. S30
+also covers the cleaner e-mail send list on the Pool route.
 F15 adds the complete CRM presentation in `en-AU` and `pt-BR`; cleaner-app screens are
 outside this implementation slice.
 
@@ -19,6 +20,14 @@ pay-basis parameters on the job/rule RPCs, and the changed `assign_job_slot` err
 ("Revoke the pending offer first"). Every call follows the delivered server-action
 pattern: zod `safeParse` → `requireCompanyAdmin` → `supabase.rpc` → verbatim error
 mapping → `revalidatePath` → discriminated result.
+
+The Pool e-mail flow adds `prepare_pool_invite_email_batch` and
+`record_pool_invite_email_results`. `sendPoolInviteEmails` and
+`retryFailedPoolInviteEmails` call these RPCs around the server-only Resend Batch API.
+Both actions call `requireCompanyAdmin` before they resolve the selected active invite.
+The request contains `en-AU` or `pt-BR`, the normalised recipients, and the accepted
+authority statement. The server derives a stable confirmation key from the invite,
+locale, and sorted unique recipient e-mails. The request never contains an API key.
 
 ## Internal structure — changes by area
 
@@ -41,17 +50,21 @@ flowchart LR
         AMONEY["money.ts (new)"]
         AIMP["import.ts (new)"]
         ANOTIF["notifications.ts (new)"]
+        AEMAIL["pool-email.ts (new)"]
     end
     subgraph rpcs["packages/db RPCs"]
         R1["create_pool_invite<br/>revoke_pool_invite"]
         R2["offer_job / offer_series<br/>revoke_offer"]
         R3["mark_paid"]
         R4["existing create RPCs<br/>(clients, sites, rules)"]
+        R5["prepare batch<br/>record results"]
     end
     RPOOL --> APOOL --> R1
     RJOB --> AOFF --> R2
     RMONEY --> AMONEY --> R3
     RIMP --> AIMP --> R4
+    RPOOL --> AEMAIL --> R5
+    AEMAIL -->|"batches <= 100"| RESEND["Resend Batch API"]
     RBELL --> ANOTIF -->|read + mark read| NDB[("notifications<br/>(RLS reads)")]
     RROSTER -->|company-scoped reads<br/>+ offers join| VDB[("tables + views")]
 ```
@@ -65,6 +78,19 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   the secondary path (LLD-db decision 3); optional expiry and registration cap.
   `rotate` action is deleted with its RPC. Link URL format is unchanged
   (`<CLEANER_APP_URL>/join?code=…`).
+- **Cleaner e-mail send list (`(crm)/pool`, `actions/pool-email.ts`,
+  `features/pool/email-csv.ts`, `lib/resend.ts`)** — the admin uploads a UTF-8 CSV with
+  the exact headers `email,name`. The browser accepts an empty `name`, reports row-level
+  address errors, and deduplicates e-mail addresses case-insensitively. It then shows
+  the exact unique-recipient count, the selected `en-AU` or `pt-BR` copy, and the
+  authority statement. Confirm sends the selected active invite only. The server
+  repeats schema validation, authorisation, invite-state checks, and deduplication.
+  It rejects more than 500 unique recipients and calls
+  `https://api.resend.com/emails/batch` with at most 100 messages per call.
+  `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are server-only. From uses
+  an RFC-quoted "{company name} via The Clean Crew" with the verified address. Reply-To
+  uses the authenticated admin e-mail. The footer tells an unexpected recipient to
+  ignore the e-mail or reply to the company.
 - **Job detail (`(crm)/jobs/[jobId]`)** — gains the directed route: an "offer to…"
   picker over active pool members not already assigned, applied, or offered; pending
   offers listed with age and a revoke action; the assign path shows the new invariant
@@ -131,6 +157,33 @@ sequenceDiagram
 *Nothing is written before confirm; a mid-batch failure is a per-row outcome, never an
 abort.*
 
+**Cleaner e-mail send list (S8/S30).** Choose file → parse and deduplicate → row-level
+preview → choose locale → preview exact e-mail and recipient count → confirm authority →
+submit once → show accepted and failed recipients. Retry creates a new confirmed attempt
+for failed recipients only. It never resends an accepted recipient.
+
+```mermaid
+sequenceDiagram
+    participant T as Thiago
+    participant B as Browser
+    participant S as CRM server
+    participant DB as Batch RPCs
+    participant R as Resend
+    T->>B: choose cleaner CSV
+    B->>B: validate + deduplicate
+    B-->>T: exact count + localised preview + authority statement
+    T->>S: confirm normalised list + locale + authority
+    S->>S: require company admin + validate + derive stable confirmation key
+    S->>DB: prepare batch for active invite
+    loop chunks of at most 100
+        S->>R: send with stable provider idempotency key
+        R-->>S: accepted IDs or safe failure
+        S->>DB: record recipient outcomes
+    end
+    S-->>T: accepted and failed recipients
+    T->>S: retry failed only
+```
+
 **Mark paid, hourly (S24).** Money list → unpaid hourly row → dialog demands amount →
 `mark_paid` → list refreshes; error "Amount is required for hourly jobs" surfaces on
 the dialog field.
@@ -141,10 +194,18 @@ Delivered pattern throughout (`fieldErrors`/`formError`, `status === 0` "could n
 confirmed", verbatim RPC message matching). Import treats a mid-batch failure as a
 per-row outcome, never an abort: the remaining rows still submit.
 
+The e-mail action maps missing configuration to one actionable admin message. It maps a
+provider failure to a safe recipient failure reason. It never returns credentials,
+response bodies, or raw provider errors. It honours Resend rate-limit reset headers and
+retries a 429 with the same provider idempotency key. A failed provider chunk does not
+stop later chunks. Retry reads failed recipients from company-scoped batch state.
+
 ## Performance
 
-Alpha scale; nothing hot. The import submits sequentially by design (LLD-db decision
-— free-tier discipline; a 40-row import is 40 fast calls).
+Alpha scale; nothing hot. The company-data import submits sequentially by design
+(LLD-db decision — free-tier discipline; a 40-row import is 40 fast calls). Cleaner
+e-mail sends use provider batches of at most 100 messages and stop at 500 unique
+recipients per confirmed CSV.
 
 ## Open questions
 
@@ -180,3 +241,12 @@ negotiate and redirect without losing path or query. Catalogue parity is a test
 contract, so Portuguese cannot silently fall back to English. The two supported
 locales are configuration, not flags or duplicated page implementations; locale-aware
 navigation preserves the user's current task.
+
+### 4. Cleaner CSV preview stays in the browser; sending stays on the server (2026-08-17)
+
+The browser parses and previews the cleaner send list so no provider call can happen
+before explicit confirmation. The server repeats validation and authorisation, derives
+the stable logical confirmation key, then uses the server-only Resend key. This keeps
+credentials out of the browser and preserves the existing Pool route. The alternative,
+a browser call to Resend, was rejected because it would expose the provider credential
+and bypass company-admin authorisation.

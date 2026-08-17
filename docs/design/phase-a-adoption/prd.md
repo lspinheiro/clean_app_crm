@@ -90,9 +90,10 @@ flowchart LR
   gap-highlighted.
 - **S30** — Bulk import from CSV, with a published column format that states exactly
   which fields are needed, as an alternative to one-by-one entry for clients, sites, and
-  recurring assignments. Cleaner data is not imported into accounts — cleaners register
-  themselves through the invite link (see Open questions for what a cleaner CSV could
-  produce).
+  recurring assignments. A cleaner CSV contains `email` and an optional `name`. It
+  produces a case-insensitive, deduplicated e-mail send list, not accounts or pool
+  memberships. Each recipient still registers and joins through the invite link. The
+  alpha accepts at most 500 unique recipients in one cleaner CSV.
 - **S8** — Create a pool invite link, ready to post into the company's WhatsApp group.
   The invitation carries the details of what the cleaner applies for — the work on offer
   and its pay shape (hourly rate or fixed amount), described so the link is a real offer,
@@ -103,7 +104,11 @@ flowchart LR
   and the admin creates a new link when needed. For each link the admin sees its state
   (active / expired / revoked / limit reached) and its registration count; each
   registration attributes to the link that admitted it. No tap tracking in alpha — link
-  performance analytics are F12 (MVP).
+  performance analytics are F12 (MVP). For an existing workforce, the admin can also
+  send the selected active link to the S30 cleaner send list. The browser shows the
+  exact recipient count and recipient-facing copy before the admin confirms the send.
+  The admin must confirm that the recipients are existing workers who expect the
+  invitation.
 
 ### CL-1 · Join the pool (Ana) — designed end-to-end
 
@@ -236,7 +241,7 @@ Approved Stitch references:
 |---|---|---|
 | Co-founder alignment (PRODUCT.md Appendix B q1): the alpha does not depend on their code or deployment, but the adaptation of the prototype's schema and UI patterns into this repo belongs in the IP/roles conversation. Have it before the cohort (their employers) onboards. | Leonardo | Open |
 | Does any alpha company need daily-frequency recurring assignments? Weekly/fortnightly covers the known cohort. | Leonardo | Extend on evidence (feeds Appendix B q3 sizing) |
-| What does a cleaner CSV import produce, given cleaners must register themselves (credential + consent)? Candidate idea: pre-staged names/phones that match up at registration. | Leonardo | Open |
+| What does a cleaner CSV import produce, given cleaners must register themselves (credential + consent)? | Leonardo | Resolved 2026-08-17: it produces a send list from `email` and optional `name`. It never creates an account or pool membership. |
 | Facebook login for cleaners: enable when the cohort shows demand (decision log #9 defers it) | Leonardo | Open |
 | Sync of PRODUCT.md revisions (v0.4) with decisions 0002 and 2026-08-10 | Leonardo | Resolved 2026-08-12: `docs/PRODUCT.md` is canonical in this repo; §3.2/§3.4 reworded per decision 0002; exit criteria replaced by qualitative partner validation |
 
@@ -254,9 +259,9 @@ Not in this cycle (cycle 2, same stage):
 
 Not in the alpha (MVP/P1 per PRODUCT.md §3.4):
 
-- Structured reviews, share links, vetting, messaging, AI, WhatsApp automation. The pool
-  invite link is the seed of F12, not its delivery: no tap tracking and no funnel
-  analytics in alpha.
+- Structured reviews, public share links, vetting, general messaging, AI, and WhatsApp
+  automation. The one-time S30 e-mail invitation is the only provider-backed alpha
+  message. It has no reminders, contact list, delivery tracking, or funnel analytics.
 - Public company signup: alpha companies are invited and approved by us; onboarding
   itself is self-serve.
 - Operator journeys and the operator console: OP-1 was removed from the alpha
@@ -374,3 +379,14 @@ admin stays in control: a new directed offer takes the slot off the board again.
 Considered option: hold the declined slot until the admin chooses — rejected because it
 hides unfilled work while the admin is away, and the vacancy model exists to make gaps
 visible (found by the HLD validation walk; HLD decision 14).
+
+### 14. A cleaner CSV is a one-time invitation send list (2026-08-17)
+
+A cleaner CSV produces a case-insensitive, deduplicated e-mail send list. It never
+creates cleaner accounts or pool memberships. Each recipient uses the existing link-first
+registration flow. The company admin confirms that all recipients are existing workers
+who expect the invitation. The message identifies the cleaning company and The Clean
+Crew, uses the authenticated admin e-mail as Reply-To, and tells unexpected recipients to
+ignore the message or reply to the company. It has no unsubscribe system because this
+alpha path is a one-time operational invitation, not a marketing list. One confirmed CSV
+is limited to 500 unique recipients so the synchronous alpha action remains bounded.

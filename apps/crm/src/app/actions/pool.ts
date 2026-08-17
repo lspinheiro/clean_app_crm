@@ -5,7 +5,7 @@ import { userMessage } from "@/i18n/user-message";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
 export type RotateInviteResult =
-  | { ok: true; code: string }
+  | { ok: true; code: string; inviteId: string }
   | { ok: false; error: string };
 
 export async function rotatePoolInvite(): Promise<RotateInviteResult> {
@@ -22,5 +22,5 @@ export async function rotatePoolInvite(): Promise<RotateInviteResult> {
   }
 
   revalidateLocalizedPath("/pool");
-  return { ok: true, code: data.code };
+  return { ok: true, code: data.code, inviteId: data.id };
 }

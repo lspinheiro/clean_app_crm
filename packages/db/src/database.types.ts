@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -543,6 +544,114 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pool_invite_email_batches: {
+        Row: {
+          authority_confirmed_at: string
+          company_id: string
+          confirmation_key: string
+          created_at: string
+          current_attempt: number
+          id: string
+          invite_id: string
+          last_retry_key: string | null
+          locale: Database["public"]["Enums"]["app_locale"]
+          requested_by: string
+        }
+        Insert: {
+          authority_confirmed_at: string
+          company_id: string
+          confirmation_key: string
+          created_at?: string
+          current_attempt?: number
+          id?: string
+          invite_id: string
+          last_retry_key?: string | null
+          locale: Database["public"]["Enums"]["app_locale"]
+          requested_by: string
+        }
+        Update: {
+          authority_confirmed_at?: string
+          company_id?: string
+          confirmation_key?: string
+          created_at?: string
+          current_attempt?: number
+          id?: string
+          invite_id?: string
+          last_retry_key?: string | null
+          locale?: Database["public"]["Enums"]["app_locale"]
+          requested_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_invite_email_batches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pool_invite_email_batches_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "company_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pool_invite_email_batches_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pool_invite_email_recipients: {
+        Row: {
+          attempt_number: number
+          batch_id: string
+          created_at: string
+          email: string
+          failure_reason: string | null
+          id: string
+          name: string | null
+          provider_message_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_number?: number
+          batch_id: string
+          created_at?: string
+          email: string
+          failure_reason?: string | null
+          id?: string
+          name?: string | null
+          provider_message_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_number?: number
+          batch_id?: string
+          created_at?: string
+          email?: string
+          failure_reason?: string | null
+          id?: string
+          name?: string | null
+          provider_message_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_invite_email_recipients_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "pool_invite_email_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -1295,9 +1404,61 @@ export type Database = {
         Returns: undefined
       }
       post_job: { Args: { target_job_id: string }; Returns: undefined }
+      prepare_pool_invite_email_batch: {
+        Args: {
+          authority_confirmed: boolean
+          confirmation_key: string
+          recipients: Json
+          selected_invite_id: string
+          selected_locale: Database["public"]["Enums"]["app_locale"]
+          target_company_id: string
+        }
+        Returns: {
+          attempt_number: number
+          batch_id: string
+          email: string
+          failure_reason: string
+          invite_code: string
+          locale: Database["public"]["Enums"]["app_locale"]
+          name: string
+          provider_message_id: string
+          recipient_id: string
+          status: string
+        }[]
+      }
+      prepare_pool_invite_email_retry: {
+        Args: { retry_key: string; selected_batch_id: string }
+        Returns: {
+          attempt_number: number
+          batch_id: string
+          email: string
+          failure_reason: string
+          invite_code: string
+          locale: Database["public"]["Enums"]["app_locale"]
+          name: string
+          provider_message_id: string
+          recipient_id: string
+          status: string
+        }[]
+      }
       reconcile_recurring_assignment_jobs: {
         Args: { as_of: string; target_recurring_assignment_id: string }
         Returns: number
+      }
+      record_pool_invite_email_results: {
+        Args: {
+          attempt_number: number
+          provider_results: Json
+          selected_batch_id: string
+        }
+        Returns: {
+          email: string
+          failure_reason: string
+          name: string
+          provider_message_id: string
+          recipient_id: string
+          status: string
+        }[]
       }
       release_cleaner_loop_state: {
         Args: { target_cleaner_id: string; target_company_id: string }
@@ -1618,3 +1779,4 @@ export const Constants = {
     },
   },
 } as const
+

@@ -38,13 +38,11 @@ This diagram shows the workflow configured in the repository; it does not imply 
 4. It invokes `openwiki code --update --print` with `OPENWIKI_PROVIDER=openrouter` and `OPENWIKI_MODEL_ID=z-ai/glm-5.2`. Required secret-backed variables are `OPENROUTER_API_KEY` and `OPENWIKI_LANGSMITH_API_KEY`; the latter authenticates the LangSmith connector's code-mode pull. Optional tracing variables are `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT=openwiki`, and `LANGCHAIN_TRACING_V2=true`.
 5. The pinned `peter-evans/create-pull-request` action adds `openwiki`, `AGENTS.md`, `CLAUDE.md`, and the workflow itself, targets branch `openwiki/update`, and uses `docs: update OpenWiki` for both the commit message and PR title. Its PR body is `Automated OpenWiki documentation update.`
 
-<!-- openwiki: broken internal link [../workspace.md#development-rules-that-already-apply] heading anchor "development-rules-that-already-apply" does not exist in "../workspace.md". Fix the href or restore the target, then delete this comment. -->
-The YAML exposes variable names only. Never place their values in source, wiki pages, logs, raw connector artefacts, test fixtures, or configuration. Repository `.gitignore` excludes normal `.env*` files; see [Workspace hygiene](../workspace.md#development-rules-that-already-apply).
+The YAML exposes variable names only. Never place their values in source, wiki pages, logs, raw connector artefacts, test fixtures, or configuration. Repository `.gitignore` excludes normal `.env*` files; see [local development and boundaries](../workspace.md#local-development-and-boundaries).
 
 ## Local tool hooks
 
-<!-- openwiki: broken internal link [../workspace.md#development-rules-that-already-apply] heading anchor "development-rules-that-already-apply" does not exist in "../workspace.md". Fix the href or restore the target, then delete this comment. -->
-The working tree also contains untracked `.claude/settings.local.json`, `.codex/hooks.json`, and `.cursor/hooks.json`, plus `.impeccable/config.local.json`. Their hooks conditionally run external Impeccable UI-check scripts after editing or at agent stop; the Cursor hook runs before tool use. They are not CRM runtime, CI, or OpenWiki automation, and their host-specific script locations are not portable project dependencies. The `.gitignore` currently lists only specific `.claude` local settings, so contributors should decide whether Codex/Cursor configuration is deliberate portable tooling or local state to ignore; see [workspace hygiene](../workspace.md#development-rules-that-already-apply).
+The working tree also contains untracked `.claude/settings.local.json`, `.codex/hooks.json`, and `.cursor/hooks.json`, plus `.impeccable/config.local.json`. Their hooks conditionally run external Impeccable UI-check scripts after editing or at agent stop; the Cursor hook runs before tool use. They are not CRM runtime, CI, or OpenWiki automation, and their host-specific script locations are not portable project dependencies. The `.gitignore` currently lists only specific `.claude` local settings, so contributors should decide whether Codex/Cursor configuration is deliberate portable tooling or local state to ignore; see [local development and boundaries](../workspace.md#local-development-and-boundaries).
 
 ## Mermaid authoring and validation
 
@@ -52,7 +50,7 @@ The working tree also contains untracked `.claude/settings.local.json`, `.codex/
 
 The skill’s syntax rules matter because OpenWiki validates Mermaid fences after generation and converts a parse failure to a plain text fence. In brief: use `sequenceDiagram`, `stateDiagram-v2`, `erDiagram`, or `flowchart` according to the represented relationship; avoid semicolons, pipes, and unescaped angle brackets in labels; quote punctuated flowchart labels; use aliases for spaced sequence participants; and avoid Mermaid reserved identifiers. The workflow’s Mermaid/jsdom installation is the operational counterpart to this instruction.
 
-This repository currently has only wiki diagrams. There is no application runtime flow to diagram yet; the diagrams in [architecture](../architecture/overview.md) and [domain model](../product/domain-model.md) are explicitly marked as present workspace structure or documented product direction.
+The repository now has application runtime flows documented with source-grounded diagrams, including the CRM request boundary in [architecture](../architecture/overview.md), cleaner join/board flow in [the cleaner app workflow](../workflows/cleaner-app.md), CSV import control flow in [client and site CSV import](../workflows/client-site-import.md), and ledger lifecycle in [company pay ledger](../workflows/pay-ledger.md).
 
 ## Connector extension contract
 

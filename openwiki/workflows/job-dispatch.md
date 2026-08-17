@@ -6,7 +6,7 @@ tags: [workflow, jobs, dispatch, crew-slots, rpc]
 openwiki:
   roles: [workflow, domain, testing]
   change_kinds: [job-lifecycle, dispatch, server-action]
-  source_paths: [apps/crm/src/app/actions/jobs.ts, apps/crm/src/features/jobs/model.ts, apps/crm/src/features/jobs/schema.ts, "apps/crm/src/app/(crm)/jobs/[jobId]/page.tsx", packages/db/supabase/migrations/20260811150000_cle_23_one_off_jobs.sql]
+  source_paths: [apps/crm/src/app/actions/jobs.ts, apps/crm/src/features/jobs/model.ts, apps/crm/src/features/jobs/schema.ts, "apps/crm/src/app/[locale]/(crm)/jobs/[jobId]/page.tsx", packages/db/supabase/migrations/20260811150000_cle_23_one_off_jobs.sql]
   symbols: [createOneOffJob, assignJobSlot, cancelJob, buildJobSlots, oneOffJobSchema, assignJobSlotSchema]
   test_paths: [apps/crm/src/app/actions/jobs.test.ts, apps/crm/src/features/jobs/model.test.ts, apps/crm/src/features/jobs/schema.test.ts, packages/db/supabase/tests/cle_23_one_off_jobs.test.sql, packages/db/supabase/tests/cle_49_loop_foundations.test.sql]
   invariants: [Crew slots are numbered and a slot is open only for draft or posted jobs without an active assignment., Job mutations revalidate detail, jobs list, and roster consumers.]
@@ -41,7 +41,7 @@ sequenceDiagram
 
 ## Creation contract
 
-`apps/crm/src/app/(crm)/jobs/new/page.tsx` loads company-owned clients/sites plus active services and gives `NewJobForm` the site defaults. The page blocks creation when no site or active service exists. `createOneOffJob` in `apps/crm/src/app/actions/jobs.ts` parses browser `FormData` with `oneOffJobSchema` and invokes `create_one_off_job` with site, service, local date/time, duration in minutes, cleaner pay in cents, crew size, draft/post mode, and optional charge/notes.
+`apps/crm/src/app/[locale]/(crm)/jobs/new/page.tsx` loads company-owned clients/sites plus active services and gives `NewJobForm` the site defaults. The page blocks creation when no site or active service exists. `createOneOffJob` in `apps/crm/src/app/actions/jobs.ts` parses browser `FormData` with `oneOffJobSchema` and invokes `create_one_off_job` with site, service, local date/time, duration in minutes, cleaner pay in cents, crew size, draft/post mode, and optional charge/notes.
 
 `apps/crm/src/features/jobs/schema.ts` is the browser trust boundary. It requires valid identifiers and date/time, duration greater than zero, cleaner pay greater than zero, `crewSize >= 1`, and at most 2,000 note characters. It converts AUD strings to integer cents and duration hours to rounded minutes before the RPC. If form validation evolves, keep this conversion contract, the RPC parameters, and the SQL test in sync; client-side validation does not replace database authorization or constraints.
 
@@ -66,7 +66,7 @@ The projection has two important boundaries: it does not invent a new slot beyon
 
 ## Cache and failure handling
 
-`revalidateJobConsumers` refreshes `/jobs/[jobId]`, `/jobs`, and `/roster`; `createOneOffJob` refreshes `/jobs` and `/roster` before an uncertain result and all three consumers after confirmed creation. `cancelJob` follows the same authorization/RPC/revalidation pattern. If adding another mutation that changes a job's status, crew, or assignment, include every derived screen that can display it. If a new consumer is introduced, make its invalidation relationship explicit and add a focused test.
+`revalidateJobConsumers` calls `revalidateLocalizedPath` for `/jobs/[jobId]`, `/jobs`, and `/roster`; `createOneOffJob` refreshes `/jobs` and `/roster` before an uncertain result and all three consumers after confirmed creation. Each logical consumer is therefore invalidated under every supported locale. `cancelJob` follows the same authorization/RPC/revalidation pattern. If adding another mutation that changes a job's status, crew, or assignment, include every derived screen that can display it. If a new consumer is introduced, make its invalidation relationship explicit and add a focused test; [bilingual CRM routing](crm-localization.md#formatting-messages-and-cache-invalidation) explains this localization boundary.
 
 ## Change recipe and validation
 

@@ -3,12 +3,22 @@ import { describe, expect, it } from "vitest";
 import {
   buildCleanerJoinUrl,
   buildInviteMessage,
+  buildWhatsAppShareUrl,
   formatJoinedDate,
   isInviteActive,
   normaliseCleanerAppUrl,
 } from "./invite";
 
 describe("pool invite content", () => {
+  it("builds a WhatsApp handoff with percent-encoded spaces in the raw URL", () => {
+    const inviteMessage =
+      "Join Coastal Demo Cleaning's cleaner pool: https://cleaner.example.test/join?code=AB12CD\nInvite code: AB12CD";
+
+    expect(buildWhatsAppShareUrl(inviteMessage)).toBe(
+      `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`,
+    );
+  });
+
   it("builds the configured cleaner signup URL with the active code", () => {
     expect(buildCleanerJoinUrl("https://cleaner.example.test/base", "AB12CD")).toBe(
       "https://cleaner.example.test/join?code=AB12CD",

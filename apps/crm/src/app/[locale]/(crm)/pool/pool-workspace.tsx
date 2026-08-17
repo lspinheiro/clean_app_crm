@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Link2, RefreshCw, UserRound } from "lucide-react";
+import { Check, Copy, Link2, MessageCircle, RefreshCw, UserRound } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -8,6 +8,7 @@ import { rotatePoolInvite } from "@/app/actions/pool";
 import {
   buildCleanerJoinUrl,
   buildInviteMessage,
+  buildWhatsAppShareUrl,
   formatJoinedDate,
 } from "@/features/pool/invite";
 import type { PoolMember } from "@/features/pool/types";
@@ -40,6 +41,9 @@ export function PoolWorkspace({
   const inviteMessage = activeCode && joinUrl
     ? buildInviteMessage(companyName, joinUrl, activeCode, (values) =>
         t("inviteMessage", values))
+    : null;
+  const whatsAppShareUrl = inviteMessage
+    ? buildWhatsAppShareUrl(inviteMessage)
     : null;
 
   async function copyToClipboard(value: string, kind: "link" | "message") {
@@ -86,6 +90,11 @@ export function PoolWorkspace({
       setStatus(t("activeCodeNotConfirmed"));
       window.location.reload();
     }
+  }
+
+  function shareOnWhatsApp() {
+    if (!whatsAppShareUrl) return;
+    window.open(whatsAppShareUrl, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -151,6 +160,15 @@ export function PoolWorkspace({
               <Copy aria-hidden="true" size={17} />
             )}
             {copying === "message" ? t("copying") : t("copyInvite")}
+          </button>
+          <button
+            className="button button--secondary"
+            disabled={!whatsAppShareUrl || copying !== null || rotating}
+            onClick={shareOnWhatsApp}
+            type="button"
+          >
+            <MessageCircle aria-hidden="true" size={17} />
+            {t("shareOnWhatsApp")}
           </button>
           <button
             className="button button--secondary"

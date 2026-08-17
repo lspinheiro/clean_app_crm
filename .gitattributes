@@ -1,0 +1,5 @@
+# The CSV import templates are served from apps/crm/public and downloaded by admins, so
+# their bytes are part of the product, and apps/crm/src/features/import/csv.test.ts asserts
+# them exactly. Without this, a Windows checkout (core.autocrlf=true) rewrites them to CRLF
+# and the test fails for every Windows contributor while passing everywhere else.
+*.csv text eol=lf

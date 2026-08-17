@@ -475,6 +475,7 @@
     "generateBeforeSharing": "Gere um código antes de compartilhar o link de cadastro do profissional.",
     "copying": "Copiando…",
     "copyInvite": "Copiar mensagem de convite",
+    "shareOnWhatsApp": "Compartilhar no WhatsApp",
     "generating": "Gerando…",
     "generateCode": "Gerar novo código",
     "rotationNote": "Gerar um novo código revoga o código anterior. A participação dos profissionais que já estão no banco permanece a mesma.",

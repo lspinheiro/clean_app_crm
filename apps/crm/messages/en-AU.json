@@ -475,6 +475,7 @@
     "generateBeforeSharing": "Generate one before sharing your cleaner signup link.",
     "copying": "Copying…",
     "copyInvite": "Copy invite message",
+    "shareOnWhatsApp": "Share on WhatsApp",
     "generating": "Generating…",
     "generateCode": "Generate new code",
     "rotationNote": "Generating a new code revokes the previous code. Existing pool members are unchanged.",

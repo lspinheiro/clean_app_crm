@@ -33,6 +33,12 @@ export function buildInviteMessage(
   return translate({ companyName, joinUrl, code });
 }
 
+export function buildWhatsAppShareUrl(inviteMessage: string) {
+  const shareUrl = new URL("https://wa.me/");
+  shareUrl.searchParams.set("text", inviteMessage);
+  return shareUrl.toString();
+}
+
 export function isInviteActive(expiresAt: string | null, now = new Date()) {
   if (!expiresAt) return true;
   const expiry = Date.parse(expiresAt);

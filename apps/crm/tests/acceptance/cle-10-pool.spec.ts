@@ -57,6 +57,10 @@ test("@CLE-10 displays, copies, and rotates the active pool invite", async ({
     `Join Coastal Demo Cleaning's cleaner pool: ${cleanerAppUrl}/join?code=${initialCode}\nInvite code: ${initialCode}`,
   );
 
+  await expect(
+    page.getByRole("button", { name: "Share on WhatsApp" }),
+  ).toBeEnabled();
+
   await page.getByRole("button", { name: "Generate new code" }).click();
   await expect(code).not.toHaveText(initialCode);
   await expect(code).toHaveText(/^[A-Z0-9]{6}$/);

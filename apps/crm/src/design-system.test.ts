@@ -10,65 +10,123 @@ function occurrences(source: string, value: string) {
   return source.split(value).length - 1;
 }
 
-describe("CLE-41 status token and roster CSS contract", () => {
-  it("uses documented semantic status tokens across jobs and roster surfaces", () => {
-    for (const token of [
-      "status-info-text",
-      "status-info-tint",
-      "status-success-text",
-      "status-success-tint",
-      "status-danger-text",
-      "status-danger-tint",
-    ]) {
-      expect(css).toContain(`--color-${token}:`);
-      expect(designContract).toContain(`\`${token}\``);
-    }
-    for (const token of [
-      "status-success-border",
-      "status-danger-soft",
-      "status-danger-faint",
-    ]) {
-      expect(css).toContain(`--color-${token}:`);
-      expect(designContract).toContain(`\`${token}\``);
-    }
+// name → hex from DESIGN.md "Colour". The status container/on-container pairs are
+// documented as `success` `#15803D` · container `#DCFCE7` · on-container `#14532D`,
+// so DESIGN.md agreement is checked by backticked name where the name is written out
+// and by backticked hex for every token.
+const TRUST_BLUE_TOKENS: Record<string, string> = {
+  primary: "#2563EB",
+  "primary-hover": "#1E40AF",
+  "primary-container": "#DBEAFE",
+  "on-primary-container": "#1E3A8A",
+  accent: "#06B6D4",
+  "accent-container": "#CFFAFE",
+  "on-accent-container": "#164E63",
+  success: "#15803D",
+  "success-container": "#DCFCE7",
+  "on-success-container": "#14532D",
+  warning: "#D97706",
+  "warning-container": "#FEF3C7",
+  "on-warning-container": "#78350F",
+  danger: "#B91C1C",
+  "danger-container": "#FEE2E2",
+  "on-danger-container": "#7F1D1D",
+  surface: "#F8FAFC",
+  "surface-card": "#FFFFFF",
+  "surface-alt": "#F1F5F9",
+  "surface-border": "#E2E8F0",
+  "text-main": "#0F172A",
+  "text-secondary": "#334155",
+  "text-muted": "#64748B",
+};
 
-    expect(occurrences(css, "var(--color-status-success-text)")).toBeGreaterThanOrEqual(2);
-    expect(occurrences(css, "var(--color-status-danger-text)")).toBeGreaterThanOrEqual(3);
-    expect(occurrences(css, "#006735")).toBe(1);
-    expect(occurrences(css, "#9b1100")).toBe(1);
-    expect(css).not.toContain("#8b1000");
-    expect(css).toMatch(
-      /\.roster-grid tbody th small\s*\{[^}]*color: var\(--color-status-danger-text\);/,
-    );
+const NAMED_IN_DESIGN_MD = [
+  "primary",
+  "primary-hover",
+  "primary-container",
+  "on-primary-container",
+  "accent",
+  "accent-container",
+  "on-accent-container",
+  "success",
+  "warning",
+  "danger",
+  "surface",
+  "surface-card",
+  "surface-alt",
+  "surface-border",
+  "text-main",
+  "text-secondary",
+  "text-muted",
+];
+
+describe("Trust Blue contract", () => {
+  it("keeps globals.css and DESIGN.md on the same semantic token set", () => {
+    for (const [name, hex] of Object.entries(TRUST_BLUE_TOKENS)) {
+      expect(css).toContain(`--color-${name}:`);
+      expect(designContract).toContain(`\`${hex}\``);
+    }
+    for (const name of NAMED_IN_DESIGN_MD) {
+      expect(designContract).toContain(`\`${name}\``);
+    }
   });
 
-  it("keeps roster radii, depth, and table declarations on the sanctioned scale", () => {
-    expect(css).toMatch(/\.roster-view-switch\s*\{[^}]*border-radius: 8px;/);
-    expect(css).toMatch(/\.roster-summary-bar\s*\{[^}]*box-shadow: var\(--shadow-floating\);/);
-    expect(css).not.toMatch(/\.roster-grid tbody th\s*\{[^}]*min-height:/);
-    expect(css).toContain(".roster-grid tbody .roster-gap-row th");
-  });
-});
-
-describe("CLE-42 font and roster skeleton performance contract", () => {
-  it("loads each Poppins weight through next/font/local instead of CSS imports", () => {
+  it("loads Inter and Public Sans through next/font/local with Poppins gone", () => {
     expect(rootLayout).toContain('from "next/font/local"');
-    expect(rootLayout).not.toMatch(/import\s+["']@fontsource\/poppins\//);
     expect(rootLayout).toContain("preload: true");
-    expect(rootLayout).toContain('display: "optional"');
-    expect(rootLayout).toContain("poppins.variable");
-    for (const weight of ["400", "500", "600", "700", "800"]) {
-      expect(rootLayout).toContain(`weight: \"${weight}\"`);
-    }
+    expect(rootLayout).toContain("@fontsource/inter/files/inter-latin-400-normal.woff2");
+    expect(rootLayout).toContain("@fontsource/inter/files/inter-latin-700-normal.woff2");
+    expect(rootLayout).toMatch(/@fontsource\/public-sans\/files\/public-sans-latin-\d{3}-normal\.woff2/);
+    expect(rootLayout).not.toMatch(/poppins/i);
+    expect(css).not.toMatch(/poppins/i);
+    expect(rootLayout).toContain('variable: "--font-inter"');
+    expect(css).toMatch(/--font-sans:[^;]*var\(--font-inter\)/);
   });
 
-  it("matches the loaded roster grid at desktop and phone widths", () => {
+  it("keeps shape and depth on the sanctioned Trust Blue scale", () => {
+    expect(css).toMatch(/\.button\s*\{[^}]*border-radius:\s*8px/);
+    expect(css).toContain("--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05)");
+    expect(css).toContain(
+      "--shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)",
+    );
+    expect(css).not.toContain("--shadow-floating");
+  });
+
+  it("marks the active nav item with primary text and a 2px primary underline", () => {
     expect(css).toMatch(
-      /\.roster-loading__row\s*\{[^}]*min-width: 960px;[^}]*grid-template-columns: 188px repeat\(7, minmax\(0, 1fr\)\);/,
+      /\.primary-navigation a\[aria-current="page"\]\s*\{[^}]*var\(--color-primary\)/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 560px\)[\s\S]*\.roster-loading__row\s*\{[^}]*min-width: 840px;[^}]*grid-template-columns: 128px repeat\(7, minmax\(0, 1fr\)\);/,
+      /\.primary-navigation a\[aria-current="page"\]::after\s*\{[^}]*var\(--color-primary\)/,
     );
+    expect(css).toMatch(
+      /\.primary-navigation a\[aria-current="page"\]::after\s*\{[^}]*height:\s*2px/,
+    );
+  });
+
+  it("keeps the visible focus ring on the primary colour", () => {
+    expect(css).toMatch(/:focus-visible\s*\{[^}]*outline:[^};]*var\(--color-primary\)/);
+  });
+
+  it("uses container/on-container status pairs instead of the retired status-* tokens", () => {
+    for (const retired of [
+      "--color-status-info-text",
+      "--color-status-info-tint",
+      "--color-status-success-text",
+      "--color-status-success-tint",
+      "--color-status-danger-text",
+      "--color-status-danger-tint",
+      "--color-status-success-border",
+      "--color-status-danger-soft",
+      "--color-status-danger-faint",
+    ]) {
+      expect(css).not.toContain(retired);
+    }
+
+    expect(occurrences(css, "var(--color-success-container)")).toBeGreaterThanOrEqual(1);
+    expect(occurrences(css, "var(--color-on-success-container)")).toBeGreaterThanOrEqual(1);
+    expect(occurrences(css, "var(--color-danger-container)")).toBeGreaterThanOrEqual(1);
+    expect(occurrences(css, "var(--color-on-danger-container)")).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -109,7 +167,7 @@ describe("design-review conformance contracts", () => {
   });
 
   it("does not require an unshipped New job action in the canonical shell", () => {
-    expect(designContract).not.toContain('primary "+ New job" button right');
-    expect(designContract).toMatch(/No dead action\s+placeholders/);
+    expect(designContract).not.toMatch(/primary\s+"\+ New job"\s+button\s+right/);
+    expect(designContract).toMatch(/No dead\s+action\s+placeholders/);
   });
 });

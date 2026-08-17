@@ -1,4 +1,4 @@
-# Clean App CRM
+# The Clean Crew CRM
 
 The company-side platform for commercial cleaning operators: a free system of record for clients,
 sites, recurring assignments, and rosters, which posts open positions (vacancies) that cleaners

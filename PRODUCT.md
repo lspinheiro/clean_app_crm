@@ -85,7 +85,7 @@ backfill speed is the hero moment. UI in English; currency AUD; timezone
 
 ## Brand Commitments
 
-- Working name **"Clean App"** appears in alpha UI; final naming is an open decision
+- Working name **"The Clean Crew"** appears in alpha UI; final naming is an open decision
   (docs/PRODUCT.md Appendix B q7) — a later rebrand is expected, design accordingly.
 - Parity screens in `apps/cleaner` keep visual fidelity to the `../clean-app` prototype
   (design-doc decision); new screens go through design exploration.

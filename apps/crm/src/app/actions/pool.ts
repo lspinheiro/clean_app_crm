@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidateLocalizedPath as revalidatePath } from "@/i18n/revalidate";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
+import { userMessage } from "@/i18n/user-message";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
 export type RotateInviteResult =
@@ -16,10 +17,10 @@ export async function rotatePoolInvite(): Promise<RotateInviteResult> {
   if (error || !data) {
     return {
       ok: false,
-      error: "A new invite code could not be generated. Please try again.",
+      error: userMessage("inviteRotateFailed"),
     };
   }
 
-  revalidatePath("/pool");
+  revalidateLocalizedPath("/pool");
   return { ok: true, code: data.code };
 }

@@ -4,14 +4,40 @@ import {
   localiseMutationResult,
   localiseUserMessage,
 } from "./user-message";
+import { preferredCleanerOrderSchema } from "@/features/preferred-cleaners/schema";
 
 describe("localized validation and mutation messages", () => {
   it("keeps English stable and translates Portuguese presentation errors", () => {
-    const source = "Choose a valid site.";
-    expect(localiseUserMessage(source, "en-AU")).toBe(source);
+    const source = "user.chooseValidSite";
+    expect(localiseUserMessage(source, "en-AU")).toBe("Choose a valid site.");
     expect(localiseUserMessage(source, "pt-BR")).toBe(
       "Selecione um local válido.",
     );
+  });
+
+  it("uses a safe localized fallback for unknown or prototype-like messages", () => {
+    expect(localiseUserMessage("constructor", "pt-BR")).toBe(
+      "Não foi possível concluir esta ação. Tente novamente.",
+    );
+    expect(localiseUserMessage("Invalid UUID", "pt-BR")).toBe(
+      "Não foi possível concluir esta ação. Tente novamente.",
+    );
+  });
+
+  it("uses stable message identifiers at schema trust boundaries", () => {
+    const result = preferredCleanerOrderSchema.safeParse({
+      cleanerIds: ["not-a-uuid"],
+      clientId: "not-a-uuid",
+      siteId: "not-a-uuid",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.message)).toEqual([
+        "user.cleanerOrderInvalid",
+        "user.cleanerOrderInvalid",
+        "user.cleanerOrderInvalid",
+      ]);
+    }
   });
 
   it("localizes field and form errors without changing mutation state", () => {
@@ -19,8 +45,8 @@ describe("localized validation and mutation messages", () => {
       localiseMutationResult(
         {
           ok: false,
-          fieldErrors: { name: "Enter a client name." },
-          formError: "The client could not be created. Please try again.",
+          fieldErrors: { name: "user.enterClientName" },
+          formError: "user.clientCreateFailed",
         },
         "pt-BR",
       ),

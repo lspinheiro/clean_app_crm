@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { explicitLocaleCookieName } from "@/i18n/config";
-
 const mocks = vi.hoisted(() => ({
   cookieDelete: vi.fn(),
   cookieGet: vi.fn(),
@@ -55,17 +53,18 @@ describe("signInAction locale persistence", () => {
     });
   });
 
-  it("consumes an explicit pre-auth choice that already matches the saved preference", async () => {
+  it("keeps the saved profile preference authoritative across sign-ins", async () => {
+    mocks.cookieGet.mockReturnValue({ value: "pt-BR" });
     const formData = new FormData();
     formData.set("email", "admin@example.com");
     formData.set("password", "local-demo-only");
 
-    await expect(signInAction({ error: null }, formData)).rejects.toThrow(
+    await expect(signInAction({ error: null, fieldErrors: {} }, formData)).rejects.toThrow(
       "NEXT_REDIRECT:/en-AU/roster",
     );
 
     expect(mocks.rpc).not.toHaveBeenCalled();
-    expect(mocks.cookieDelete).toHaveBeenCalledWith(explicitLocaleCookieName);
+    expect(mocks.cookieDelete).not.toHaveBeenCalled();
     expect(mocks.cookieSet).toHaveBeenCalledWith("NEXT_LOCALE", "en-AU", {
       maxAge: 60 * 60 * 24 * 365,
       path: "/",
@@ -73,34 +72,16 @@ describe("signInAction locale persistence", () => {
     });
   });
 
-  it("saves and consumes a different explicit pre-auth choice", async () => {
-    mocks.cookieGet.mockReturnValue({ value: "pt-BR" });
-    mocks.rpc.mockResolvedValue({ error: null });
+  it("returns field-associated errors for every invalid credential field", async () => {
     const formData = new FormData();
-    formData.set("email", "admin@example.com");
-    formData.set("password", "local-demo-only");
 
-    await expect(signInAction({ error: null }, formData)).rejects.toThrow(
-      "NEXT_REDIRECT:/pt-BR/roster",
-    );
-
-    expect(mocks.rpc).toHaveBeenCalledWith("set_preferred_locale", {
-      target_locale: "pt-BR",
+    await expect(signInAction({ error: null, fieldErrors: {} }, formData)).resolves.toEqual({
+      error: null,
+      fieldErrors: {
+        email: "Enter a valid email address.",
+        password: "Enter your password.",
+      },
     });
-    expect(mocks.cookieDelete).toHaveBeenCalledWith(explicitLocaleCookieName);
-  });
-
-  it("retains a different explicit choice when persistence fails", async () => {
-    mocks.cookieGet.mockReturnValue({ value: "pt-BR" });
-    mocks.rpc.mockResolvedValue({ error: new Error("save failed") });
-    const formData = new FormData();
-    formData.set("email", "admin@example.com");
-    formData.set("password", "local-demo-only");
-
-    await expect(signInAction({ error: null }, formData)).rejects.toThrow(
-      "NEXT_REDIRECT:/pt-BR/roster",
-    );
-
-    expect(mocks.cookieDelete).not.toHaveBeenCalled();
+    expect(mocks.createClient).not.toHaveBeenCalled();
   });
 });

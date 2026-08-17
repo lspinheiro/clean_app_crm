@@ -51,10 +51,10 @@ describe("CLE-71 import action boundary", () => {
 
     expect(result.ok).toBe(false);
     expect(result.fieldErrors).toMatchObject({
-      clientId: "Choose a valid client.",
-      name: "Enter a site name.",
-      address: "Enter a street address.",
-      suburb: "Enter a suburb.",
+      clientId: "user.chooseValidClient",
+      name: "user.enterSiteName",
+      address: "user.enterStreetAddress",
+      suburb: "user.enterSuburb",
     });
     expect(mocks.createSite).not.toHaveBeenCalled();
   });

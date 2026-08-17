@@ -55,7 +55,10 @@ describe("recurring assignment actions", () => {
       named_cleaner_ids: ["10000000-0000-4000-8000-000000000002"],
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith(
-      `/clients/${validInput.clientId}`,
+      `/en-AU/clients/${validInput.clientId}`,
+    );
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(
+      `/pt-BR/clients/${validInput.clientId}`,
     );
   });
 

@@ -6,11 +6,14 @@ export function revalidateLocalizedPath(
   path: string,
   type?: "layout" | "page",
 ) {
-  if (type) revalidatePath(path, type);
-  else revalidatePath(path);
+  if (path === "/") {
+    if (type) revalidatePath(path, type);
+    else revalidatePath(path);
+    return;
+  }
 
   for (const locale of locales) {
-    const localizedPath = path === "/" ? `/${locale}` : `/${locale}${path}`;
+    const localizedPath = `/${locale}${path}`;
     if (type) revalidatePath(localizedPath, type);
     else revalidatePath(localizedPath);
   }

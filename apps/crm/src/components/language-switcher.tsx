@@ -7,9 +7,7 @@ import { useEffect, useState, useTransition } from "react";
 import { setPreferredLocaleAction } from "@/app/actions/locale";
 import {
   isAppLocale,
-  explicitLocaleCookieName,
   languageSelectionEnabled,
-  localeCookieMaxAgeSeconds,
   locales,
   type AppLocale,
 } from "@/i18n/config";
@@ -20,10 +18,12 @@ import { DocumentLocale } from "./document-locale";
 type LanguageSwitcherProps = {
   authenticated?: boolean;
   currentLocale: AppLocale;
+  savedLocale?: AppLocale | null;
 };
 
 type PreservedField = {
   checked?: boolean;
+  files?: File[];
   name: string;
   value: string;
 };
@@ -36,7 +36,6 @@ function preserveEnteredFields() {
       "input[name], select[name], textarea[name]",
     ),
   ).flatMap((field) => {
-    if (field instanceof HTMLInputElement && field.type === "file") return [];
     return [{
       checked:
         field instanceof HTMLInputElement &&
@@ -44,6 +43,10 @@ function preserveEnteredFields() {
           ? field.checked
           : undefined,
       name: field.name,
+      files:
+        field instanceof HTMLInputElement && field.type === "file"
+          ? Array.from(field.files ?? [])
+          : undefined,
       value: field.value,
     }];
   });
@@ -58,14 +61,44 @@ function restoreEnteredFields() {
     const candidates = document.getElementsByName(preserved.name);
     const field = Array.from(candidates).find(
       (candidate): candidate is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
-        candidate instanceof HTMLInputElement ||
-        candidate instanceof HTMLSelectElement ||
-        candidate instanceof HTMLTextAreaElement,
+        (candidate instanceof HTMLInputElement ||
+          candidate instanceof HTMLSelectElement ||
+          candidate instanceof HTMLTextAreaElement) &&
+        (!(candidate instanceof HTMLInputElement) ||
+          candidate.type !== "radio" ||
+          candidate.value === preserved.value),
     );
     if (!field) continue;
-    field.value = preserved.value;
+
+    if (field instanceof HTMLInputElement && field.type === "file") {
+      if (preserved.files?.length && typeof DataTransfer !== "undefined") {
+        const transfer = new DataTransfer();
+        preserved.files.forEach((file) => transfer.items.add(file));
+        field.files = transfer.files;
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      continue;
+    }
+
+    if (field instanceof HTMLInputElement && field.type === "radio") {
+      if (preserved.checked) field.click();
+      continue;
+    }
+
+    const valuePrototype = field instanceof HTMLInputElement
+      ? HTMLInputElement.prototype
+      : field instanceof HTMLSelectElement
+        ? HTMLSelectElement.prototype
+        : HTMLTextAreaElement.prototype;
+    Object.getOwnPropertyDescriptor(valuePrototype, "value")?.set?.call(
+      field,
+      preserved.value,
+    );
     if (field instanceof HTMLInputElement && preserved.checked !== undefined) {
-      field.checked = preserved.checked;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "checked")?.set?.call(
+        field,
+        preserved.checked,
+      );
     }
     field.dispatchEvent(new Event("input", { bubbles: true }));
     field.dispatchEvent(new Event("change", { bubbles: true }));
@@ -75,12 +108,20 @@ function restoreEnteredFields() {
 export function LanguageSwitcher({
   authenticated = false,
   currentLocale,
+  savedLocale = null,
 }: LanguageSwitcherProps) {
   const t = useTranslations("LocaleSwitcher");
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedLocale, setSelectedLocale] = useState(currentLocale);
+  const baseLocale = savedLocale ?? currentLocale;
+  const [selection, setSelection] = useState<{
+    base: AppLocale;
+    value: AppLocale;
+  } | null>(null);
+  const selectedLocale = selection?.base === baseLocale
+    ? selection.value
+    : baseLocale;
   const [error, setError] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -93,19 +134,17 @@ export function LanguageSwitcher({
   function changeLocale(nextValue: string) {
     if (!isAppLocale(nextValue) || nextValue === selectedLocale) return;
     const previousLocale = selectedLocale;
-    setSelectedLocale(nextValue);
+    setSelection({ base: baseLocale, value: nextValue });
     setError(false);
 
     startTransition(async () => {
       if (authenticated) {
         const result = await setPreferredLocaleAction(nextValue);
         if (!result.ok) {
-          setSelectedLocale(previousLocale);
+          setSelection({ base: baseLocale, value: previousLocale });
           setError(true);
           return;
         }
-      } else {
-        document.cookie = `${explicitLocaleCookieName}=${nextValue}; Path=/; Max-Age=${localeCookieMaxAgeSeconds}; SameSite=Lax`;
       }
 
       const query = searchParams.toString();

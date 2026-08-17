@@ -119,7 +119,8 @@ export function RosterWeek({
                   <ChevronLeft aria-hidden="true" size={20} />
                 </Link>
                 <p className="roster-week-title tabular-numerals">
-                  {formatRosterWeekHeading(weekStart, locale)}
+                  {formatRosterWeekHeading(weekStart, locale, (range) =>
+                    t("weekOf", { range }))}
                 </p>
                 <Link className="icon-button roster-week-link" href={nextWeek} aria-label={t("nextWeek")}>
                   <ChevronRight aria-hidden="true" size={20} />

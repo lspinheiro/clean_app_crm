@@ -242,7 +242,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
           <div className="job-detail-title-line">
             <h1 className="page-heading">{job.site.name}</h1>
             <span className={`status-chip status-chip--${job.status}`}>
-              {formatJobStatus(job.status, locale)}
+              {formatJobStatus(job.status, t)}
             </span>
           </div>
           <p className="job-detail-context">
@@ -275,7 +275,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
         </div>
         <dl className="job-detail-facts">
           <div>
-            <dt>{t("date")}</dt>
+            <dt>{t("detailDate")}</dt>
             <dd>
               <time dateTime={job.scheduledStart}>
                 {formatJobDate(job.scheduledStart, locale)}
@@ -287,7 +287,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
             <dd className="tabular-numerals">{formatJobTime(job.scheduledStart, locale)}</dd>
           </div>
           <div>
-            <dt>{t("duration")}</dt>
+            <dt>{t("detailDuration")}</dt>
             <dd className="tabular-numerals">{formatJobDuration(job.durationMinutes, locale)}</dd>
           </div>
           <div className="job-detail-fact--wide">

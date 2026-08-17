@@ -26,7 +26,7 @@ describe("company logo compression", () => {
     const compressor = vi.fn();
 
     await expect(compressCompanyLogo(source, compressor)).rejects.toThrow(
-      "Choose a PNG, JPEG, or WebP image.",
+      "user.logoType",
     );
     expect(compressor).not.toHaveBeenCalled();
   });

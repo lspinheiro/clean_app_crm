@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { userMessage } from "@/i18n/user-message";
+
 const optionalText = (maximum: number, message: string) =>
   z
     .string()
@@ -8,18 +10,18 @@ const optionalText = (maximum: number, message: string) =>
     .transform((value) => value || null);
 
 export const createClientSchema = z.object({
-  name: z.string().trim().min(1, "Enter a client name.").max(120, "Use 120 characters or fewer."),
-  contactName: optionalText(120, "Use 120 characters or fewer."),
-  phone: optionalText(40, "Use 40 characters or fewer."),
-  notes: optionalText(2_000, "Use 2,000 characters or fewer."),
+  name: z.string().trim().min(1, userMessage("enterClientName")).max(120, userMessage("max120")),
+  contactName: optionalText(120, userMessage("max120")),
+  phone: optionalText(40, userMessage("max40")),
+  notes: optionalText(2_000, userMessage("max2000")),
 });
 
 export const createSiteSchema = z.object({
-  clientId: z.string().uuid("Choose a valid client."),
-  name: z.string().trim().min(1, "Enter a site name.").max(120, "Use 120 characters or fewer."),
-  address: z.string().trim().min(1, "Enter a street address.").max(240, "Use 240 characters or fewer."),
-  suburb: z.string().trim().min(1, "Enter a suburb.").max(120, "Use 120 characters or fewer."),
-  accessNotes: optionalText(2_000, "Use 2,000 characters or fewer."),
+  clientId: z.string().uuid(userMessage("chooseValidClient")),
+  name: z.string().trim().min(1, userMessage("enterSiteName")).max(120, userMessage("max120")),
+  address: z.string().trim().min(1, userMessage("enterStreetAddress")).max(240, userMessage("max240")),
+  suburb: z.string().trim().min(1, userMessage("enterSuburb")).max(120, userMessage("max120")),
+  accessNotes: optionalText(2_000, userMessage("max2000")),
 });
 
 export function firstFieldErrors(error: z.ZodError) {

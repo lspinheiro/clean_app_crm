@@ -21,20 +21,20 @@ test.describe("@CLE-13 jobs with crew slots", () => {
     const jobs = page.getByRole("list", { name: "Company jobs" });
     expect(await jobs.getByRole("listitem").count()).toBeGreaterThanOrEqual(3);
 
-    const crewJob = jobs
+    const broadbeachJobs = jobs
       .getByRole("listitem")
-      .filter({ hasText: "Broadbeach Towers" })
-      .filter({ hasText: "Posted" })
-      .filter({ hasText: "1/2 assigned" })
-      .first();
+      .filter({ hasText: "Broadbeach Towers" });
+    const futureJobIndex = await broadbeachJobs.locator("time").evaluateAll((times) =>
+      times.findIndex((time) => Date.parse(time.getAttribute("datetime") ?? "") > Date.now()),
+    );
+    expect(futureJobIndex).toBeGreaterThanOrEqual(0);
+    const crewJob = broadbeachJobs.nth(futureJobIndex);
     await expect(crewJob).toContainText("Posted");
     await expect(crewJob).toContainText("1/2 assigned");
 
     const assignedJob = jobs
       .getByRole("listitem")
       .filter({ hasText: "Southport Office" })
-      .filter({ hasText: "Assigned" })
-      .filter({ hasText: "1/1 assigned" })
       .first();
     await expect(assignedJob).toContainText("Assigned");
     await expect(assignedJob).toContainText("1/1 assigned");
@@ -42,8 +42,6 @@ test.describe("@CLE-13 jobs with crew slots", () => {
     const openJob = jobs
       .getByRole("listitem")
       .filter({ hasText: "Palm Grove Practice" })
-      .filter({ hasText: "Posted" })
-      .filter({ hasText: "0/1 assigned" })
       .first();
     await expect(openJob).toContainText("Posted");
     await expect(openJob).toContainText("0/1 assigned");

@@ -1,11 +1,13 @@
 import { z } from "zod";
 
+import { userMessage } from "@/i18n/user-message";
+
 export const companyIdentitySchema = z.object({
-  name: z.string().trim().min(1, "Enter a company name.").max(120, "Use 120 characters or fewer."),
+  name: z.string().trim().min(1, userMessage("enterCompanyName")).max(120, userMessage("max120")),
   abn: z
     .string()
     .transform((value) => value.replace(/\s/g, ""))
-    .pipe(z.string().regex(/^\d{11}$/, "Enter exactly 11 digits.")),
+    .pipe(z.string().regex(/^\d{11}$/, userMessage("digits11"))),
 });
 
 export type CompanyIdentityInput = z.input<typeof companyIdentitySchema>;

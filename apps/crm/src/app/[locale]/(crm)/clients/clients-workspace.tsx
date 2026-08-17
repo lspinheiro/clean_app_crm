@@ -175,7 +175,9 @@ export function ClientsWorkspace({ clients }: ClientsWorkspaceProps) {
                       <div>
                         <strong>{site.name}</strong>
                         <span>{site.address} · {site.suburb}</span>
-                        <span className="site-default-summary">{formatSiteDefaults(site, locale)}</span>
+                        <span className="site-default-summary">
+                          {formatSiteDefaults(site, locale, t("defaultsNotSet"))}
+                        </span>
                       </div>
                     </li>
                   ))}

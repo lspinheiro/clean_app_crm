@@ -7,7 +7,8 @@ import {
   oneOffJobSchema,
 } from "@/features/jobs/schema";
 import { requireCompanyAdmin } from "@/lib/auth/session";
-import { revalidateLocalizedPath as revalidatePath } from "@/i18n/revalidate";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
+import { userMessage } from "@/i18n/user-message";
 
 export type JobMutationResult = {
   ok: boolean;
@@ -68,7 +69,7 @@ export async function createOneOffJob(
       ok: false,
       fieldErrors: {},
       formError:
-        "The save could not be confirmed. Refresh Jobs before trying again.",
+        userMessage("jobSaveUnconfirmed"),
       jobId: null,
     };
   }
@@ -79,7 +80,7 @@ export async function createOneOffJob(
       ok: false,
       fieldErrors: {},
       formError:
-        "The save could not be confirmed. Refresh Jobs before trying again.",
+        userMessage("jobSaveUnconfirmed"),
       jobId: null,
     };
   }
@@ -88,7 +89,7 @@ export async function createOneOffJob(
     return {
       ok: false,
       fieldErrors: {},
-      formError: "The job could not be saved. Please try again.",
+      formError: userMessage("jobSaveFailed"),
       jobId: null,
     };
   }
@@ -99,7 +100,7 @@ export async function createOneOffJob(
       ok: false,
       fieldErrors: {},
       formError:
-        "The save could not be confirmed. Refresh Jobs before trying again.",
+        userMessage("jobSaveUnconfirmed"),
       jobId: null,
     };
   }
@@ -124,7 +125,7 @@ export async function assignJobSlot(
   if (!parsed.success) {
     return {
       ok: false,
-      formError: "Choose a valid assignment before trying again.",
+      formError: userMessage("validAssignment"),
     };
   }
 
@@ -143,7 +144,7 @@ export async function assignJobSlot(
     return {
       ok: false,
       formError:
-        "The assignment could not be confirmed. Review the refreshed crew slots before trying again.",
+        userMessage("assignmentUnconfirmed"),
     };
   }
 
@@ -152,7 +153,7 @@ export async function assignJobSlot(
     if (error.message === "Cleaner is unavailable for this time") {
       return {
         ok: false,
-        formError: "This cleaner is unavailable for the job time.",
+        formError: userMessage("cleanerUnavailable"),
       };
     }
     if (
@@ -163,20 +164,20 @@ export async function assignJobSlot(
       return {
         ok: false,
         formError:
-          "This job changed while you were assigning it. Review the refreshed crew slots.",
+          userMessage("jobChanged"),
       };
     }
     if (status === 0) {
       return {
         ok: false,
         formError:
-          "The assignment could not be confirmed. Review the refreshed crew slots before trying again.",
+          userMessage("assignmentUnconfirmed"),
       };
     }
     return {
       ok: false,
       formError:
-        "The cleaner could not be assigned. Review the refreshed crew slots and try again.",
+        userMessage("cleanerAssignFailed"),
     };
   }
 
@@ -184,7 +185,7 @@ export async function assignJobSlot(
     return {
       ok: false,
       formError:
-        "The assignment could not be confirmed. Review the refreshed crew slots before trying again.",
+        userMessage("assignmentUnconfirmed"),
     };
   }
 
@@ -194,7 +195,7 @@ export async function assignJobSlot(
 export async function cancelJob(jobId: string): Promise<JobOperationResult> {
   const parsed = jobIdSchema.safeParse(jobId);
   if (!parsed.success) {
-    return { ok: false, formError: "The job could not be cancelled." };
+    return { ok: false, formError: userMessage("jobCancelFailed") };
   }
 
   const { supabase } = await requireCompanyAdmin();
@@ -209,7 +210,7 @@ export async function cancelJob(jobId: string): Promise<JobOperationResult> {
     return {
       ok: false,
       formError:
-        "The cancellation could not be confirmed. Review the refreshed job before trying again.",
+        userMessage("cancellationUnconfirmed"),
     };
   }
 
@@ -218,14 +219,14 @@ export async function cancelJob(jobId: string): Promise<JobOperationResult> {
     return {
       ok: false,
       formError:
-        "The cancellation could not be confirmed. Review the refreshed job before trying again.",
+        userMessage("cancellationUnconfirmed"),
     };
   }
   if (error) {
     return {
       ok: false,
       formError:
-        "The job could not be cancelled. Review the refreshed job and try again.",
+        userMessage("jobCancelChanged"),
     };
   }
 
@@ -233,11 +234,11 @@ export async function cancelJob(jobId: string): Promise<JobOperationResult> {
 }
 
 function revalidateJobConsumers(jobId: string) {
-  revalidatePath(`/jobs/${jobId}`);
+  revalidateLocalizedPath(`/jobs/${jobId}`);
   revalidateJobCollections();
 }
 
 function revalidateJobCollections() {
-  revalidatePath("/jobs");
-  revalidatePath("/roster");
+  revalidateLocalizedPath("/jobs");
+  revalidateLocalizedPath("/roster");
 }

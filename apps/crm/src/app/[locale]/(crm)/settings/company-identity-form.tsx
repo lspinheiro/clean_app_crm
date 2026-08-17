@@ -15,6 +15,7 @@ import { useRouter } from "@/i18n/navigation";
 import {
   localiseFieldErrors,
   localiseMutationResult,
+  userMessage,
 } from "@/i18n/user-message";
 
 type CompanyIdentityFormProps = {
@@ -100,7 +101,7 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
     } catch (error) {
       setFieldErrors({
         logo:
-          error instanceof Error && error.message.includes("400 KB")
+          error instanceof Error && error.message === userMessage("logoCompressFailed")
             ? t("compressFailed")
             : t("logoPrepare"),
       });

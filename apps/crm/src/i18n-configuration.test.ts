@@ -31,4 +31,19 @@ describe("CRM language configuration", () => {
       sameSite: "lax",
     });
   });
+
+  it("ships one physical locale-owned route tree", async () => {
+    await expect(
+      readFile(path.resolve(process.cwd(), "src/app/(crm)/roster/page.tsx"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(path.resolve(process.cwd(), "src/app/(auth)/login/page.tsx"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+
+    const localeRoster = await readFile(
+      path.resolve(process.cwd(), "src/app/[locale]/(crm)/roster/page.tsx"),
+      "utf8",
+    );
+    expect(localeRoster).not.toMatch(/^export \{ default/);
+  });
 });

@@ -1,4 +1,5 @@
 const inviteCodePattern = /^[A-Z0-9]{6}$/;
+const joinedDateFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function assertInviteCode(code: string) {
   if (!inviteCodePattern.test(code)) {
@@ -26,12 +27,10 @@ export function buildInviteMessage(
   companyName: string,
   joinUrl: string,
   code: string,
-  locale = "en-AU",
+  translate: (values: { companyName: string; joinUrl: string; code: string }) => string,
 ) {
   assertInviteCode(code);
-  return locale === "pt-BR"
-    ? `Entre para o banco de profissionais da empresa ${companyName}: ${joinUrl}\nCódigo de convite: ${code}`
-    : `Join ${companyName}'s cleaner pool: ${joinUrl}\nInvite code: ${code}`;
+  return translate({ companyName, joinUrl, code });
 }
 
 export function isInviteActive(expiresAt: string | null, now = new Date()) {
@@ -41,10 +40,15 @@ export function isInviteActive(expiresAt: string | null, now = new Date()) {
 }
 
 export function formatJoinedDate(joinedAt: string, locale = "en-AU") {
-  return new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "Australia/Brisbane",
-  }).format(new Date(joinedAt));
+  let formatter = joinedDateFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "Australia/Brisbane",
+    });
+    joinedDateFormatters.set(locale, formatter);
+  }
+  return formatter.format(new Date(joinedAt));
 }

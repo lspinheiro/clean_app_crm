@@ -1,4 +1,8 @@
-import { parse } from "@formatjs/icu-messageformat-parser";
+import {
+  parse,
+  TYPE,
+  type MessageFormatElement,
+} from "@formatjs/icu-messageformat-parser";
 import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
 
@@ -22,6 +26,27 @@ function leafMessages(
   return leaves;
 }
 
+function argumentShapes(elements: MessageFormatElement[], result = new Map<string, number>()) {
+  for (const element of elements) {
+    if (
+      element.type === TYPE.argument ||
+      element.type === TYPE.number ||
+      element.type === TYPE.date ||
+      element.type === TYPE.time ||
+      element.type === TYPE.select ||
+      element.type === TYPE.plural
+    ) {
+      result.set(element.value, element.type);
+    }
+    if (element.type === TYPE.select || element.type === TYPE.plural) {
+      Object.values(element.options).forEach((option) => argumentShapes(option.value, result));
+    } else if (element.type === TYPE.tag) {
+      argumentShapes(element.children, result);
+    }
+  }
+  return [...result.entries()].sort(([left], [right]) => left.localeCompare(right));
+}
+
 describe("CRM message catalogues", () => {
   it("keeps recursive keys in parity and every ICU message valid", () => {
     const english = leafMessages(enAu);
@@ -34,6 +59,9 @@ describe("CRM message catalogues", () => {
       const ptMessage = portuguese.get(key);
       expect(ptMessage?.trim(), `${key} in pt-BR`).not.toBe("");
       expect(() => parse(ptMessage ?? ""), `${key} in pt-BR`).not.toThrow();
+      expect(argumentShapes(parse(ptMessage ?? "")), `${key} ICU arguments`).toEqual(
+        argumentShapes(parse(message)),
+      );
     }
   });
 

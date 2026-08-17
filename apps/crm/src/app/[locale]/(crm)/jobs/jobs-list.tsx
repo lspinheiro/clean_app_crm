@@ -43,7 +43,7 @@ export function JobsList({ jobs }: JobsListProps) {
               <div className="job-title-line">
                 <h2>{job.siteName}</h2>
                 <span className={`status-chip status-chip--${job.status}`}>
-                  {formatJobStatus(job.status, locale)}
+                  {formatJobStatus(job.status, t)}
                 </span>
               </div>
               <p>{job.clientName} · {job.serviceName}</p>

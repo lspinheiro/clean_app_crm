@@ -1,14 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { formatAud, formatDuration } from "./format";
+import { formatSiteDefaults } from "./format";
 
 describe("site default formatting", () => {
-  it("renders integer cents as AUD with tabular-friendly decimals", () => {
-    expect(formatAud(16_550)).toBe("$165.50");
-  });
-
-  it("renders duration minutes as compact hours", () => {
-    expect(formatDuration(150)).toBe("2.5 h");
-    expect(formatDuration(120)).toBe("2 h");
+  it("gets the empty-state label from the active catalogue", () => {
+    const site = {
+      accessNotes: null,
+      address: "10 Surf Parade",
+      clientId: "client-1",
+      defaultDurationMinutes: null,
+      defaultRateCents: null,
+      defaultService: null,
+      id: "site-1",
+      name: "Broadbeach Towers",
+      preferredCleaners: [],
+      suburb: "Broadbeach",
+    };
+    expect(formatSiteDefaults(site, "en-AU", "catalogue:defaults")).toBe("catalogue:defaults");
   });
 });

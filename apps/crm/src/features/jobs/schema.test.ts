@@ -76,7 +76,7 @@ describe("CLE-23 one-off job validation", () => {
         expect.arrayContaining([
           expect.objectContaining({
             path: ["clientId"],
-            message: "Choose a client.",
+            message: "user.chooseClient",
           }),
         ]),
       );

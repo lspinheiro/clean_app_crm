@@ -152,6 +152,10 @@ describe("CLE-22 job detail workspace", () => {
     expect(screen.getByText("$150")).toBeInTheDocument();
     expect(screen.getByText("$480")).toBeInTheDocument();
     expect(screen.getByText("Kitchen detail after the standard clean.")).toBeInTheDocument();
+    expect(screen.getByText("Date", { selector: "dt" })).toBeInTheDocument();
+    expect(screen.getByText("Duration", { selector: "dt" })).toBeInTheDocument();
+    expect(screen.queryByText("Job date", { selector: "dt" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Duration (hours)", { selector: "dt" })).not.toBeInTheDocument();
 
     const slotOne = screen.getByRole("article", { name: "Crew slot 1" });
     expect(within(slotOne).getByText("Assigned")).toBeInTheDocument();
@@ -315,7 +319,7 @@ describe("CLE-22 job detail workspace", () => {
   it("keeps a safe inline error and refreshes after a losing assignment", async () => {
     mocks.assignJobSlot.mockResolvedValue({
       ok: false,
-      formError: "This job changed while you were assigning it. Review the refreshed crew slots.",
+      formError: "user.jobChanged",
     });
     const user = userEvent.setup();
     const { rerender } = render(<JobDetailWorkspace job={job} />);
@@ -445,7 +449,7 @@ describe("CLE-22 job detail workspace", () => {
   it("shows the safe cancellation error after refreshing an unchanged job", async () => {
     mocks.cancelJob.mockResolvedValue({
       ok: false,
-      formError: "The job could not be cancelled. Review the refreshed job and try again.",
+      formError: "user.jobCancelChanged",
     });
     const user = userEvent.setup();
     const { rerender } = render(<JobDetailWorkspace job={job} />);

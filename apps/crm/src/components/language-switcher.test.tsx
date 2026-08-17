@@ -1,5 +1,6 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -39,11 +40,76 @@ describe("LanguageSwitcher", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: "Language" }), "pt-BR");
 
     expect(mocks.setPreferredLocale).not.toHaveBeenCalled();
-    expect(document.cookie).toContain("CLEAN_CREW_EXPLICIT_LOCALE=pt-BR");
+    expect(document.cookie).not.toContain("CLEAN_CREW_EXPLICIT_LOCALE=pt-BR");
     expect(document.documentElement).toHaveAttribute("lang", "pt-BR");
     expect(mocks.replace).toHaveBeenCalledWith("/settings?tab=identity", {
       locale: "pt-BR",
     });
+  });
+
+  it("restores controlled text and the selected radio after a locale remount", async () => {
+    function ControlledDraft() {
+      const [name, setName] = useState("");
+      const [entity, setEntity] = useState("clients");
+      const [, rerender] = useState(0);
+      return (
+        <>
+          <input
+            aria-label="Client name"
+            name="name"
+            onChange={(event) => setName(event.target.value)}
+            value={name}
+          />
+          <label>
+            Clients
+            <input
+              checked={entity === "clients"}
+              name="import-entity"
+              onChange={() => setEntity("clients")}
+              type="radio"
+              value="clients"
+            />
+          </label>
+          <label>
+            Sites
+            <input
+              checked={entity === "sites"}
+              name="import-entity"
+              onChange={() => setEntity("sites")}
+              type="radio"
+              value="sites"
+            />
+          </label>
+          <button onClick={() => rerender((value) => value + 1)} type="button">
+            Rerender
+          </button>
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+    const firstRender = render(
+      <>
+        <ControlledDraft />
+        <LanguageSwitcher currentLocale="en-AU" />
+      </>,
+    );
+    await user.type(screen.getByRole("textbox", { name: "Client name" }), "Acme");
+    await user.click(screen.getByRole("radio", { name: "Sites" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Language" }), "pt-BR");
+
+    firstRender.unmount();
+    render(
+      <>
+        <ControlledDraft />
+        <LanguageSwitcher currentLocale="pt-BR" />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Rerender" }));
+    expect(screen.getByRole("textbox", { name: "Client name" })).toHaveValue("Acme");
+    expect(screen.getByRole("radio", { name: "Sites" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Clients" })).not.toBeChecked();
   });
 
   it("resynchronises the document language when the active locale changes", async () => {

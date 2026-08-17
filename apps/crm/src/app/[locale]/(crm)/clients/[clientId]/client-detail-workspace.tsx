@@ -83,6 +83,7 @@ export function ClientDetailWorkspace({
 }: ClientDetailWorkspaceProps) {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("ClientDetail");
+  const clientsT = useTranslations("Clients");
   const router = useRouter();
   const clientDialog = useRef<HTMLDialogElement>(null);
   const siteDialog = useRef<HTMLDialogElement>(null);
@@ -284,7 +285,7 @@ export function ClientDetailWorkspace({
             <summary>
               <span>
                 <strong>{site.name}</strong>
-                <small>{formatSiteDefaults(site, locale)}</small>
+                <small>{formatSiteDefaults(site, locale, clientsT("defaultsNotSet"))}</small>
               </span>
               <ChevronDown aria-hidden="true" className="details-chevron" size={20} />
             </summary>
@@ -521,7 +522,9 @@ export function ClientDetailWorkspace({
           <header className="dialog-header">
             <div>
               <p className="record-kicker">{t("siteDefaults")}</p>
-              <h2 id="edit-site-title">{t("editNamed", { name: siteTarget?.name ?? t("editSite") })}</h2>
+              <h2 id="edit-site-title">
+                {siteTarget ? t("editNamed", { name: siteTarget.name }) : t("editSite")}
+              </h2>
             </div>
             <button aria-label={t("closeEditSite")} className="icon-button" onClick={() => siteDialog.current?.close()} type="button">
               <X aria-hidden="true" size={19} />

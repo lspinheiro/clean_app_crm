@@ -17,8 +17,8 @@ describe("company identity validation", () => {
 
     expect(result.data).toBeNull();
     expect(result.fieldErrors).toEqual({
-      name: "Enter a company name.",
-      abn: "Enter exactly 11 digits.",
+      name: "user.enterCompanyName",
+      abn: "user.digits11",
     });
   });
 

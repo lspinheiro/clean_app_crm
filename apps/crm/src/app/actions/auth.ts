@@ -6,7 +6,6 @@ import { z } from "zod";
 
 import {
   defaultLocale,
-  explicitLocaleCookieName,
   isAppLocale,
   localeCookieMaxAgeSeconds,
   localeCookieName,
@@ -15,7 +14,10 @@ import { redirect } from "@/i18n/navigation";
 import { evaluateCrmAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
-export type LoginState = { error: string | null };
+export type LoginState = {
+  error: string | null;
+  fieldErrors: { email?: string; password?: string };
+};
 
 export async function signInAction(
   _previous: LoginState,
@@ -28,14 +30,23 @@ export async function signInAction(
     password: z.string().min(1, t("passwordRequired")),
   });
   const parsed = loginSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("checkDetails") };
+  if (!parsed.success) {
+    const fieldErrors = z.flattenError(parsed.error).fieldErrors;
+    return {
+      error: null,
+      fieldErrors: {
+        email: fieldErrors.email?.[0],
+        password: fieldErrors.password?.[0],
+      },
+    };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error || !data.user) return { error: t("failed") };
+  if (error || !data.user) return { error: t("failed"), fieldErrors: {} };
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -48,31 +59,16 @@ export async function signInAction(
   if (decision.kind === "denied") {
     const { error: signOutError } = await supabase.auth.signOut();
     if (signOutError) throw signOutError;
-    return { error: t("notAuthorised") };
+    return { error: t("notAuthorised"), fieldErrors: {} };
   }
 
   const cookieStore = await cookies();
-  const explicitLocaleValue = cookieStore.get(explicitLocaleCookieName)?.value;
-  const explicitLocale = isAppLocale(explicitLocaleValue)
-    ? explicitLocaleValue
-    : null;
   const targetLocale =
-    explicitLocale ??
-    (isAppLocale(profile?.preferred_locale)
+    isAppLocale(profile?.preferred_locale)
       ? profile.preferred_locale
       : isAppLocale(locale)
         ? locale
-        : defaultLocale);
-  if (explicitLocale) {
-    let preferenceIsSaved = explicitLocale === profile?.preferred_locale;
-    if (!preferenceIsSaved) {
-      const { error: localeError } = await supabase.rpc("set_preferred_locale", {
-        target_locale: explicitLocale,
-      });
-      preferenceIsSaved = !localeError;
-    }
-    if (preferenceIsSaved) cookieStore.delete(explicitLocaleCookieName);
-  }
+        : defaultLocale;
   cookieStore.set(localeCookieName, targetLocale, {
     maxAge: localeCookieMaxAgeSeconds,
     path: "/",

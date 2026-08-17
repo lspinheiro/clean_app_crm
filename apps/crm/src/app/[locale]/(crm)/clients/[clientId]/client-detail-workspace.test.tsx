@@ -91,4 +91,22 @@ describe("CLE-9 preferred-cleaner reconciliation", () => {
     )).toBeInTheDocument();
     expect(mocks.reloadCurrentPage).toHaveBeenCalledOnce();
   });
+
+  it("uses the bare site noun before an edit target is selected", () => {
+    render(
+      <ClientDetailWorkspace
+        client={client}
+        poolCleaners={[]}
+        recurringAssignmentsBySite={{ [siteId]: [] }}
+        services={[{ id: "service-1", name: "Standard clean" }]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { hidden: true, name: "Edit site" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { hidden: true, name: "Edit Edit site" }),
+    ).not.toBeInTheDocument();
+  });
 });

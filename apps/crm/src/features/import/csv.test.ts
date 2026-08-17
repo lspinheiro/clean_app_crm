@@ -64,7 +64,7 @@ describe("CLE-71 CSV contract", () => {
       expect.objectContaining({
         rowNumber: 3,
         state: "invalid",
-        reason: "Enter a client name.",
+        reason: "user.enterClientName",
       }),
       expect.objectContaining({
         rowNumber: 4,

@@ -4,6 +4,7 @@ import {
   AuthRetryableFetchError,
   AuthSessionMissingError,
 } from "@supabase/supabase-js";
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,7 +24,7 @@ vi.mock("@/lib/supabase/env", () => ({
   getSupabaseBrowserEnv: mocks.getSupabaseBrowserEnv,
 }));
 
-import proxy from "./proxy";
+import proxy, { config } from "./proxy";
 
 const deletionCookies = [
   {
@@ -133,6 +134,23 @@ describe("Supabase session proxy", () => {
     expect(response.headers.get("location")).toBe(
       "http://localhost:3000/pt-BR/roster?week=2026-08-17&view=site",
     );
+    expect(mocks.getUser).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "/roster.rsc",
+    "/en-AU/roster.segments/__PAGE__.segment.rsc",
+    "/clients/foo.bar",
+  ])("keeps locale and auth proxying enabled for %s", (url) => {
+    expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
+  });
+
+  it.each([
+    "/_next/static/chunks/app.js",
+    "/_next/image/logo.png",
+    "/templates/clients-import.csv",
+  ])("leaves static asset %s outside the proxy", (url) => {
+    expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
   });
 
   it.each([

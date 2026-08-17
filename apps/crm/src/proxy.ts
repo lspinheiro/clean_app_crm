@@ -9,6 +9,9 @@ import { getSupabaseBrowserEnv } from "@/lib/supabase/env";
 const handleI18nRouting = createMiddleware(routing);
 
 export default async function proxy(request: NextRequest) {
+  const earlyResponse = handleI18nRouting(request);
+  if (earlyResponse.status >= 300 && earlyResponse.status < 400) return earlyResponse;
+
   const pendingCookies: Parameters<NonNullable<CookieMethodsServer["setAll"]>>[0] = [];
   const pendingHeaders: Record<string, string> = {};
   const { publishableKey, url } = getSupabaseBrowserEnv();
@@ -42,6 +45,6 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|.*\\..*).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|csv)$).*)",
   ],
 };

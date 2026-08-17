@@ -1,30 +1,20 @@
 import type { RecurringAssignmentSummary } from "./types";
 
-const weekdayLabels = {
-  "en-AU": ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-  "pt-BR": [
-    "",
-    "segunda-feira",
-    "terça-feira",
-    "quarta-feira",
-    "quinta-feira",
-    "sexta-feira",
-    "sábado",
-    "domingo",
-  ],
-} as const;
+export type RecurringLabels = {
+  everyFortnight: (weekday: string) => string;
+  everyWeek: (weekday: string) => string;
+  openSlots: (count: number) => string;
+  weekday: (day: number) => string;
+};
 
 export function formatRecurrence(
   rule: Pick<RecurringAssignmentSummary, "frequency" | "weekday">,
-  locale: "en-AU" | "pt-BR" = "en-AU",
+  labels: RecurringLabels,
 ) {
-  const weekday = weekdayLabels[locale][rule.weekday] ?? (locale === "pt-BR" ? "dia" : "day");
-  if (locale === "pt-BR") {
-    return rule.frequency === "fortnightly"
-      ? `Repete a cada duas semanas: ${weekday}`
-      : `Repete semanalmente: ${weekday}`;
-  }
-  return rule.frequency === "fortnightly" ? `Every second ${weekday}` : `Every ${weekday}`;
+  const weekday = labels.weekday(rule.weekday);
+  return rule.frequency === "fortnightly"
+    ? labels.everyFortnight(weekday)
+    : labels.everyWeek(weekday);
 }
 
 export function formatLocalTime(value: string) {
@@ -33,14 +23,10 @@ export function formatLocalTime(value: string) {
 
 export function formatNamedCoverage(
   rule: Pick<RecurringAssignmentSummary, "crewSize" | "namedCleaners">,
-  locale: "en-AU" | "pt-BR" = "en-AU",
+  labels: RecurringLabels,
 ) {
   const names = rule.namedCleaners.map((cleaner) => cleaner.name);
   const openSlots = Math.max(0, rule.crewSize - names.length);
-  const openLabel = openSlots
-    ? locale === "pt-BR"
-      ? `${openSlots} ${openSlots === 1 ? "vaga aberta" : "vagas abertas"}`
-      : `${openSlots} open`
-    : "";
+  const openLabel = openSlots ? labels.openSlots(openSlots) : "";
   return [...names, openLabel].filter(Boolean).join(" + ");
 }

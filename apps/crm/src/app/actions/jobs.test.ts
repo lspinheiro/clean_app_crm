@@ -15,6 +15,11 @@ import { assignJobSlot, cancelJob, createOneOffJob } from "./jobs";
 
 const jobId = "23000000-0000-4000-8000-000000000501";
 
+function expectLocalizedRevalidation(path: string) {
+  expect(mocks.revalidatePath).toHaveBeenCalledWith(`/en-AU${path}`);
+  expect(mocks.revalidatePath).toHaveBeenCalledWith(`/pt-BR${path}`);
+}
+
 function validFormData() {
   const formData = new FormData();
   formData.set("clientId", "10000000-0000-4000-8000-000000000301");
@@ -66,9 +71,9 @@ describe("CLE-23 one-off job action", () => {
       target_client_charge_cents: 42000,
       target_notes: "Focus on the kitchen",
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
-    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/jobs/${jobId}`);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
+    expectLocalizedRevalidation("/jobs");
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
+    expectLocalizedRevalidation("/roster");
   });
 
   it("passes nullable client charge and notes when saving a draft", async () => {
@@ -110,7 +115,7 @@ describe("CLE-23 one-off job action", () => {
 
     expect(result).toMatchObject({
       ok: false,
-      fieldErrors: { clientId: "Choose a client." },
+      fieldErrors: { clientId: "user.chooseClient" },
     });
     expect(result.fieldErrors.siteId).toBeUndefined();
     expect(mocks.requireCompanyAdmin).not.toHaveBeenCalled();
@@ -126,7 +131,7 @@ describe("CLE-23 one-off job action", () => {
     await expect(createOneOffJob(validFormData())).resolves.toMatchObject({
       ok: false,
       jobId: null,
-      formError: "The job could not be saved. Please try again.",
+      formError: "user.jobSaveFailed",
     });
   });
 
@@ -136,10 +141,10 @@ describe("CLE-23 one-off job action", () => {
     await expect(createOneOffJob(validFormData())).resolves.toMatchObject({
       ok: false,
       jobId: null,
-      formError: expect.stringContaining("could not be confirmed"),
+      formError: "user.jobSaveUnconfirmed",
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
+    expectLocalizedRevalidation("/jobs");
+    expectLocalizedRevalidation("/roster");
   });
 
   it("treats a status-zero transport error as an indeterminate commit", async () => {
@@ -152,10 +157,10 @@ describe("CLE-23 one-off job action", () => {
     await expect(createOneOffJob(validFormData())).resolves.toMatchObject({
       ok: false,
       jobId: null,
-      formError: expect.stringContaining("could not be confirmed"),
+      formError: "user.jobSaveUnconfirmed",
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
+    expectLocalizedRevalidation("/jobs");
+    expectLocalizedRevalidation("/roster");
   });
 
   it("treats a rejected RPC client as an indeterminate commit", async () => {
@@ -164,10 +169,10 @@ describe("CLE-23 one-off job action", () => {
     await expect(createOneOffJob(validFormData())).resolves.toMatchObject({
       ok: false,
       jobId: null,
-      formError: expect.stringContaining("could not be confirmed"),
+      formError: "user.jobSaveUnconfirmed",
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
+    expectLocalizedRevalidation("/jobs");
+    expectLocalizedRevalidation("/roster");
   });
 });
 
@@ -197,9 +202,9 @@ describe("CLE-22 job dispatch actions", () => {
       target_slot_number: 2,
       target_cleaner_id: "10000000-0000-4000-8000-000000000003",
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/jobs/${jobId}`);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
+    expectLocalizedRevalidation("/jobs");
+    expectLocalizedRevalidation("/roster");
   });
 
   it("rejects invalid assignment payloads before authentication", async () => {
@@ -208,7 +213,7 @@ describe("CLE-22 job dispatch actions", () => {
 
     await expect(assignJobSlot(formData)).resolves.toMatchObject({
       ok: false,
-      formError: expect.stringContaining("valid assignment"),
+      formError: "user.validAssignment",
     });
     expect(mocks.requireCompanyAdmin).not.toHaveBeenCalled();
     expect(mocks.rpc).not.toHaveBeenCalled();
@@ -223,7 +228,7 @@ describe("CLE-22 job dispatch actions", () => {
 
     await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
       ok: false,
-      formError: "This cleaner is unavailable for the job time.",
+      formError: "user.cleanerUnavailable",
     });
   });
 
@@ -236,9 +241,9 @@ describe("CLE-22 job dispatch actions", () => {
 
     await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
       ok: false,
-      formError: "This job changed while you were assigning it. Review the refreshed crew slots.",
+      formError: "user.jobChanged",
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/jobs/${jobId}`);
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
   });
 
   it("cancels through the loop RPC and refreshes vacancies and roster state", async () => {
@@ -247,9 +252,9 @@ describe("CLE-22 job dispatch actions", () => {
     expect(mocks.rpc).toHaveBeenCalledWith("cancel_job", {
       target_job_id: jobId,
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/jobs/${jobId}`);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/jobs");
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/roster");
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
+    expectLocalizedRevalidation("/jobs");
+    expectLocalizedRevalidation("/roster");
   });
 
   it("returns one generic cancellation failure for foreign, missing, or closed jobs", async () => {
@@ -261,7 +266,7 @@ describe("CLE-22 job dispatch actions", () => {
 
     await expect(cancelJob(jobId)).resolves.toEqual({
       ok: false,
-      formError: "The job could not be cancelled. Review the refreshed job and try again.",
+      formError: "user.jobCancelChanged",
     });
   });
 
@@ -274,9 +279,8 @@ describe("CLE-22 job dispatch actions", () => {
 
     await expect(cancelJob(jobId)).resolves.toEqual({
       ok: false,
-      formError:
-        "The cancellation could not be confirmed. Review the refreshed job before trying again.",
+      formError: "user.cancellationUnconfirmed",
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith(`/jobs/${jobId}`);
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
   });
 });

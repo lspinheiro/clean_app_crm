@@ -11,8 +11,16 @@ const dateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
   month: "2-digit",
   day: "2-digit",
 });
+const visibleDateFormatters = new Map<string, Intl.DateTimeFormat>();
+const rosterTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 function dateFormatter(locale: string, options: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...options });
+  const key = `${locale}:${JSON.stringify(options)}`;
+  let formatter = visibleDateFormatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...options });
+    visibleDateFormatters.set(key, formatter);
+  }
+  return formatter;
 }
 
 function fromDateKey(dateKey: string) {
@@ -82,13 +90,14 @@ export function parseRosterView(value: string | string[] | undefined): RosterVie
 }
 
 export function buildRosterDays(weekStart: string, locale = "en-AU"): RosterDay[] {
+  const formatter = dateFormatter(locale, { weekday: "short", day: "numeric" });
   return Array.from({ length: 7 }, (_, index) => {
     const dateKey = addDays(weekStart, index);
     const date = fromDateKey(dateKey);
     if (!date) throw new Error(`Invalid roster week: ${weekStart}`);
     return {
       dateKey,
-      headerLabel: dateFormatter(locale, { weekday: "short", day: "numeric" }).format(date),
+      headerLabel: formatter.format(date),
     };
   });
 }
@@ -101,38 +110,53 @@ export function getRosterWeekBounds(weekStart: string) {
   };
 }
 
-export function formatRosterWeekHeading(weekStart: string, locale = "en-AU") {
+export function formatRosterWeekHeading(
+  weekStart: string,
+  locale: string,
+  weekOf: (range: string) => string,
+) {
   const start = fromDateKey(weekStart);
   const end = fromDateKey(addDays(weekStart, 6));
   if (!start || !end) throw new Error(`Invalid roster week: ${weekStart}`);
-  const prefix = locale === "pt-BR" ? "Semana de" : "Week of";
   const full = dateFormatter(locale, { day: "numeric", month: "short", year: "numeric" });
   const month = dateFormatter(locale, { day: "numeric", month: "short" });
   const day = dateFormatter(locale, { day: "numeric" });
   if (start.getUTCFullYear() !== end.getUTCFullYear()) {
-    return `${prefix} ${full.format(start)} – ${full.format(end)}`;
+    return weekOf(`${full.format(start)} – ${full.format(end)}`);
   }
   if (start.getUTCMonth() !== end.getUTCMonth()) {
-    return `${prefix} ${month.format(start)} – ${full.format(end)}`;
+    return weekOf(`${month.format(start)} – ${full.format(end)}`);
   }
-  return `${prefix} ${day.format(start)}–${full.format(end)}`;
+  return weekOf(`${day.format(start)}–${full.format(end)}`);
 }
 
-export function formatRosterTitle(weekStart: string, view: RosterView, locale = "en-AU") {
-  const roster = locale === "pt-BR" ? "Escala" : "Roster";
-  const byView = locale === "pt-BR"
-    ? view === "site" ? "por local" : "por profissional"
-    : `by ${view}`;
-  return `${roster} · ${formatRosterWeekHeading(weekStart, locale)} · ${byView}`;
+export function formatRosterTitle(
+  weekStart: string,
+  view: RosterView,
+  locale: string,
+  labels: {
+    byCleaner: string;
+    bySite: string;
+    title: string;
+    weekOf: (range: string) => string;
+  },
+) {
+  const byView = view === "site" ? labels.bySite : labels.byCleaner;
+  return `${labels.title} · ${formatRosterWeekHeading(weekStart, locale, labels.weekOf)} · ${byView}`;
 }
 
 export function formatRosterTime(timestamp: string, locale = "en-AU") {
-  const value = new Intl.DateTimeFormat(locale, {
-    timeZone: BRISBANE_TIME_ZONE,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(timestamp));
+  let formatter = rosterTimeFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      timeZone: BRISBANE_TIME_ZONE,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    rosterTimeFormatters.set(locale, formatter);
+  }
+  const value = formatter.format(new Date(timestamp));
   return locale === "en-AU" ? value.replace(/^0/, "") : value;
 }
 

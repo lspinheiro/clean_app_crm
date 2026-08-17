@@ -2,6 +2,7 @@ import {
   createClientSchema,
   createSiteSchema,
 } from "@/features/clients/schema";
+import { userMessage } from "@/i18n/user-message";
 
 export type ImportEntity = "clients" | "sites";
 
@@ -180,7 +181,7 @@ function firstReason(
   localiseValidation: (message: string) => string,
 ) {
   return localiseValidation(
-    issues[0]?.message ?? "Check this row and try again.",
+    issues[0]?.message ?? userMessage("checkRow"),
   );
 }
 

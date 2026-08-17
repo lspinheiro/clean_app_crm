@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+import { userMessage } from "@/i18n/user-message";
+
 const isoDate = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a valid job date.")
+  .regex(/^\d{4}-\d{2}-\d{2}$/, userMessage("validJobDate"))
   .refine((value) => {
     const [year, month, day] = value.split("-").map(Number);
     const date = new Date(Date.UTC(year, month - 1, day));
@@ -11,53 +13,53 @@ const isoDate = z
       date.getUTCMonth() === month - 1 &&
       date.getUTCDate() === day
     );
-  }, "Choose a valid job date.");
+  }, userMessage("validJobDate"));
 
 const audAmount = z
   .string()
   .trim()
-  .regex(/^\d+(?:\.\d{1,2})?$/, "Enter a valid AUD amount with up to two decimals.")
-  .refine((value) => Number(value) > 0, "Enter cleaner pay greater than zero.");
+  .regex(/^\d+(?:\.\d{1,2})?$/, userMessage("validAud"))
+  .refine((value) => Number(value) > 0, userMessage("cleanerPayPositive"));
 
 const optionalAudAmount = z
   .string()
   .trim()
   .refine(
     (value) => value === "" || /^\d+(?:\.\d{1,2})?$/.test(value),
-    "Enter a valid AUD amount with up to two decimals.",
+    userMessage("validAud"),
   )
   .refine(
     (value) => value === "" || Number(value) > 0,
-    "Enter a client charge greater than zero.",
+    userMessage("clientChargePositive"),
   );
 
 export const oneOffJobSchema = z
   .object({
-    clientId: z.string().uuid("Choose a client."),
+    clientId: z.string().uuid(userMessage("chooseClient")),
     siteId: z.string(),
-    serviceId: z.string().uuid("Choose a service."),
+    serviceId: z.string().uuid(userMessage("chooseService")),
     date: isoDate,
     startTime: z
       .string()
-      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Choose a valid start time."),
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, userMessage("validStartTime")),
     durationHours: z.coerce
       .number<number>()
-      .finite("Enter a valid duration.")
-      .positive("Enter a duration greater than zero.")
+      .finite(userMessage("validDuration"))
+      .positive(userMessage("durationPositive"))
       .refine(
         (value) => Math.round(value * 60) >= 1,
-        "Enter a duration of at least one minute.",
+        userMessage("durationMinute"),
       ),
     cleanerPayAud: audAmount,
     clientChargeAud: optionalAudAmount,
     crewSize: z.coerce
       .number<number>()
-      .int("Crew size must be a whole number.")
-      .min(1, "Crew size must be at least one."),
+      .int(userMessage("crewWhole"))
+      .min(1, userMessage("crewMin")),
     notes: z
       .string()
       .trim()
-      .max(2000, "Use 2,000 characters or fewer."),
+      .max(2000, userMessage("max2000")),
     mode: z.enum(["draft", "post"]),
   })
   .superRefine((value, context) => {
@@ -67,7 +69,7 @@ export const oneOffJobSchema = z
     ) {
       context.addIssue({
         code: "custom",
-        message: "Choose a site.",
+        message: userMessage("chooseSite"),
         path: ["siteId"],
       });
     }

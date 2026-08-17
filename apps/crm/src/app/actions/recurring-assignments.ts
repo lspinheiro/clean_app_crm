@@ -6,7 +6,8 @@ import {
   recurringAssignmentSchema,
 } from "@/features/recurring-assignments/schema";
 import { requireCompanyAdmin } from "@/lib/auth/session";
-import { revalidateLocalizedPath as revalidatePath } from "@/i18n/revalidate";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
+import { userMessage } from "@/i18n/user-message";
 
 export type RecurringMutationResult = {
   ok: boolean;
@@ -52,11 +53,11 @@ export async function saveRecurringAssignment(
     return {
       ok: false,
       fieldErrors: {},
-      formError: "The recurring assignment could not be saved. Please try again.",
+      formError: userMessage("recurringSaveFailed"),
     };
   }
 
-  revalidatePath(`/clients/${parsed.data.clientId}`);
+  revalidateLocalizedPath(`/clients/${parsed.data.clientId}`);
   return { ok: true, fieldErrors: {}, formError: null };
 }
 
@@ -81,10 +82,10 @@ export async function setRecurringAssignmentActive(
     return {
       ok: false,
       fieldErrors: {},
-      formError: "The recurring assignment status could not be saved. Please try again.",
+      formError: userMessage("recurringStatusSaveFailed"),
     };
   }
 
-  revalidatePath(`/clients/${parsed.data.clientId}`);
+  revalidateLocalizedPath(`/clients/${parsed.data.clientId}`);
   return { ok: true, fieldErrors: {}, formError: null };
 }

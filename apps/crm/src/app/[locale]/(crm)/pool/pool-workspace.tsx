@@ -38,7 +38,8 @@ export function PoolWorkspace({
   const [hasError, setHasError] = useState(false);
   const joinUrl = activeCode ? buildCleanerJoinUrl(cleanerAppUrl, activeCode) : null;
   const inviteMessage = activeCode && joinUrl
-    ? buildInviteMessage(companyName, joinUrl, activeCode, locale)
+    ? buildInviteMessage(companyName, joinUrl, activeCode, (values) =>
+        t("inviteMessage", values))
     : null;
 
   async function copyToClipboard(value: string, kind: "link" | "message") {

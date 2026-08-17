@@ -36,6 +36,16 @@ type SiteRecurringAssignmentsProps = {
   siteName: string;
 };
 
+const weekdayKeys = {
+  1: "weekday1",
+  2: "weekday2",
+  3: "weekday3",
+  4: "weekday4",
+  5: "weekday5",
+  6: "weekday6",
+  7: "weekday7",
+} as const;
+
 const emptyResult: RecurringMutationResult = {
   ok: false,
   fieldErrors: {},
@@ -73,6 +83,12 @@ export function SiteRecurringAssignments({
 }: SiteRecurringAssignmentsProps) {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("RecurringAssignments");
+  const labels = {
+    everyFortnight: (weekday: string) => t("everyFortnight", { weekday }),
+    everyWeek: (weekday: string) => t("everyWeek", { weekday }),
+    openSlots: (count: number) => t("openSlots", { count }),
+    weekday: (day: number) => t(weekdayKeys[day as keyof typeof weekdayKeys] ?? "weekday1"),
+  };
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
   const [target, setTarget] = useState<RecurringAssignmentSummary | null>(null);
@@ -149,7 +165,7 @@ export function SiteRecurringAssignments({
 
   async function handleToggle(rule: RecurringAssignmentSummary) {
     setTogglingId(rule.id);
-    const recurrence = formatRecurrence(rule, locale);
+    const recurrence = formatRecurrence(rule, labels);
     setStatusMessage(t("savingStatus", { recurrence }));
     try {
       const nextResult = await setRecurringAssignmentActive({
@@ -195,7 +211,7 @@ export function SiteRecurringAssignments({
       {assignments.length ? (
         <ul className="recurring-list">
           {assignments.map((rule) => {
-            const recurrence = formatRecurrence(rule, locale);
+            const recurrence = formatRecurrence(rule, labels);
             return (
               <li className={rule.active ? undefined : "is-inactive"} key={rule.id}>
                 <span className="recurring-icon" aria-hidden="true">
@@ -207,7 +223,7 @@ export function SiteRecurringAssignments({
                     {formatLocalTime(rule.startTime)} · {formatDuration(rule.durationMinutes, locale)} · {rule.service.name}
                   </span>
                   <span>
-                    {formatNamedCoverage(rule, locale)} · {formatAud(rule.cleanerPayCents, locale)}{t("perSlot")}
+                    {formatNamedCoverage(rule, labels)} · {formatAud(rule.cleanerPayCents, locale)}{t("perSlot")}
                   </span>
                 </div>
                 <div className="recurring-actions">
@@ -259,7 +275,7 @@ export function SiteRecurringAssignments({
               <p className="record-kicker">{t("record")}</p>
               <h2 id={`recurring-dialog-title-${siteId}`}>
                 {target
-                  ? t("edit", { recurrence: formatRecurrence(target, locale) })
+                  ? t("edit", { recurrence: formatRecurrence(target, labels) })
                   : t("addForSite", { siteName })}
               </h2>
             </div>

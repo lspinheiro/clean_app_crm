@@ -168,8 +168,17 @@
     ,"service": "Serviço"
     ,"chooseService": "Selecione um serviço"
     ,"date": "Data do serviço"
+    ,"detailDate": "Data"
     ,"startTime": "Horário de início"
     ,"duration": "Duração (horas)"
+    ,"detailDuration": "Duração"
+    ,"statusDraft": "Rascunho"
+    ,"statusPosted": "Publicado"
+    ,"statusAssigned": "Alocado"
+    ,"statusOnTheWay": "A caminho"
+    ,"statusInProgress": "Em andamento"
+    ,"statusCompleted": "Concluído"
+    ,"statusCancelled": "Cancelado"
     ,"step3": "Etapa 3"
     ,"commercialTitle": "Defina a equipe e os detalhes comerciais"
     ,"commercialDescription": "O pagamento do profissional é acordado por posição. O valor cobrado do cliente e as observações ficam visíveis apenas para administradores."
@@ -504,9 +513,77 @@
     "site": "Local",
     "amount": "Valor",
     "status": "Status",
+    "statusOwed": "A pagar",
+    "statusPaid": "Pago",
     "jobLabel": "Serviço em {siteName} em {date}",
     "emptyTitle": "Nenhum histórico de pagamentos ainda",
     "emptyDescription": "Os serviços concluídos aparecerão aqui com um lançamento do valor acordado para cada posição da equipe."
+  },
+  "UserMessages": {
+    "checkRow": "Verifique esta linha e tente novamente.",
+    "enterCompanyName": "Insira o nome da empresa.",
+    "enterClientName": "Insira o nome do cliente.",
+    "enterSiteName": "Insira o nome do local.",
+    "enterStreetAddress": "Insira o endereço.",
+    "enterSuburb": "Insira o subúrbio.",
+    "digits11": "Insira exatamente 11 dígitos.",
+    "max40": "Use no máximo 40 caracteres.",
+    "max120": "Use no máximo 120 caracteres.",
+    "max240": "Use no máximo 240 caracteres.",
+    "max2000": "Use no máximo 2.000 caracteres.",
+    "chooseClient": "Selecione um cliente.",
+    "chooseValidClient": "Selecione um cliente válido.",
+    "chooseSite": "Selecione um local.",
+    "chooseValidSite": "Selecione um local válido.",
+    "chooseService": "Selecione um serviço.",
+    "chooseDefaultService": "Selecione um serviço padrão.",
+    "validJobDate": "Selecione uma data válida para o serviço.",
+    "validFirstServiceDate": "Selecione uma primeira data de serviço válida.",
+    "validStartTime": "Selecione um horário de início válido.",
+    "validRecurringAssignment": "Selecione uma programação recorrente válida.",
+    "validAssignment": "Selecione uma alocação válida antes de tentar novamente.",
+    "activePoolCleaner": "Selecione profissionais do banco ativo.",
+    "validDuration": "Insira uma duração válida.",
+    "durationPositive": "Insira uma duração maior que zero.",
+    "durationMinute": "Insira uma duração de pelo menos um minuto.",
+    "duration24Max": "Use uma duração de no máximo 24 horas.",
+    "validAud": "Insira um valor em AUD válido com até duas casas decimais.",
+    "cleanerPayPositive": "Insira um pagamento do profissional maior que zero.",
+    "clientChargePositive": "Insira um valor cobrado do cliente maior que zero.",
+    "ratePositive": "Insira um valor maior que zero.",
+    "crewWhole": "O tamanho da equipe deve ser um número inteiro.",
+    "crewMin": "O tamanho da equipe deve ser de pelo menos um.",
+    "crewMax20": "O tamanho da equipe deve ser de no máximo 20.",
+    "namedOrder": "Preencha em ordem as posições com profissionais definidos.",
+    "namedWithinCrew": "A quantidade de profissionais definidos não pode exceder o tamanho da equipe.",
+    "namedUnique": "Selecione cada profissional definido apenas uma vez.",
+    "cleanerOrderDuplicate": "A ordem dos profissionais não pode conter duplicatas.",
+    "cleanerOrderInvalid": "A ordem dos profissionais é inválida.",
+    "clientCreateFailed": "Não foi possível criar o cliente. Tente novamente.",
+    "siteCreateFailed": "Não foi possível criar o local. Tente novamente.",
+    "clientSaveFailed": "Não foi possível salvar o cliente. Tente novamente.",
+    "siteSaveFailed": "Não foi possível salvar o local. Tente novamente.",
+    "preferredOrderSaveFailed": "Não foi possível salvar a ordem de profissionais preferenciais. Tente novamente.",
+    "recurringSaveFailed": "Não foi possível salvar a programação recorrente. Tente novamente.",
+    "recurringStatusSaveFailed": "Não foi possível salvar o status da programação recorrente. Tente novamente.",
+    "jobSaveFailed": "Não foi possível salvar o serviço. Tente novamente.",
+    "jobSaveUnconfirmed": "Não foi possível confirmar o salvamento. Atualize Serviços antes de tentar novamente.",
+    "cleanerUnavailable": "Este profissional não está disponível no horário do serviço.",
+    "jobChanged": "Este serviço mudou durante a alocação. Revise as posições atualizadas da equipe.",
+    "cleanerAssignFailed": "Não foi possível alocar o profissional. Revise as posições atualizadas da equipe e tente novamente.",
+    "assignmentUnconfirmed": "Não foi possível confirmar a alocação. Revise as posições atualizadas da equipe antes de tentar novamente.",
+    "jobCancelFailed": "Não foi possível cancelar o serviço.",
+    "jobCancelChanged": "Não foi possível cancelar o serviço. Revise o serviço atualizado e tente novamente.",
+    "cancellationUnconfirmed": "Não foi possível confirmar o cancelamento. Revise o serviço atualizado antes de tentar novamente.",
+    "inviteRotateFailed": "Não foi possível gerar um novo código de convite. Tente novamente.",
+    "logoType": "Selecione uma imagem PNG, JPEG ou WebP.",
+    "logoCompressFailed": "Não foi possível compactar esse logotipo para menos de 400 KB.",
+    "logoUploadType": "Selecione um logotipo WebP compactado com menos de 400 KB.",
+    "companySaveUnconfirmed": "Não foi possível confirmar o salvamento. Recarregue a página antes de tentar novamente para verificar os dados e o logotipo da empresa.",
+    "logoPrepareFailed": "Não foi possível preparar o envio do logotipo. Os dados da empresa não foram alterados.",
+    "staleLogoCleanupFailed": "Não foi possível remover um logotipo pendente anterior. Os dados da empresa não foram alterados.",
+    "logoUploadFailed": "Não foi possível enviar o logotipo. Os dados da empresa não foram alterados.",
+    "generic": "Não foi possível concluir esta ação. Tente novamente."
   },
   "Services": {
     "office-clean": "Limpeza de escritório",

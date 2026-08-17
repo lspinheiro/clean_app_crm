@@ -1,5 +1,7 @@
 import imageCompression, { type Options } from "browser-image-compression";
 
+import { userMessage } from "@/i18n/user-message";
+
 export const COMPANY_LOGO_MAX_BYTES = 400_000;
 const allowedInputTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -18,7 +20,7 @@ export async function compressCompanyLogo(
   compress: Compressor = imageCompression,
 ): Promise<File> {
   if (!allowedInputTypes.has(source.type)) {
-    throw new Error("Choose a PNG, JPEG, or WebP image.");
+    throw new Error(userMessage("logoType"));
   }
 
   let output = await compress(source, companyLogoCompressionOptions);
@@ -34,7 +36,7 @@ export async function compressCompanyLogo(
   }
 
   if (output.type !== "image/webp" || output.size > COMPANY_LOGO_MAX_BYTES) {
-    throw new Error("We could not compress that logo below 400 KB.");
+    throw new Error(userMessage("logoCompressFailed"));
   }
 
   return new File([output], "logo.webp", {

@@ -128,7 +128,7 @@ describe("CLE-23 new job form", () => {
   it("puts a missing-selection error on Client while Site remains disabled", async () => {
     mocks.createOneOffJob.mockResolvedValue({
       ok: false,
-      fieldErrors: { clientId: "Choose a client." },
+      fieldErrors: { clientId: "user.chooseClient" },
       formError: null,
       jobId: null,
     });
@@ -157,9 +157,9 @@ describe("CLE-23 new job form", () => {
     mocks.createOneOffJob.mockResolvedValue({
       ok: false,
       fieldErrors: {
-        serviceId: "Choose a service.",
+        serviceId: "user.chooseService",
         durationHours: "Enter a duration greater than zero.",
-        cleanerPayAud: "Enter cleaner pay greater than zero.",
+        cleanerPayAud: "user.cleanerPayPositive",
       },
       formError: null,
       jobId: null,

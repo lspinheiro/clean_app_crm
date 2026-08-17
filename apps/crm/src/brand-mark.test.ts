@@ -23,7 +23,7 @@ describe("The Clean Crew brand mark", () => {
     expect(header).toContain("BrandBubbles");
     expect(header).not.toContain(">CA<");
 
-    const login = read("src/app/(auth)/login/page.tsx");
+    const login = read("src/app/[locale]/(auth)/login/page.tsx");
     expect(login).toContain("BrandBubbles");
     expect(login).not.toContain(">CA<");
   });

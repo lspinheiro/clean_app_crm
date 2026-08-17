@@ -168,8 +168,17 @@
     ,"service": "Service"
     ,"chooseService": "Choose a service"
     ,"date": "Job date"
+    ,"detailDate": "Date"
     ,"startTime": "Start time"
     ,"duration": "Duration (hours)"
+    ,"detailDuration": "Duration"
+    ,"statusDraft": "Draft"
+    ,"statusPosted": "Posted"
+    ,"statusAssigned": "Assigned"
+    ,"statusOnTheWay": "On the way"
+    ,"statusInProgress": "In progress"
+    ,"statusCompleted": "Completed"
+    ,"statusCancelled": "Cancelled"
     ,"step3": "Step 3"
     ,"commercialTitle": "Set crew and commercial details"
     ,"commercialDescription": "Cleaner pay is agreed per slot. Client charge and notes stay admin-only."
@@ -360,7 +369,7 @@
     "saveChanges": "Save changes",
     "everyWeek": "Every {weekday}",
     "everyFortnight": "Every second {weekday}",
-    "openSlots": "{count} open",
+    "openSlots": "{count, plural, =0 {No open slots} one {# open} other {# open}}",
     "weekday1": "Mon",
     "weekday2": "Tue",
     "weekday3": "Wed",
@@ -504,9 +513,77 @@
     "site": "Site",
     "amount": "Amount",
     "status": "Status",
+    "statusOwed": "Owed",
+    "statusPaid": "Paid",
     "jobLabel": "Job at {siteName} on {date}",
     "emptyTitle": "No pay history yet",
     "emptyDescription": "Completed jobs will appear here as one agreed-pay entry for each crew slot."
+  },
+  "UserMessages": {
+    "checkRow": "Check this row and try again.",
+    "enterCompanyName": "Enter a company name.",
+    "enterClientName": "Enter a client name.",
+    "enterSiteName": "Enter a site name.",
+    "enterStreetAddress": "Enter a street address.",
+    "enterSuburb": "Enter a suburb.",
+    "digits11": "Enter exactly 11 digits.",
+    "max40": "Use 40 characters or fewer.",
+    "max120": "Use 120 characters or fewer.",
+    "max240": "Use 240 characters or fewer.",
+    "max2000": "Use 2,000 characters or fewer.",
+    "chooseClient": "Choose a client.",
+    "chooseValidClient": "Choose a valid client.",
+    "chooseSite": "Choose a site.",
+    "chooseValidSite": "Choose a valid site.",
+    "chooseService": "Choose a service.",
+    "chooseDefaultService": "Choose a default service.",
+    "validJobDate": "Choose a valid job date.",
+    "validFirstServiceDate": "Choose a valid first service date.",
+    "validStartTime": "Choose a valid start time.",
+    "validRecurringAssignment": "Choose a valid recurring assignment.",
+    "validAssignment": "Choose a valid assignment before trying again.",
+    "activePoolCleaner": "Choose cleaners from the active pool.",
+    "validDuration": "Enter a valid duration.",
+    "durationPositive": "Enter a duration greater than zero.",
+    "durationMinute": "Enter a duration of at least one minute.",
+    "duration24Max": "Use a duration of 24 hours or less.",
+    "validAud": "Enter a valid AUD amount with up to two decimals.",
+    "cleanerPayPositive": "Enter cleaner pay greater than zero.",
+    "clientChargePositive": "Enter a client charge greater than zero.",
+    "ratePositive": "Enter a rate greater than zero.",
+    "crewWhole": "Crew size must be a whole number.",
+    "crewMin": "Crew size must be at least one.",
+    "crewMax20": "Crew size must be 20 or fewer.",
+    "namedOrder": "Fill named cleaner slots in order.",
+    "namedWithinCrew": "Named cleaners cannot exceed crew size.",
+    "namedUnique": "Choose each named cleaner only once.",
+    "cleanerOrderDuplicate": "Cleaner order cannot contain duplicates.",
+    "cleanerOrderInvalid": "The cleaner order is invalid.",
+    "clientCreateFailed": "The client could not be created. Please try again.",
+    "siteCreateFailed": "The site could not be created. Please try again.",
+    "clientSaveFailed": "The client could not be saved. Please try again.",
+    "siteSaveFailed": "The site could not be saved. Please try again.",
+    "preferredOrderSaveFailed": "The preferred cleaner order could not be saved. Please try again.",
+    "recurringSaveFailed": "The recurring assignment could not be saved. Please try again.",
+    "recurringStatusSaveFailed": "The recurring assignment status could not be saved. Please try again.",
+    "jobSaveFailed": "The job could not be saved. Please try again.",
+    "jobSaveUnconfirmed": "The save could not be confirmed. Refresh Jobs before trying again.",
+    "cleanerUnavailable": "This cleaner is unavailable for the job time.",
+    "jobChanged": "This job changed while you were assigning it. Review the refreshed crew slots.",
+    "cleanerAssignFailed": "The cleaner could not be assigned. Review the refreshed crew slots and try again.",
+    "assignmentUnconfirmed": "The assignment could not be confirmed. Review the refreshed crew slots before trying again.",
+    "jobCancelFailed": "The job could not be cancelled.",
+    "jobCancelChanged": "The job could not be cancelled. Review the refreshed job and try again.",
+    "cancellationUnconfirmed": "The cancellation could not be confirmed. Review the refreshed job before trying again.",
+    "inviteRotateFailed": "A new invite code could not be generated. Please try again.",
+    "logoType": "Choose a PNG, JPEG, or WebP image.",
+    "logoCompressFailed": "We could not compress that logo below 400 KB.",
+    "logoUploadType": "Choose a compressed WebP logo under 400 KB.",
+    "companySaveUnconfirmed": "The save could not be confirmed. Reload before trying again to reconcile your company details and logo.",
+    "logoPrepareFailed": "The logo upload could not be prepared. Your company details were not changed.",
+    "staleLogoCleanupFailed": "A previous pending logo could not be cleared. Your company details were not changed.",
+    "logoUploadFailed": "The logo could not be uploaded. Your company details were not changed.",
+    "generic": "This action could not be completed. Please try again."
   },
   "Services": {
     "office-clean": "Office clean",

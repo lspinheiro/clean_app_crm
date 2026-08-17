@@ -97,7 +97,7 @@ export function MoneyList({ ledger }: MoneyListProps) {
                     </td>
                     <td>
                       <span className={`money-status money-status--${entry.status}`}>
-                        {formatMoneyStatus(entry.status, locale)}
+                        {formatMoneyStatus(entry.status, t)}
                       </span>
                     </td>
                   </tr>

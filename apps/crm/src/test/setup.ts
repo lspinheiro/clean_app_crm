@@ -1,29 +1,57 @@
 import "@testing-library/jest-dom/vitest";
 
-import { vi } from "vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach, vi } from "vitest";
+
+import type { AppLocale } from "@/i18n/config";
+
+afterEach(cleanup);
+
+function testLocale(): AppLocale {
+  return (globalThis as { __CRM_TEST_LOCALE__?: AppLocale }).__CRM_TEST_LOCALE__
+    ?? "en-AU";
+}
 
 vi.mock("next-intl", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next-intl")>();
-  const messages = (await import("../../messages/en-AU.json")).default;
+  const messages = {
+    "en-AU": (await import("../../messages/en-AU.json")).default,
+    "pt-BR": (await import("../../messages/pt-BR.json")).default,
+  };
   return {
     ...actual,
-    useLocale: () => "en-AU",
-    useMessages: () => messages,
-    useTranslations: (namespace?: string) =>
-      actual.createTranslator({ locale: "en-AU", messages, namespace: namespace as never }),
+    useLocale: testLocale,
+    useMessages: () => messages[testLocale()],
+    useTranslations: (namespace?: string) => {
+      const locale = testLocale();
+      return actual.createTranslator({
+        locale,
+        messages: messages[locale],
+        namespace: namespace as never,
+      });
+    },
   };
 });
 
 vi.mock("next-intl/server", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next-intl/server")>();
   const intl = await vi.importActual<typeof import("next-intl")>("next-intl");
-  const messages = (await import("../../messages/en-AU.json")).default;
+  const messages = {
+    "en-AU": (await import("../../messages/en-AU.json")).default,
+    "pt-BR": (await import("../../messages/pt-BR.json")).default,
+  };
   return {
     ...actual,
-    getLocale: async () => "en-AU",
-    getMessages: async () => messages,
-    getTranslations: async (namespace?: string) =>
-      intl.createTranslator({ locale: "en-AU", messages, namespace: namespace as never }),
+    getLocale: async () => testLocale(),
+    getMessages: async () => messages[testLocale()],
+    getTranslations: async (namespace?: string) => {
+      const locale = testLocale();
+      return intl.createTranslator({
+        locale,
+        messages: messages[locale],
+        namespace: namespace as never,
+      });
+    },
     setRequestLocale: vi.fn(),
   };
 });

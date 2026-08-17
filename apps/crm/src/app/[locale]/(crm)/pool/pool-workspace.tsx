@@ -16,10 +16,13 @@ import type { AppLocale } from "@/i18n/config";
 import { useRouter } from "@/i18n/navigation";
 import { localiseUserMessage } from "@/i18n/user-message";
 
+import { PoolEmailInvite } from "./pool-email-invite";
+
 type PoolWorkspaceProps = {
   cleanerAppUrl: string;
   companyName: string;
   initialCode: string | null;
+  initialInviteId: string | null;
   members: PoolMember[];
 };
 
@@ -27,12 +30,14 @@ export function PoolWorkspace({
   cleanerAppUrl,
   companyName,
   initialCode,
+  initialInviteId,
   members,
 }: PoolWorkspaceProps) {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("Pool");
   const router = useRouter();
   const [activeCode, setActiveCode] = useState(initialCode);
+  const [activeInviteId, setActiveInviteId] = useState(initialInviteId);
   const [copying, setCopying] = useState<"link" | "message" | null>(null);
   const [rotating, setRotating] = useState(false);
   const [status, setStatus] = useState("");
@@ -82,6 +87,7 @@ export function PoolWorkspace({
         return;
       }
       setActiveCode(result.code);
+      setActiveInviteId(result.inviteId);
       setStatus(t("newCodeGenerated"));
       router.refresh();
       setRotating(false);
@@ -194,6 +200,11 @@ export function PoolWorkspace({
         <p className="invite-rotation-note">
           {t("rotationNote")}
         </p>
+        <PoolEmailInvite
+          companyName={companyName}
+          inviteId={activeInviteId}
+          joinUrl={joinUrl}
+        />
       </section>
 
       <section className="pool-members-card" aria-labelledby="pool-members-heading">

@@ -1715,6 +1715,203 @@ a {
   font-size: 12px;
 }
 
+.pool-email-invite {
+  margin-top: 20px;
+  border-top: 1px solid var(--color-gray-200);
+  padding-top: 20px;
+}
+
+.pool-email-invite__entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pool-email-invite__entry strong,
+.pool-email-invite__entry p {
+  margin: 0;
+}
+
+.pool-email-invite__entry p {
+  margin-top: 3px;
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.pool-email-invite__flow {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+  border-radius: 10px;
+  padding: 18px;
+  background: var(--color-gray-50);
+}
+
+.pool-email-invite__controls {
+  display: grid;
+  gap: 8px;
+}
+
+.pool-email-invite__controls .field-label {
+  color: var(--color-gray-700);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pool-email-invite__controls .form-control {
+  min-height: 44px;
+  width: min(100%, 300px);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 8px;
+  padding: 9px 36px 9px 12px;
+  background: var(--color-surface-card);
+  color: var(--color-text-main);
+}
+
+.pool-email-invite__file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.pool-email-invite__file-row .button {
+  cursor: pointer;
+}
+
+.pool-email-invite__file-row .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pool-email-invite__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.pool-email-invite__counts strong {
+  color: var(--color-text-main);
+}
+
+.pool-email-invite__table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 8px;
+  background: var(--color-surface-card);
+}
+
+.pool-email-invite__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.pool-email-invite__table th,
+.pool-email-invite__table td {
+  border-bottom: 1px solid var(--color-gray-200);
+  padding: 9px 10px;
+}
+
+.pool-email-invite__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.pool-email-invite__message {
+  border: 1px solid var(--color-gray-200);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--color-surface-card);
+}
+
+.pool-email-invite__message h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.pool-email-invite__message dl,
+.pool-email-invite__message dl div,
+.pool-email-invite__message dd,
+.pool-email-invite__message pre {
+  margin: 0;
+}
+
+.pool-email-invite__message dl {
+  display: grid;
+  gap: 10px;
+}
+
+.pool-email-invite__message dt {
+  color: var(--color-gray-600);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pool-email-invite__message dd,
+.pool-email-invite__message pre {
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  color: var(--color-text-main);
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+.pool-email-invite__authority {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pool-email-invite__authority input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+}
+
+.pool-email-invite__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+.pool-email-invite__results {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--color-surface-card);
+}
+
+.pool-email-invite__results > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pool-email-invite__results > div span {
+  color: var(--color-gray-600);
+}
+
+.pool-email-invite__results ul {
+  margin: 0;
+  padding-left: 22px;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
 .pool-members-heading {
   padding-bottom: 18px;
 }

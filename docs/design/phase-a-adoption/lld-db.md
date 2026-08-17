@@ -16,7 +16,7 @@ migrations only (LLD decision 2).
 Stories with a db surface in this file: S6 (consent-gated generation), S8 (multi-link
 invites), S9/S10 (join attribution), S16 (board projection changes), S19/S24 (ledger,
 mark-paid), S23 (pay basis), S20 (push, notification types), S26 (`product_events`),
-S28/S29 (offers).
+S28/S29 (offers), and S30 (company-scoped cleaner invitation batches).
 
 F15 adds one shared profile preference used by both company admins and cleaners:
 `public.app_locale` has exactly `en-AU` and `pt-BR`; `profiles.preferred_locale` is
@@ -54,6 +54,9 @@ erDiagram
     PROFILES ||--o{ LEDGER_ENTRIES : ""
     PROFILES ||--o{ PUSH_SUBSCRIPTIONS : ""
     PROFILES ||--o{ NOTIFICATIONS : "recipient"
+    COMPANIES ||--o{ POOL_INVITE_EMAIL_BATCHES : "owns"
+    COMPANY_INVITES ||--o{ POOL_INVITE_EMAIL_BATCHES : "selected link"
+    POOL_INVITE_EMAIL_BATCHES ||--o{ POOL_INVITE_EMAIL_RECIPIENTS : "contains"
 
     COMPANY_INVITES {
         text title "nullable"
@@ -83,6 +86,20 @@ erDiagram
     }
     PUSH_SUBSCRIPTIONS {
         text endpoint "unique"
+    }
+    POOL_INVITE_EMAIL_BATCHES {
+        uuid company_id
+        uuid invite_id
+        app_locale locale
+        uuid confirmation_key "unique per company"
+        timestamptz authority_confirmed_at
+    }
+    POOL_INVITE_EMAIL_RECIPIENTS {
+        text email "unique lower(email) per batch"
+        text name "nullable"
+        text status "pending|accepted|failed"
+        text provider_message_id "nullable"
+        text failure_reason "safe, nullable"
     }
 ```
 
@@ -213,6 +230,51 @@ Changed RPCs:
 - `join_company_pool` locks the invite row `for update` (delivered), and now also
   rejects `limit_reached` (the row lock serialises two joins racing for the last
   place — concurrency harness required) and stamps `invite_id` on the new membership.
+
+## Data model — cleaner invitation e-mail batches (S8, S30)
+
+New table `pool_invite_email_batches`:
+
+- `id uuid pk default gen_random_uuid()`
+- `company_id uuid not null references companies on delete cascade`
+- `invite_id uuid not null references company_invites on delete restrict`
+- `requested_by uuid not null references profiles on delete restrict`
+- `locale app_locale not null`
+- `confirmation_key uuid not null`
+- `authority_confirmed_at timestamptz not null`
+- `created_at timestamptz not null default now()`
+- Unique `(company_id, confirmation_key)` prevents a confirmation retry or double-click
+  from creating another logical batch.
+
+New table `pool_invite_email_recipients`:
+
+- `id uuid pk default gen_random_uuid()`
+- `batch_id uuid not null references pool_invite_email_batches on delete cascade`
+- `email text not null`, `name text null`
+- `status text not null` with CHECK `status in ('pending', 'accepted', 'failed')`
+- `attempt_number integer not null default 0`
+- `provider_message_id text null`; the server derives the stable provider key from
+  `(batch_id, attempt_number, chunk_number)` rather than persisting it
+- `failure_reason text null` contains a stable safe category, never a raw provider body
+- `created_at`, `updated_at timestamptz not null default now()`
+- Unique index on `(batch_id, lower(email))` enforces case-insensitive deduplication.
+
+`prepare_pool_invite_email_batch` validates the current company admin, locks and checks
+the selected invite state, validates the accepted authority statement, and inserts the
+batch plus unique normalised recipients. The same `(company, confirmation key)` returns
+the existing batch. It never creates an Auth user or a `company_members` row.
+
+`prepare_pool_invite_email_retry` locks one company-scoped batch and moves failed
+recipients only into the next attempt; accepted recipients remain unchanged. The server
+derives stable provider keys from the batch, attempt, and chunk. The RPC returns the
+company-scoped batch state so the server can send pending recipients and report the whole
+result. `record_pool_invite_email_results` accepts only recipients prepared by the current
+attempt and records accepted or failed outcomes. All three RPCs re-authorise the company
+admin and use explicit authenticated and service-role grants.
+
+RLS permits a company admin to read batches and recipients for their company only.
+Authenticated users get no direct insert, update, or delete grant. `service_role` gets
+explicit full access. Cleaner roles and other companies see no rows.
 
 ## Data model — pay basis (S3, S5, S23)
 
@@ -454,6 +516,8 @@ mutation.*
   `notifications` row as the durable record; dead subscriptions are pruned on 404/410.
 - Generation failures stay per-rule in `recurring_generation_failures` (delivered);
   offer-driven reconciles reuse it.
+- E-mail configuration and provider failures never enter SQL error text. Recipient rows
+  store only stable safe categories that the CRM can localise.
 
 ## Performance
 
@@ -462,7 +526,8 @@ path cold. The only structural additions: partial index on `offers (job_id) wher
 status = 'pending'` for the board/vacancy projections, and
 `offers (cleaner_id, status)` for the cleaner's offers surface. The board's
 "minus pending offers" join rides these. `product_events` is insert-only append;
-no read path exists to optimise.
+no read path exists to optimise. E-mail recipient lookup uses the unique
+`(batch_id, lower(email))` index; alpha batches are small and provider chunks stop at 100.
 
 ## Open questions
 
@@ -539,3 +604,12 @@ request negotiation remain authoritative for existing and pre-auth users. A narr
 with no target-profile argument preserves the existing ban on direct profile updates
 while allowing both roles to save their own choice. Unsupported enum values and null
 mutations fail without changing the previous preference.
+
+### 8. E-mail batch state records submission outcomes only (2026-08-17)
+
+The database records the confirmed batch, each unique recipient, the selected invite and
+locale, the provider message ID, and a safe accepted or failed outcome. It does not store
+message opens, clicks, bounce events, contact-list state, or cleaner accounts. Stable
+confirmation and provider batch keys make repeated confirmations safe. The alternative,
+creating Auth users from CSV, was rejected because registration and pool joining remain
+the cleaner's explicit link-first actions.

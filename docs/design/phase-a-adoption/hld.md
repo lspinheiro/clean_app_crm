@@ -55,8 +55,10 @@ flowchart LR
         CRON["pg_cron nightly generation\nAustralia/Brisbane"]
         PUSH["Web-push dispatch\n(VAPID)"]
     end
+    RESEND["Resend Batch API\none-time workforce invitation"]
     CRM -->|"server actions"| RPC
     CRM -->|"company-scoped reads"| PG
+    CRM -->|"server-only e-mail batches"| RESEND
     CLEANER -->|"client Supabase SDK, PKCE auth"| VIEWS
     CLEANER -->|"mutations"| RPC
     RPC --> PG
@@ -76,7 +78,12 @@ Component responsibilities:
   import (S30): the browser parses and validates the file against the published column
   format, shows a preview with per-row errors, and submits confirmed rows through the
   same server actions and RPCs as one-by-one entry. Reads are company-scoped;
-  state-changing mutations go through RPCs.
+  state-changing mutations go through RPCs. The Pool route also parses a cleaner CSV
+  in the browser, previews the one-time invitation, and submits a confirmed send list
+  to a server-only Resend adapter. The adapter never exposes its API key to the browser.
+- **Resend** — the alpha provider for one-time workforce invitation e-mails. The CRM
+  sends no more than 100 messages per provider batch. Stable idempotency keys prevent a
+  repeated confirmation from sending a second copy.
 - **Locale presentation** — both apps share the `en-AU`/`pt-BR` locale contract and the
   per-profile preference. The CRM uses canonical locale-prefixed routes, complete
   app-owned catalogues, device-language negotiation before sign-in, and explicit
@@ -134,6 +141,13 @@ Component responsibilities:
   it, and the CRM pool screen shows per-link state (active / expired / revoked / limit
   reached) and registration count. The delivered one-active-code-with-rotation model
   (`rotate_company_invite`) gives way to this multi-link model.
+- Cleaner CSV invitations (S8/S30) use one selected active invite. The browser parses,
+  validates, normalises, and deduplicates `email` plus optional `name`. It shows the
+  exact count and localised copy before confirmation. A server action re-authorises the
+  company admin, resolves the active invite, creates company-scoped batch state through
+  RPCs, and calls Resend in chunks of at most 100. The provider result updates each
+  recipient to accepted or failed. An explicit retry selects failed recipients only.
+  No step creates a Supabase Auth user or a pool membership.
 - Pay flows as a (basis, value) pair: fixed amount per slot, or hourly rate. Site
   defaults seed the pair; recurring assignments carry it; generated jobs inherit it;
   one-off jobs prefill it from the site default. Every surface shows pay as the admin
@@ -179,7 +193,8 @@ directed offer; target is a job or a recurring assignment; lifecycle state; the 
 series offer projects a consent mark onto the named-cleaner link), `ledger_entries` (one per
 job + cleaner — per slot, not per job; the amount is always admin-stated — at creation
 for fixed jobs, at mark-paid for hourly jobs), `notifications` + web-push infrastructure,
-`product_events`, and the vacancy view.
+`product_events`, `pool_invite_email_batches` + `pool_invite_email_recipients` (submission
+state only), and the vacancy view.
 
 ## Requirement mapping
 
@@ -190,11 +205,11 @@ for fixed jobs, at mark-paid for hourly jobs), `notifications` + web-push infras
 | S5 (recurring assignments) | `apps/crm`, `packages/db` `recurring_assignments` + named-cleaner side table |
 | S6 (generated instances: consent-gated assignment, offered, posted vacancies) | generation job (pg_cron + on-edit, reads series consent), `offers`, vacancy view |
 | S7 (roster week view) | `apps/crm` roster, vacancy view |
-| S8 (pool invite link with offer details, limits, revocation) | `apps/crm` pool, `packages/db` `company_invites` (multi-link) + invite preview |
+| S8 (pool invite link with offer details, limits, revocation, and confirmed delivery) | `apps/crm` pool, server-only Resend adapter, `packages/db` `company_invites` + company-scoped e-mail batch state |
 | S9–S12 (link-first join, auto pool join, PWA + push opt-in, board) | `apps/cleaner` join + board, cleaner views, RPCs |
 | S27 (cleaner sign-in: Google OAuth / email + password) | Supabase Auth (Google provider + email/password, PKCE callback route in `apps/cleaner`) |
 | S28–S29 (directed offers with accept/decline) | `offers` entity + offer RPCs, `apps/crm` job detail + recurring assignment, `apps/cleaner` offers surface, generation job (consent-gated), notifications |
-| S30 (bulk CSV import for clients/sites/recurring assignments) | `apps/crm` import flow (client-side parse + preview) over the existing write RPCs |
+| S30 (bulk CSV for company data and cleaner send lists) | `apps/crm` client-side parse + preview; existing write RPCs for company data; Resend adapter and batch RPCs for cleaner invitations |
 | S31 (CRM jobs list) | `apps/crm` jobs |
 | S16 (board apply/withdraw) | `apps/cleaner` board, `job_applications` RPCs |
 | S17–S18 (my jobs, gated address, status taps) | `apps/cleaner`, cleaner views, assignment-gated boundary |
@@ -217,6 +232,10 @@ for fixed jobs, at mark-paid for hourly jobs), `notifications` + web-push infras
 - **Reliability of generation**: idempotent per (assignment, service date); safe to re-run.
 - **Free-tier discipline**: select only needed columns; push over e-mail; small payloads.
 - **Timezone**: all schedule computation in `Australia/Brisbane`.
+- **E-mail boundary**: `RESEND_API_KEY` and the verified sender address are server-only.
+  The sender display name is "{company name} via The Clean Crew". Reply-To uses the
+  registered company or admin e-mail. Stored provider failures contain no credentials
+  or raw provider internals.
 
 ## Open questions
 
@@ -361,3 +380,12 @@ An explicit URL controls the current rendering; the saved profile choice control
 visits and sign-ins; device language is only the pre-auth fallback. This keeps links
 deterministic and gives both roles one preference contract without making language a
 company property. The app name remains `The Clean Crew` in both locales.
+
+### 16. Resend delivers confirmed one-time workforce invitations (2026-08-17)
+
+Resend is the alpha provider for cleaner send lists. The browser owns CSV validation and
+preview, while the CRM server re-authorises the admin, persists company-scoped submission
+state through RPCs, and sends provider batches of at most 100 messages. Each provider
+batch has a stable idempotency key. The alternative, Supabase Auth invitations, was
+rejected because the CSV is a contact list for the existing link-first registration flow,
+not an account import.

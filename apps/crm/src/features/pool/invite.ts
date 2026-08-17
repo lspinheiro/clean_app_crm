@@ -34,9 +34,7 @@ export function buildInviteMessage(
 }
 
 export function buildWhatsAppShareUrl(inviteMessage: string) {
-  const shareUrl = new URL("https://wa.me/");
-  shareUrl.searchParams.set("text", inviteMessage);
-  return shareUrl.toString();
+  return `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`;
 }
 
 export function isInviteActive(expiresAt: string | null, now = new Date()) {

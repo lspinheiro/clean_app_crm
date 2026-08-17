@@ -10,13 +10,13 @@ import {
 } from "./invite";
 
 describe("pool invite content", () => {
-  it("builds a WhatsApp handoff whose decoded text exactly matches the invite message", () => {
+  it("builds a WhatsApp handoff with percent-encoded spaces in the raw URL", () => {
     const inviteMessage =
       "Join Coastal Demo Cleaning's cleaner pool: https://cleaner.example.test/join?code=AB12CD\nInvite code: AB12CD";
 
-    const shareUrl = new URL(buildWhatsAppShareUrl(inviteMessage));
-    expect(`${shareUrl.origin}${shareUrl.pathname}`).toBe("https://wa.me/");
-    expect(shareUrl.searchParams.get("text")).toBe(inviteMessage);
+    expect(buildWhatsAppShareUrl(inviteMessage)).toBe(
+      `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`,
+    );
   });
 
   it("builds the configured cleaner signup URL with the active code", () => {

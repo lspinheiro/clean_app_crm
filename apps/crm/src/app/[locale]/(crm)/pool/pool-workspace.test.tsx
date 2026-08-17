@@ -55,9 +55,9 @@ describe("CLE-78 WhatsApp pool invitation", () => {
 
     expect(openWindow).toHaveBeenCalledOnce();
     const [rawUrl, target, features] = openWindow.mock.calls[0];
-    const shareUrl = new URL(String(rawUrl));
-    expect(`${shareUrl.origin}${shareUrl.pathname}`).toBe("https://wa.me/");
-    expect(shareUrl.searchParams.get("text")).toBe(expectedMessage);
+    expect(rawUrl).toBe(
+      `https://wa.me/?text=${encodeURIComponent(expectedMessage)}`,
+    );
     expect(target).toBe("_blank");
     expect(features).toBe("noopener,noreferrer");
   });

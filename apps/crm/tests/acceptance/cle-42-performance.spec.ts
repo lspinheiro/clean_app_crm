@@ -4,14 +4,14 @@ const adminEmail = "admin@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
-test("@CLE-42 preloads the local Poppins face used on first roster paint", async ({ page }) => {
+test("@CLE-42 preloads the local Inter face used on first roster paint", async ({ page }) => {
   const fontResponses: Array<{ status: number; url: string }> = [];
   page.on("response", (response) => {
     if (new URL(response.url()).pathname.endsWith(".woff2")) {
@@ -19,13 +19,14 @@ test("@CLE-42 preloads the local Poppins face used on first roster paint", async
     }
   });
   await signIn(page);
+  await expect(page.getByRole("heading", { name: "Roster", level: 1 })).toBeVisible();
 
   const fontState = await page.evaluate(async () => {
     await document.fonts.ready;
     const heading = document.querySelector("h1");
     if (!heading) throw new Error("Roster heading is unavailable.");
     const familyVariable = getComputedStyle(document.documentElement)
-      .getPropertyValue("--font-poppins")
+      .getPropertyValue("--font-inter")
       .trim();
     const primaryFamily = familyVariable.split(",")[0]?.replaceAll(/["']/g, "").trim() ?? "";
     const headingStyle = getComputedStyle(heading);

@@ -17,11 +17,11 @@ const nextWeekStart = addDays(weekStart, 7);
 const { startsAt: weekStartUtc, endsAt: weekEndUtc } = getRosterWeekBounds(weekStart);
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 async function visibleVacancyCount() {
@@ -55,7 +55,7 @@ test("@CLE-16 renders the generated week by cleaner with exact vacancy evidence"
   expect(expectedVacancies).toBeGreaterThan(0);
 
   await signIn(page);
-  await page.goto(`/roster?week=${weekStart}`);
+  await page.goto(`/en-AU/roster?week=${weekStart}`);
 
   await expect(page.getByRole("heading", { name: "Roster", level: 1 })).toBeVisible();
   const grid = page.getByRole("region", { name: "Roster by cleaner" });
@@ -77,9 +77,9 @@ test("@CLE-16 renders the generated week by cleaner with exact vacancy evidence"
   await expect(grid).toContainText("2 cleaners");
 
   const nextWeek = page.getByRole("link", { name: "Next week" });
-  await expect(nextWeek).toHaveAttribute("href", new RegExp(`week=${nextWeekStart}`));
+  await expect(nextWeek).toHaveAttribute("href", `/en-AU/roster?week=${nextWeekStart}`);
   await nextWeek.click();
-  await expect(page).toHaveURL(new RegExp(`week=${nextWeekStart}`));
+  await expect(page).toHaveURL(`/en-AU/roster?week=${nextWeekStart}`);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileGrid = page.getByRole("region", { name: "Roster by cleaner" });

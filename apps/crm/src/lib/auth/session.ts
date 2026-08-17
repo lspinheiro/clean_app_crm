@@ -1,8 +1,10 @@
-import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 import { cache } from "react";
 
 import { evaluateCrmAccess } from "./access";
 import { isRecoverableAuthSessionError } from "./errors";
+import { defaultLocale, isAppLocale } from "@/i18n/config";
+import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 async function loadCompanyAdminContext() {
@@ -25,7 +27,7 @@ async function loadCompanyAdminContext() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, role, full_name")
+    .select("id, role, full_name, preferred_locale")
     .eq("id", user.id)
     .maybeSingle();
   if (profileError) throw profileError;
@@ -97,11 +99,13 @@ export const getCompanyAdminContext = cache(loadCompanyAdminContext);
 
 export async function requireCompanyAdmin() {
   const context = await getCompanyAdminContext();
+  const requestLocale = await getLocale();
+  const locale = isAppLocale(requestLocale) ? requestLocale : defaultLocale;
   if (context.decision.kind === "denied") {
-    redirect("/login?error=not-authorised");
+    return redirect({ href: "/login?error=not-authorised", locale });
   }
   if (!context.company || !context.profile) {
-    redirect("/login?error=not-authorised");
+    return redirect({ href: "/login?error=not-authorised", locale });
   }
   return {
     ...context,

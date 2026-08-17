@@ -2,6 +2,7 @@ import {
   createClientSchema,
   createSiteSchema,
 } from "@/features/clients/schema";
+import { userMessage } from "@/i18n/user-message";
 
 export type ImportEntity = "clients" | "sites";
 
@@ -57,7 +58,57 @@ const siteHeaders = [
 type ParsedCsvRow = { cells: string[]; rowNumber: number };
 type ParsedCsv = { rows: ParsedCsvRow[]; error: string | null };
 
-function parseCsv(source: string): ParsedCsv {
+export type ImportCsvMessageKey =
+  | "ambiguousClient"
+  | "clientAlreadyExists"
+  | "clientAlreadyInFile"
+  | "clientDoesNotExist"
+  | "clientTemplateColumns"
+  | "enterClientName"
+  | "expectedColumns"
+  | "siteAlreadyExists"
+  | "siteAlreadyInFile"
+  | "siteTemplateColumns"
+  | "unclosedQuote";
+
+export type ImportCsvTranslator = (
+  key: ImportCsvMessageKey,
+  values?: Record<string, number | string>,
+) => string;
+
+function importMessage(
+  translate: ImportCsvTranslator | undefined,
+  key: ImportCsvMessageKey,
+  values: Record<string, number | string> = {},
+) {
+  if (translate) return translate(key, values);
+  switch (key) {
+    case "unclosedQuote":
+      return "The CSV contains an unclosed quoted field.";
+    case "clientTemplateColumns":
+      return "Use the client template columns: name, contact_name, phone, notes.";
+    case "siteTemplateColumns":
+      return "Use the site template columns: client_name, name, address, suburb, access_notes.";
+    case "expectedColumns":
+      return `Expected ${values.count} columns.`;
+    case "enterClientName":
+      return "Enter a client name.";
+    case "clientAlreadyExists":
+      return `A client named ${values.clientName} already exists.`;
+    case "clientAlreadyInFile":
+      return `A client named ${values.clientName} is already in this file.`;
+    case "clientDoesNotExist":
+      return `No client named ${values.clientName} exists.`;
+    case "ambiguousClient":
+      return `More than one client is named ${values.clientName}. Rename the duplicate client first.`;
+    case "siteAlreadyExists":
+      return `${values.siteName} already exists for ${values.clientName}.`;
+    case "siteAlreadyInFile":
+      return `${values.siteName} for ${values.clientName} is already in this file.`;
+  }
+}
+
+function parseCsv(source: string, translate?: ImportCsvTranslator): ParsedCsv {
   const rows: ParsedCsvRow[] = [];
   let row: string[] = [];
   let cell = "";
@@ -97,7 +148,7 @@ function parseCsv(source: string): ParsedCsv {
   }
 
   if (quoted) {
-    return { rows: [], error: "The CSV contains an unclosed quoted field." };
+    return { rows: [], error: importMessage(translate, "unclosedQuote") };
   }
 
   row.push(cell);
@@ -125,8 +176,13 @@ function normaliseName(value: string) {
   return value.trim().toLocaleLowerCase("en-AU");
 }
 
-function firstReason(issues: { message: string }[]) {
-  return issues[0]?.message ?? "Check this row and try again.";
+function firstReason(
+  issues: { message: string }[],
+  localiseValidation: (message: string) => string,
+) {
+  return localiseValidation(
+    issues[0]?.message ?? userMessage("checkRow"),
+  );
 }
 
 function clientValues(cells: string[]): ClientImportValues {
@@ -151,13 +207,14 @@ function siteValues(cells: string[]): SiteImportValues {
 export function parseClientImportCsv(
   source: string,
   existingNames: string[],
+  translate?: ImportCsvTranslator,
+  localiseValidation: (message: string) => string = (message) => message,
 ): ImportPreview<ClientImportValues> {
-  const parsedCsv = parseCsv(source);
+  const parsedCsv = parseCsv(source, translate);
   if (parsedCsv.error) return { fileError: parsedCsv.error, rows: [] };
   if (!headersMatch(parsedCsv.rows[0]?.cells, clientHeaders)) {
     return {
-      fileError:
-        "Use the client template columns: name, contact_name, phone, notes.",
+      fileError: importMessage(translate, "clientTemplateColumns"),
       rows: [],
     };
   }
@@ -176,7 +233,9 @@ export function parseClientImportCsv(
         sourceCells: [...cells],
         state: "invalid",
         values,
-        reason: "Expected " + clientHeaders.length + " columns.",
+        reason: importMessage(translate, "expectedColumns", {
+          count: clientHeaders.length,
+        }),
       });
       return;
     }
@@ -188,7 +247,7 @@ export function parseClientImportCsv(
         sourceCells: [...cells],
         state: "invalid",
         values,
-        reason: firstReason(validation.error.issues),
+        reason: firstReason(validation.error.issues, localiseValidation),
       });
       return;
     }
@@ -207,7 +266,9 @@ export function parseClientImportCsv(
         sourceCells: [...cells],
         state: "duplicate",
         values: cleanValues,
-        reason: "A client named " + existingName + " already exists.",
+        reason: importMessage(translate, "clientAlreadyExists", {
+          clientName: existingName,
+        }),
       });
       return;
     }
@@ -218,7 +279,9 @@ export function parseClientImportCsv(
         sourceCells: [...cells],
         state: "duplicate",
         values: cleanValues,
-        reason: "A client named " + earlierName + " is already in this file.",
+        reason: importMessage(translate, "clientAlreadyInFile", {
+          clientName: earlierName,
+        }),
       });
       return;
     }
@@ -239,13 +302,14 @@ export function parseClientImportCsv(
 export function parseSiteImportCsv(
   source: string,
   clients: ExistingImportClient[],
+  translate?: ImportCsvTranslator,
+  localiseValidation: (message: string) => string = (message) => message,
 ): ImportPreview<SiteImportValues, SiteImportActionInput> {
-  const parsedCsv = parseCsv(source);
+  const parsedCsv = parseCsv(source, translate);
   if (parsedCsv.error) return { fileError: parsedCsv.error, rows: [] };
   if (!headersMatch(parsedCsv.rows[0]?.cells, siteHeaders)) {
     return {
-      fileError:
-        "Use the site template columns: client_name, name, address, suburb, access_notes.",
+      fileError: importMessage(translate, "siteTemplateColumns"),
       rows: [],
     };
   }
@@ -266,7 +330,9 @@ export function parseSiteImportCsv(
         sourceCells: [...cells],
         state: "invalid",
         values,
-        reason: "Expected " + siteHeaders.length + " columns.",
+        reason: importMessage(translate, "expectedColumns", {
+          count: siteHeaders.length,
+        }),
       });
       return;
     }
@@ -276,7 +342,7 @@ export function parseSiteImportCsv(
         sourceCells: [...cells],
         state: "invalid",
         values,
-        reason: "Enter a client name.",
+        reason: importMessage(translate, "enterClientName"),
       });
       return;
     }
@@ -289,7 +355,9 @@ export function parseSiteImportCsv(
         sourceCells: [...cells],
         state: "invalid",
         values,
-        reason: "No client named " + values.clientName + " exists.",
+        reason: importMessage(translate, "clientDoesNotExist", {
+          clientName: values.clientName,
+        }),
       });
       return;
     }
@@ -299,10 +367,9 @@ export function parseSiteImportCsv(
         sourceCells: [...cells],
         state: "invalid",
         values,
-        reason:
-          "More than one client is named " +
-          values.clientName +
-          ". Rename the duplicate client first.",
+        reason: importMessage(translate, "ambiguousClient", {
+          clientName: values.clientName,
+        }),
       });
       return;
     }
@@ -321,7 +388,7 @@ export function parseSiteImportCsv(
         sourceCells: [...cells],
         state: "invalid",
         values,
-        reason: firstReason(validation.error.issues),
+        reason: firstReason(validation.error.issues, localiseValidation),
       });
       return;
     }
@@ -344,7 +411,10 @@ export function parseSiteImportCsv(
         sourceCells: [...cells],
         state: "duplicate",
         values: cleanValues,
-        reason: existingName + " already exists for " + client.name + ".",
+        reason: importMessage(translate, "siteAlreadyExists", {
+          clientName: client.name,
+          siteName: existingName,
+        }),
       });
       return;
     }
@@ -355,11 +425,10 @@ export function parseSiteImportCsv(
         sourceCells: [...cells],
         state: "duplicate",
         values: cleanValues,
-        reason:
-          earlierSiteName +
-          " for " +
-          client.name +
-          " is already in this file.",
+        reason: importMessage(translate, "siteAlreadyInFile", {
+          clientName: client.name,
+          siteName: earlierSiteName,
+        }),
       });
       return;
     }

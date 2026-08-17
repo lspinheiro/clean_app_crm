@@ -4,11 +4,11 @@ const adminEmail = "admin@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 async function createClient(page: import("@playwright/test").Page, name: string) {
@@ -40,7 +40,7 @@ async function addSite(
 test.describe("@CLE-7 clients and sites", () => {
   test("searches by client name and site name", async ({ page }) => {
     await signIn(page);
-    await page.goto("/clients");
+    await page.goto("/en-AU/clients");
 
     const search = page.getByRole("searchbox", { name: "Search clients and sites" });
     await search.fill("Oceanview");
@@ -55,7 +55,7 @@ test.describe("@CLE-7 clients and sites", () => {
 
   test("creates and reloads a multi-site client and a single-site client", async ({ page }) => {
     await signIn(page);
-    await page.goto("/clients");
+    await page.goto("/en-AU/clients");
 
     await createClient(page, "Harbour Offices");
     await addSite(page, "Harbour Offices", "Harbour North", "Southport");

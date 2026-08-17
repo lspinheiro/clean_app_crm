@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import {
   createClientSchema,
   createSiteSchema,
@@ -12,6 +10,8 @@ import {
   updateSiteSchema,
 } from "@/features/site-defaults/schema";
 import { preferredCleanerOrderSchema } from "@/features/preferred-cleaners/schema";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
+import { userMessage } from "@/i18n/user-message";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
 export type RecordMutationResult = {
@@ -43,11 +43,11 @@ export async function createClient(formData: FormData): Promise<RecordMutationRe
     return {
       ok: false,
       fieldErrors: {},
-      formError: "The client could not be created. Please try again.",
+      formError: userMessage("clientCreateFailed"),
     };
   }
 
-  revalidatePath("/clients");
+  revalidateLocalizedPath("/clients");
   return { ok: true, fieldErrors: {}, formError: null };
 }
 
@@ -75,11 +75,11 @@ export async function createSite(formData: FormData): Promise<RecordMutationResu
     return {
       ok: false,
       fieldErrors: {},
-      formError: "The site could not be created. Please try again.",
+      formError: userMessage("siteCreateFailed"),
     };
   }
 
-  revalidatePath("/clients");
+  revalidateLocalizedPath("/clients");
   return { ok: true, fieldErrors: {}, formError: null };
 }
 
@@ -107,12 +107,12 @@ export async function updateClient(formData: FormData): Promise<RecordMutationRe
     return {
       ok: false,
       fieldErrors: {},
-      formError: "The client could not be saved. Please try again.",
+      formError: userMessage("clientSaveFailed"),
     };
   }
 
-  revalidatePath("/clients");
-  revalidatePath(`/clients/${parsed.data.clientId}`);
+  revalidateLocalizedPath("/clients");
+  revalidateLocalizedPath(`/clients/${parsed.data.clientId}`);
   return { ok: true, fieldErrors: {}, formError: null };
 }
 
@@ -147,12 +147,12 @@ export async function updateSite(formData: FormData): Promise<RecordMutationResu
     return {
       ok: false,
       fieldErrors: {},
-      formError: "The site could not be saved. Please try again.",
+      formError: userMessage("siteSaveFailed"),
     };
   }
 
-  revalidatePath("/clients");
-  revalidatePath(`/clients/${parsed.data.clientId}`);
+  revalidateLocalizedPath("/clients");
+  revalidateLocalizedPath(`/clients/${parsed.data.clientId}`);
   return { ok: true, fieldErrors: {}, formError: null };
 }
 
@@ -177,10 +177,10 @@ export async function savePreferredCleanerOrder(
     return {
       ok: false,
       fieldErrors: {},
-      formError: "The preferred cleaner order could not be saved. Please try again.",
+      formError: userMessage("preferredOrderSaveFailed"),
     };
   }
 
-  revalidatePath(`/clients/${parsed.data.clientId}`);
+  revalidateLocalizedPath(`/clients/${parsed.data.clientId}`);
   return { ok: true, fieldErrors: {}, formError: null };
 }

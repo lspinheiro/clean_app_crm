@@ -2,8 +2,6 @@
 
 import { randomUUID } from "node:crypto";
 
-import { revalidatePath } from "next/cache";
-
 import {
   COMPANY_LOGO_MAX_BYTES,
 } from "@/features/company-identity/compress-logo";
@@ -12,6 +10,8 @@ import {
   type CompanyIdentityFieldErrors,
 } from "@/features/company-identity/schema";
 import { requireCompanyAdmin } from "@/lib/auth/session";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
+import { userMessage } from "@/i18n/user-message";
 
 export type CompanyIdentityActionResult = {
   ok: boolean;
@@ -23,8 +23,7 @@ function indeterminateSaveResult(): CompanyIdentityActionResult {
   return {
     ok: false,
     fieldErrors: {},
-    formError:
-      "The save could not be confirmed. Reload before trying again to reconcile your company details and logo.",
+    formError: userMessage("companySaveUnconfirmed"),
   };
 }
 
@@ -47,7 +46,7 @@ export async function updateCompanyIdentity(
   ) {
     return {
       ok: false,
-      fieldErrors: { logo: "Choose a compressed WebP logo under 400 KB." },
+      fieldErrors: { logo: userMessage("logoUploadType") },
       formError: null,
     };
   }
@@ -74,7 +73,7 @@ export async function updateCompanyIdentity(
           ok: false,
           fieldErrors: {},
           formError:
-            "The logo upload could not be prepared. Your company details were not changed.",
+            userMessage("logoPrepareFailed"),
         };
       }
 
@@ -83,7 +82,7 @@ export async function updateCompanyIdentity(
           ok: false,
           fieldErrors: {},
           formError:
-            "The logo upload could not be prepared. Your company details were not changed.",
+            userMessage("logoPrepareFailed"),
         };
       }
       if (reservation.data === candidateLogoPath) {
@@ -100,7 +99,7 @@ export async function updateCompanyIdentity(
             ok: false,
             fieldErrors: {},
             formError:
-              "A previous pending logo could not be cleared. Your company details were not changed.",
+              userMessage("staleLogoCleanupFailed"),
           };
         }
       } catch {
@@ -108,7 +107,7 @@ export async function updateCompanyIdentity(
           ok: false,
           fieldErrors: {},
           formError:
-            "A previous pending logo could not be cleared. Your company details were not changed.",
+            userMessage("staleLogoCleanupFailed"),
         };
       }
     }
@@ -118,7 +117,7 @@ export async function updateCompanyIdentity(
         ok: false,
         fieldErrors: {},
         formError:
-          "A previous pending logo could not be cleared. Your company details were not changed.",
+          userMessage("staleLogoCleanupFailed"),
       };
     }
 
@@ -137,7 +136,7 @@ export async function updateCompanyIdentity(
       return {
         ok: false,
         fieldErrors: {},
-        formError: "The logo could not be uploaded. Your company details were not changed.",
+        formError: userMessage("logoUploadFailed"),
       };
     }
   }
@@ -171,7 +170,7 @@ export async function updateCompanyIdentity(
     }
   }
 
-  revalidatePath("/settings");
-  revalidatePath("/", "layout");
+  revalidateLocalizedPath("/settings");
+  revalidateLocalizedPath("/", "layout");
   return { ok: true, fieldErrors: {}, formError: null };
 }

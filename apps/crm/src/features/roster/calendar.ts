@@ -11,32 +11,17 @@ const dateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
   month: "2-digit",
   day: "2-digit",
 });
-const dayHeaderFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "UTC",
-  weekday: "short",
-  day: "numeric",
-});
-const weekRangeDayFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "UTC",
-  day: "numeric",
-});
-const weekRangeMonthFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "UTC",
-  day: "numeric",
-  month: "short",
-});
-const weekRangeFullFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "UTC",
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-const rosterTimeFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: BRISBANE_TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
+const visibleDateFormatters = new Map<string, Intl.DateTimeFormat>();
+const rosterTimeFormatters = new Map<string, Intl.DateTimeFormat>();
+function dateFormatter(locale: string, options: Intl.DateTimeFormatOptions) {
+  const key = `${locale}:${JSON.stringify(options)}`;
+  let formatter = visibleDateFormatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...options });
+    visibleDateFormatters.set(key, formatter);
+  }
+  return formatter;
+}
 
 function fromDateKey(dateKey: string) {
   const match = dateKeyPattern.exec(dateKey);
@@ -104,12 +89,16 @@ export function parseRosterView(value: string | string[] | undefined): RosterVie
   return requested === "site" ? "site" : "cleaner";
 }
 
-export function buildRosterDays(weekStart: string): RosterDay[] {
+export function buildRosterDays(weekStart: string, locale = "en-AU"): RosterDay[] {
+  const formatter = dateFormatter(locale, { weekday: "short", day: "numeric" });
   return Array.from({ length: 7 }, (_, index) => {
     const dateKey = addDays(weekStart, index);
     const date = fromDateKey(dateKey);
     if (!date) throw new Error(`Invalid roster week: ${weekStart}`);
-    return { dateKey, headerLabel: dayHeaderFormatter.format(date) };
+    return {
+      dateKey,
+      headerLabel: formatter.format(date),
+    };
   });
 }
 
@@ -121,25 +110,54 @@ export function getRosterWeekBounds(weekStart: string) {
   };
 }
 
-export function formatRosterWeekHeading(weekStart: string) {
+export function formatRosterWeekHeading(
+  weekStart: string,
+  locale: string,
+  weekOf: (range: string) => string,
+) {
   const start = fromDateKey(weekStart);
   const end = fromDateKey(addDays(weekStart, 6));
   if (!start || !end) throw new Error(`Invalid roster week: ${weekStart}`);
+  const full = dateFormatter(locale, { day: "numeric", month: "short", year: "numeric" });
+  const month = dateFormatter(locale, { day: "numeric", month: "short" });
+  const day = dateFormatter(locale, { day: "numeric" });
   if (start.getUTCFullYear() !== end.getUTCFullYear()) {
-    return `Week of ${weekRangeFullFormatter.format(start)} – ${weekRangeFullFormatter.format(end)}`;
+    return weekOf(`${full.format(start)} – ${full.format(end)}`);
   }
   if (start.getUTCMonth() !== end.getUTCMonth()) {
-    return `Week of ${weekRangeMonthFormatter.format(start)} – ${weekRangeFullFormatter.format(end)}`;
+    return weekOf(`${month.format(start)} – ${full.format(end)}`);
   }
-  return `Week of ${weekRangeDayFormatter.format(start)}–${weekRangeFullFormatter.format(end)}`;
+  return weekOf(`${day.format(start)}–${full.format(end)}`);
 }
 
-export function formatRosterTitle(weekStart: string, view: RosterView) {
-  return `Roster · ${formatRosterWeekHeading(weekStart)} · by ${view}`;
+export function formatRosterTitle(
+  weekStart: string,
+  view: RosterView,
+  locale: string,
+  labels: {
+    byCleaner: string;
+    bySite: string;
+    title: string;
+    weekOf: (range: string) => string;
+  },
+) {
+  const byView = view === "site" ? labels.bySite : labels.byCleaner;
+  return `${labels.title} · ${formatRosterWeekHeading(weekStart, locale, labels.weekOf)} · ${byView}`;
 }
 
-export function formatRosterTime(timestamp: string) {
-  return rosterTimeFormatter.format(new Date(timestamp)).replace(/^0/, "");
+export function formatRosterTime(timestamp: string, locale = "en-AU") {
+  let formatter = rosterTimeFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      timeZone: BRISBANE_TIME_ZONE,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    rosterTimeFormatters.set(locale, formatter);
+  }
+  const value = formatter.format(new Date(timestamp));
+  return locale === "en-AU" ? value.replace(/^0/, "") : value;
 }
 
 export function getRosterDateKey(timestamp: string) {

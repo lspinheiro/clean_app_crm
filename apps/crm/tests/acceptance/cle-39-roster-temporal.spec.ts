@@ -14,11 +14,11 @@ if (!currentWeekStart) throw new Error("Could not derive the current Brisbane we
 const otherWeekStart = addDays(currentWeekStart, 7);
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 test("@CLE-39 keeps the displayed week and pivot anchored in title and controls", async ({
@@ -26,16 +26,21 @@ test("@CLE-39 keeps the displayed week and pivot anchored in title and controls"
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page);
-  await page.goto(`/roster?week=${otherWeekStart}&view=site`);
+  await page.goto(`/en-AU/roster?week=${otherWeekStart}&view=site`);
 
-  await expect(page).toHaveTitle(`${formatRosterTitle(otherWeekStart, "site")} · The Clean Crew`);
+  await expect(page).toHaveTitle(`${formatRosterTitle(otherWeekStart, "site", "en-AU", {
+    byCleaner: "by cleaner",
+    bySite: "by site",
+    title: "Roster",
+    weekOf: (range) => `Week of ${range}`,
+  })} · The Clean Crew`);
   const thisWeek = page.getByRole("link", { name: "This week" });
   await expect(thisWeek).toBeVisible();
   const target = await thisWeek.boundingBox();
   expect(target?.height).toBeGreaterThanOrEqual(44);
 
   await thisWeek.click();
-  await expect(page).toHaveURL(`/roster?week=${currentWeekStart}&view=site`);
+  await expect(page).toHaveURL(`/en-AU/roster?week=${currentWeekStart}&view=site`);
   await expect(page.locator('th[aria-current="date"]')).toBeVisible();
   await expect(page.getByRole("link", { name: "This week" })).toHaveCount(0);
 });

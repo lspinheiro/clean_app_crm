@@ -4,27 +4,31 @@ const adminEmail = "admin@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 test.describe("@CLE-13 jobs with crew slots", () => {
   test("lists seeded jobs with status and per-slot staffing counts", async ({ page }) => {
     await signIn(page);
-    await page.goto("/jobs");
+    await page.goto("/en-AU/jobs");
 
     await expect(page.getByRole("heading", { name: "Jobs" })).toBeVisible();
     await expect(page).toHaveTitle("Jobs · The Clean Crew");
     const jobs = page.getByRole("list", { name: "Company jobs" });
     expect(await jobs.getByRole("listitem").count()).toBeGreaterThanOrEqual(3);
 
-    const crewJob = jobs
+    const broadbeachJobs = jobs
       .getByRole("listitem")
-      .filter({ hasText: "Broadbeach Towers" })
-      .first();
+      .filter({ hasText: "Broadbeach Towers" });
+    const futureJobIndex = await broadbeachJobs.locator("time").evaluateAll((times) =>
+      times.findIndex((time) => Date.parse(time.getAttribute("datetime") ?? "") > Date.now()),
+    );
+    expect(futureJobIndex).toBeGreaterThanOrEqual(0);
+    const crewJob = broadbeachJobs.nth(futureJobIndex);
     await expect(crewJob).toContainText("Posted");
     await expect(crewJob).toContainText("1/2 assigned");
 

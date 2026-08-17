@@ -1,36 +1,47 @@
 import type { SiteSummary } from "@/features/clients/types";
 
-const audFormatter = new Intl.NumberFormat("en-AU", {
-  style: "currency",
-  currency: "AUD",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+const audFormatters = new Map<string, Intl.NumberFormat>();
+const durationFormatters = new Map<string, Intl.NumberFormat>();
 
-const durationFormatter = new Intl.NumberFormat("en-AU", {
-  maximumFractionDigits: 2,
-});
-
-export function formatAud(cents: number) {
-  return audFormatter.format(cents / 100);
+export function formatAud(cents: number, locale = "en-AU") {
+  let formatter = audFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "AUD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    audFormatters.set(locale, formatter);
+  }
+  return formatter.format(cents / 100);
 }
 
-export function formatDuration(minutes: number) {
-  return `${durationFormatter.format(minutes / 60)} h`;
+export function formatDuration(minutes: number, locale = "en-AU") {
+  let formatter = durationFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+    durationFormatters.set(locale, formatter);
+  }
+  return `${formatter.format(minutes / 60)} h`;
 }
 
-export function formatSiteDefaults(site: SiteSummary) {
+export function formatSiteDefaults(
+  site: SiteSummary,
+  locale: string,
+  defaultsNotSet: string,
+) {
   if (
     !site.defaultService ||
     site.defaultDurationMinutes === null ||
     site.defaultRateCents === null
   ) {
-    return "Defaults not set";
+    return defaultsNotSet;
   }
 
   return [
     site.defaultService.name,
-    formatDuration(site.defaultDurationMinutes),
-    formatAud(site.defaultRateCents),
+    formatDuration(site.defaultDurationMinutes, locale),
+    formatAud(site.defaultRateCents, locale),
   ].join(" · ");
 }

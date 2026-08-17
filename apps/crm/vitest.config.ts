@@ -16,5 +16,10 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     clearMocks: true,
     exclude: ["tests/acceptance/**", "node_modules/**", ".next/**"],
+    server: {
+      deps: {
+        inline: ["next-intl"],
+      },
+    },
   },
 });

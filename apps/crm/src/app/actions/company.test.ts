@@ -138,7 +138,7 @@ describe("CLE-6 company identity transaction", () => {
 
     expect(result).toMatchObject({
       ok: false,
-      formError: expect.stringContaining("could not be confirmed"),
+      formError: "user.companySaveUnconfirmed",
     });
     expect(upload).toHaveBeenCalledOnce();
     expect(remove).not.toHaveBeenCalledWith([previousLogoPath]);

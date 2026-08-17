@@ -21,10 +21,26 @@ describe("pool invite content", () => {
         "Coastal Demo Cleaning",
         "http://127.0.0.1:3001/join?code=CLEAN1",
         "CLEAN1",
+        ({ companyName, joinUrl, code }) =>
+          `Join ${companyName}'s cleaner pool: ${joinUrl}\nInvite code: ${code}`,
       ),
     ).toBe(
       "Join Coastal Demo Cleaning's cleaner pool: http://127.0.0.1:3001/join?code=CLEAN1\nInvite code: CLEAN1",
     );
+  });
+
+  it("gets outbound invite copy from the active catalogue", () => {
+    const formatter = buildInviteMessage as unknown as (
+      companyName: string,
+      joinUrl: string,
+      code: string,
+      translate: (values: { companyName: string; joinUrl: string; code: string }) => string,
+    ) => string;
+
+    expect(
+      formatter("Coastal", "https://cleaner.test/join", "CLEAN1", (values) =>
+        `catalogue:${values.companyName}:${values.code}`),
+    ).toBe("catalogue:Coastal:CLEAN1");
   });
 
   it("rejects malformed codes at the display boundary", () => {

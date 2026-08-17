@@ -3,13 +3,14 @@ import { expect, test } from "@playwright/test";
 const adminEmail = "admin@clean-app.example.test";
 const demoPassword = "local-demo-only";
 const cleanerAppUrl = "http://127.0.0.1:3001";
+const crmOrigin = new URL(process.env.E2E_BASE_URL ?? "http://127.0.0.1:3100").origin;
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 test("@CLE-10 displays, copies, and rotates the active pool invite", async ({
@@ -17,10 +18,10 @@ test("@CLE-10 displays, copies, and rotates the active pool invite", async ({
   page,
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
-    origin: "http://127.0.0.1:3100",
+    origin: crmOrigin,
   });
   await signIn(page);
-  await page.goto("/pool");
+  await page.goto("/en-AU/pool");
 
   await expect(page.getByRole("heading", { name: "Cleaner pool", level: 1 })).toBeVisible();
   const code = page.getByTestId("invite-code");

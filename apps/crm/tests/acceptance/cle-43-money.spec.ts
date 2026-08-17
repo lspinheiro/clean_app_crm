@@ -5,7 +5,7 @@ const cleanerEmail = "cleaner.one@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 async function signIn(page: import("@playwright/test").Page, email: string) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
@@ -16,8 +16,8 @@ test.describe("@CLE-43 company Money list", () => {
     page,
   }) => {
     await signIn(page, adminEmail);
-    await expect(page).toHaveURL(/\/roster$/);
-    await page.goto("/money");
+    await expect(page).toHaveURL(/\/en-AU\/roster$/);
+    await page.goto("/en-AU/money");
 
     await expect(page).toHaveTitle("Money · The Clean Crew");
     await expect(page.getByRole("heading", { name: "Money", exact: true })).toBeVisible();
@@ -43,8 +43,8 @@ test.describe("@CLE-43 company Money list", () => {
     await signIn(page, cleanerEmail);
     await expect(page.locator(".form-error")).toContainText("for company admins");
 
-    await page.goto("/money");
-    await expect(page).toHaveURL(/\/login\?error=not-authorised$/);
+    await page.goto("/en-AU/money");
+    await expect(page).toHaveURL(/\/en-AU\/login\?error=not-authorised$/);
     await expect(page.getByRole("table", { name: "Company pay ledger" })).toHaveCount(0);
   });
 });

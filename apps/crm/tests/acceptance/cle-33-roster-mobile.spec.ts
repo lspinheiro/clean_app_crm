@@ -13,11 +13,11 @@ if (!currentWeekStart) throw new Error("Could not derive the current Brisbane we
 const weekStart = addDays(currentWeekStart, 7);
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 test("@CLE-33 mobile grid shows a usable day window with snap and sticky headers", async ({
@@ -25,7 +25,7 @@ test("@CLE-33 mobile grid shows a usable day window with snap and sticky headers
 }) => {
   await page.setViewportSize({ width: 390, height: 480 });
   await signIn(page);
-  await page.goto(`/roster?week=${weekStart}&view=site`);
+  await page.goto(`/en-AU/roster?week=${weekStart}&view=site`);
 
   for (const label of ["Jobs", "Pool"]) {
     const target = page.getByRole("link", { name: label, exact: true });
@@ -93,7 +93,7 @@ test("@CLE-33 mobile grid shows a usable day window with snap and sticky headers
 
   // Gap context stays visually recoverable in the narrow cleaner pivot rather
   // than being clipped behind an ellipsis.
-  await page.goto(`/roster?week=${weekStart}&view=cleaner`);
+  await page.goto(`/en-AU/roster?week=${weekStart}&view=cleaner`);
   const gapDetails = page.getByTestId("roster-gap").first().locator("span, small");
   await expect(gapDetails.first()).toBeVisible();
   const detailLayout = await gapDetails.evaluateAll((elements) => elements.map((element) => {

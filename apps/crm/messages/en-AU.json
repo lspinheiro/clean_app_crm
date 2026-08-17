@@ -1,0 +1,594 @@
+{
+  "Metadata": {
+    "description": "The Clean Crew CRM — company-side cleaning operations.",
+    "login": "Sign in",
+    "roster": "Roster",
+    "jobs": "Jobs",
+    "newJob": "New job",
+    "jobDetail": "Job detail",
+    "clients": "Clients",
+    "clientDetail": "Client details",
+    "import": "Import clients and sites",
+    "pool": "Cleaner pool",
+    "money": "Money",
+    "settings": "Company settings"
+  },
+  "Common": {
+    "add": "Add",
+    "back": "Back",
+    "cancel": "Cancel",
+    "close": "Close",
+    "create": "Create",
+    "edit": "Edit",
+    "loading": "Loading…",
+    "notSet": "Not set",
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "saved": "Saved",
+    "saving": "Saving…",
+    "unknownClient": "Unknown client",
+    "unknownCleaner": "Unavailable cleaner",
+    "unknownService": "Unavailable service",
+    "unknownSite": "Unknown site",
+    "workspaceReady": "This workspace is ready."
+  },
+  "ErrorPages": {
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The page you requested does not exist or is no longer available.",
+    "backToRoster": "Back to roster",
+    "unexpectedTitle": "Something went wrong",
+    "unexpectedDescription": "The page could not be loaded. Try again.",
+    "retry": "Try again"
+  },
+  "Navigation": {
+    "primary": "Primary navigation",
+    "skip": "Skip to content",
+    "roster": "Roster",
+    "jobs": "Jobs",
+    "clients": "Clients",
+    "pool": "Pool",
+    "money": "Money",
+    "settings": "Company settings",
+    "companyLogo": "{companyName} logo",
+    "brandLabel": "{companyName} — The Clean Crew"
+  },
+  "Roster": {
+    "loading": "Loading roster",
+    "eyebrow": "Company operations",
+    "title": "Roster",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "thisWeek": "This week",
+    "view": "Roster view",
+    "byCleaner": "By cleaner",
+    "bySite": "By site",
+    "weekOf": "Week of {range}",
+    "gap": "GAP",
+    "slotOf": "slot {slot} of {crewSize}",
+    "noCleanersAssigned": "No cleaners assigned",
+    "cleanerCount": "{count, plural, one {# cleaner} other {# cleaners}}",
+    "unfilled": "{count, plural, one {# unfilled slot} other {# unfilled slots}}",
+    "unfilledThisWeek": "{count, plural, one {# unfilled slot this week} other {# unfilled slots this week}}",
+    "nothingScheduled": "Nothing scheduled",
+    "foundationTitle": "Build your roster foundation",
+    "foundationDescription": "Add a client site and invite cleaners before recurring work can appear here.",
+    "goToClients": "Go to clients",
+    "rosterByCleaner": "Roster by cleaner",
+    "rosterBySite": "Roster by site",
+    "cleaner": "Cleaner",
+    "site": "Site",
+    "today": "Today",
+    "vacancies": "Vacancies to fill",
+    "noWork": "No work",
+    "noCleaners": "No active cleaners",
+    "noSites": "No company sites",
+    "inviteCleaner": "Invite a cleaner to add a row to this week.",
+    "addSite": "Add a client site to create a roster row.",
+    "nothingThisWeek": "Nothing scheduled this week yet. Recurring jobs are generated 4 weeks ahead.",
+    "offerToPool": "Offer to pool",
+    "poolLater": "Available after the cleaner job board launches.",
+    "unavailableCleaner": "Unavailable cleaner",
+    "unfilledSlots": "Unfilled slots"
+  },
+  "LocaleSwitcher": {
+    "heading": "Language",
+    "description": "Choose the language used for The Clean Crew.",
+    "label": "Language",
+    "en-AU": "English (Australia)",
+    "pt-BR": "Português (Brasil)",
+    "updating": "Changing language…",
+    "error": "The language preference could not be saved."
+  },
+  "Auth": {
+    "title": "Sign in",
+    "headline": "Your cleaning week, on record.",
+    "intro": "Clients, sites, the pool and every upcoming job in one operational workspace.",
+    "location": "Gold Coast · Australia/Brisbane",
+    "accountHint": "Use your company admin account.",
+    "alphaNote": "Company accounts are self-serve for the founding team during alpha.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "invalidEmail": "Enter a valid email address.",
+    "passwordRequired": "Enter your password.",
+    "checkDetails": "Check your details.",
+    "failed": "Email or password is incorrect.",
+    "notAuthorised": "This CRM is for company admins.",
+    "signOut": "Sign out"
+  },
+  "Settings": {
+    "eyebrow": "Company record",
+    "title": "Company settings",
+    "languageHeading": "Language",
+    "languageDescription": "Choose the language used for your account on both The Clean Crew apps.",
+    "identity": "Business identity",
+    "companyName": "Company name",
+    "logoAlt": "{companyName} logo",
+    "abnHint": "11 digits, as registered",
+    "uploadLogo": "Upload logo",
+    "saved": "Saved",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "timezone": "Timezone · {timezone}",
+    "logoType": "Choose a PNG, JPEG, or WebP image.",
+    "logoPrepare": "The logo could not be prepared.",
+    "compressFailed": "We could not compress that logo below 400 KB."
+  },
+  "Jobs": {
+    "title": "Jobs",
+    "description": "Every scheduled clean, its staffing state, and the pay agreed per crew slot.",
+    "count": "{count, plural, one {# job} other {# jobs}}",
+    "newJob": "New job",
+    "noJobsTitle": "No jobs yet",
+    "noJobsDescription": "Recurring assignments will place the company's real week here.",
+    "companyJobs": "Company jobs",
+    "assignedCount": "{assigned}/{total} assigned",
+    "cleanerPay": "Cleaner pay",
+    "perSlot": "/slot",
+    "back": "Back to jobs",
+    "oneOff": "One-off work",
+    "createTitle": "Create a job",
+    "createDescription": "Start with the site defaults, then tailor the schedule, crew, and agreed amounts.",
+    "setupSiteTitle": "Set up a client site first",
+    "setupSiteDescription": "A job needs a site and an active service before it can be saved.",
+    "openClients": "Open clients & sites"
+    ,"noDefaults": "No defaults are set for {siteName}. Add the job details below."
+    ,"defaultsLoaded": "Defaults loaded from {siteName}. You can edit them for this job."
+    ,"step1": "Step 1"
+    ,"chooseSiteTitle": "Choose the site"
+    ,"chooseSiteDescription": "The client sets the available sites. Site defaults are a starting point only."
+    ,"client": "Client"
+    ,"chooseClient": "Choose a client"
+    ,"site": "Site"
+    ,"chooseSite": "Choose a site"
+    ,"step2": "Step 2"
+    ,"scheduleTitle": "Set the service and schedule"
+    ,"brisbaneTimes": "Times are entered and displayed in Australia/Brisbane."
+    ,"service": "Service"
+    ,"chooseService": "Choose a service"
+    ,"date": "Job date"
+    ,"detailDate": "Date"
+    ,"startTime": "Start time"
+    ,"duration": "Duration (hours)"
+    ,"detailDuration": "Duration"
+    ,"statusDraft": "Draft"
+    ,"statusPosted": "Posted"
+    ,"statusAssigned": "Assigned"
+    ,"statusOnTheWay": "On the way"
+    ,"statusInProgress": "In progress"
+    ,"statusCompleted": "Completed"
+    ,"statusCancelled": "Cancelled"
+    ,"step3": "Step 3"
+    ,"commercialTitle": "Set crew and commercial details"
+    ,"commercialDescription": "Cleaner pay is agreed per slot. Client charge and notes stay admin-only."
+    ,"crewSize": "Crew size"
+    ,"cleanerPayPerSlot": "Cleaner pay per slot (AUD)"
+    ,"clientCharge": "Client charge (AUD, admin only)"
+    ,"internalNotes": "Internal notes (admin only)"
+    ,"notesPlaceholder": "Add operational context for company admins"
+    ,"draftHint": "Drafts stay private. Posting creates one vacancy per open crew slot."
+    ,"saveDraft": "Save draft"
+    ,"saving": "Saving…"
+    ,"post": "Post to pool"
+    ,"posting": "Posting…"
+    ,"saveFailed": "The job could not be saved. Please try again."
+    ,"applicationApplied": "Applied"
+    ,"applicationAssigned": "Assigned"
+    ,"applicationNotSelected": "Not selected"
+    ,"applicationWithdrawn": "Withdrawn"
+    ,"preferredCandidate": "{cleanerName} — preferred #{rank}"
+    ,"slotAssigned": "Assigned"
+    ,"slotOpen": "Open"
+    ,"slotClosed": "Closed"
+    ,"previouslyAssigned": "Previously assigned to {cleanerName}"
+    ,"chooseApplicant": "Choose an applicant or pool cleaner"
+    ,"noActiveAssignment": "No active assignment"
+    ,"detailEyebrow": "Job detail"
+    ,"cancelJob": "Cancel job"
+    ,"overview": "Overview"
+    ,"scheduleAndSite": "Schedule and site"
+    ,"start": "Start"
+    ,"siteAddress": "Site address"
+    ,"accessNotes": "Access notes"
+    ,"noAccessNotes": "No access notes recorded."
+    ,"adminOnly": "Admin only"
+    ,"commercialDetail": "Commercial detail"
+    ,"cleanerPayPerSlotLabel": "Cleaner pay per slot"
+    ,"clientChargeLabel": "Client charge"
+    ,"notRecorded": "Not recorded"
+    ,"internalNotesLabel": "Internal notes"
+    ,"noInternalNotes": "No internal notes recorded."
+    ,"crew": "Crew"
+    ,"crewSlots": "Crew slots"
+    ,"crewSlot": "Crew slot {slot}"
+    ,"cleanerForSlot": "Cleaner for slot {slot}"
+    ,"chooseCleaner": "Choose a cleaner"
+    ,"applicantsGroup": "Applicants"
+    ,"poolMembersGroup": "Pool members"
+    ,"assignSelected": "Assign {cleanerName} to slot {slot}"
+    ,"assignSlot": "Assign cleaner to slot {slot}"
+    ,"assigning": "Assigning…"
+    ,"assign": "Assign"
+    ,"noPoolCandidates": "No active pool cleaners are available to assign."
+    ,"assignmentNotConfirmed": "The assignment could not be confirmed. Review the refreshed crew slots before trying again."
+    ,"cancellationNotConfirmed": "The cancellation could not be confirmed. Review the refreshed job before trying again."
+    ,"poolResponse": "Pool response"
+    ,"applicants": "Applicants"
+    ,"applicantsDescription": "Site preferences set the order; status text records the outcome."
+    ,"jobApplicants": "Job applicants"
+    ,"preferredRank": "Preferred #{rank}"
+    ,"noApplications": "No applications yet."
+    ,"closeOpenSlots": "Close every open slot"
+    ,"cancelQuestion": "Cancel this job?"
+    ,"cancelDescription": "Active assignments will be released, vacancies will close, and affected cleaners will see the cancellation."
+    ,"keepJob": "Keep job"
+    ,"cancelling": "Cancelling…"
+    ,"confirmCancellation": "Confirm cancellation"
+  },
+  "Clients": {
+    "eyebrow": "Company records",
+    "title": "Clients & sites",
+    "description": "Keep every commercial relationship and cleaning location in one operational view.",
+    "search": "Search clients and sites",
+    "searchPlaceholder": "Search clients or sites",
+    "importCsv": "Import CSV",
+    "addClient": "Add client",
+    "records": "Client records",
+    "client": "Client",
+    "noContact": "No contact recorded",
+    "addSiteTo": "Add site to {clientName}",
+    "addSite": "Add site",
+    "noSites": "No sites yet",
+    "noMatching": "No matching records",
+    "addFirst": "Add your first client",
+    "trySearch": "Try a client name or a site name.",
+    "relationshipDescription": "Clients hold the commercial relationship; each cleaning location is a site.",
+    "newRecord": "New record",
+    "closeAddClient": "Close add client",
+    "clientName": "Client name",
+    "contactPerson": "Contact person",
+    "phone": "Phone",
+    "internalNotes": "Internal notes",
+    "cancel": "Cancel",
+    "creating": "Creating…",
+    "createClient": "Create client",
+    "closeAddSite": "Close add site",
+    "siteName": "Site name",
+    "streetAddress": "Street address",
+    "suburb": "Suburb",
+    "accessNotes": "Access notes",
+    "createSite": "Create site",
+    "clientCreateFailed": "The client could not be created. Please try again.",
+    "siteCreateFailed": "The site could not be created. Please try again.",
+    "defaultsNotSet": "Defaults not set"
+  },
+  "ClientDetail": {
+    "breadcrumb": "Breadcrumb",
+    "clientRecord": "Client record",
+    "clients": "Clients",
+    "clientName": "Client name",
+    "contactPerson": "Contact person",
+    "phone": "Phone",
+    "internalNotes": "Internal notes",
+    "siteName": "Site name",
+    "suburb": "Suburb",
+    "streetAddress": "Street address",
+    "noContact": "No contact recorded",
+    "siteCount": "{count, plural, one {# site} other {# sites}}",
+    "editClient": "Edit client",
+    "clientSites": "Client sites",
+    "privacy": "Address and access notes are shown to a cleaner only after assignment",
+    "accessNotes": "Access notes",
+    "noneRecorded": "None recorded",
+    "preferredCleaners": "Preferred cleaners",
+    "preferredDescription": "Captured now; roster ordering uses this list in a later Milestone.",
+    "preferredForSite": "Preferred cleaners for {siteName}",
+    "moveUp": "Move {cleanerName} up",
+    "moveDown": "Move {cleanerName} down",
+    "remove": "Remove {cleanerName}",
+    "noPreferred": "No preferred cleaners recorded.",
+    "preferredCleaner": "Preferred cleaner",
+    "chooseFromPool": "Choose from cleaner pool",
+    "allAdded": "All pool cleaners added",
+    "addPreferred": "Add preferred cleaner to {siteName}",
+    "add": "Add",
+    "savingOrder": "Saving preferred cleaner order…",
+    "refreshingOrder": "Refreshing the saved preferred cleaner order…",
+    "orderSaved": "Preferred cleaner order saved.",
+    "saveNotConfirmed": "The save could not be confirmed. The page is refreshing to check the saved order.",
+    "defaultService": "Default service",
+    "duration": "Duration",
+    "durationHours": "Duration (hours)",
+    "rate": "Rate (AUD)",
+    "notSet": "Not set",
+    "editSite": "Edit site",
+    "editNamed": "Edit {name}",
+    "closeEditClient": "Close edit client",
+    "closeEditSite": "Close edit site",
+    "saveClient": "Save client",
+    "saveSite": "Save site",
+    "siteDefaults": "Site defaults",
+    "chooseService": "Choose service",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "clientSaveFailed": "The client could not be saved. Please try again.",
+    "siteSaveFailed": "The site could not be saved. Please try again."
+  },
+  "RecurringAssignments": {
+    "section": "Recurring assignments for {siteName}",
+    "title": "Recurring assignments",
+    "description": "One schedule rule per service day. Jobs are generated in the next step.",
+    "addSchedule": "Add schedule",
+    "perSlot": "/slot",
+    "deactivate": "Deactivate {recurrence}",
+    "activate": "Activate {recurrence}",
+    "active": "Active",
+    "inactive": "Inactive",
+    "edit": "Edit {recurrence}",
+    "none": "No recurring assignments for this site.",
+    "record": "Recurring assignment",
+    "addForSite": "Add schedule for {siteName}",
+    "close": "Close recurring assignment",
+    "service": "Service",
+    "chooseService": "Choose service",
+    "frequency": "Frequency",
+    "weekly": "Weekly",
+    "fortnightly": "Fortnightly",
+    "firstDate": "First service date",
+    "startTime": "Start time",
+    "estimatedHours": "Estimated hours",
+    "cleanerPay": "Cleaner pay per slot (AUD)",
+    "crewSize": "Crew size",
+    "namedCleaners": "Named cleaners (optional)",
+    "namedDescription": "Fill named slots in order. Remaining slots become vacancies when jobs are generated.",
+    "slot": "Slot {slot}",
+    "leaveOpen": "Leave open",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "everyWeek": "Every {weekday}",
+    "everyFortnight": "Every second {weekday}",
+    "openSlots": "{count, plural, =0 {No open slots} one {# open} other {# open}}",
+    "weekday1": "Mon",
+    "weekday2": "Tue",
+    "weekday3": "Wed",
+    "weekday4": "Thu",
+    "weekday5": "Fri",
+    "weekday6": "Sat",
+    "weekday7": "Sun",
+    "savingStatus": "Saving {recurrence}…",
+    "statusSaved": "{recurrence} status saved.",
+    "saveNotConfirmed": "The save could not be confirmed. The page is refreshing to check the saved rule.",
+    "statusFailed": "The recurring assignment status could not be saved.",
+    "statusNotConfirmed": "The status could not be confirmed. The page is refreshing to check the saved rule."
+  },
+  "Import": {
+    "back": "Clients & sites",
+    "title": "Import clients & sites",
+    "description": "Check every row before it reaches your company records. Valid rows import independently, so one problem never blocks the rest.",
+    "commercialClientName": "Commercial client name",
+    "primaryContact": "Primary contact person",
+    "contactPhone": "Contact phone number",
+    "internalNotes": "Internal notes",
+    "existingClientName": "Existing client name",
+    "siteName": "Site name",
+    "streetAddress": "Street address",
+    "suburb": "Suburb",
+    "internalAccessNotes": "Internal access notes",
+    "required": "Required",
+    "optional": "Optional",
+    "ready": "Ready",
+    "skipped": "Skipped",
+    "failed": "Failed",
+    "created": "Created",
+    "client": "Client",
+    "site": "Site",
+    "clients": "Clients",
+    "sites": "Sites",
+    "row": "Row",
+    "status": "Status",
+    "details": "Details",
+    "reason": "Reason",
+    "clientPreview": "Client import preview",
+    "sitePreview": "Site import preview",
+    "missingName": "Missing name",
+    "missingClient": "Missing client",
+    "addressIncomplete": "Address incomplete",
+    "noOptionalDetails": "No optional details",
+    "readyToCreate": "Ready to create",
+    "resultsAria": "Import results",
+    "complete": "Import complete",
+    "downloadFailed": "Download {count, plural, one {# failed row} other {# failed rows}}",
+    "createdCount": "{count, plural, one {# created} other {# created}}",
+    "skippedCount": "{count, plural, one {# skipped} other {# skipped}}",
+    "failedCount": "{count, plural, one {# failed} other {# failed}}",
+    "rowResult": "Row {row}: {name}",
+    "readFailed": "The CSV could not be read. Choose the file again.",
+    "notUtf8": "This file isn't UTF-8. Re-save it as CSV UTF-8 and choose it again.",
+    "clientCreated": "Client created.",
+    "siteCreated": "Site created.",
+    "clientCreateFailed": "The client could not be created. Please try again.",
+    "siteCreateFailed": "The site could not be created. Please try again.",
+    "templatesTitle": "Start from the published columns",
+    "templatesDescription": "Keep the header row unchanged. Optional cells may be blank.",
+    "downloadClientTemplate": "Download client template",
+    "downloadSiteTemplate": "Download site template",
+    "clientColumnsAria": "Client CSV columns",
+    "siteColumnsAria": "Site CSV columns",
+    "pickerTitle": "Choose records to import",
+    "pickerDescription": "Import clients first when the site file names a new client.",
+    "recordType": "Record type",
+    "clientCsvFile": "Client CSV file",
+    "siteCsvFile": "Site CSV file",
+    "csvOnly": "CSV files only",
+    "previewAria": "Import preview",
+    "previewTitle": "Check the preview",
+    "rowsFound": "{count, plural, one {# row found.} other {# rows found.}} Nothing is written until you confirm.",
+    "importing": "Importing…",
+    "confirm": "Confirm import",
+    "headerOnly": "The file has a header but no records.",
+    "progress": "Importing {current} of {total}",
+    "unclosedQuote": "The CSV contains an unclosed quoted field.",
+    "checkRow": "Check this row and try again.",
+    "clientTemplateColumns": "Use the client template columns: name, contact_name, phone, notes.",
+    "siteTemplateColumns": "Use the site template columns: client_name, name, address, suburb, access_notes.",
+    "expectedColumns": "Expected {count} columns.",
+    "enterClientName": "Enter a client name.",
+    "clientAlreadyExists": "A client named {clientName} already exists.",
+    "clientAlreadyInFile": "A client named {clientName} is already in this file.",
+    "clientDoesNotExist": "No client named {clientName} exists.",
+    "ambiguousClient": "More than one client is named {clientName}. Rename the duplicate client first.",
+    "siteAlreadyExists": "{siteName} already exists for {clientName}.",
+    "siteAlreadyInFile": "{siteName} for {clientName} is already in this file."
+  },
+  "Pool": {
+    "eyebrow": "Private workforce",
+    "title": "Cleaner pool",
+    "description": "Share one controlled invite and keep your active cleaners visible in the CRM.",
+    "inviteTitle": "Cleaner pool invite",
+    "inviteDescription": "Post this message in your company's WhatsApp group.",
+    "signupLink": "Cleaner signup link",
+    "copySignupLink": "Copy cleaner signup link",
+    "inviteCode": "Invite code",
+    "noCode": "No active invite code.",
+    "generateBeforeSharing": "Generate one before sharing your cleaner signup link.",
+    "copying": "Copying…",
+    "copyInvite": "Copy invite message",
+    "generating": "Generating…",
+    "generateCode": "Generate new code",
+    "rotationNote": "Generating a new code revokes the previous code. Existing pool members are unchanged.",
+    "activeCleaners": "Active cleaners",
+    "memberCount": "{count, plural, one {# cleaner in this pool} other {# cleaners in this pool}}",
+    "members": "Active cleaner pool members",
+    "joined": "Joined {date}",
+    "noMembers": "No active cleaners yet.",
+    "shareToBuild": "Share the invite message to start building the company pool.",
+    "copyingSignup": "Copying cleaner signup link…",
+    "copyingInvite": "Copying invite message…",
+    "signupCopied": "Cleaner signup link copied.",
+    "inviteCopied": "Invite message copied.",
+    "signupCopyFailed": "The cleaner signup link could not be copied. Select the link manually.",
+    "inviteCopyFailed": "The invite message could not be copied. Copy the link and code manually.",
+    "generatingCode": "Generating a new invite code…",
+    "reloadingInvite": "{error} Reloading the current invite…",
+    "newCodeGenerated": "New invite code generated. The previous code is no longer active.",
+    "activeCodeNotConfirmed": "The active code could not be confirmed. Reloading the current invite…",
+    "inviteMessage": "Join {companyName}'s cleaner pool: {joinUrl}\nInvite code: {code}"
+  },
+  "Money": {
+    "title": "Money",
+    "description": "A shared record of agreed cleaner pay. The Clean Crew records settlement; it never moves money.",
+    "totals": "Money totals",
+    "totalOwed": "Total owed",
+    "awaitingSettlement": "Awaiting settlement",
+    "totalPaid": "Total paid",
+    "recordedSettled": "Recorded as settled",
+    "history": "Pay history",
+    "entryCount": "{count, plural, one {# entry} other {# entries}}",
+    "table": "Company pay ledger table",
+    "caption": "Company pay ledger",
+    "cleaner": "Cleaner",
+    "job": "Job",
+    "site": "Site",
+    "amount": "Amount",
+    "status": "Status",
+    "statusOwed": "Owed",
+    "statusPaid": "Paid",
+    "jobLabel": "Job at {siteName} on {date}",
+    "emptyTitle": "No pay history yet",
+    "emptyDescription": "Completed jobs will appear here as one agreed-pay entry for each crew slot."
+  },
+  "UserMessages": {
+    "checkRow": "Check this row and try again.",
+    "enterCompanyName": "Enter a company name.",
+    "enterClientName": "Enter a client name.",
+    "enterSiteName": "Enter a site name.",
+    "enterStreetAddress": "Enter a street address.",
+    "enterSuburb": "Enter a suburb.",
+    "digits11": "Enter exactly 11 digits.",
+    "max40": "Use 40 characters or fewer.",
+    "max120": "Use 120 characters or fewer.",
+    "max240": "Use 240 characters or fewer.",
+    "max2000": "Use 2,000 characters or fewer.",
+    "chooseClient": "Choose a client.",
+    "chooseValidClient": "Choose a valid client.",
+    "chooseSite": "Choose a site.",
+    "chooseValidSite": "Choose a valid site.",
+    "chooseService": "Choose a service.",
+    "chooseDefaultService": "Choose a default service.",
+    "validJobDate": "Choose a valid job date.",
+    "validFirstServiceDate": "Choose a valid first service date.",
+    "validStartTime": "Choose a valid start time.",
+    "validRecurringAssignment": "Choose a valid recurring assignment.",
+    "validAssignment": "Choose a valid assignment before trying again.",
+    "activePoolCleaner": "Choose cleaners from the active pool.",
+    "validDuration": "Enter a valid duration.",
+    "durationPositive": "Enter a duration greater than zero.",
+    "durationMinute": "Enter a duration of at least one minute.",
+    "duration24Max": "Use a duration of 24 hours or less.",
+    "validAud": "Enter a valid AUD amount with up to two decimals.",
+    "cleanerPayPositive": "Enter cleaner pay greater than zero.",
+    "clientChargePositive": "Enter a client charge greater than zero.",
+    "ratePositive": "Enter a rate greater than zero.",
+    "crewWhole": "Crew size must be a whole number.",
+    "crewMin": "Crew size must be at least one.",
+    "crewMax20": "Crew size must be 20 or fewer.",
+    "namedOrder": "Fill named cleaner slots in order.",
+    "namedWithinCrew": "Named cleaners cannot exceed crew size.",
+    "namedUnique": "Choose each named cleaner only once.",
+    "cleanerOrderDuplicate": "Cleaner order cannot contain duplicates.",
+    "cleanerOrderInvalid": "The cleaner order is invalid.",
+    "clientCreateFailed": "The client could not be created. Please try again.",
+    "siteCreateFailed": "The site could not be created. Please try again.",
+    "clientSaveFailed": "The client could not be saved. Please try again.",
+    "siteSaveFailed": "The site could not be saved. Please try again.",
+    "preferredOrderSaveFailed": "The preferred cleaner order could not be saved. Please try again.",
+    "recurringSaveFailed": "The recurring assignment could not be saved. Please try again.",
+    "recurringStatusSaveFailed": "The recurring assignment status could not be saved. Please try again.",
+    "jobSaveFailed": "The job could not be saved. Please try again.",
+    "jobSaveUnconfirmed": "The save could not be confirmed. Refresh Jobs before trying again.",
+    "cleanerUnavailable": "This cleaner is unavailable for the job time.",
+    "jobChanged": "This job changed while you were assigning it. Review the refreshed crew slots.",
+    "cleanerAssignFailed": "The cleaner could not be assigned. Review the refreshed crew slots and try again.",
+    "assignmentUnconfirmed": "The assignment could not be confirmed. Review the refreshed crew slots before trying again.",
+    "jobCancelFailed": "The job could not be cancelled.",
+    "jobCancelChanged": "The job could not be cancelled. Review the refreshed job and try again.",
+    "cancellationUnconfirmed": "The cancellation could not be confirmed. Review the refreshed job before trying again.",
+    "inviteRotateFailed": "A new invite code could not be generated. Please try again.",
+    "logoType": "Choose a PNG, JPEG, or WebP image.",
+    "logoCompressFailed": "We could not compress that logo below 400 KB.",
+    "logoUploadType": "Choose a compressed WebP logo under 400 KB.",
+    "companySaveUnconfirmed": "The save could not be confirmed. Reload before trying again to reconcile your company details and logo.",
+    "logoPrepareFailed": "The logo upload could not be prepared. Your company details were not changed.",
+    "staleLogoCleanupFailed": "A previous pending logo could not be cleared. Your company details were not changed.",
+    "logoUploadFailed": "The logo could not be uploaded. Your company details were not changed.",
+    "generic": "This action could not be completed. Please try again."
+  },
+  "Services": {
+    "office-clean": "Office clean",
+    "standard-clean": "Standard clean",
+    "deep-clean": "Deep clean",
+    "end-of-lease-clean": "End-of-lease clean"
+  }
+}

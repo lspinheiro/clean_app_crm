@@ -2,43 +2,44 @@ import type { MoneyStatus } from "./types";
 
 import { formatBrisbaneTime } from "@/lib/format/schedule";
 
-const amountFormatter = new Intl.NumberFormat("en-AU", {
-  style: "currency",
-  currency: "AUD",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+const moneyAmountFormatters = new Map<string, Intl.NumberFormat>();
+const moneyDateFormatters = new Map<string, Intl.DateTimeFormat>();
 
-const brisbaneDateFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "Australia/Brisbane",
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-
-function assertNever(value: never): never {
-  throw new Error(`Unsupported money status: ${String(value)}`);
-}
-
-export function formatMoneyAmount(cents: number) {
-  return amountFormatter.format(cents / 100);
-}
-
-export function formatMoneyJobDate(value: string) {
-  return brisbaneDateFormatter.format(new Date(value));
-}
-
-export function formatMoneyJobTime(value: string) {
-  return formatBrisbaneTime(value);
-}
-
-export function formatMoneyStatus(status: MoneyStatus) {
-  switch (status) {
-    case "owed":
-      return "Owed";
-    case "paid":
-      return "Paid";
-    default:
-      return assertNever(status);
+export function formatMoneyAmount(cents: number, locale = "en-AU") {
+  let formatter = moneyAmountFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "AUD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    moneyAmountFormatters.set(locale, formatter);
   }
+  return formatter.format(cents / 100);
+}
+
+export function formatMoneyJobDate(value: string, locale = "en-AU") {
+  let formatter = moneyDateFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      timeZone: "Australia/Brisbane",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    moneyDateFormatters.set(locale, formatter);
+  }
+  return formatter.format(new Date(value));
+}
+
+export function formatMoneyJobTime(value: string, locale = "en-AU") {
+  return formatBrisbaneTime(value, locale);
+}
+
+export function formatMoneyStatus(
+  status: MoneyStatus,
+  translate: (key: "statusOwed" | "statusPaid") => string,
+) {
+  return translate(status === "owed" ? "statusOwed" : "statusPaid");
 }

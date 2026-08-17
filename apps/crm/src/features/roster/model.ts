@@ -18,6 +18,10 @@ type BuildCleanerRosterInput = {
   jobs: RosterJob[];
   assignments: RosterAssignment[];
   vacancies: RosterVacancy[];
+  labels?: {
+    unavailableCleaner: string;
+    unfilledSlots: string;
+  };
 };
 
 type BuildSiteRosterInput = BuildCleanerRosterInput & {
@@ -43,13 +47,14 @@ function visibleCleanerNames(
   cleaners: RosterCleaner[],
   assignments: RosterAssignment[],
   jobsById: Map<string, RosterJob>,
+  unavailableCleaner: string,
 ) {
   const cleanersById = new Map(cleaners.map((cleaner) => [cleaner.id, cleaner]));
   for (const assignment of assignments) {
     if (!cleanersById.has(assignment.cleanerId) && jobsById.has(assignment.jobId)) {
       cleanersById.set(assignment.cleanerId, {
         id: assignment.cleanerId,
-        name: "Unavailable cleaner",
+        name: unavailableCleaner,
       });
     }
   }
@@ -77,9 +82,10 @@ function assignedCleanerNames(
   jobId: string,
   byJob: Map<string, RosterAssignment[]>,
   cleanersById: Map<string, RosterCleaner>,
+  unavailableCleaner: string,
 ) {
   return (byJob.get(jobId) ?? []).map(
-    (assignment) => cleanersById.get(assignment.cleanerId)?.name ?? "Unavailable cleaner",
+    (assignment) => cleanersById.get(assignment.cleanerId)?.name ?? unavailableCleaner,
   );
 }
 
@@ -97,10 +103,19 @@ export function buildCleanerRoster({
   jobs,
   assignments,
   vacancies,
+  labels = {
+    unavailableCleaner: "Unavailable cleaner",
+    unfilledSlots: "Unfilled slots",
+  },
 }: BuildCleanerRosterInput): CleanerRosterModel {
   const visibleDates = new Set(days.map((day) => day.dateKey));
   const jobsById = new Map(jobs.map((job) => [job.id, job]));
-  const cleanersById = visibleCleanerNames(cleaners, assignments, jobsById);
+  const cleanersById = visibleCleanerNames(
+    cleaners,
+    assignments,
+    jobsById,
+    labels.unavailableCleaner,
+  );
   const jobAssignments = assignmentsByJob(assignments, jobsById);
 
   const cleanerRows = [...cleanersById.values()]
@@ -128,7 +143,12 @@ export function buildCleanerRoster({
       siteName: job.siteName,
       scheduledStart: job.scheduledStart,
       crewSize: job.crewSize,
-      cleanerNames: assignedCleanerNames(job.id, jobAssignments, cleanersById),
+      cleanerNames: assignedCleanerNames(
+        job.id,
+        jobAssignments,
+        cleanersById,
+        labels.unavailableCleaner,
+      ),
     });
   }
 
@@ -136,7 +156,7 @@ export function buildCleanerRoster({
   if (vacancies.length > 0) {
     const gapRow: RosterRow = {
       id: "gaps",
-      label: "Unfilled slots",
+      label: labels.unfilledSlots,
       kind: "gaps",
       cells: emptyCells(days),
     };
@@ -170,10 +190,19 @@ export function buildSiteRoster({
   jobs,
   assignments,
   vacancies,
+  labels = {
+    unavailableCleaner: "Unavailable cleaner",
+    unfilledSlots: "Unfilled slots",
+  },
 }: BuildSiteRosterInput): SiteRosterModel {
   const visibleDates = new Set(days.map((day) => day.dateKey));
   const jobsById = new Map(jobs.map((job) => [job.id, job]));
-  const cleanersById = visibleCleanerNames(cleaners, assignments, jobsById);
+  const cleanersById = visibleCleanerNames(
+    cleaners,
+    assignments,
+    jobsById,
+    labels.unavailableCleaner,
+  );
   const jobAssignments = assignmentsByJob(assignments, jobsById);
   const rows = [...sites]
     .sort((left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id))
@@ -198,7 +227,12 @@ export function buildSiteRoster({
       siteName: job.siteName,
       scheduledStart: job.scheduledStart,
       crewSize: job.crewSize,
-      cleanerNames: assignedCleanerNames(job.id, jobAssignments, cleanersById),
+      cleanerNames: assignedCleanerNames(
+        job.id,
+        jobAssignments,
+        cleanersById,
+        labels.unavailableCleaner,
+      ),
     });
   }
 

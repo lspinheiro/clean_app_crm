@@ -62,13 +62,16 @@ jobs and cleaners.
 
 ```mermaid
 flowchart LR
-    A[Hear about the app] --> B[Create account:\ncompany + ABN] --> C[Enter clients\nand sites] --> D[Enter recurring\nassignments] --> E[Invite the\nworkforce] --> F[See the first\nroster week]
+    A[Receive founder\ninvitation] --> B[Accept invitation:\naccount + company] --> C[Enter clients\nand sites] --> D[Enter recurring\nassignments] --> E[Invite the\nworkforce] --> F[See the first\nroster week]
 ```
 
-- **S1** — Create the company record: name, ABN, and contact details — nothing more.
-  Alpha companies are approved by us (invite-only; no public signup), and the admin signs
-  in with email + password. Service areas and logo (F1) arrive at MVP; no alpha surface
-  consumes them.
+- **S1** — A founder invites the first company admin through a trusted repository command.
+  Sending the invitation approves that company for the alpha. The invited person verifies
+  the invited e-mail, sets a password, and enters their name, company name, ABN, contact
+  phone, and locale. The app then creates the approved company and active admin membership
+  in one transaction. The admin confirms or corrects these details in the skippable
+  onboarding flow. There is no public signup. Service areas and logo (F1) arrive at MVP;
+  no alpha surface consumes them.
 - **S2** — Create clients and their sites as separate records: at least one multi-site
   client and single-site clients; address and access notes per site.
 - **S3** — Set per-site defaults: service type, duration, and default pay — a pay basis
@@ -265,7 +268,8 @@ Not in the alpha (MVP/P1 per PRODUCT.md §3.4):
 - Public company signup: alpha companies are invited and approved by us; onboarding
   itself is self-serve.
 - Operator journeys and the operator console: OP-1 was removed from the alpha
-  (decision log #12); operator journeys start at MVP (OP-2, vetting).
+  (decision log #12). A trusted founder command sends the first-admin invitation; it is
+  not an operator application. Operator journeys start at MVP (OP-2, vetting).
 
 Partial journeys: CA-2…CA-5 and CL-2…CL-4 are served at prototype parity only; the Phase
 B/C cycle designs them properly.
@@ -390,3 +394,11 @@ Crew, uses the authenticated admin e-mail as Reply-To, and tells unexpected reci
 ignore the message or reply to the company. It has no unsubscribe system because this
 alpha path is a one-time operational invitation, not a marketing list. One confirmed CSV
 is limited to 500 unique recipients so the synchronous alpha action remains bounded.
+
+### 15. A founder invitation approves the first company admin (2026-08-18)
+
+A founder sends one first-admin invitation from a trusted repository command. The invited
+person verifies the invited e-mail before the app creates an approved company, promotes the
+profile, and creates the first active membership in one transaction. A platform operator
+application and invitations for additional company admins remain out of scope. This keeps
+the alpha invite-only without restoring the concierge model or adding public signup.

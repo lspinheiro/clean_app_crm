@@ -13,7 +13,8 @@ grants; cleaners read through views only; "offered" and "vacancy" are projection
 decisions 10, 14); amounts are always admin-stated (HLD decision 12); forward
 migrations only (LLD decision 2).
 
-Stories with a db surface in this file: S6 (consent-gated generation), S8 (multi-link
+Stories with a db surface in this file: S1 (first-admin invitation and company bootstrap),
+S6 (consent-gated generation), S8 (multi-link
 invites), S9/S10 (join attribution), S16 (board projection changes), S19/S24 (ledger,
 mark-paid), S23 (pay basis), S20 (push, notification types), S26 (`product_events`),
 S28/S29 (offers), and S30 (company-scoped cleaner invitation batches).
@@ -43,6 +44,8 @@ The new and changed entities of this cycle and how they attach to the delivered 
 
 ```mermaid
 erDiagram
+    FIRST_ADMIN_INVITATIONS |o--o| PROFILES : "accepted by"
+    FIRST_ADMIN_INVITATIONS |o--o| COMPANIES : "creates"
     COMPANIES ||--o{ COMPANY_INVITES : "many links"
     COMPANY_INVITES |o..o{ COMPANY_MEMBERS : "admitted (attribution)"
     COMPANIES ||--o{ OFFERS : ""
@@ -101,6 +104,16 @@ erDiagram
         text provider_message_id "nullable"
         text failure_reason "safe, nullable"
     }
+    FIRST_ADMIN_INVITATIONS {
+        text email "normalised"
+        app_locale locale
+        text invited_by "trusted command actor"
+        timestamptz expires_at
+        timestamptz accepted_at "nullable"
+        timestamptz revoked_at "nullable"
+        uuid accepted_by_profile_id "nullable"
+        uuid company_id "nullable"
+    }
 ```
 
 *`product_events` is omitted: it references everything weakly (nullable, set-null) and
@@ -132,6 +145,48 @@ stateDiagram-v2
 
 *No `offered` status exists on the job — the note is the projection rule (HLD decision
 10). Completion is the only state that creates ledger rows (LLD-db decision 5).*
+
+## Data model — first company admin invitation (S1)
+
+`first_admin_invitations` is application-owned approval state. It contains `id`, a
+normalised `email`, `locale`, `invited_by`, `expires_at`, `created_at`, `accepted_at`,
+`revoked_at`, `accepted_by_profile_id`, and `company_id`. The last four columns are null
+until the related transition. A partial unique index on `lower(email)` permits only one
+record with no accepted or revoked timestamp. The table has RLS with no browser policy.
+Only `service_role` has direct table access.
+
+`prepare_first_admin_invitation(email, locale, invited_by, expires_at)` is available only
+to `service_role`. It normalises and validates the e-mail, actor, locale, and future
+expiry. It returns the existing pending record with `created = false`, so a repeated
+command sends no second e-mail. It revokes an expired pending record before it creates a
+new record. `revoke_first_admin_invitation(id)` is also service-role only and lets the
+command close prepared state when Supabase Auth rejects the send.
+
+`get_first_admin_invitation_context()` derives the verified caller e-mail from
+`auth.users`. It returns only that caller's latest invitation state and locale. It never
+accepts an e-mail or invitation identifier from the browser.
+
+`accept_first_admin_invitation(full_name, company_name, company_abn, contact_phone,
+locale)` is available to authenticated users. It locks the caller profile and the
+matching pending invitation. It requires a confirmed Auth e-mail, an unexpired record, a
+least-privilege `cleaner` profile, and no existing company membership. It validates the
+same company fields as the CRM. In one transaction it updates the profile to
+`company_admin`, creates an `approved` company, creates one active membership, and marks
+the invitation accepted with the new profile and company identifiers. No argument can
+choose a role, profile, company identifier, status, or e-mail.
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending : trusted command prepares
+    pending --> revoked : Auth send fails or founder revokes
+    pending --> expired : expires_at passes
+    pending --> accepted : verified e-mail accepts atomically
+    expired --> revoked : next trusted prepare
+    accepted --> [*]
+    revoked --> [*]
+```
+
+The invitation can enter the privileged state only through the atomic acceptance RPC.
 
 ## Data model — offers (S28, S29)
 
@@ -423,6 +478,30 @@ guarantees `accept_offer` always finds an open slot.
 
 ## Interaction sequences
 
+**Accept the first-admin invitation (S1).** The trusted command prepares one invitation
+and asks Supabase Auth to send it. The recipient verifies the same e-mail and submits the
+company form. The RPC locks the profile and invitation, then writes every privileged row
+in one transaction. A validation, expiry, mismatch, or uniqueness error rolls back the
+profile, company, membership, and invitation changes together.
+
+```mermaid
+sequenceDiagram
+    participant F as Founder command
+    participant A as Supabase Auth
+    participant T as Invited admin
+    participant DB as Postgres
+    F->>DB: prepare_first_admin_invitation
+    DB-->>F: pending invitation, created = true
+    F->>A: inviteUserByEmail
+    A-->>T: identity invitation e-mail
+    T->>A: verify token and establish session
+    T->>DB: accept_first_admin_invitation(details)
+    DB->>DB: lock profile + matching invitation
+    DB->>DB: promote profile + create approved company<br/>+ create membership + consume invitation
+    DB-->>T: company id
+    Note over DB: any failure rolls back all four writes
+```
+
 **Series offer, accept path (S28, S29, S6).** Admin creates a rule naming Ana →
 `offer_series` inserts the pending offer in the same transaction → generation creates
 instances with Ana's slot unassigned (projected as offered; off the board) → push
@@ -515,6 +594,10 @@ mutation.*
   pending offer first" (`assign_job_slot`), "Invite is no longer active" (join on
   revoked/expired/limit-reached), "Amount is required for hourly jobs" / "Amount is
   not accepted for fixed jobs" (`mark_paid`).
+- First-admin preparation rejects invalid e-mail, actor, locale, or expiry before it
+  writes. Acceptance uses one safe "Invitation is no longer available" error for a
+  missing, expired, revoked, used, or mismatched record. Field validation errors remain
+  distinct. Every acceptance error rolls back the privileged changes.
 - Push is never load-bearing: webhook and Edge Function failures leave the
   `notifications` row as the durable record; dead subscriptions are pruned on 404/410.
 - Generation failures stay per-rule in `recurring_generation_failures` (delivered);
@@ -531,6 +614,8 @@ status = 'pending'` for the board/vacancy projections, and
 "minus pending offers" join rides these. `product_events` is insert-only append;
 no read path exists to optimise. E-mail recipient lookup uses the unique
 `(batch_id, lower(email))` index; alpha batches are small and provider chunks stop at 100.
+First-admin lookup uses one partial index on the normalised e-mail. The command and
+acceptance paths each handle one record.
 
 ## Open questions
 
@@ -616,3 +701,12 @@ message opens, clicks, bounce events, contact-list state, or cleaner accounts. S
 confirmation and provider batch keys make repeated confirmations safe. The alternative,
 creating Auth users from CSV, was rejected because registration and pool joining remain
 the cleaner's explicit link-first actions.
+
+### 9. The database grants the first privileged company access atomically (2026-08-18)
+
+The Auth trigger continues to create a least-privilege `cleaner` profile. One
+security-definer acceptance RPC derives the profile and verified e-mail from the caller,
+then promotes the profile and creates the approved company and active membership in one
+transaction. Auth metadata and browser fields cannot choose a role or company. The
+alternative, promotion in the Auth trigger, would trust mutable metadata and could leave
+partial company state after a later failure.

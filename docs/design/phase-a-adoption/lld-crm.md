@@ -3,7 +3,8 @@
 ## Scope
 
 The company-admin app of the [Phase A HLD](hld.md), against the db contract in
-[lld-db.md](lld-db.md). Stories: S1–S8 (delivered screens gaining pay basis and the
+[lld-db.md](lld-db.md). Stories: S1–S8 (the public first-admin acceptance path plus
+delivered screens gaining pay basis and the
 new pool), S22 (job detail + offers), S23 (pay basis picker), S24 (money), S25
 (cancel — delivered), S28 (send/revoke offers), S30 (bulk import), S31 (jobs list —
 delivered). Delivered internals (route layout, server-action pattern, zod convention,
@@ -29,6 +30,18 @@ The request contains `en-AU` or `pt-BR`, the normalised recipients, and the acce
 authority statement. The server derives a stable confirmation key from the invite,
 locale, and sorted unique recipient e-mails. The request never contains an API key.
 
+The repository command calls `prepare_first_admin_invitation` with a normalised e-mail,
+locale, future expiry, and the configured operator identity. It calls Supabase Auth
+Admin only when the RPC returns `created = true`. A provider error calls
+`revoke_first_admin_invitation`. The command uses `SUPABASE_SECRET_KEY` or the legacy
+`SUPABASE_SERVICE_ROLE_KEY`; neither value enters the Next.js browser bundle.
+
+The public `/{locale}/auth/confirm` route accepts only a Supabase `invite` token hash. It
+calls `verifyOtp` and redirects to `/{locale}/invite/accept`. The acceptance page calls
+`get_first_admin_invitation_context` for the session e-mail. Its server action validates
+the password and company fields, updates the Auth password, and calls
+`accept_first_admin_invitation`. Success redirects to the guarded `/onboarding` handoff.
+
 ## Internal structure — changes by area
 
 New and reworked modules in the delivered layout (route → server action → RPC; the
@@ -44,6 +57,11 @@ flowchart LR
         RIMP["clients/import (new)"]
         RBELL["layout header:<br/>bell (new)"]
     end
+    subgraph publicRoutes["public locale routes"]
+        RCONF["auth/confirm<br/>token verification"]
+        RACCEPT["invite/accept<br/>first-admin form"]
+    end
+    FCLI["scripts/invite-first-admin.mjs"]
     subgraph actions["app/actions (server)"]
         APOOL["pool.ts<br/>(reworked)"]
         AOFF["offers.ts (new)"]
@@ -51,6 +69,7 @@ flowchart LR
         AIMP["import.ts (new)"]
         ANOTIF["notifications.ts (new)"]
         AEMAIL["pool-email.ts (new)"]
+        AADMIN["first-admin.ts<br/>(accept)"]
     end
     subgraph rpcs["packages/db RPCs"]
         R1["create_pool_invite<br/>revoke_pool_invite"]
@@ -58,7 +77,11 @@ flowchart LR
         R3["mark_paid"]
         R4["existing create RPCs<br/>(clients, sites, rules)"]
         R5["prepare batch<br/>record results"]
+        R6["prepare/revoke/context/accept<br/>first-admin invitation"]
     end
+    FCLI -->|"secret key"| SAUTH["Supabase Auth Admin"]
+    FCLI --> R6
+    SAUTH -->|"invite token hash"| RCONF --> RACCEPT --> AADMIN --> R6
     RPOOL --> APOOL --> R1
     RJOB --> AOFF --> R2
     RMONEY --> AMONEY --> R3
@@ -91,6 +114,15 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   an RFC-quoted "{company name} via The Clean Crew" with the verified address. Reply-To
   uses the authenticated admin e-mail. The footer tells an unexpected recipient to
   ignore the e-mail or reply to the company.
+- **First-admin invitation (`scripts/invite-first-admin.mjs`, `(auth)/auth/confirm`,
+  `(auth)/invite/accept`, `actions/first-admin.ts`)** — the non-interactive command
+  accepts `--email` and `--locale`, loads the trusted Supabase secret and operator identity,
+  and prints no token or credential. The invite template uses locale metadata for
+  `en-AU` or `pt-BR` copy and links to the locale confirmation route with
+  `token_hash` and `type=invite`. The public acceptance page renders the exact profile and
+  company fields from S1. It accepts no role, status, profile identifier, or company
+  identifier. The `/onboarding` route stays inside the CRM guard and is the stable CLE-47
+  handoff; until CLE-47 lands, it redirects to the roster.
 - **Job detail (`(crm)/jobs/[jobId]`)** — gains the directed route: an "offer to…"
   picker over active pool members not already assigned, applied, or offered; pending
   offers listed with age and a revoke action; the assign path shows the new invariant
@@ -130,6 +162,34 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   slug; user-entered names, addresses and notes pass through unchanged.
 
 ## Interaction sequences
+
+**First company admin (S1).** A founder runs the trusted command. The command prepares
+one application invitation and calls Supabase Auth Admin. The e-mail uses the locale
+template and enters the public confirmation route. That route verifies the invite token
+and establishes the SSR session. The acceptance form sets the password and submits the
+company details. The atomic RPC grants access and the app redirects through the guarded
+`/onboarding` route.
+
+```mermaid
+sequenceDiagram
+    participant F as Founder command
+    participant A as Supabase Auth + Resend SMTP
+    participant T as Invited admin
+    participant C as CRM public routes
+    participant DB as Bootstrap RPCs
+    F->>DB: prepare invitation
+    DB-->>F: created = true
+    F->>A: inviteUserByEmail(locale, confirm URL)
+    A-->>T: invitation e-mail
+    T->>C: token_hash + type=invite
+    C->>A: verifyOtp
+    A-->>C: SSR session
+    C-->>T: acceptance form
+    T->>C: password + profile + company details
+    C->>DB: accept_first_admin_invitation
+    DB-->>C: approved company id
+    C-->>T: /{locale}/onboarding
+```
 
 **Import (S30).** Choose file → parse → validation table (green/red rows with
 reasons) → confirm → sequential submits with a progress count → result list (created
@@ -200,12 +260,21 @@ response bodies, or raw provider errors. It honours Resend rate-limit reset head
 retries a 429 with the same provider idempotency key. A failed provider chunk does not
 stop later chunks. Retry reads failed recipients from company-scoped batch state.
 
+The founder command fails before an Auth call if configuration or input is invalid. A
+repeated pending invitation reports that it sent no e-mail. An Auth Admin error revokes
+the prepared application record and returns a safe action message. The confirmation route
+maps an invalid token to the public unavailable state. The acceptance action shows field
+errors for form input and one safe unavailable message for every invitation state error.
+It never returns the Supabase secret, token hash, raw provider error, role, or company id.
+
 ## Performance
 
 Alpha scale; nothing hot. The company-data import submits sequentially by design
 (LLD-db decision — free-tier discipline; a 40-row import is 40 fast calls). Cleaner
 e-mail sends use provider batches of at most 100 messages and stop at 500 unique
 recipients per confirmed CSV.
+The first-admin command and acceptance form each handle one invitation. No queue or bulk
+path exists.
 
 ## Open questions
 
@@ -250,3 +319,12 @@ the stable logical confirmation key, then uses the server-only Resend key. This 
 credentials out of the browser and preserves the existing Pool route. The alternative,
 a browser call to Resend, was rejected because it would expose the provider credential
 and bypass company-admin authorisation.
+
+### 5. The first-admin confirmation route is public; the privilege mutation is not (2026-08-18)
+
+The Auth e-mail enters a public locale route because the recipient has no CRM access yet.
+That route can only exchange an `invite` token hash for a session. The browser then calls
+one authenticated RPC that derives the verified e-mail and grants the company role
+atomically. A platform operator screen and a browser Auth Admin client are rejected: the
+first adds an unrequested alpha application, and the second would expose the secret and
+privileged API.

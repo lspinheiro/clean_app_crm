@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -180,6 +179,60 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      first_admin_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by_profile_id: string | null
+          company_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          locale: Database["public"]["Enums"]["app_locale"]
+          revoked_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          locale: Database["public"]["Enums"]["app_locale"]
+          revoked_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          locale?: Database["public"]["Enums"]["app_locale"]
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "first_admin_invitations_accepted_by_profile_id_fkey"
+            columns: ["accepted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "first_admin_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1246,6 +1299,16 @@ export type Database = {
       }
     }
     Functions: {
+      accept_first_admin_invitation: {
+        Args: {
+          company_abn: string
+          company_name: string
+          contact_phone: string
+          full_name: string
+          target_locale: Database["public"]["Enums"]["app_locale"]
+        }
+        Returns: string
+      }
       apply_to_job: { Args: { target_job_id: string }; Returns: string }
       assign_job_slot: {
         Args: {
@@ -1383,6 +1446,15 @@ export type Database = {
           address: string
         }[]
       }
+      get_first_admin_invitation_context: {
+        Args: never
+        Returns: {
+          expires_at: string
+          invitation_status: string
+          invitee_email: string
+          locale: Database["public"]["Enums"]["app_locale"]
+        }[]
+      }
       is_company_admin: {
         Args: { target_company_id: string }
         Returns: boolean
@@ -1404,6 +1476,19 @@ export type Database = {
         Returns: undefined
       }
       post_job: { Args: { target_job_id: string }; Returns: undefined }
+      prepare_first_admin_invitation: {
+        Args: {
+          expires_at: string
+          invited_by: string
+          target_email: string
+          target_locale: Database["public"]["Enums"]["app_locale"]
+        }
+        Returns: {
+          created: boolean
+          invitation_expires_at: string
+          invitation_id: string
+        }[]
+      }
       prepare_pool_invite_email_batch: {
         Args: {
           authority_confirmed: boolean
@@ -1467,6 +1552,10 @@ export type Database = {
       reserve_company_logo_upload: {
         Args: { requested_object_name: string; target_company_id: string }
         Returns: string
+      }
+      revoke_first_admin_invitation: {
+        Args: { target_invitation_id: string }
+        Returns: undefined
       }
       rotate_company_invite: {
         Args: { target_company_id: string }

@@ -112,6 +112,38 @@ The development launcher injects the local Supabase credentials automatically. U
 `apps/crm/.env.local` only for optional local overrides (never commit `.env*`; keep
 `.env.example` current).
 
+### Invite the first company admin
+
+Copy `apps/crm/.env.example` to `apps/crm/.env.local`. Set these server-only values:
+
+- `CRM_PUBLIC_URL` — the CRM origin, with no locale path.
+- `SUPABASE_SECRET_KEY` — the hosted Supabase secret key. The command also accepts the
+  legacy `SUPABASE_SERVICE_ROLE_KEY` name.
+- `FIRST_ADMIN_INVITER` — the founder name or e-mail stored in the invitation audit row.
+
+Never expose the Supabase secret to the browser or commit `.env.local`. Run one invite:
+
+```bash
+pnpm --dir apps/crm invite:first-admin -- --email admin@example.com --locale en-AU
+```
+
+The command accepts `en-AU` or `pt-BR`. A pending invitation makes a repeated command
+exit without sending another e-mail.
+
+Configure the hosted Supabase project before a real send:
+
+1. Add `<CRM_PUBLIC_URL>/en-AU/auth/confirm` and
+   `<CRM_PUBLIC_URL>/pt-BR/auth/confirm` to the Auth redirect allow list.
+2. Copy `packages/db/supabase/templates/invite.html` into the hosted **Invite user**
+   e-mail template. Keep the `token_hash`, `type=invite`, and `RedirectTo` values intact.
+3. Enable custom SMTP with host `smtp.resend.com`, port `465`, username `resend`, and
+   the Resend API key as the SMTP password. Use a From address on a verified domain.
+4. Keep the Supabase e-mail OTP expiry at one hour so it matches the application
+   invitation lifetime.
+
+Local Supabase uses the committed invite template and Inbucket. Hosted SMTP credentials
+live in Supabase Auth settings, not in the application bundle.
+
 ## Status
 
 M1 delivery is active: the workspace, fresh Supabase baseline, deterministic local seed,

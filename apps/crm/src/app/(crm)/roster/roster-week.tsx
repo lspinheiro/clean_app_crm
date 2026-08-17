@@ -1,5 +1,5 @@
 import { AlertTriangle, Check, ChevronLeft, ChevronRight } from "lucide-react";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   addDays,
@@ -14,6 +14,8 @@ import type {
   RosterModel,
   RosterView,
 } from "@/features/roster/types";
+import type { AppLocale } from "@/i18n/config";
+import { Link } from "@/i18n/navigation";
 
 type RosterWeekProps = {
   weekStart: string;
@@ -24,11 +26,28 @@ type RosterWeekProps = {
   todayKey: string;
 };
 
-function unfilledLabel(count: number, suffix = "") {
-  return `${count} unfilled ${count === 1 ? "slot" : "slots"}${suffix}`;
-}
+type RosterEntryMessageKey =
+  | "cleanerCount"
+  | "gap"
+  | "noCleanersAssigned"
+  | "slotOf";
 
-function RosterEntry({ item, view }: { item: RosterCellItem; view: RosterView }) {
+type Translator = (
+  key: RosterEntryMessageKey,
+  values?: Record<string, string | number>,
+) => string;
+
+function RosterEntry({
+  item,
+  locale,
+  t,
+  view,
+}: {
+  item: RosterCellItem;
+  locale: AppLocale;
+  t: Translator;
+  view: RosterView;
+}) {
   if (item.kind === "gap") {
     return (
       <div
@@ -37,13 +56,13 @@ function RosterEntry({ item, view }: { item: RosterCellItem; view: RosterView })
         data-testid="roster-gap"
         data-vacancy-key={item.key}
       >
-        <strong><AlertTriangle aria-hidden="true" size={14} /> GAP</strong>
+        <strong><AlertTriangle aria-hidden="true" size={14} /> {t("gap")}</strong>
         <span>
-          {view === "site" ? formatRosterTime(item.scheduledStart) : item.siteName}
+          {view === "site" ? formatRosterTime(item.scheduledStart, locale) : item.siteName}
         </span>
         <small className="tabular-numerals">
-          {view === "cleaner" ? `${formatRosterTime(item.scheduledStart)} · ` : null}
-          slot {item.crewSlot} of {item.crewSize}
+          {view === "cleaner" ? `${formatRosterTime(item.scheduledStart, locale)} · ` : null}
+          {t("slotOf", { slot: item.crewSlot, crewSize: item.crewSize })}
         </small>
       </div>
     );
@@ -56,14 +75,14 @@ function RosterEntry({ item, view }: { item: RosterCellItem; view: RosterView })
       data-testid="roster-job"
     >
       <strong>
-        {view === "site" ? formatRosterTime(item.scheduledStart) : item.siteName}
+        {view === "site" ? formatRosterTime(item.scheduledStart, locale) : item.siteName}
       </strong>
       <span className={view === "cleaner" ? "tabular-numerals" : "roster-entry__cleaners"}>
         {view === "site"
-          ? item.cleanerNames.join(", ") || "No cleaners assigned"
-          : formatRosterTime(item.scheduledStart)}
+          ? item.cleanerNames.join(", ") || t("noCleanersAssigned")
+          : formatRosterTime(item.scheduledStart, locale)}
       </span>
-      {item.crewSize > 1 ? <small>{item.crewSize} cleaners</small> : null}
+      {item.crewSize > 1 ? <small>{t("cleanerCount", { count: item.crewSize })}</small> : null}
     </div>
   );
 }
@@ -76,6 +95,8 @@ export function RosterWeek({
   hasFoundation,
   todayKey,
 }: RosterWeekProps) {
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("Roster");
   const previousWeek = rosterHref(addDays(weekStart, -7), view);
   const nextWeek = rosterHref(addDays(weekStart, 7), view);
   const currentWeekStart = normaliseWeekStart(todayKey);
@@ -90,37 +111,37 @@ export function RosterWeek({
       <main className="page-shell roster-page-shell">
         <header className="roster-header">
           <div>
-            <p className="eyebrow">Company operations</p>
-            <h1 className="page-heading">Roster</h1>
+            <p className="eyebrow">{t("eyebrow")}</p>
+            <h1 className="page-heading">{t("title")}</h1>
             <div className="roster-toolbar">
               <div className="roster-week-controls">
-                <Link className="icon-button roster-week-link" href={previousWeek} aria-label="Previous week">
+                <Link className="icon-button roster-week-link" href={previousWeek} aria-label={t("previousWeek")}>
                   <ChevronLeft aria-hidden="true" size={20} />
                 </Link>
                 <p className="roster-week-title tabular-numerals">
-                  {formatRosterWeekHeading(weekStart)}
+                  {formatRosterWeekHeading(weekStart, locale)}
                 </p>
-                <Link className="icon-button roster-week-link" href={nextWeek} aria-label="Next week">
+                <Link className="icon-button roster-week-link" href={nextWeek} aria-label={t("nextWeek")}>
                   <ChevronRight aria-hidden="true" size={20} />
                 </Link>
                 {currentWeekStart && currentWeekStart !== weekStart ? (
                   <Link className="roster-this-week" href={rosterHref(currentWeekStart, view)}>
-                    This week
+                    {t("thisWeek")}
                   </Link>
                 ) : null}
               </div>
-              <nav className="roster-view-switch" aria-label="Roster view">
+              <nav className="roster-view-switch" aria-label={t("view")}>
                 <Link
                   aria-current={view === "cleaner" ? "page" : undefined}
                   href={rosterHref(weekStart, "cleaner")}
                 >
-                  By cleaner
+                  {t("byCleaner")}
                 </Link>
                 <Link
                   aria-current={view === "site" ? "page" : undefined}
                   href={rosterHref(weekStart, "site")}
                 >
-                  By site
+                  {t("bySite")}
                 </Link>
               </nav>
             </div>
@@ -134,7 +155,9 @@ export function RosterWeek({
             >
               {gapState === "gaps" ? <AlertTriangle aria-hidden="true" size={14} /> : null}
               {gapState === "clear" ? <Check aria-hidden="true" size={14} /> : null}
-              {gapState === "unscheduled" ? "Nothing scheduled" : unfilledLabel(model.vacancyCount)}
+              {gapState === "unscheduled"
+                ? t("nothingScheduled")
+                : t("unfilled", { count: model.vacancyCount })}
             </p>
           ) : null}
         </header>
@@ -144,21 +167,21 @@ export function RosterWeek({
             <div className="bubble-cluster" aria-hidden="true">
               <span /><span /><span />
             </div>
-            <h2 id="roster-empty-heading">Build your roster foundation</h2>
-            <p>Add a client site and invite cleaners before recurring work can appear here.</p>
-            <Link className="button button--secondary" href="/clients">Go to clients</Link>
+            <h2 id="roster-empty-heading">{t("foundationTitle")}</h2>
+            <p>{t("foundationDescription")}</p>
+            <Link className="button button--secondary" href="/clients">{t("goToClients")}</Link>
           </section>
         ) : (
           <div
             className="roster-grid-region"
             role="region"
-            aria-label={`Roster by ${view}`}
+            aria-label={t(view === "cleaner" ? "rosterByCleaner" : "rosterBySite")}
             tabIndex={0}
           >
             <table className="roster-grid">
               <thead>
                 <tr>
-                  <th scope="col">{view === "cleaner" ? "Cleaner" : "Site"}</th>
+                  <th scope="col">{view === "cleaner" ? t("cleaner") : t("site")}</th>
                   {days.map((day) => (
                     <th
                       key={day.dateKey}
@@ -168,7 +191,7 @@ export function RosterWeek({
                     >
                       {day.headerLabel}
                       {day.dateKey === todayKey ? (
-                        <span aria-hidden="true" className="roster-today-tag">Today</span>
+                        <span aria-hidden="true" className="roster-today-tag">{t("today")}</span>
                       ) : null}
                     </th>
                   ))}
@@ -179,7 +202,7 @@ export function RosterWeek({
                   <tr key={row.id} className={row.kind === "gaps" ? "roster-gap-row" : undefined}>
                     <th scope="row">
                       <span>{row.label}</span>
-                      {row.kind === "gaps" ? <small>Vacancies to fill</small> : null}
+                      {row.kind === "gaps" ? <small>{t("vacancies")}</small> : null}
                       {row.sublabel ? (
                         <small className="roster-row-client">{row.sublabel}</small>
                       ) : null}
@@ -192,11 +215,11 @@ export function RosterWeek({
                           className={day.dateKey === todayKey ? "is-today" : undefined}
                         >
                           {items.length ? items.map((item) => (
-                            <RosterEntry item={item} key={item.key} view={view} />
+                            <RosterEntry item={item} key={item.key} locale={locale} t={t} view={view} />
                           )) : (
                             <span className="roster-no-work">
                               <span aria-hidden="true">—</span>
-                              <span className="visually-hidden">No work</span>
+                              <span className="visually-hidden">{t("noWork")}</span>
                             </span>
                           )}
                         </td>
@@ -206,12 +229,12 @@ export function RosterWeek({
                 )) : (
                   <tr>
                     <th scope="row">
-                      {view === "cleaner" ? "No active cleaners" : "No company sites"}
+                      {view === "cleaner" ? t("noCleaners") : t("noSites")}
                     </th>
                     <td colSpan={7} className="roster-grid-message">
                       {view === "cleaner"
-                        ? "Invite a cleaner to add a row to this week."
-                        : "Add a client site to create a roster row."}
+                        ? t("inviteCleaner")
+                        : t("addSite")}
                     </td>
                   </tr>
                 )}
@@ -232,14 +255,14 @@ export function RosterWeek({
               {gapState === "clear" ? <Check aria-hidden="true" size={18} /> : null}
               {gapState === "gaps" ? <AlertTriangle aria-hidden="true" size={18} /> : null}
               {gapState === "unscheduled"
-                ? "Nothing scheduled this week yet. Recurring jobs are generated 4 weeks ahead."
-                : unfilledLabel(model.vacancyCount, " this week")}
+                ? t("nothingThisWeek")
+                : t("unfilledThisWeek", { count: model.vacancyCount })}
             </p>
             <div className="roster-offer-control">
               <button className="button button--secondary" type="button" disabled>
-                Offer to pool
+                {t("offerToPool")}
               </button>
-              <span>Available after the cleaner job board launches.</span>
+              <span>{t("poolLater")}</span>
             </div>
           </div>
         </footer>

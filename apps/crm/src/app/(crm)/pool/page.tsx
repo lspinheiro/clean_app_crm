@@ -4,7 +4,13 @@ import { isInviteActive, normaliseCleanerAppUrl } from "@/features/pool/invite";
 import type { PoolMember } from "@/features/pool/types";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: t("pool") };
+}
+
 export default async function PoolPage() {
+  const t = await getTranslations("Pool");
   const cleanerAppUrl = process.env.NEXT_PUBLIC_CLEANER_APP_URL;
   if (!cleanerAppUrl) {
     throw new Error(
@@ -59,11 +65,9 @@ export default async function PoolPage() {
     <main className="page-shell pool-page-shell">
       <header className="page-header-row pool-page-header">
         <div>
-          <p className="eyebrow">Private workforce</p>
-          <h1 className="page-heading">Cleaner pool</h1>
-          <p className="page-description">
-            Share one controlled invite and keep your active cleaners visible in the CRM.
-          </p>
+          <p className="eyebrow">{t("eyebrow")}</p>
+          <h1 className="page-heading">{t("title")}</h1>
+          <p className="page-description">{t("description")}</p>
         </div>
       </header>
       <PoolWorkspace
@@ -76,3 +80,5 @@ export default async function PoolPage() {
     </main>
   );
 }
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";

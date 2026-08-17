@@ -18,6 +18,15 @@ invites), S9/S10 (join attribution), S16 (board projection changes), S19/S24 (le
 mark-paid), S23 (pay basis), S20 (push, notification types), S26 (`product_events`),
 S28/S29 (offers).
 
+F15 adds one shared profile preference used by both company admins and cleaners:
+`public.app_locale` has exactly `en-AU` and `pt-BR`; `profiles.preferred_locale` is
+nullable so existing users retain cookie/device fallback until they choose explicitly.
+Authenticated users still cannot update `profiles` directly. The self-only
+`set_preferred_locale(app_locale)` security-definer RPC derives the profile from
+`auth.uid()` and has explicit authenticated/service-role grants. The auth bootstrap
+trigger accepts only valid locale metadata, treating missing or invalid metadata as
+null so sign-up cannot fail on presentation data.
+
 Conventions every new object follows (delivered pattern, `cle_5`–`cle_49`): `set
 search_path = ''` with qualified names; `revoke all` then explicit `grant execute` to
 `authenticated, service_role` on RPCs; `revoke` + `grant select` to `authenticated` and
@@ -522,3 +531,11 @@ the dev-machine stage where the CRM is not always up. Trade-off accepted: the re
 gains a Deno runtime and a second deploy artifact in `packages/db`. Considered
 option: the prototype's dispatch route in `apps/crm` woken by the same webhook —
 rejected because dispatch would depend on the CRM process being reachable.
+
+### 7. Locale preference is nullable and self-scoped (2026-08-17)
+
+Null means no explicit saved choice; it is not another spelling of `en-AU`. This lets
+request negotiation remain authoritative for existing and pre-auth users. A narrow RPC
+with no target-profile argument preserves the existing ban on direct profile updates
+while allowing both roles to save their own choice. Unsupported enum values and null
+mutations fail without changing the previous preference.

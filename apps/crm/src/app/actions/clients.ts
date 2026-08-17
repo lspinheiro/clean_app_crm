@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import {
   createClientSchema,
   createSiteSchema,
@@ -12,6 +10,7 @@ import {
   updateSiteSchema,
 } from "@/features/site-defaults/schema";
 import { preferredCleanerOrderSchema } from "@/features/preferred-cleaners/schema";
+import { revalidateLocalizedPath as revalidatePath } from "@/i18n/revalidate";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
 export type RecordMutationResult = {

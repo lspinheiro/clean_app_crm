@@ -1,7 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
+import { revalidateLocalizedPath as revalidatePath } from "@/i18n/revalidate";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
 export type RotateInviteResult =

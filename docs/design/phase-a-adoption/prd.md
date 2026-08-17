@@ -206,7 +206,11 @@ rather than a gate (product decision 2026-08-10):
 The three designed journeys pass their stages above, and every §3.4 "kept at prototype
 parity" capability demonstrably works across the two monorepo apps: auth and roles, pools
 and invites, job creation, post/assign, one-tap apply, address gating, job-done, pay
-ledger recording, push.
+ledger recording, push. F15 also applies at alpha: first-party interface copy is complete
+in `en-AU` and `pt-BR`, an explicit language choice persists per profile, and names or
+notes entered by users are never translated. The CRM lands first; the profile contract is
+shared by both roles, while the cleaner-interface translation remains a separate
+implementation slice required before the alpha launch.
 
 ## 6. User interaction and design
 

@@ -8,6 +8,8 @@ new pool), S22 (job detail + offers), S23 (pay basis picker), S24 (money), S25
 (cancel — delivered), S28 (send/revoke offers), S30 (bulk import), S31 (jobs list —
 delivered). Delivered internals (route layout, server-action pattern, zod convention,
 `requireCompanyAdmin`) are the authority for anything this file does not change.
+F15 adds the complete CRM presentation in `en-AU` and `pt-BR`; cleaner-app screens are
+outside this implementation slice.
 
 ## Interfaces
 
@@ -93,6 +95,13 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   (no db uniqueness exists); matched rows are flagged "already exists" and skipped.
   The published column format ships as a downloadable template CSV linked from the
   import screen, one file per entity (clients, sites, recurring assignments).
+- **Internationalisation (`[locale]`, `i18n`, `messages`)** — `next-intl` owns canonical
+  always-prefixed routes, request negotiation, typed navigation and one complete
+  catalogue per supported locale. The root layout sets the document language and a
+  client provider. The sign-in selector changes the active URL; the settings selector
+  first persists `profiles.preferred_locale` through its self-only RPC, then replaces
+  the same path and query in the chosen locale. Built-in services translate by stable
+  slug; user-entered names, addresses and notes pass through unchanged.
 
 ## Interaction sequences
 
@@ -163,3 +172,11 @@ returned vacancy — rejected as exactly the silent state the notification exist
 prevent. Founder note (2026-08-16): admins often work from their phones; a mobile
 CRM centred on pool messaging, schedule confirmation, and notifications is a
 roadmap item beyond Phase A (recorded in PRODUCT.md §4.1).
+
+### 3. The CRM uses complete catalogues and canonical locale URLs (2026-08-17)
+
+Every CRM route is available under `/en-AU` and `/pt-BR`; unprefixed legacy links
+negotiate and redirect without losing path or query. Catalogue parity is a test
+contract, so Portuguese cannot silently fall back to English. The two supported
+locales are configuration, not flags or duplicated page implementations; locale-aware
+navigation preserves the user's current task.

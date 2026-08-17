@@ -4,16 +4,16 @@ const adminEmail = "admin@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 test("@CLE-14 creates, edits, toggles, and reloads a crew schedule", async ({ page }) => {
   await signIn(page);
-  await page.goto("/clients/10000000-0000-4000-8000-000000000301");
+  await page.goto("/en-AU/clients/10000000-0000-4000-8000-000000000301");
 
   const site = page.getByRole("group", { name: "Broadbeach Towers" });
   const recurring = site.getByRole("region", {

@@ -8,6 +8,10 @@ Current direction: **Trust Blue**, adopted 17 Aug 2026 from the palette explorat
 `af56308a78bf477b9f7f256f1f94974f`, project `clean-app-crm`). This supersedes the
 ink-on-paper system seeded from the `../clean-app` prototype.
 
+The product is bilingual from alpha: every shipped surface in both apps supports Australian
+English (`en-AU`) and Brazilian Portuguese (`pt-BR`). **The Clean Crew** is the product name in
+both languages and is never translated.
+
 ## Point of view
 
 Calm operational utility: roughly **80% neutral surfaces, 15% brand colour, 5% semantic
@@ -73,8 +77,10 @@ status chips. Fallback system sans. Scale:
 - Label (Public Sans) 11–12/16, weight 700, uppercase, wide tracking — eyebrows, table
   headers, chip text
 
-Prices, pay amounts, times, and counts use **tabular numerals**. UI copy is plain
-English: short sentences, no idioms, numerals for times and pay (ESL, phone-only users).
+Prices, pay amounts, times, and counts use **tabular numerals**. Copy in both languages uses
+short sentences, familiar words, no idioms, and numerals for times and pay (ESL, phone-only
+users). `en-AU` follows Australian spelling. `pt-BR` is natural Brazilian Portuguese, not a
+word-for-word translation of the English catalogue.
 
 ## Shape, depth, spacing
 
@@ -103,6 +109,10 @@ English: short sentences, no idioms, numerals for times and pay (ESL, phone-only
   4px radius compact form inside dense grids. Never colour without a word.
 - **Segmented controls**: `surface-alt` track with 1px border; the active segment is a
   `surface-card` pill with `sm` shadow and `primary` text.
+- **Language control**: available before authentication and in the signed-in settings/profile
+  surface. Options use their own-language names — “English (Australia)” and “Português
+  (Brasil)” — never flags. Switching language preserves the current task, entered data, route,
+  and query parameters.
 - **Navigation (CRM top bar)**: `surface-card`, bottom `surface-border`, `sm` shadow;
   active item = `primary` text + 2px `primary` underline; inactive = `text-secondary`.
 - **Exception panels** (e.g. vacancies to fill): `surface-alt` panel, danger icon +
@@ -125,6 +135,10 @@ English: short sentences, no idioms, numerals for times and pay (ESL, phone-only
   action placeholders. Content max-width 1200px. Dense data (roster week grid, client
   tables) uses label-style headers, body-size cells, generous row height (44px+). The
   roster is the default screen.
+- **Translation resilience**: controls and layouts accommodate the longer of the `en-AU` and
+  `pt-BR` labels without clipping or hiding actions. Buttons may grow or wrap where necessary;
+  text-bearing controls do not depend on a fixed English width. Truncation is reserved for long
+  user-authored values and must leave the full value available accessibly.
 
 ## Interaction & motion
 
@@ -139,16 +153,40 @@ caption text on `surface-card` and `surface` (≈4.7:1 on white); nothing lighte
 text. On-container tones are the only text colours on status tints. White text only on
 `primary`, `primary-hover`, and semantic `DEFAULT` fills. Visible focus rings
 (`primary`, soft), 44px minimum touch targets, labels tied to inputs, status conveyed by
-text + colour.
+text + colour. The document language reflects the active locale (`en-AU` or `pt-BR`) so screen
+readers use the correct pronunciation. Language controls have an explicit accessible label in
+the active language.
 
 ## Content rules
 
 Demo data only in mockups and fixtures — never real client names, addresses, or phone
-numbers. Currency AUD (`$180`), times as `8:00`, dates as `Tue 12 Aug`. Working name in
-UI: **The Clean Crew**.
+numbers.
+
+- **Supported languages**: every first-party surface shipped in alpha is complete in `en-AU`
+  and `pt-BR`. This includes navigation, authentication, onboarding, forms, helper text,
+  validation, errors, status labels, loading and empty states, dialogs, invites, and in-app and
+  push notifications. Missing `pt-BR` copy is a release defect, even when an `en-AU` runtime
+  fallback prevents a broken screen.
+- **Product name**: always **The Clean Crew**. Do not translate, abbreviate, or localise it.
+- **Formatting versus operations**: currency remains AUD and schedule time remains
+  `Australia/Brisbane` in both languages. Dates, times, numbers, and AUD amounts follow the
+  active language's readable conventions; changing language never changes stored values,
+  currency, or schedule semantics.
+- **User-authored content**: company, client and site names, addresses, access instructions,
+  job notes, and field-event notes remain exactly as written. Do not silently translate them.
+  Translate the structured labels and status text around them.
+- **Message composition**: write complete sentences for each language, including plural and
+  variable cases; do not construct visible sentences by joining translated fragments.
+- **Terminology**: use the product glossary as the authority for domain concepts. Maintain one
+  approved term per concept in each language and avoid unexplained English product jargon in
+  `pt-BR`.
 
 ## Decision log
 
+- **17 Aug 2026 — Bilingual alpha adopted.** Both apps support `en-AU` and `pt-BR` on every
+  shipped alpha surface. Language changes first-party copy and readable formatting, while AUD,
+  `Australia/Brisbane`, domain state, and user-authored content remain unchanged. The product
+  name is **The Clean Crew** in both languages and is never translated.
 - **17 Aug 2026 — Trust Blue adopted.** Chosen from the five research palette directions
   (`docs/research/ux-design.md`; comparison set in `mockups/redesign/`) against Fresh
   Teal, Warm Clean, Burgundy & Teal, and Utility Orange. Reference screen:

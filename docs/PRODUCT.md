@@ -1,7 +1,8 @@
 # Product Strategy & Requirements — Cleaning Operations & Recruitment Platform (v1)
 
-**Working title:** The Clean Crew (the co-founders' prototype ships as "Clean App")
-**Status:** Draft v0.4 — 2026-08-12
+**Product name:** The Clean Crew (never translated; the co-founders' reference prototype was
+named "Clean App")
+**Status:** Draft v0.5 — 2026-08-17
 **Owners:** Leonardo Pinheiro (product/engineering), Thiago (industry partner); prototype by two
 prospective co-founders (developer + PM), collaboration not yet formalised (Appendix B)
 **Market:** Commercial cleaning companies, Gold Coast QLD (initial), Australia (later)
@@ -42,6 +43,16 @@ approved the proposal without comments):
   exit-criteria gate (product decision 2026-08-10).
 - v0.4 also records the cleaner surface strategy in §4.1/§5.3: a wrapper-ready PWA, with a
   Capacitor store shell only on alpha push evidence (decision 0004).
+
+**Revision v0.5 (2026-08-17)** makes bilingual operation part of the alpha contract:
+
+- New cross-cutting feature **F15 — bilingual product experience**. Every first-party surface
+  shipped in alpha supports Australian English (`en-AU`) and Brazilian Portuguese (`pt-BR`) in
+  both the CRM and cleaner app.
+- Language choice is explicit and persistent. Language never changes the Australian operating
+  contract: currency remains AUD and schedule time remains `Australia/Brisbane`.
+- The product name is **The Clean Crew** in both languages. User-authored names, addresses,
+  access instructions, and notes remain as written rather than being automatically translated.
 
 ---
 
@@ -153,8 +164,10 @@ are **no longer** out of scope; they are the v1 base (F10).
 
 Priorities: **P0** = required for launch; **P1** = fast follow (3 months or less after launch);
 **P2** = later in v1 life. Agent autonomy levels reference the 0–4 scale in §4.4. F1–F9 keep
-their v0.1 numbers. F10–F13 are new in v0.2; F14 is new in v0.4. Reading order for the build:
-F10 → F11 → F12 → F13 → F14 → F1, F4, F5, F6 → then the P1 items (F2, F3, F7, F8 extensions).
+their v0.1 numbers. F10–F13 are new in v0.2; F14 is new in v0.4; F15 is new in v0.5. F15 is
+cross-cutting and ships with each alpha journey rather than as a translation pass at the end.
+Reading order for the build: F10 → F11 → F12 → F13 → F14 → F1, F4, F5, F6 → then the P1 items
+(F2, F3, F7, F8 extensions).
 
 ### F10 — Scheduling and client CRM core (P0) *(new in v0.2)*
 
@@ -240,6 +253,28 @@ F10 → F11 → F12 → F13 → F14 → F1, F4, F5, F6 → then the P1 items (F2
 - Staging: structured events land with the alpha dropout cycle (§3.4). The free-text per-job
   thread is MVP P0. AI assist (drafted replies, translations, inbound "can't come" detection) is
   P1 and merges with F7's unified view.
+
+### F15 — Bilingual product experience (P0) *(new in v0.5; required from alpha)*
+
+- Every first-party surface shipped in a release is complete in Australian English (`en-AU`)
+  and Brazilian Portuguese (`pt-BR`). For alpha this applies to both `apps/crm` and
+  `apps/cleaner`, including authentication, navigation, onboarding and pool joining, rosters,
+  jobs, forms, validation, errors, status labels, loading and empty states, invites, and
+  system-generated in-app and push notifications.
+- Before sign-in, the product selects between the two supported languages from the device
+  preference and provides an explicit language control. A user's explicit choice takes
+  precedence, remains available after sign-in, and persists across sessions.
+- The product name is **The Clean Crew** in both languages and is never translated. Product and
+  domain terminology stays consistent within each language; Brazilian Portuguese copy is
+  written naturally rather than as a literal rendering of the Australian English catalogue.
+- Language affects interface copy and human-readable formatting only. Jobs, pay, schedules,
+  notification types, and other domain records remain language-neutral; currency remains AUD
+  and schedule computation remains in `Australia/Brisbane` in both languages.
+- User-authored content — including company, client and site names, addresses, access
+  instructions, job notes, and field-event notes — remains exactly as written. Alpha does not
+  automatically translate it. Structured product labels around that content are bilingual.
+- A missing `pt-BR` message on a released surface is an alpha defect. A safe `en-AU` runtime
+  fallback may prevent a blank or broken interface, but it does not satisfy release acceptance.
 
 ### F1 — Company onboarding and job posting (P0)
 
@@ -418,7 +453,8 @@ Three release stages structure v1 delivery:
 
 - **Alpha** — internal test. A minimal CRM and cleaner app run entirely on the monorepo apps;
   the co-founders' prototype is reference material only (decision 0002). Invite-only, run with
-  the founding team's own companies and their real cleaners. A strict subset of P0.
+  the founding team's own companies and their real cleaners. Every shipped surface supports
+  `en-AU` and `pt-BR` (F15). A strict subset of P0.
 - **MVP** — public Gold Coast launch; all P0.
 - **P1** — fast follow.
 
@@ -824,6 +860,7 @@ that journey's stage. A feature is "done" when every journey it touches works en
 | F12 — WhatsApp share-link bridge | CA-7, CL-7, CA-6 (fallback), OP-3 |
 | F13 — Urgent backfill | CA-6, CL-6, CL-5, CL-11 |
 | F14 — Job chat & field events | CL-11, CA-13, CA-6 (can't-attend trigger), OP-3 |
+| F15 — Bilingual product experience | Every journey at its shipped stage; `en-AU` and `pt-BR` from alpha |
 
 ### 3.4 Alpha release definition (internal test)
 
@@ -852,6 +889,9 @@ entirely on the monorepo apps; the prototype is reference material, never runtim
    lost & found with photo; the admin extra charge, which updates the ledger entry and notifies
    the cleaner. The free-text thread stays MVP.
 8. The cleaner weekly agenda: assignments across joined pools in one week view (F11, v0.4).
+9. Complete `en-AU` and `pt-BR` support across both alpha apps, including the pre-auth language
+   choice, persisted preference, validation and error states, invites, and in-app and push
+   notifications (F15).
 
 **Kept at prototype parity.** These capabilities are re-housed in the monorepo apps with visual
 fidelity preserved — not shared code: auth and roles, pools and invite codes, job creation and
@@ -962,6 +1002,10 @@ picker and a per-group toggle — the Level-2 approval surface for F2 (P1).
   admin can miss.
 - **Mobile-first for cleaners, WhatsApp-native.** Registration must never require an app
   download. Each step survives interruption. The PWA is an upgrade, not a gate.
+- **Bilingual from the first contact.** Every shipped journey is complete in `en-AU` and
+  `pt-BR`, beginning with the invite, login, and join surfaces. Language can be changed without
+  losing the current task. The Clean Crew name and user-authored operational content remain
+  untranslated (F15).
 - **The admin sees structured signal, not noise.** Rosters, digests, and pipelines — never raw
   group threads.
 - **Agent transparency.** Bots identify themselves as AI assistants of the platform on first
@@ -989,6 +1033,13 @@ picker and a per-group toggle — the Level-2 approval surface for F2 (P1).
   mobile-focused CRM surface is on the roadmap beyond Phase A. It centres on the fundamentals:
   messages with the roster and pool (F7/F14), the view and confirmation of schedules, and the
   primary notification surface for the admin.
+- **Internationalisation boundary**: `en-AU` and `pt-BR` are supported across both monorepo apps
+  from alpha (F15). The selected language is an explicit user preference, with a device-derived
+  choice before authentication. First-party copy and system-generated notifications are
+  localised at the presentation or delivery boundary; domain state, monetary values, schedule
+  timestamps, and notification types remain language-neutral. AUD and `Australia/Brisbane` are
+  explicit operating rules, not inferred from the display language. User-authored operational
+  content is not automatically translated in alpha.
 - **API + core services**: a single backend (modular monolith) with Postgres. Core entities:
   `Company`, `Client`, `Site`, `Job`, `RecurringAssignment`, `Vacancy`, `Pool`, `PoolMembership`,
   `Candidate`, `Conversation`, `VettingCheck`, `Reference`, `Trial`, `Placement`, `PayRecord`,
@@ -1257,8 +1308,8 @@ here, not linked.
 5. Reference checks: fully bot-run or human-assisted (the cost / trust trade-off)?
 6. Candidate-side value adds worth v1 effort (for example, a profile the candidate can share
    outside the platform)?
-7. Name/brand ("The Clean Crew" or new), and whether F2 posts under the platform's identity or the
-   company's in groups.
+7. **F2 sender identity**: whether group posts use **The Clean Crew** or the cleaning company's
+   identity. The product name is resolved as **The Clean Crew** and is never translated.
 8. Legal review scope and budget — terms, privacy, vetting consent flows, **dispatch + pay
    ledger against labour-hire "arranging" (QLD)**, client-address privacy — before public
    launch.

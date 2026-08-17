@@ -13,8 +13,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useRef, useState } from "react";
 
 import {
@@ -40,6 +39,9 @@ import {
   removeCleaner,
 } from "@/features/preferred-cleaners/order";
 import type { RecurringAssignmentsBySite } from "@/features/recurring-assignments/types";
+import type { AppLocale } from "@/i18n/config";
+import { Link, useRouter } from "@/i18n/navigation";
+import { localiseMutationResult } from "@/i18n/user-message";
 import { reloadCurrentPage } from "@/lib/reload-page";
 
 import { SiteRecurringAssignments } from "./site-recurring-assignments";
@@ -79,6 +81,8 @@ export function ClientDetailWorkspace({
   recurringAssignmentsBySite,
   services,
 }: ClientDetailWorkspaceProps) {
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("ClientDetail");
   const router = useRouter();
   const clientDialog = useRef<HTMLDialogElement>(null);
   const siteDialog = useRef<HTMLDialogElement>(null);
@@ -110,7 +114,10 @@ export function ClientDetailWorkspace({
     event.preventDefault();
     setBusy(true);
     try {
-      const result = await updateClient(new FormData(event.currentTarget));
+      const result = localiseMutationResult(
+        await updateClient(new FormData(event.currentTarget)),
+        locale,
+      );
       setClientResult(result);
       if (result.ok) {
         clientDialog.current?.close();
@@ -120,7 +127,7 @@ export function ClientDetailWorkspace({
       setClientResult({
         ok: false,
         fieldErrors: {},
-        formError: "The client could not be saved. Please try again.",
+        formError: t("clientSaveFailed"),
       });
     } finally {
       setBusy(false);
@@ -131,7 +138,10 @@ export function ClientDetailWorkspace({
     event.preventDefault();
     setBusy(true);
     try {
-      const result = await updateSite(new FormData(event.currentTarget));
+      const result = localiseMutationResult(
+        await updateSite(new FormData(event.currentTarget)),
+        locale,
+      );
       setSiteResult(result);
       if (result.ok) {
         siteDialog.current?.close();
@@ -141,7 +151,7 @@ export function ClientDetailWorkspace({
       setSiteResult({
         ok: false,
         fieldErrors: {},
-        formError: "The site could not be saved. Please try again.",
+        formError: t("siteSaveFailed"),
       });
     } finally {
       setBusy(false);
@@ -158,7 +168,7 @@ export function ClientDetailWorkspace({
     setPreferenceErrors((current) => ({ ...current, [site.id]: "" }));
     setPreferenceStatuses((current) => ({
       ...current,
-      [site.id]: "Saving preferred cleaner order…",
+      [site.id]: t("savingOrder"),
     }));
     setSavingPreferenceSiteId(site.id);
     let reconcilingCanonicalOrder = false;
@@ -168,11 +178,11 @@ export function ClientDetailWorkspace({
       setPreferenceErrors((current) => ({
         ...current,
         [site.id]:
-          "The save could not be confirmed. The page is refreshing to check the saved order.",
+          t("saveNotConfirmed"),
       }));
       setPreferenceStatuses((current) => ({
         ...current,
-        [site.id]: "Refreshing the saved preferred cleaner order…",
+        [site.id]: t("refreshingOrder"),
       }));
       reloadCurrentPage();
     }
@@ -190,7 +200,7 @@ export function ClientDetailWorkspace({
       setSelectedCleaners((current) => ({ ...current, [site.id]: "" }));
       setPreferenceStatuses((current) => ({
         ...current,
-        [site.id]: "Preferred cleaner order saved.",
+        [site.id]: t("orderSaved"),
       }));
       router.refresh();
     } catch {
@@ -231,31 +241,31 @@ export function ClientDetailWorkspace({
 
   return (
     <>
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href="/clients">Clients</Link>
+      <nav className="breadcrumb" aria-label={t("breadcrumb")}>
+        <Link href="/clients">{t("clients")}</Link>
         <span aria-hidden="true">/</span>
         <span>{client.name}</span>
       </nav>
 
       <header className="client-detail-header">
         <div>
-          <p className="eyebrow">Client record</p>
+          <p className="eyebrow">{t("clientRecord")}</p>
           <h1 className="page-heading">{client.name}</h1>
           <p className="client-detail-contact">
-            {client.contactName ?? "No contact recorded"}
+            {client.contactName ?? t("noContact")}
             {client.phone ? ` · ${client.phone}` : ""}
           </p>
           <p className="client-detail-count">
-            {client.sites.length} {client.sites.length === 1 ? "site" : "sites"}
+            {t("siteCount", { count: client.sites.length })}
           </p>
         </div>
         <button className="button button--secondary" onClick={openClientDialog} type="button">
           <Pencil aria-hidden="true" size={17} />
-          Edit client
+          {t("editClient")}
         </button>
       </header>
 
-      <section className="site-detail-list" aria-label="Client sites">
+      <section className="site-detail-list" aria-label={t("clientSites")}>
         {client.sites.map((site, index) => {
           const preferred = preferredBySite[site.id] ?? site.preferredCleaners;
           const availableCleaners = poolCleaners.filter(
@@ -274,7 +284,7 @@ export function ClientDetailWorkspace({
             <summary>
               <span>
                 <strong>{site.name}</strong>
-                <small>{formatSiteDefaults(site)}</small>
+                <small>{formatSiteDefaults(site, locale)}</small>
               </span>
               <ChevronDown aria-hidden="true" className="details-chevron" size={20} />
             </summary>
@@ -285,14 +295,14 @@ export function ClientDetailWorkspace({
                   <p>{site.address}, {site.suburb}</p>
                   <span className="privacy-caption">
                     <ShieldCheck aria-hidden="true" size={15} />
-                    Address and access notes are shown to a cleaner only after assignment
+                    {t("privacy")}
                   </span>
                 </div>
               </div>
 
               <div className="site-notes-block">
-                <span>Access notes</span>
-                <p>{site.accessNotes ?? "None recorded"}</p>
+                <span>{t("accessNotes")}</span>
+                <p>{site.accessNotes ?? t("noneRecorded")}</p>
               </div>
 
               <section
@@ -301,14 +311,14 @@ export function ClientDetailWorkspace({
               >
                 <div className="preferred-cleaners-heading">
                   <div>
-                    <h3>Preferred cleaners</h3>
-                    <p>Captured now; roster ordering uses this list in a later Milestone.</p>
+                    <h3>{t("preferredCleaners")}</h3>
+                    <p>{t("preferredDescription")}</p>
                   </div>
                 </div>
 
                 {preferred.length ? (
                   <ol
-                    aria-label={`Preferred cleaners for ${site.name}`}
+                    aria-label={t("preferredForSite", { siteName: site.name })}
                     className="preferred-cleaner-list"
                   >
                     {preferred.map((cleaner, cleanerIndex) => (
@@ -317,7 +327,7 @@ export function ClientDetailWorkspace({
                         <strong>{cleaner.name}</strong>
                         <span className="preference-actions">
                           <button
-                            aria-label={`Move ${cleaner.name} up`}
+                            aria-label={t("moveUp", { cleanerName: cleaner.name })}
                             className="icon-button icon-button--small"
                             disabled={savingPreferences || cleanerIndex === 0}
                             onClick={() => movePreferred(site, preferred, cleaner.id, "up")}
@@ -326,7 +336,7 @@ export function ClientDetailWorkspace({
                             <ArrowUp aria-hidden="true" size={16} />
                           </button>
                           <button
-                            aria-label={`Move ${cleaner.name} down`}
+                            aria-label={t("moveDown", { cleanerName: cleaner.name })}
                             className="icon-button icon-button--small"
                             disabled={savingPreferences || cleanerIndex === preferred.length - 1}
                             onClick={() => movePreferred(site, preferred, cleaner.id, "down")}
@@ -335,7 +345,7 @@ export function ClientDetailWorkspace({
                             <ArrowDown aria-hidden="true" size={16} />
                           </button>
                           <button
-                            aria-label={`Remove ${cleaner.name}`}
+                            aria-label={t("remove", { cleanerName: cleaner.name })}
                             className="icon-button icon-button--small"
                             disabled={savingPreferences}
                             onClick={() =>
@@ -360,12 +370,12 @@ export function ClientDetailWorkspace({
                     ))}
                   </ol>
                 ) : (
-                  <p className="preferred-empty">No preferred cleaners recorded.</p>
+                  <p className="preferred-empty">{t("noPreferred")}</p>
                 )}
 
                 <div className="preferred-add-row">
                   <div className="field">
-                    <label htmlFor={`preferred-cleaner-${site.id}`}>Preferred cleaner</label>
+                    <label htmlFor={`preferred-cleaner-${site.id}`}>{t("preferredCleaner")}</label>
                     <select
                       disabled={!availableCleaners.length || savingPreferences}
                       id={`preferred-cleaner-${site.id}`}
@@ -381,7 +391,7 @@ export function ClientDetailWorkspace({
                       value={selectedCleaners[site.id] ?? ""}
                     >
                       <option value="">
-                        {availableCleaners.length ? "Choose from cleaner pool" : "All pool cleaners added"}
+                        {availableCleaners.length ? t("chooseFromPool") : t("allAdded")}
                       </option>
                       {availableCleaners.map((cleaner) => (
                         <option key={cleaner.id} value={cleaner.id}>{cleaner.name}</option>
@@ -389,14 +399,14 @@ export function ClientDetailWorkspace({
                     </select>
                   </div>
                   <button
-                    aria-label={`Add preferred cleaner to ${site.name}`}
+                    aria-label={t("addPreferred", { siteName: site.name })}
                     className="button button--secondary button--small"
                     disabled={savingPreferences || !selectedCleaners[site.id]}
                     onClick={() => addPreferredCleaner(site, preferred)}
                     type="button"
                   >
                     <UserPlus aria-hidden="true" size={16} />
-                    Add
+                    {t("add")}
                   </button>
                 </div>
                 {preferenceErrors[site.id] ? (
@@ -413,21 +423,23 @@ export function ClientDetailWorkspace({
 
               <dl className="defaults-grid">
                 <div>
-                  <dt>Default service</dt>
-                  <dd>{site.defaultService?.name ?? "Not set"}</dd>
+                  <dt>{t("defaultService")}</dt>
+                  <dd>{site.defaultService?.name ?? t("notSet")}</dd>
                 </div>
                 <div>
-                  <dt><Clock3 aria-hidden="true" size={16} /> Duration</dt>
+                  <dt><Clock3 aria-hidden="true" size={16} /> {t("duration")}</dt>
                   <dd className="tabular-numerals">
                     {site.defaultDurationMinutes === null
-                      ? "Not set"
-                      : formatDuration(site.defaultDurationMinutes)}
+                      ? t("notSet")
+                      : formatDuration(site.defaultDurationMinutes, locale)}
                   </dd>
                 </div>
                 <div>
-                  <dt><DollarSign aria-hidden="true" size={16} /> Rate (AUD)</dt>
+                  <dt><DollarSign aria-hidden="true" size={16} /> {t("rate")}</dt>
                   <dd className="tabular-numerals">
-                    {site.defaultRateCents === null ? "Not set" : formatAud(site.defaultRateCents)}
+                    {site.defaultRateCents === null
+                      ? t("notSet")
+                      : formatAud(site.defaultRateCents, locale)}
                   </dd>
                 </div>
               </dl>
@@ -445,13 +457,13 @@ export function ClientDetailWorkspace({
 
               <div className="site-detail-actions">
                 <button
-                  aria-label={`Edit ${site.name}`}
+                  aria-label={t("editNamed", { name: site.name })}
                   className="button button--secondary button--small"
                   onClick={() => openSiteDialog(site)}
                   type="button"
                 >
                   <Pencil aria-hidden="true" size={16} />
-                  Edit site
+                  {t("editSite")}
                 </button>
               </div>
             </div>
@@ -465,39 +477,39 @@ export function ClientDetailWorkspace({
           <input name="clientId" type="hidden" value={client.id} />
           <header className="dialog-header">
             <div>
-              <p className="record-kicker">Client record</p>
-              <h2 id="edit-client-title">Edit {client.name}</h2>
+              <p className="record-kicker">{t("clientRecord")}</p>
+              <h2 id="edit-client-title">{t("editNamed", { name: client.name })}</h2>
             </div>
-            <button aria-label="Close edit client" className="icon-button" onClick={() => clientDialog.current?.close()} type="button">
+            <button aria-label={t("closeEditClient")} className="icon-button" onClick={() => clientDialog.current?.close()} type="button">
               <X aria-hidden="true" size={19} />
             </button>
           </header>
           <div className="field">
-            <label htmlFor="edit-client-name">Client name</label>
+            <label htmlFor="edit-client-name">{t("clientName")}</label>
             <input defaultValue={client.name} id="edit-client-name" name="name" type="text" />
             <FieldError id="edit-client-name-error" message={clientResult.fieldErrors.name} />
           </div>
           <div className="dialog-columns">
             <div className="field">
-              <label htmlFor="edit-client-contact">Contact person</label>
+              <label htmlFor="edit-client-contact">{t("contactPerson")}</label>
               <input defaultValue={client.contactName ?? ""} id="edit-client-contact" name="contactName" type="text" />
               <FieldError id="edit-client-contact-error" message={clientResult.fieldErrors.contactName} />
             </div>
             <div className="field">
-              <label htmlFor="edit-client-phone">Phone</label>
+              <label htmlFor="edit-client-phone">{t("phone")}</label>
               <input defaultValue={client.phone ?? ""} id="edit-client-phone" name="phone" type="tel" />
               <FieldError id="edit-client-phone-error" message={clientResult.fieldErrors.phone} />
             </div>
           </div>
           <div className="field">
-            <label htmlFor="edit-client-notes">Internal notes</label>
+            <label htmlFor="edit-client-notes">{t("internalNotes")}</label>
             <textarea defaultValue={client.notes ?? ""} id="edit-client-notes" name="notes" rows={3} />
             <FieldError id="edit-client-notes-error" message={clientResult.fieldErrors.notes} />
           </div>
           {clientResult.formError ? <p className="form-error" role="alert">{clientResult.formError}</p> : null}
           <footer className="dialog-actions">
-            <button className="button button--secondary" onClick={() => clientDialog.current?.close()} type="button">Cancel</button>
-            <button className="button" disabled={busy} type="submit">{busy ? "Saving…" : "Save client"}</button>
+            <button className="button button--secondary" onClick={() => clientDialog.current?.close()} type="button">{t("cancel")}</button>
+            <button className="button" disabled={busy} type="submit">{busy ? t("saving") : t("saveClient")}</button>
           </footer>
         </form>
       </dialog>
@@ -508,59 +520,59 @@ export function ClientDetailWorkspace({
           <input name="siteId" type="hidden" value={siteTarget?.id ?? ""} />
           <header className="dialog-header">
             <div>
-              <p className="record-kicker">Site defaults</p>
-              <h2 id="edit-site-title">Edit {siteTarget?.name ?? "site"}</h2>
+              <p className="record-kicker">{t("siteDefaults")}</p>
+              <h2 id="edit-site-title">{t("editNamed", { name: siteTarget?.name ?? t("editSite") })}</h2>
             </div>
-            <button aria-label="Close edit site" className="icon-button" onClick={() => siteDialog.current?.close()} type="button">
+            <button aria-label={t("closeEditSite")} className="icon-button" onClick={() => siteDialog.current?.close()} type="button">
               <X aria-hidden="true" size={19} />
             </button>
           </header>
           <div className="dialog-columns">
             <div className="field">
-              <label htmlFor="edit-site-name">Site name</label>
+              <label htmlFor="edit-site-name">{t("siteName")}</label>
               <input defaultValue={siteTarget?.name ?? ""} id="edit-site-name" name="name" type="text" />
               <FieldError id="edit-site-name-error" message={siteResult.fieldErrors.name} />
             </div>
             <div className="field">
-              <label htmlFor="edit-site-suburb">Suburb</label>
+              <label htmlFor="edit-site-suburb">{t("suburb")}</label>
               <input defaultValue={siteTarget?.suburb ?? ""} id="edit-site-suburb" name="suburb" type="text" />
               <FieldError id="edit-site-suburb-error" message={siteResult.fieldErrors.suburb} />
             </div>
           </div>
           <div className="field">
-            <label htmlFor="edit-site-address">Street address</label>
+            <label htmlFor="edit-site-address">{t("streetAddress")}</label>
             <input defaultValue={siteTarget?.address ?? ""} id="edit-site-address" name="address" type="text" />
             <FieldError id="edit-site-address-error" message={siteResult.fieldErrors.address} />
           </div>
           <div className="field">
-            <label htmlFor="edit-site-access">Access notes</label>
+            <label htmlFor="edit-site-access">{t("accessNotes")}</label>
             <textarea defaultValue={siteTarget?.accessNotes ?? ""} id="edit-site-access" name="accessNotes" rows={3} />
             <FieldError id="edit-site-access-error" message={siteResult.fieldErrors.accessNotes} />
           </div>
           <div className="defaults-form-grid">
             <div className="field">
-              <label htmlFor="edit-site-service">Default service</label>
+              <label htmlFor="edit-site-service">{t("defaultService")}</label>
               <select defaultValue={siteTarget?.defaultService?.id ?? ""} id="edit-site-service" name="defaultServiceId">
-                <option disabled value="">Choose service</option>
+                <option disabled value="">{t("chooseService")}</option>
                 {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
               </select>
               <FieldError id="edit-site-service-error" message={siteResult.fieldErrors.defaultServiceId} />
             </div>
             <div className="field">
-              <label htmlFor="edit-site-duration">Duration (hours)</label>
+              <label htmlFor="edit-site-duration">{t("durationHours")}</label>
               <input defaultValue={siteTarget?.defaultDurationMinutes ? siteTarget.defaultDurationMinutes / 60 : ""} id="edit-site-duration" min="0.25" name="durationHours" step="0.25" type="number" />
               <FieldError id="edit-site-duration-error" message={siteResult.fieldErrors.durationHours} />
             </div>
             <div className="field">
-              <label htmlFor="edit-site-rate">Rate (AUD)</label>
+              <label htmlFor="edit-site-rate">{t("rate")}</label>
               <input defaultValue={siteTarget?.defaultRateCents ? (siteTarget.defaultRateCents / 100).toFixed(2) : ""} id="edit-site-rate" inputMode="decimal" min="0.01" name="rateAud" step="0.01" type="number" />
               <FieldError id="edit-site-rate-error" message={siteResult.fieldErrors.rateAud} />
             </div>
           </div>
           {siteResult.formError ? <p className="form-error" role="alert">{siteResult.formError}</p> : null}
           <footer className="dialog-actions">
-            <button className="button button--secondary" onClick={() => siteDialog.current?.close()} type="button">Cancel</button>
-            <button className="button" disabled={busy} type="submit">{busy ? "Saving…" : "Save site"}</button>
+            <button className="button button--secondary" onClick={() => siteDialog.current?.close()} type="button">{t("cancel")}</button>
+            <button className="button" disabled={busy} type="submit">{busy ? t("saving") : t("saveSite")}</button>
           </footer>
         </form>
       </dialog>

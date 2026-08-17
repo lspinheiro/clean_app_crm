@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { ClientDetailWorkspace } from "./client-detail-workspace";
@@ -9,13 +11,21 @@ import type {
   ServiceOption,
 } from "@/features/clients/types";
 import type { RecurringAssignmentsBySite } from "@/features/recurring-assignments/types";
+import { getServiceLabel } from "@/i18n/service-label";
 import { requireCompanyAdmin } from "@/lib/auth/session";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: t("clientDetail") };
+}
 
 type ClientDetailPageProps = {
   params: Promise<{ clientId: string }>;
 };
 
 export default async function ClientDetailPage({ params }: ClientDetailPageProps) {
+  const common = await getTranslations("Common");
+  const serviceT = await getTranslations("Services");
   const { clientId } = await params;
   if (!z.string().uuid().safeParse(clientId).success) notFound();
 
@@ -40,7 +50,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
       .order("name"),
     supabase
       .from("service_catalogue")
-      .select("id, name")
+      .select("id, name, slug")
       .eq("active", true)
       .order("sort_order"),
     supabase
@@ -102,7 +112,10 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
     : { data: [], error: null };
   if (namedCleanerError) throw namedCleanerError;
 
-  const services: ServiceOption[] = serviceRows;
+  const services: ServiceOption[] = serviceRows.map((service) => ({
+    id: service.id,
+    name: getServiceLabel(service, serviceT),
+  }));
   const poolCleaners: PoolCleaner[] = profileRows.map((profile) => ({
     id: profile.id,
     name: profile.full_name,
@@ -117,7 +130,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
           siteId: rule.site_id,
           service: services.find((service) => service.id === rule.service_id) ?? {
             id: rule.service_id,
-            name: "Unavailable service",
+            name: common("unknownService"),
           },
           frequency: rule.frequency,
           weekday: rule.weekday,
@@ -133,7 +146,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
               id: named.cleaner_id,
               name:
                 poolCleaners.find((cleaner) => cleaner.id === named.cleaner_id)?.name ??
-                "Unavailable cleaner",
+                common("unknownCleaner"),
               slotNumber: named.slot_number,
             })),
         })),
@@ -162,7 +175,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
           id: preference.cleaner_id,
           name:
             poolCleaners.find((cleaner) => cleaner.id === preference.cleaner_id)?.name ??
-            "Unavailable cleaner",
+            common("unknownCleaner"),
           rank: preference.rank,
         })),
     })),

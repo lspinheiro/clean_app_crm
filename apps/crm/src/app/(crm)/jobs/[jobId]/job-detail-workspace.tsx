@@ -1,8 +1,7 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
 import { assignJobSlot, cancelJob } from "@/app/actions/jobs";
@@ -19,13 +18,22 @@ import type {
   JobPoolCandidate,
   JobSlot,
 } from "@/features/jobs/types";
+import type { AppLocale } from "@/i18n/config";
+import { Link, useRouter } from "@/i18n/navigation";
+import { localiseUserMessage } from "@/i18n/user-message";
 
-const applicationLabels: Record<JobApplicationStatus, string> = {
-  applied: "Applied",
-  assigned: "Assigned",
-  not_selected: "Not selected",
-  withdrawn: "Withdrawn",
-};
+type ApplicationLabelKey =
+  | "applicationApplied"
+  | "applicationAssigned"
+  | "applicationNotSelected"
+  | "applicationWithdrawn";
+
+const applicationLabelKeys = {
+  applied: "applicationApplied",
+  assigned: "applicationAssigned",
+  not_selected: "applicationNotSelected",
+  withdrawn: "applicationWithdrawn",
+} as const satisfies Record<JobApplicationStatus, ApplicationLabelKey>;
 
 const cancellableStatuses: JobDetail["status"][] = [
   "draft",
@@ -35,36 +43,57 @@ const cancellableStatuses: JobDetail["status"][] = [
   "in_progress",
 ];
 
-function candidateLabel(candidate: JobPoolCandidate) {
+type HelperMessageKey =
+  | "chooseApplicant"
+  | "noActiveAssignment"
+  | "preferredCandidate"
+  | "previouslyAssigned"
+  | "slotAssigned"
+  | "slotClosed"
+  | "slotOpen";
+
+type Translator = (
+  key: HelperMessageKey,
+  values?: Record<string, string | number>,
+) => string;
+
+function candidateLabel(candidate: JobPoolCandidate, t: Translator) {
   return candidate.preferredRank === null
     ? candidate.cleanerName
-    : `${candidate.cleanerName} — preferred #${candidate.preferredRank}`;
+    : t("preferredCandidate", {
+        cleanerName: candidate.cleanerName,
+        rank: candidate.preferredRank,
+      });
 }
 
 function assertNever(value: never): never {
   throw new Error(`Unexpected job slot state: ${JSON.stringify(value)}`);
 }
 
-function slotPresentation(slot: JobSlot) {
+function slotPresentation(slot: JobSlot, t: Translator) {
   switch (slot.state) {
     case "assigned":
       return {
-        label: "Assigned",
+        label: t("slotAssigned"),
         detail: slot.assignment.cleanerName,
       };
     case "open":
       return {
-        label: "Open",
+        label: t("slotOpen"),
         detail: slot.previousAssignment
-          ? `Previously assigned to ${slot.previousAssignment.cleanerName}`
-          : "Choose an applicant or pool cleaner",
+          ? t("previouslyAssigned", {
+              cleanerName: slot.previousAssignment.cleanerName,
+            })
+          : t("chooseApplicant"),
       };
     case "closed":
       return {
-        label: "Closed",
+        label: t("slotClosed"),
         detail: slot.previousAssignment
-          ? `Previously assigned to ${slot.previousAssignment.cleanerName}`
-          : "No active assignment",
+          ? t("previouslyAssigned", {
+              cleanerName: slot.previousAssignment.cleanerName,
+            })
+          : t("noActiveAssignment"),
       };
     default:
       return assertNever(slot);
@@ -97,6 +126,8 @@ function slotLifecycleKey(jobId: string, slot: JobSlot) {
 }
 
 export function JobDetailWorkspace({ job }: { job: JobDetail }) {
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("Jobs");
   const router = useRouter();
   const cancelDialog = useRef<HTMLDialogElement>(null);
   const [selectedBySlot, setSelectedBySlot] = useState<Record<string, string>>({});
@@ -154,13 +185,16 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
     try {
       const result = await assignJobSlot(formData);
       if (!result.ok) {
-        setSlotError({ slotKey, message: result.formError });
+        setSlotError({
+          slotKey,
+          message: localiseUserMessage(result.formError, locale) ?? result.formError,
+        });
       }
     } catch {
       setSlotError({
         slotKey,
         message:
-          "The assignment could not be confirmed. Review the refreshed crew slots before trying again.",
+          t("assignmentNotConfirmed"),
       });
     } finally {
       router.refresh();
@@ -178,11 +212,15 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
     setCancelError(null);
     try {
       const result = await cancelJob(job.id);
-      if (!result.ok) setCancelError(result.formError);
+      if (!result.ok) {
+        setCancelError(
+          localiseUserMessage(result.formError, locale) ?? result.formError,
+        );
+      }
       cancelDialog.current?.close();
     } catch {
       setCancelError(
-        "The cancellation could not be confirmed. Review the refreshed job before trying again.",
+        t("cancellationNotConfirmed"),
       );
       cancelDialog.current?.close();
     } finally {
@@ -195,16 +233,16 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
     <>
       <Link className="back-link" href="/jobs">
         <ArrowLeft aria-hidden="true" size={18} />
-        Back to jobs
+        {t("back")}
       </Link>
 
       <header className="job-detail-header">
         <div>
-          <p className="eyebrow">Job detail</p>
+          <p className="eyebrow">{t("detailEyebrow")}</p>
           <div className="job-detail-title-line">
             <h1 className="page-heading">{job.site.name}</h1>
             <span className={`status-chip status-chip--${job.status}`}>
-              {formatJobStatus(job.status)}
+              {formatJobStatus(job.status, locale)}
             </span>
           </div>
           <p className="job-detail-context">
@@ -219,7 +257,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
             onClick={() => cancelDialog.current?.showModal()}
             type="button"
           >
-            Cancel job
+            {t("cancelJob")}
           </button>
         ) : null}
       </header>
@@ -232,58 +270,58 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
 
       <section aria-labelledby="job-overview-heading" className="job-detail-section">
         <div className="job-detail-section__heading">
-          <p className="record-kicker">Overview</p>
-          <h2 id="job-overview-heading">Schedule and site</h2>
+          <p className="record-kicker">{t("overview")}</p>
+          <h2 id="job-overview-heading">{t("scheduleAndSite")}</h2>
         </div>
         <dl className="job-detail-facts">
           <div>
-            <dt>Date</dt>
+            <dt>{t("date")}</dt>
             <dd>
               <time dateTime={job.scheduledStart}>
-                {formatJobDate(job.scheduledStart)}
+                {formatJobDate(job.scheduledStart, locale)}
               </time>
             </dd>
           </div>
           <div>
-            <dt>Start</dt>
-            <dd className="tabular-numerals">{formatJobTime(job.scheduledStart)}</dd>
+            <dt>{t("start")}</dt>
+            <dd className="tabular-numerals">{formatJobTime(job.scheduledStart, locale)}</dd>
           </div>
           <div>
-            <dt>Duration</dt>
-            <dd className="tabular-numerals">{formatJobDuration(job.durationMinutes)}</dd>
+            <dt>{t("duration")}</dt>
+            <dd className="tabular-numerals">{formatJobDuration(job.durationMinutes, locale)}</dd>
           </div>
           <div className="job-detail-fact--wide">
-            <dt>Site address</dt>
+            <dt>{t("siteAddress")}</dt>
             <dd>{job.site.address} · {job.site.suburb}</dd>
           </div>
           <div className="job-detail-fact--wide">
-            <dt>Access notes</dt>
-            <dd>{job.site.accessNotes || "No access notes recorded."}</dd>
+            <dt>{t("accessNotes")}</dt>
+            <dd>{job.site.accessNotes || t("noAccessNotes")}</dd>
           </div>
         </dl>
       </section>
 
       <section aria-labelledby="job-commercial-heading" className="job-detail-section">
         <div className="job-detail-section__heading">
-          <p className="record-kicker">Admin only</p>
-          <h2 id="job-commercial-heading">Commercial detail</h2>
+          <p className="record-kicker">{t("adminOnly")}</p>
+          <h2 id="job-commercial-heading">{t("commercialDetail")}</h2>
         </div>
         <dl className="job-commercial-facts">
           <div>
-            <dt>Cleaner pay per slot</dt>
-            <dd className="tabular-numerals">{formatCleanerPay(job.cleanerPayCents)}</dd>
+            <dt>{t("cleanerPayPerSlotLabel")}</dt>
+            <dd className="tabular-numerals">{formatCleanerPay(job.cleanerPayCents, locale)}</dd>
           </div>
           <div>
-            <dt>Client charge</dt>
+            <dt>{t("clientChargeLabel")}</dt>
             <dd className="tabular-numerals">
               {job.clientChargeCents === null
-                ? "Not recorded"
-                : formatCleanerPay(job.clientChargeCents)}
+                ? t("notRecorded")
+                : formatCleanerPay(job.clientChargeCents, locale)}
             </dd>
           </div>
           <div className="job-detail-fact--wide">
-            <dt>Internal notes</dt>
-            <dd>{job.notes || "No internal notes recorded."}</dd>
+            <dt>{t("internalNotesLabel")}</dt>
+            <dd>{job.notes || t("noInternalNotes")}</dd>
           </div>
         </dl>
       </section>
@@ -293,20 +331,23 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
         className="job-detail-section job-crew-section"
       >
         <div className="job-detail-section__heading">
-          <p className="record-kicker">Crew</p>
-          <h2 id="job-crew-heading">Crew slots</h2>
-          <p>{job.slots.filter((slot) => slot.state === "assigned").length}/{job.crewSize} assigned</p>
+          <p className="record-kicker">{t("crew")}</p>
+          <h2 id="job-crew-heading">{t("crewSlots")}</h2>
+          <p>{t("assignedCount", {
+            assigned: job.slots.filter((slot) => slot.state === "assigned").length,
+            total: job.crewSize,
+          })}</p>
         </div>
-        <div aria-label="Crew slots" className="job-slot-list" role="region">
+        <div aria-label={t("crewSlots")} className="job-slot-list" role="region">
           {job.slots.map((slot) => {
             const slotKey = slotLifecycleKey(job.id, slot);
             const selectedCleanerId = selectedBySlot[slotKey] ?? "";
             const selectedCleaner = candidatesById.get(selectedCleanerId);
             const showAssignment = canAssign && slot.state === "open";
-            const presentation = slotPresentation(slot);
+            const presentation = slotPresentation(slot, t);
             return (
               <article
-                aria-label={`Crew slot ${slot.slotNumber}`}
+                aria-label={t("crewSlot", { slot: slot.slotNumber })}
                 className="job-slot-row"
                 key={slotKey}
               >
@@ -325,7 +366,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
                     <input name="jobId" type="hidden" value={job.id} />
                     <input name="slotNumber" type="hidden" value={slot.slotNumber} />
                     <label htmlFor={`slot-${slot.slotNumber}-cleaner`}>
-                      Cleaner for slot {slot.slotNumber}
+                      {t("cleanerForSlot", { slot: slot.slotNumber })}
                     </label>
                     <select
                       id={`slot-${slot.slotNumber}-cleaner`}
@@ -338,21 +379,21 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
                       }
                       value={selectedCleanerId}
                     >
-                      <option value="">Choose a cleaner</option>
+                      <option value="">{t("chooseCleaner")}</option>
                       {appliedCandidates.length ? (
-                        <optgroup label="Applicants">
+                        <optgroup label={t("applicantsGroup")}>
                           {appliedCandidates.map((candidate) => (
                             <option key={candidate.cleanerId} value={candidate.cleanerId}>
-                              {candidateLabel(candidate)}
+                              {candidateLabel(candidate, t)}
                             </option>
                           ))}
                         </optgroup>
                       ) : null}
                       {directCandidates.length ? (
-                        <optgroup label="Pool members">
+                        <optgroup label={t("poolMembersGroup")}>
                           {directCandidates.map((candidate) => (
                             <option key={candidate.cleanerId} value={candidate.cleanerId}>
-                              {candidateLabel(candidate)}
+                              {candidateLabel(candidate, t)}
                             </option>
                           ))}
                         </optgroup>
@@ -361,19 +402,22 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
                     <button
                       aria-label={
                         selectedCleaner
-                          ? `Assign ${selectedCleaner.cleanerName} to slot ${slot.slotNumber}`
-                          : `Assign cleaner to slot ${slot.slotNumber}`
+                          ? t("assignSelected", {
+                              cleanerName: selectedCleaner.cleanerName,
+                              slot: slot.slotNumber,
+                            })
+                          : t("assignSlot", { slot: slot.slotNumber })
                       }
                       className="button button--small"
                       disabled={!selectedCleaner || busySlot !== null}
                       type="submit"
                     >
-                      {busySlot === slotKey ? "Assigning…" : "Assign"}
+                      {busySlot === slotKey ? t("assigning") : t("assign")}
                     </button>
                   </form>
                 ) : showAssignment ? (
                   <p className="job-slot-empty">
-                    No active pool cleaners are available to assign.
+                    {t("noPoolCandidates")}
                   </p>
                 ) : null}
                 {slotError?.slotKey === slotKey && showAssignment ? (
@@ -389,30 +433,30 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
 
       <section aria-labelledby="job-applicants-heading" className="job-detail-section">
         <div className="job-detail-section__heading">
-          <p className="record-kicker">Pool response</p>
-          <h2 id="job-applicants-heading">Applicants</h2>
-          <p>Site preferences set the order; status text records the outcome.</p>
+          <p className="record-kicker">{t("poolResponse")}</p>
+          <h2 id="job-applicants-heading">{t("applicants")}</h2>
+          <p>{t("applicantsDescription")}</p>
         </div>
         {job.applicants.length ? (
-          <ul aria-label="Job applicants" className="job-applicant-list">
+          <ul aria-label={t("jobApplicants")} className="job-applicant-list">
             {job.applicants.map((applicant) => (
               <li key={applicant.cleanerId}>
                 <div>
                   <strong>{applicant.cleanerName}</strong>
                   {applicant.preferredRank === null ? null : (
                     <span className="preference-label">
-                      Preferred #{applicant.preferredRank}
+                      {t("preferredRank", { rank: applicant.preferredRank })}
                     </span>
                   )}
                 </div>
                 <span className={`application-chip application-chip--${applicant.status}`}>
-                  {applicationLabels[applicant.status]}
+                  {t(applicationLabelKeys[applicant.status])}
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="job-applicants-empty">No applications yet.</p>
+          <p className="job-applicants-empty">{t("noApplications")}</p>
         )}
       </section>
 
@@ -423,12 +467,9 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
       >
         <div className="dialog-form">
           <header className="dialog-header">
-            <p className="record-kicker">Close every open slot</p>
-            <h2 id="cancel-job-title">Cancel this job?</h2>
-            <p>
-              Active assignments will be released, vacancies will close, and affected
-              cleaners will see the cancellation.
-            </p>
+            <p className="record-kicker">{t("closeOpenSlots")}</p>
+            <h2 id="cancel-job-title">{t("cancelQuestion")}</h2>
+            <p>{t("cancelDescription")}</p>
           </header>
           <div className="dialog-actions">
             <button
@@ -437,7 +478,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
               onClick={() => cancelDialog.current?.close()}
               type="button"
             >
-              Keep job
+              {t("keepJob")}
             </button>
             <button
               className="button button--danger-solid"
@@ -445,7 +486,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
               onClick={handleCancel}
               type="button"
             >
-              {cancelling ? "Cancelling…" : "Confirm cancellation"}
+              {cancelling ? t("cancelling") : t("confirmCancellation")}
             </button>
           </div>
         </div>

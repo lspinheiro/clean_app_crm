@@ -1,9 +1,20 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+
 import { ClientsWorkspace } from "./clients-workspace";
 
 import type { ClientWithSites } from "@/features/clients/types";
+import { getServiceLabel } from "@/i18n/service-label";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: t("clients") };
+}
+
 export default async function ClientsPage() {
+  const t = await getTranslations("Clients");
+  const serviceT = await getTranslations("Services");
   const { supabase } = await requireCompanyAdmin();
   const [
     { data: clientRows, error: clientError },
@@ -22,7 +33,7 @@ export default async function ClientsPage() {
         .order("name"),
       supabase
         .from("service_catalogue")
-        .select("id, name")
+        .select("id, name, slug")
         .eq("active", true)
         .order("sort_order"),
     ]);
@@ -46,7 +57,14 @@ export default async function ClientsPage() {
         suburb: site.suburb,
         accessNotes: site.access_notes,
         defaultService:
-          serviceRows.find((service) => service.id === site.default_service_id) ?? null,
+          (() => {
+            const service = serviceRows.find(
+              (candidate) => candidate.id === site.default_service_id,
+            );
+            return service
+              ? { id: service.id, name: getServiceLabel(service, serviceT) }
+              : null;
+          })(),
         defaultDurationMinutes: site.default_duration_minutes,
         defaultRateCents: site.default_rate_cents,
         preferredCleaners: [],
@@ -57,11 +75,9 @@ export default async function ClientsPage() {
     <main className="page-shell">
       <header className="page-header-row clients-page-header">
         <div>
-          <p className="eyebrow">Company records</p>
-          <h1 className="page-heading">Clients &amp; sites</h1>
-          <p className="page-description">
-            Keep every commercial relationship and cleaning location in one operational view.
-          </p>
+          <p className="eyebrow">{t("eyebrow")}</p>
+          <h1 className="page-heading">{t("title")}</h1>
+          <p className="page-description">{t("description")}</p>
         </div>
       </header>
       <ClientsWorkspace clients={clients} />

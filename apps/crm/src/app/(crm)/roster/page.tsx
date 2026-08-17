@@ -1,3 +1,5 @@
+import { getLocale, getTranslations } from "next-intl/server";
+
 import { RosterWeek } from "./roster-week";
 
 import {
@@ -67,7 +69,10 @@ function requireCompleteRows<T>(label: string, result: CountedResult<T>) {
 
 export async function generateMetadata({ searchParams }: RosterPageProps) {
   const { view, week } = await searchParams;
-  return { title: formatRosterTitle(parseRosterWeek(week), parseRosterView(view)) };
+  const locale = await getLocale();
+  return {
+    title: formatRosterTitle(parseRosterWeek(week), parseRosterView(view), locale),
+  };
 }
 
 export default async function RosterPage({ searchParams }: RosterPageProps) {
@@ -76,8 +81,10 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
     requireCompanyAdmin(),
   ]);
   const view = parseRosterView(requestedView);
+  const locale = await getLocale();
+  const t = await getTranslations("Roster");
   const weekStart = parseRosterWeek(week);
-  const days = buildRosterDays(weekStart);
+  const days = buildRosterDays(weekStart, locale);
   const { startsAt, endsAt } = getRosterWeekBounds(weekStart);
 
   const [sitesResult, membersResult, vacanciesResult] = await Promise.all([
@@ -192,7 +199,17 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
     };
   });
 
-  const rosterInput = { days, cleaners, jobs, assignments, vacancies };
+  const rosterInput = {
+    days,
+    cleaners,
+    jobs,
+    assignments,
+    vacancies,
+    labels: {
+      unavailableCleaner: t("unavailableCleaner"),
+      unfilledSlots: t("unfilledSlots"),
+    },
+  };
   const model = view === "site"
     ? buildSiteRoster({ ...rosterInput, sites })
     : buildCleanerRoster(rosterInput);

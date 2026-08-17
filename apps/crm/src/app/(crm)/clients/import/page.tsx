@@ -1,12 +1,19 @@
+import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { ImportWorkspace } from "./import-workspace";
 
 import type { ExistingImportClient } from "@/features/import/csv";
+import { Link } from "@/i18n/navigation";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
 const pageSize = 1_000;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: t("import") };
+}
 
 type Supabase = Awaited<
   ReturnType<typeof requireCompanyAdmin>
@@ -52,6 +59,7 @@ async function loadSites(supabase: Supabase, companyId: string) {
 }
 
 export default async function ClientsImportPage() {
+  const t = await getTranslations("Import");
   const { company, supabase } = await requireCompanyAdmin();
   const [clientRows, siteRows] = await Promise.all([
     loadClients(supabase, company.id),
@@ -72,14 +80,11 @@ export default async function ClientsImportPage() {
     <main className="page-shell import-page">
       <Link className="back-link" href="/clients">
         <ArrowLeft aria-hidden="true" size={18} />
-        Clients &amp; sites
+        {t("back")}
       </Link>
       <header className="import-page__header">
-        <h1 className="page-heading">Import clients &amp; sites</h1>
-        <p className="page-description">
-          Check every row before it reaches your company records. Valid rows import
-          independently, so one problem never blocks the rest.
-        </p>
+        <h1 className="page-heading">{t("title")}</h1>
+        <p className="page-description">{t("description")}</p>
       </header>
       <ImportWorkspace clients={clients} />
     </main>

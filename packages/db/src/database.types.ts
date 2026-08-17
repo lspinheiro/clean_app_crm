@@ -554,6 +554,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string | null
+          preferred_locale: Database["public"]["Enums"]["app_locale"] | null
           role: Database["public"]["Enums"]["app_role"]
           suburb: string | null
           updated_at: string
@@ -564,6 +565,7 @@ export type Database = {
           full_name: string
           id: string
           phone?: string | null
+          preferred_locale?: Database["public"]["Enums"]["app_locale"] | null
           role?: Database["public"]["Enums"]["app_role"]
           suburb?: string | null
           updated_at?: string
@@ -574,6 +576,7 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+          preferred_locale?: Database["public"]["Enums"]["app_locale"] | null
           role?: Database["public"]["Enums"]["app_role"]
           suburb?: string | null
           updated_at?: string
@@ -1321,6 +1324,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_preferred_locale: {
+        Args: { target_locale: Database["public"]["Enums"]["app_locale"] }
+        Returns: Database["public"]["Enums"]["app_locale"]
+      }
       set_recurring_assignment_active: {
         Args: { target_active: boolean; target_recurring_assignment_id: string }
         Returns: undefined
@@ -1437,6 +1444,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_locale: "en-AU" | "pt-BR"
       app_role: "company_admin" | "cleaner" | "admin"
       application_status: "applied" | "assigned" | "not_selected" | "withdrawn"
       assignment_source: "manual" | "recurring"
@@ -1584,6 +1592,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_locale: ["en-AU", "pt-BR"],
       app_role: ["company_admin", "cleaner", "admin"],
       application_status: ["applied", "assigned", "not_selected", "withdrawn"],
       assignment_source: ["manual", "recurring"],
@@ -1609,4 +1618,3 @@ export const Constants = {
     },
   },
 } as const
-

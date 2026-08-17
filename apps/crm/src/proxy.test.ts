@@ -45,7 +45,7 @@ const authResponseHeaders = {
 };
 
 function requestWithStaleSession() {
-  return new NextRequest("http://localhost:3000/", {
+  return new NextRequest("http://localhost:3000/en-AU/login", {
     headers: {
       cookie: "sb-127-auth-token.0=stale-a; sb-127-auth-token.1=stale-b",
     },
@@ -83,13 +83,19 @@ describe("Supabase session proxy", () => {
 
     const response = await proxy(requestWithStaleSession());
 
-    const deletionNames = response.cookies.getAll().map(({ name }) => name);
+    const deletionNames = response.cookies
+      .getAll()
+      .map(({ name }) => name)
+      .filter((name) => name.startsWith("sb-127-auth-token"));
     expect(deletionNames).toEqual([
       "sb-127-auth-token.0",
       "sb-127-auth-token.1",
     ]);
-    expect(response.headers.getSetCookie()).toHaveLength(2);
-    expect(response.headers.getSetCookie()).toEqual(
+    const authSetCookies = response.headers
+      .getSetCookie()
+      .filter((cookie) => cookie.startsWith("sb-127-auth-token"));
+    expect(authSetCookies).toHaveLength(2);
+    expect(authSetCookies).toEqual(
       expect.arrayContaining([
         expect.stringMatching(/^sb-127-auth-token\.0=;.*Max-Age=0/i),
         expect.stringMatching(/^sb-127-auth-token\.1=;.*Max-Age=0/i),
@@ -110,6 +116,23 @@ describe("Supabase session proxy", () => {
     configureAuthResult(new AuthSessionMissingError());
 
     await expect(proxy(requestWithStaleSession())).resolves.toBeDefined();
+  });
+
+  it("detects Brazilian Portuguese for an unprefixed CRM route", async () => {
+    configureAuthResult(new AuthSessionMissingError());
+    const request = new NextRequest(
+      "http://localhost:3000/roster?week=2026-08-17&view=site",
+      {
+        headers: { "accept-language": "pt-BR,pt;q=0.9,en;q=0.8" },
+      },
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/pt-BR/roster?week=2026-08-17&view=site",
+    );
   });
 
   it.each([

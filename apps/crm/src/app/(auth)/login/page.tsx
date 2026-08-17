@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { BrandBubbles } from "../../../components/brand-bubbles";
+import { LanguageSwitcher } from "../../../components/language-switcher";
+import type { AppLocale } from "../../../i18n/config";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Sign in" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: t("login") };
+}
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const locale = (await getLocale()) as AppLocale;
+  const t = await getTranslations("Auth");
+
   return (
     <main className="auth-page">
       <section className="auth-intro">
@@ -14,17 +23,18 @@ export default function LoginPage() {
           The Clean Crew
         </div>
         <div>
-          <h1>Your cleaning week, on record.</h1>
-          <p>Clients, sites, the pool and every upcoming job in one operational workspace.</p>
+          <h1>{t("headline")}</h1>
+          <p>{t("intro")}</p>
         </div>
-        <p>Gold Coast · Australia/Brisbane</p>
+        <p>{t("location")}</p>
       </section>
       <section className="auth-panel" aria-labelledby="sign-in-title">
         <div className="auth-panel__inner">
-          <h2 id="sign-in-title">Sign in</h2>
-          <p className="auth-panel__intro">Use the company admin account prepared for your team.</p>
+          <LanguageSwitcher currentLocale={locale} />
+          <h2 id="sign-in-title">{t("title")}</h2>
+          <p className="auth-panel__intro">{t("accountHint")}</p>
           <LoginForm />
-          <p className="auth-note">Company accounts are concierge-created during the alpha.</p>
+          <p className="auth-note">{t("alphaNote")}</p>
         </div>
       </section>
     </main>

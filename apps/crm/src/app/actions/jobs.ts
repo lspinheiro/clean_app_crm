@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import {
   assignJobSlotSchema,
   firstJobFieldErrors,
@@ -9,6 +7,7 @@ import {
   oneOffJobSchema,
 } from "@/features/jobs/schema";
 import { requireCompanyAdmin } from "@/lib/auth/session";
+import { revalidateLocalizedPath as revalidatePath } from "@/i18n/revalidate";
 
 export type JobMutationResult = {
   ok: boolean;

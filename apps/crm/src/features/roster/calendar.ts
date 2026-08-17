@@ -11,32 +11,9 @@ const dateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
   month: "2-digit",
   day: "2-digit",
 });
-const dayHeaderFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "UTC",
-  weekday: "short",
-  day: "numeric",
-});
-const weekRangeDayFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "UTC",
-  day: "numeric",
-});
-const weekRangeMonthFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "UTC",
-  day: "numeric",
-  month: "short",
-});
-const weekRangeFullFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "UTC",
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-const rosterTimeFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: BRISBANE_TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
+function dateFormatter(locale: string, options: Intl.DateTimeFormatOptions) {
+  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...options });
+}
 
 function fromDateKey(dateKey: string) {
   const match = dateKeyPattern.exec(dateKey);
@@ -104,12 +81,15 @@ export function parseRosterView(value: string | string[] | undefined): RosterVie
   return requested === "site" ? "site" : "cleaner";
 }
 
-export function buildRosterDays(weekStart: string): RosterDay[] {
+export function buildRosterDays(weekStart: string, locale = "en-AU"): RosterDay[] {
   return Array.from({ length: 7 }, (_, index) => {
     const dateKey = addDays(weekStart, index);
     const date = fromDateKey(dateKey);
     if (!date) throw new Error(`Invalid roster week: ${weekStart}`);
-    return { dateKey, headerLabel: dayHeaderFormatter.format(date) };
+    return {
+      dateKey,
+      headerLabel: dateFormatter(locale, { weekday: "short", day: "numeric" }).format(date),
+    };
   });
 }
 
@@ -121,25 +101,39 @@ export function getRosterWeekBounds(weekStart: string) {
   };
 }
 
-export function formatRosterWeekHeading(weekStart: string) {
+export function formatRosterWeekHeading(weekStart: string, locale = "en-AU") {
   const start = fromDateKey(weekStart);
   const end = fromDateKey(addDays(weekStart, 6));
   if (!start || !end) throw new Error(`Invalid roster week: ${weekStart}`);
+  const prefix = locale === "pt-BR" ? "Semana de" : "Week of";
+  const full = dateFormatter(locale, { day: "numeric", month: "short", year: "numeric" });
+  const month = dateFormatter(locale, { day: "numeric", month: "short" });
+  const day = dateFormatter(locale, { day: "numeric" });
   if (start.getUTCFullYear() !== end.getUTCFullYear()) {
-    return `Week of ${weekRangeFullFormatter.format(start)} – ${weekRangeFullFormatter.format(end)}`;
+    return `${prefix} ${full.format(start)} – ${full.format(end)}`;
   }
   if (start.getUTCMonth() !== end.getUTCMonth()) {
-    return `Week of ${weekRangeMonthFormatter.format(start)} – ${weekRangeFullFormatter.format(end)}`;
+    return `${prefix} ${month.format(start)} – ${full.format(end)}`;
   }
-  return `Week of ${weekRangeDayFormatter.format(start)}–${weekRangeFullFormatter.format(end)}`;
+  return `${prefix} ${day.format(start)}–${full.format(end)}`;
 }
 
-export function formatRosterTitle(weekStart: string, view: RosterView) {
-  return `Roster · ${formatRosterWeekHeading(weekStart)} · by ${view}`;
+export function formatRosterTitle(weekStart: string, view: RosterView, locale = "en-AU") {
+  const roster = locale === "pt-BR" ? "Escala" : "Roster";
+  const byView = locale === "pt-BR"
+    ? view === "site" ? "por local" : "por profissional"
+    : `by ${view}`;
+  return `${roster} · ${formatRosterWeekHeading(weekStart, locale)} · ${byView}`;
 }
 
-export function formatRosterTime(timestamp: string) {
-  return rosterTimeFormatter.format(new Date(timestamp)).replace(/^0/, "");
+export function formatRosterTime(timestamp: string, locale = "en-AU") {
+  const value = new Intl.DateTimeFormat(locale, {
+    timeZone: BRISBANE_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(timestamp));
+  return locale === "en-AU" ? value.replace(/^0/, "") : value;
 }
 
 export function getRosterDateKey(timestamp: string) {

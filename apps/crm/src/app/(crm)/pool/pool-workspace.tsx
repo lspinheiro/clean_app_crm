@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Copy, Link2, RefreshCw, UserRound } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { rotatePoolInvite } from "@/app/actions/pool";
@@ -11,6 +11,9 @@ import {
   formatJoinedDate,
 } from "@/features/pool/invite";
 import type { PoolMember } from "@/features/pool/types";
+import type { AppLocale } from "@/i18n/config";
+import { useRouter } from "@/i18n/navigation";
+import { localiseUserMessage } from "@/i18n/user-message";
 
 type PoolWorkspaceProps = {
   cleanerAppUrl: string;
@@ -25,6 +28,8 @@ export function PoolWorkspace({
   initialCode,
   members,
 }: PoolWorkspaceProps) {
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("Pool");
   const router = useRouter();
   const [activeCode, setActiveCode] = useState(initialCode);
   const [copying, setCopying] = useState<"link" | "message" | null>(null);
@@ -33,22 +38,22 @@ export function PoolWorkspace({
   const [hasError, setHasError] = useState(false);
   const joinUrl = activeCode ? buildCleanerJoinUrl(cleanerAppUrl, activeCode) : null;
   const inviteMessage = activeCode && joinUrl
-    ? buildInviteMessage(companyName, joinUrl, activeCode)
+    ? buildInviteMessage(companyName, joinUrl, activeCode, locale)
     : null;
 
   async function copyToClipboard(value: string, kind: "link" | "message") {
     setCopying(kind);
     setHasError(false);
-    setStatus(kind === "link" ? "Copying cleaner signup link…" : "Copying invite message…");
+    setStatus(kind === "link" ? t("copyingSignup") : t("copyingInvite"));
     try {
       await navigator.clipboard.writeText(value);
-      setStatus(kind === "link" ? "Cleaner signup link copied." : "Invite message copied.");
+      setStatus(kind === "link" ? t("signupCopied") : t("inviteCopied"));
     } catch {
       setHasError(true);
       setStatus(
         kind === "link"
-          ? "The cleaner signup link could not be copied. Select the link manually."
-          : "The invite message could not be copied. Copy the link and code manually.",
+          ? t("signupCopyFailed")
+          : t("inviteCopyFailed"),
       );
     } finally {
       setCopying(null);
@@ -58,22 +63,26 @@ export function PoolWorkspace({
   async function generateNewCode() {
     setRotating(true);
     setHasError(false);
-    setStatus("Generating a new invite code…");
+    setStatus(t("generatingCode"));
     try {
       const result = await rotatePoolInvite();
       if (!result.ok) {
         setHasError(true);
-        setStatus(`${result.error} Reloading the current invite…`);
+        setStatus(
+          t("reloadingInvite", {
+            error: localiseUserMessage(result.error, locale) ?? result.error,
+          }),
+        );
         window.location.reload();
         return;
       }
       setActiveCode(result.code);
-      setStatus("New invite code generated. The previous code is no longer active.");
+      setStatus(t("newCodeGenerated"));
       router.refresh();
       setRotating(false);
     } catch {
       setHasError(true);
-      setStatus("The active code could not be confirmed. Reloading the current invite…");
+      setStatus(t("activeCodeNotConfirmed"));
       window.location.reload();
     }
   }
@@ -84,21 +93,21 @@ export function PoolWorkspace({
         <header className="pool-card-heading">
           <span aria-hidden="true" className="pool-card-icon"><Link2 size={20} /></span>
           <div>
-            <h2 id="pool-invite-heading">Cleaner pool invite</h2>
-            <p>Post this message in your company&apos;s WhatsApp group.</p>
+            <h2 id="pool-invite-heading">{t("inviteTitle")}</h2>
+            <p>{t("inviteDescription")}</p>
           </div>
         </header>
 
         {activeCode && joinUrl ? (
           <div className="invite-display">
             <div className="invite-url-row">
-              <span>Cleaner signup link</span>
+              <span>{t("signupLink")}</span>
               <div className="invite-url-value">
-                <a aria-label="Cleaner signup link" href={joinUrl} rel="noreferrer" target="_blank">
+                <a aria-label={t("signupLink")} href={joinUrl} rel="noreferrer" target="_blank">
                   {joinUrl}
                 </a>
                 <button
-                  aria-label="Copy cleaner signup link"
+                  aria-label={t("copySignupLink")}
                   className="icon-button"
                   disabled={copying !== null || rotating}
                   onClick={() => void copyToClipboard(joinUrl, "link")}
@@ -106,7 +115,7 @@ export function PoolWorkspace({
                 >
                   {copying === "link" ? (
                     <RefreshCw aria-hidden="true" className="button-spinner" size={17} />
-                  ) : status === "Cleaner signup link copied." ? (
+                  ) : status === t("signupCopied") ? (
                     <Check aria-hidden="true" size={17} />
                   ) : (
                     <Copy aria-hidden="true" size={17} />
@@ -115,14 +124,14 @@ export function PoolWorkspace({
               </div>
             </div>
             <div className="invite-code-block">
-              <span>Invite code</span>
+              <span>{t("inviteCode")}</span>
               <strong data-testid="invite-code">{activeCode}</strong>
             </div>
           </div>
         ) : (
           <div className="invite-empty">
-            <p>No active invite code.</p>
-            <span>Generate one before sharing your cleaner signup link.</span>
+            <p>{t("noCode")}</p>
+            <span>{t("generateBeforeSharing")}</span>
           </div>
         )}
 
@@ -135,12 +144,12 @@ export function PoolWorkspace({
           >
             {copying === "message" ? (
               <RefreshCw aria-hidden="true" className="button-spinner" size={17} />
-            ) : status === "Invite message copied." ? (
+            ) : status === t("inviteCopied") ? (
               <Check aria-hidden="true" size={17} />
             ) : (
               <Copy aria-hidden="true" size={17} />
             )}
-            {copying === "message" ? "Copying…" : "Copy invite message"}
+            {copying === "message" ? t("copying") : t("copyInvite")}
           </button>
           <button
             className="button button--secondary"
@@ -153,7 +162,7 @@ export function PoolWorkspace({
               className={rotating ? "button-spinner" : undefined}
               size={17}
             />
-            {rotating ? "Generating…" : "Generate new code"}
+            {rotating ? t("generating") : t("generateCode")}
           </button>
         </div>
         <p
@@ -164,7 +173,7 @@ export function PoolWorkspace({
           {status}
         </p>
         <p className="invite-rotation-note">
-          Generating a new code revokes the previous code. Existing pool members are unchanged.
+          {t("rotationNote")}
         </p>
       </section>
 
@@ -172,13 +181,13 @@ export function PoolWorkspace({
         <header className="pool-card-heading pool-members-heading">
           <span aria-hidden="true" className="pool-card-icon"><UserRound size={20} /></span>
           <div>
-            <h2 id="pool-members-heading">Active cleaners</h2>
-            <p>{members.length} {members.length === 1 ? "cleaner" : "cleaners"} in this pool</p>
+            <h2 id="pool-members-heading">{t("activeCleaners")}</h2>
+            <p>{t("memberCount", { count: members.length })}</p>
           </div>
         </header>
 
         {members.length ? (
-          <ul aria-label="Active cleaner pool members" className="pool-member-list">
+          <ul aria-label={t("members")} className="pool-member-list">
             {members.map((member) => (
               <li key={member.id}>
                 <span aria-hidden="true" className="member-initial">
@@ -187,7 +196,9 @@ export function PoolWorkspace({
                 <div>
                   <strong>{member.name}</strong>
                   <span>
-                    Joined <time dateTime={member.joinedAt}>{formatJoinedDate(member.joinedAt)}</time>
+                    {t("joined", {
+                      date: formatJoinedDate(member.joinedAt, locale),
+                    })}
                   </span>
                 </div>
               </li>
@@ -195,8 +206,8 @@ export function PoolWorkspace({
           </ul>
         ) : (
           <div className="pool-members-empty">
-            <p>No active cleaners yet.</p>
-            <span>Share the invite message to start building the company pool.</span>
+            <p>{t("noMembers")}</p>
+            <span>{t("shareToBuild")}</span>
           </div>
         )}
       </section>

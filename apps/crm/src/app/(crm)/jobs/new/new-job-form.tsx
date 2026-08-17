@@ -1,12 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useMemo, useState } from "react";
 
 import {
   createOneOffJob,
   type JobMutationResult,
 } from "@/app/actions/jobs";
+import { useRouter } from "@/i18n/navigation";
+import { localiseMutationResult } from "@/i18n/user-message";
 
 export type NewJobSite = {
   id: string;
@@ -77,6 +79,8 @@ export function NewJobForm({
   clients: NewJobClient[];
   services: NewJobService[];
 }) {
+  const locale = useLocale();
+  const t = useTranslations("Jobs");
   const router = useRouter();
   const [clientId, setClientId] = useState("");
   const [siteId, setSiteId] = useState("");
@@ -129,8 +133,8 @@ export function NewJobForm({
       site.defaultServiceId === null &&
         site.defaultDurationMinutes === null &&
         site.defaultRateCents === null
-        ? `No defaults are set for ${site.name}. Add the job details below.`
-        : `Defaults loaded from ${site.name}. You can edit them for this job.`,
+        ? t("noDefaults", { siteName: site.name })
+        : t("defaultsLoaded", { siteName: site.name }),
     );
   }
 
@@ -147,7 +151,10 @@ export function NewJobForm({
     setBusy(true);
     setResult(emptyResult);
     try {
-      const nextResult = await createOneOffJob(formData);
+      const nextResult = localiseMutationResult(
+        await createOneOffJob(formData),
+        locale,
+      );
       setResult(nextResult);
       if (nextResult.ok && nextResult.jobId) {
         router.push(`/jobs/${nextResult.jobId}`);
@@ -162,7 +169,7 @@ export function NewJobForm({
     } catch {
       setResult({
         ...emptyResult,
-        formError: "The job could not be saved. Please try again.",
+        formError: t("saveFailed"),
       });
     } finally {
       setBusy(false);
@@ -173,13 +180,13 @@ export function NewJobForm({
     <form className="new-job-form" noValidate onSubmit={handleSubmit}>
       <section aria-labelledby="new-job-site-heading" className="new-job-section">
         <div className="new-job-section__heading">
-          <p className="record-kicker">Step 1</p>
-          <h2 id="new-job-site-heading">Choose the site</h2>
-          <p>The client sets the available sites. Site defaults are a starting point only.</p>
+          <p className="record-kicker">{t("step1")}</p>
+          <h2 id="new-job-site-heading">{t("chooseSiteTitle")}</h2>
+          <p>{t("chooseSiteDescription")}</p>
         </div>
         <div className="new-job-grid new-job-grid--two">
           <div className="field">
-            <label htmlFor="new-job-clientId">Client</label>
+            <label htmlFor="new-job-clientId">{t("client")}</label>
             <select
               {...errorProps("clientId", result)}
               id="new-job-clientId"
@@ -187,7 +194,7 @@ export function NewJobForm({
               onChange={(event) => selectClient(event.target.value)}
               value={clientId}
             >
-              <option value="">Choose a client</option>
+              <option value="">{t("chooseClient")}</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
@@ -200,7 +207,7 @@ export function NewJobForm({
             />
           </div>
           <div className="field">
-            <label htmlFor="new-job-siteId">Site</label>
+            <label htmlFor="new-job-siteId">{t("site")}</label>
             <select
               {...errorProps("siteId", result)}
               disabled={!clientId}
@@ -209,7 +216,7 @@ export function NewJobForm({
               onChange={(event) => selectSite(event.target.value)}
               value={siteId}
             >
-              <option value="">Choose a site</option>
+              <option value="">{t("chooseSite")}</option>
               {clients.flatMap((client) =>
                 client.sites.map((site) => (
                   <option
@@ -235,13 +242,13 @@ export function NewJobForm({
 
       <section aria-labelledby="new-job-service-heading" className="new-job-section">
         <div className="new-job-section__heading">
-          <p className="record-kicker">Step 2</p>
-          <h2 id="new-job-service-heading">Set the service and schedule</h2>
-          <p>Times are entered and displayed in Australia/Brisbane.</p>
+          <p className="record-kicker">{t("step2")}</p>
+          <h2 id="new-job-service-heading">{t("scheduleTitle")}</h2>
+          <p>{t("brisbaneTimes")}</p>
         </div>
         <div className="new-job-grid new-job-grid--trio">
           <div className="field new-job-field--wide">
-            <label htmlFor="new-job-serviceId">Service</label>
+            <label htmlFor="new-job-serviceId">{t("service")}</label>
             <select
               {...errorProps("serviceId", result)}
               id="new-job-serviceId"
@@ -249,7 +256,7 @@ export function NewJobForm({
               onChange={(event) => setServiceId(event.target.value)}
               value={serviceId}
             >
-              <option value="">Choose a service</option>
+              <option value="">{t("chooseService")}</option>
               {services.map((service) => (
                 <option key={service.id} value={service.id}>
                   {service.name}
@@ -262,7 +269,7 @@ export function NewJobForm({
             />
           </div>
           <div className="field">
-            <label htmlFor="new-job-date">Job date</label>
+            <label htmlFor="new-job-date">{t("date")}</label>
             <input
               {...errorProps("date", result)}
               id="new-job-date"
@@ -272,7 +279,7 @@ export function NewJobForm({
             <FieldError id="new-job-date-error" message={result.fieldErrors.date} />
           </div>
           <div className="field">
-            <label htmlFor="new-job-startTime">Start time</label>
+            <label htmlFor="new-job-startTime">{t("startTime")}</label>
             <input
               {...errorProps("startTime", result)}
               id="new-job-startTime"
@@ -285,7 +292,7 @@ export function NewJobForm({
             />
           </div>
           <div className="field">
-            <label htmlFor="new-job-durationHours">Duration (hours)</label>
+            <label htmlFor="new-job-durationHours">{t("duration")}</label>
             <input
               {...errorProps("durationHours", result)}
               id="new-job-durationHours"
@@ -306,13 +313,13 @@ export function NewJobForm({
 
       <section aria-labelledby="new-job-commercial-heading" className="new-job-section">
         <div className="new-job-section__heading">
-          <p className="record-kicker">Step 3</p>
-          <h2 id="new-job-commercial-heading">Set crew and commercial details</h2>
-          <p>Cleaner pay is agreed per slot. Client charge and notes stay admin-only.</p>
+          <p className="record-kicker">{t("step3")}</p>
+          <h2 id="new-job-commercial-heading">{t("commercialTitle")}</h2>
+          <p>{t("commercialDescription")}</p>
         </div>
         <div className="new-job-grid new-job-grid--three">
           <div className="field">
-            <label htmlFor="new-job-crewSize">Crew size</label>
+            <label htmlFor="new-job-crewSize">{t("crewSize")}</label>
             <input
               {...errorProps("crewSize", result)}
               defaultValue="1"
@@ -328,7 +335,7 @@ export function NewJobForm({
             />
           </div>
           <div className="field">
-            <label htmlFor="new-job-cleanerPayAud">Cleaner pay per slot (AUD)</label>
+            <label htmlFor="new-job-cleanerPayAud">{t("cleanerPayPerSlot")}</label>
             <input
               {...errorProps("cleanerPayAud", result)}
               id="new-job-cleanerPayAud"
@@ -347,7 +354,7 @@ export function NewJobForm({
           </div>
           <div className="field">
             <label htmlFor="new-job-clientChargeAud">
-              Client charge (AUD, admin only)
+              {t("clientCharge")}
             </label>
             <input
               {...errorProps("clientChargeAud", result)}
@@ -365,13 +372,13 @@ export function NewJobForm({
           </div>
         </div>
         <div className="field">
-          <label htmlFor="new-job-notes">Internal notes (admin only)</label>
+          <label htmlFor="new-job-notes">{t("internalNotes")}</label>
           <textarea
             {...errorProps("notes", result)}
             id="new-job-notes"
             maxLength={2000}
             name="notes"
-            placeholder="Add operational context for company admins"
+            placeholder={t("notesPlaceholder")}
             rows={4}
           />
           <FieldError id="new-job-notes-error" message={result.fieldErrors.notes} />
@@ -386,7 +393,7 @@ export function NewJobForm({
             </p>
           ) : (
             <p className="new-job-submit__hint">
-              Drafts stay private. Posting creates one vacancy per open crew slot.
+              {t("draftHint")}
             </p>
           )}
         </div>
@@ -398,7 +405,7 @@ export function NewJobForm({
             type="submit"
             value="draft"
           >
-            {busy ? "Saving…" : "Save draft"}
+            {busy ? t("saving") : t("saveDraft")}
           </button>
           <button
             className="button"
@@ -407,7 +414,7 @@ export function NewJobForm({
             type="submit"
             value="post"
           >
-            {busy ? "Posting…" : "Post to pool"}
+            {busy ? t("posting") : t("post")}
           </button>
         </div>
       </div>

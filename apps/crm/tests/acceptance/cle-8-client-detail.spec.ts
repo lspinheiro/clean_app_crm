@@ -4,17 +4,17 @@ const adminEmail = "admin@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 async function openOceanviewDetail(page: import("@playwright/test").Page) {
-  await page.goto("/clients");
+  await page.goto("/en-AU/clients");
   await page.getByRole("link", { name: "Oceanview Property Group" }).click();
-  await expect(page).toHaveURL(/\/clients\/10000000-0000-4000-8000-000000000301$/);
+  await expect(page).toHaveURL(/\/en-AU\/clients\/10000000-0000-4000-8000-000000000301$/);
 }
 
 test.describe("@CLE-8 client detail and site defaults", () => {
@@ -56,13 +56,18 @@ test.describe("@CLE-8 client detail and site defaults", () => {
     await siteDialog.getByRole("button", { name: "Save site" }).click();
 
     await expect(siteCard.getByText("12 Surf Parade")).toBeVisible();
-    await expect(siteCard.getByText("Office clean", { exact: true })).toBeVisible();
+    await expect(
+      siteCard.getByRole("definition").filter({ hasText: /^Office clean$/ }),
+    ).toBeVisible();
     await expect(siteCard.getByText("2.5 h", { exact: true })).toBeVisible();
     await expect(siteCard.getByText("$165.50", { exact: true })).toBeVisible();
 
     await page.reload();
     await expect(
-      page.getByRole("group", { name: "Broadbeach Towers" }).getByText("Office clean", { exact: true }),
+      page
+        .getByRole("group", { name: "Broadbeach Towers" })
+        .getByRole("definition")
+        .filter({ hasText: /^Office clean$/ }),
     ).toBeVisible();
     await page
       .getByRole("navigation", { name: "Breadcrumb" })

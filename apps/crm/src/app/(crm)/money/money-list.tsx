@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   formatMoneyAmount,
@@ -7,33 +7,37 @@ import {
   formatMoneyStatus,
 } from "@/features/money/format";
 import type { CompanyMoneyLedger } from "@/features/money/types";
+import type { AppLocale } from "@/i18n/config";
+import { Link } from "@/i18n/navigation";
 
 type MoneyListProps = {
   ledger: CompanyMoneyLedger;
 };
 
 export function MoneyList({ ledger }: MoneyListProps) {
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("Money");
   return (
     <>
-      <section aria-label="Money totals" className="money-totals">
-        <h2 className="visually-hidden">Money totals</h2>
+      <section aria-label={t("totals")} className="money-totals">
+        <h2 className="visually-hidden">{t("totals")}</h2>
         <dl>
           <div>
-            <dt>Total owed</dt>
+            <dt>{t("totalOwed")}</dt>
             <dd>
               <strong className="tabular-numerals">
-                {formatMoneyAmount(ledger.owedCents)}
+                {formatMoneyAmount(ledger.owedCents, locale)}
               </strong>
-              <span>Awaiting settlement</span>
+              <span>{t("awaitingSettlement")}</span>
             </dd>
           </div>
           <div>
-            <dt>Total paid</dt>
+            <dt>{t("totalPaid")}</dt>
             <dd>
               <strong className="tabular-numerals">
-                {formatMoneyAmount(ledger.paidCents)}
+                {formatMoneyAmount(ledger.paidCents, locale)}
               </strong>
-              <span>Recorded as settled</span>
+              <span>{t("recordedSettled")}</span>
             </dd>
           </div>
         </dl>
@@ -42,26 +46,26 @@ export function MoneyList({ ledger }: MoneyListProps) {
       {ledger.entries.length ? (
         <section aria-labelledby="money-history-heading" className="money-history">
           <div className="money-history-header">
-            <h2 id="money-history-heading">Pay history</h2>
+            <h2 id="money-history-heading">{t("history")}</h2>
             <p className="money-entry-count tabular-numerals">
-              {ledger.entries.length} {ledger.entries.length === 1 ? "entry" : "entries"}
+              {t("entryCount", { count: ledger.entries.length })}
             </p>
           </div>
           <div
-            aria-label="Company pay ledger table"
+            aria-label={t("table")}
             className="money-table-region"
             role="region"
             tabIndex={0}
           >
             <table className="money-table">
-              <caption>Company pay ledger</caption>
+              <caption>{t("caption")}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Cleaner</th>
-                  <th scope="col">Job</th>
-                  <th scope="col">Site</th>
-                  <th scope="col">Amount</th>
-                  <th scope="col">Status</th>
+                  <th scope="col">{t("cleaner")}</th>
+                  <th scope="col">{t("job")}</th>
+                  <th scope="col">{t("site")}</th>
+                  <th scope="col">{t("amount")}</th>
+                  <th scope="col">{t("status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -70,14 +74,17 @@ export function MoneyList({ ledger }: MoneyListProps) {
                     <td className="money-cleaner-name">{entry.cleanerName}</td>
                     <td>
                       <Link
-                        aria-label={`Job at ${entry.siteName} on ${formatMoneyJobDate(entry.scheduledStart)}`}
+                        aria-label={t("jobLabel", {
+                          siteName: entry.siteName,
+                          date: formatMoneyJobDate(entry.scheduledStart, locale),
+                        })}
                         className="money-job-link"
                         href={`/jobs/${entry.jobId}`}
                       >
                         <time dateTime={entry.scheduledStart}>
-                          <strong>{formatMoneyJobDate(entry.scheduledStart)}</strong>
+                          <strong>{formatMoneyJobDate(entry.scheduledStart, locale)}</strong>
                           <span className="tabular-numerals">
-                            {formatMoneyJobTime(entry.scheduledStart)}
+                            {formatMoneyJobTime(entry.scheduledStart, locale)}
                           </span>
                         </time>
                       </Link>
@@ -85,12 +92,12 @@ export function MoneyList({ ledger }: MoneyListProps) {
                     <td>{entry.siteName}</td>
                     <td>
                       <strong className="money-amount tabular-numerals">
-                        {formatMoneyAmount(entry.amountCents)}
+                        {formatMoneyAmount(entry.amountCents, locale)}
                       </strong>
                     </td>
                     <td>
                       <span className={`money-status money-status--${entry.status}`}>
-                        {formatMoneyStatus(entry.status)}
+                        {formatMoneyStatus(entry.status, locale)}
                       </span>
                     </td>
                   </tr>
@@ -101,10 +108,8 @@ export function MoneyList({ ledger }: MoneyListProps) {
         </section>
       ) : (
         <section className="money-empty">
-          <h2>No pay history yet</h2>
-          <p>
-            Completed jobs will appear here as one agreed-pay entry for each crew slot.
-          </p>
+          <h2>{t("emptyTitle")}</h2>
+          <p>{t("emptyDescription")}</p>
         </section>
       )}
     </>

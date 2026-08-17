@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import { updateCompanyIdentity } from "@/app/actions/company";
@@ -11,6 +11,11 @@ import {
   parseCompanyIdentity,
   type CompanyIdentityFieldErrors,
 } from "@/features/company-identity/schema";
+import { useRouter } from "@/i18n/navigation";
+import {
+  localiseFieldErrors,
+  localiseMutationResult,
+} from "@/i18n/user-message";
 
 type CompanyIdentityFormProps = {
   company: {
@@ -22,6 +27,8 @@ type CompanyIdentityFormProps = {
 };
 
 export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormProps) {
+  const locale = useLocale();
+  const t = useTranslations("Settings");
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = useState<CompanyIdentityFieldErrors>({});
@@ -46,7 +53,7 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       setFieldErrors((current) => ({
         ...current,
-        logo: "Choose a PNG, JPEG, or WebP image.",
+        logo: t("logoType"),
       }));
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
@@ -65,7 +72,7 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
       abn: String(payload.get("abn") ?? ""),
     });
     if (!parsed.data) {
-      setFieldErrors(parsed.fieldErrors);
+      setFieldErrors(localiseFieldErrors(parsed.fieldErrors, locale));
       return;
     }
 
@@ -79,7 +86,10 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
         payload.append("logo", compressedLogo);
       }
 
-      const result = await updateCompanyIdentity(payload);
+      const result = localiseMutationResult(
+        await updateCompanyIdentity(payload),
+        locale,
+      );
       setFieldErrors(result.fieldErrors);
       setFormError(result.formError);
       if (result.ok) {
@@ -89,7 +99,10 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
       }
     } catch (error) {
       setFieldErrors({
-        logo: error instanceof Error ? error.message : "The logo could not be prepared.",
+        logo:
+          error instanceof Error && error.message.includes("400 KB")
+            ? t("compressFailed")
+            : t("logoPrepare"),
       });
     } finally {
       setBusy(false);
@@ -99,11 +112,11 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
   return (
     <form className="settings-form" onSubmit={handleSubmit} noValidate>
       <section className="settings-card" aria-labelledby="business-identity-heading">
-        <h2 id="business-identity-heading">Business identity</h2>
+        <h2 id="business-identity-heading">{t("identity")}</h2>
         <div className="identity-grid">
           <div className="form-stack">
             <div className="field">
-              <label htmlFor="company-name">Company name</label>
+              <label htmlFor="company-name">{t("companyName")}</label>
               <input
                 aria-describedby={fieldErrors.name ? "company-name-error" : undefined}
                 aria-invalid={Boolean(fieldErrors.name)}
@@ -138,7 +151,7 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
                 </span>
               ) : (
                 <span className="field-hint" id="company-abn-hint">
-                  11 digits, as registered
+                  {t("abnHint")}
                 </span>
               )}
             </div>
@@ -148,7 +161,7 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
             <div className="logo-preview">
               {previewUrl ? (
                 <Image
-                  alt={`${company.name} logo`}
+                  alt={t("logoAlt", { companyName: company.name })}
                   fill
                   sizes="96px"
                   src={previewUrl}
@@ -159,7 +172,7 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
               )}
             </div>
             <label className="logo-upload" htmlFor="company-logo">
-              Upload logo
+              {t("uploadLogo")}
             </label>
             <input
               accept="image/png,image/jpeg,image/webp"
@@ -177,13 +190,13 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
             ) : null}
           </div>
         </div>
-        <p className="timezone-row">Timezone · {company.timezone}</p>
+        <p className="timezone-row">{t("timezone", { timezone: company.timezone })}</p>
       </section>
 
       <div className="settings-actions" aria-live="polite">
-        <span className="save-status">{saved ? "Saved" : ""}</span>
+        <span className="save-status">{saved ? t("saved") : ""}</span>
         <button className="button" disabled={busy} type="submit">
-          {busy ? "Saving…" : "Save changes"}
+          {busy ? t("saving") : t("saveChanges")}
         </button>
       </div>
       {formError ? (

@@ -7,7 +7,7 @@ import {
   FileSpreadsheet,
   Upload,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { type ChangeEvent, useMemo, useRef, useState } from "react";
 
 import {
@@ -18,6 +18,7 @@ import {
 import {
   type ClientImportValues,
   type ExistingImportClient,
+  type ImportCsvTranslator,
   type ImportPreview,
   type ImportPreviewRow,
   type SiteImportActionInput,
@@ -26,6 +27,8 @@ import {
   parseSiteImportCsv,
   serialiseImportRows,
 } from "@/features/import/csv";
+import { useRouter } from "@/i18n/navigation";
+import { localiseUserMessage } from "@/i18n/user-message";
 
 type PreviewState =
   | {
@@ -55,19 +58,30 @@ type ImportResults =
 
 type Progress = { current: number; total: number } | null;
 
+type ImportColumnDescriptionKey =
+  | "commercialClientName"
+  | "contactPhone"
+  | "existingClientName"
+  | "internalAccessNotes"
+  | "internalNotes"
+  | "primaryContact"
+  | "siteName"
+  | "streetAddress"
+  | "suburb";
+
 const clientColumns = [
-  { name: "name", requirement: "Required", description: "Commercial client name" },
-  { name: "contact_name", requirement: "Optional", description: "Primary contact person" },
-  { name: "phone", requirement: "Optional", description: "Contact phone number" },
-  { name: "notes", requirement: "Optional", description: "Internal notes" },
+  { name: "name", requirement: "required", description: "commercialClientName" },
+  { name: "contact_name", requirement: "optional", description: "primaryContact" },
+  { name: "phone", requirement: "optional", description: "contactPhone" },
+  { name: "notes", requirement: "optional", description: "internalNotes" },
 ] as const;
 
 const siteColumns = [
-  { name: "client_name", requirement: "Required", description: "Existing client name" },
-  { name: "name", requirement: "Required", description: "Site name" },
-  { name: "address", requirement: "Required", description: "Street address" },
-  { name: "suburb", requirement: "Required", description: "Suburb" },
-  { name: "access_notes", requirement: "Optional", description: "Internal access notes" },
+  { name: "client_name", requirement: "required", description: "existingClientName" },
+  { name: "name", requirement: "required", description: "siteName" },
+  { name: "address", requirement: "required", description: "streetAddress" },
+  { name: "suburb", requirement: "required", description: "suburb" },
+  { name: "access_notes", requirement: "optional", description: "internalAccessNotes" },
 ] as const;
 
 function ColumnContract({
@@ -77,10 +91,11 @@ function ColumnContract({
   label: string;
   columns: readonly {
     name: string;
-    requirement: string;
-    description: string;
+    requirement: "optional" | "required";
+    description: ImportColumnDescriptionKey;
   }[];
 }) {
+  const t = useTranslations("Import");
   return (
     <section aria-label={label} className="import-column-contract">
       <dl>
@@ -88,9 +103,9 @@ function ColumnContract({
           <div key={column.name}>
             <dt>
               <code>{column.name}</code>
-              <span>{column.requirement}</span>
+              <span>{t(column.requirement)}</span>
             </dt>
-            <dd>{column.description}</dd>
+            <dd>{t(column.description)}</dd>
           </div>
         ))}
       </dl>
@@ -98,74 +113,85 @@ function ColumnContract({
   );
 }
 
-function statusLabel(state: ImportPreviewRow<unknown, unknown>["state"]) {
+function statusLabel(
+  state: ImportPreviewRow<unknown, unknown>["state"],
+  t: ReturnType<typeof useTranslations<"Import">>,
+) {
   switch (state) {
     case "ready":
-      return "Ready";
+      return t("ready");
     case "duplicate":
-      return "Skipped";
+      return t("skipped");
     case "invalid":
-      return "Failed";
+      return t("failed");
   }
 }
 
-function resultLabel(state: ResultState) {
+function resultLabel(state: ResultState, t: ReturnType<typeof useTranslations<"Import">>) {
   switch (state) {
     case "created":
-      return "Created";
+      return t("created");
     case "skipped":
-      return "Skipped";
+      return t("skipped");
     case "failed":
-      return "Failed";
+      return t("failed");
   }
 }
 
-function actionError(result: ImportRowActionResult, fallback: string) {
+function actionError(
+  result: ImportRowActionResult,
+  fallback: string,
+  locale: ReturnType<typeof useLocale>,
+) {
   return (
-    result.formError ??
-    Object.values(result.fieldErrors)[0] ??
+    localiseUserMessage(result.formError, locale) ??
+    localiseUserMessage(Object.values(result.fieldErrors)[0], locale) ??
     fallback
   );
 }
 
 function PreviewTable({ state }: { state: PreviewState }) {
-  const entityLabel = state.entity === "clients" ? "Client" : "Site";
+  const t = useTranslations("Import");
+  const entityLabel = state.entity === "clients" ? t("client") : t("site");
   return (
     <div className="import-table-scroll">
-      <table aria-label={entityLabel + " import preview"} className="import-table">
+      <table
+        aria-label={state.entity === "clients" ? t("clientPreview") : t("sitePreview")}
+        className="import-table"
+      >
         <thead>
           <tr>
-            <th scope="col">Row</th>
-            <th scope="col">Status</th>
+            <th scope="col">{t("row")}</th>
+            <th scope="col">{t("status")}</th>
             <th scope="col">{entityLabel}</th>
-            <th scope="col">Details</th>
-            <th scope="col">Reason</th>
+            <th scope="col">{t("details")}</th>
+            <th scope="col">{t("reason")}</th>
           </tr>
         </thead>
         <tbody>
           {state.preview.rows.map((row) => (
             <tr className={"import-row import-row--" + row.state} key={row.rowNumber}>
-              <td className="tabular-numerals" data-label="Row">{row.rowNumber}</td>
-              <td data-label="Status">
+              <td className="tabular-numerals" data-label={t("row")}>{row.rowNumber}</td>
+              <td data-label={t("status")}>
                 <span className={"import-status import-status--" + row.state}>
-                  {statusLabel(row.state)}
+                  {statusLabel(row.state, t)}
                 </span>
               </td>
               <td data-label={entityLabel}>
-                <strong>{row.values.name || "Missing name"}</strong>
+                <strong>{row.values.name || t("missingName")}</strong>
                 {"clientName" in row.values ? (
-                  <span>{row.values.clientName || "Missing client"}</span>
+                  <span>{row.values.clientName || t("missingClient")}</span>
                 ) : null}
               </td>
-              <td data-label="Details">
+              <td data-label={t("details")}>
                 {"clientName" in row.values
                   ? row.values.address && row.values.suburb
                     ? row.values.address + ", " + row.values.suburb
-                    : "Address incomplete"
-                  : row.values.contactName || row.values.phone || "No optional details"}
+                    : t("addressIncomplete")
+                  : row.values.contactName || row.values.phone || t("noOptionalDetails")}
               </td>
-              <td data-label="Reason">
-                {row.state === "ready" ? "Ready to create" : row.reason}
+              <td data-label={t("reason")}>
+                {row.state === "ready" ? t("readyToCreate") : row.reason}
               </td>
             </tr>
           ))}
@@ -184,6 +210,7 @@ function resultCounts(rows: ImportResultRow<unknown>[]) {
 }
 
 function ImportResultsPanel({ results }: { results: ImportResults }) {
+  const t = useTranslations("Import");
   const counts = resultCounts(results.rows);
   const failedRows = results.rows.filter((row) => row.state === "failed");
   const csv = serialiseImportRows(
@@ -195,14 +222,14 @@ function ImportResultsPanel({ results }: { results: ImportResults }) {
 
   return (
     <section
-      aria-label="Import results"
+      aria-label={t("resultsAria")}
       aria-live="polite"
       className="import-results"
     >
       <div className="import-results__heading">
         <div>
           <CheckCircle2 aria-hidden="true" size={22} />
-          <h2>Import complete</h2>
+          <h2>{t("complete")}</h2>
         </div>
         {failedRows.length ? (
           <a
@@ -211,22 +238,22 @@ function ImportResultsPanel({ results }: { results: ImportResults }) {
             href={href}
           >
             <Download aria-hidden="true" size={17} />
-            Download {failedRows.length} failed {failedRows.length === 1 ? "row" : "rows"}
+            {t("downloadFailed", { count: failedRows.length })}
           </a>
         ) : null}
       </div>
       <div className="import-result-counts">
-        <strong>{counts.created} created</strong>
-        <strong>{counts.skipped} skipped</strong>
-        <strong>{counts.failed} failed</strong>
+        <strong>{t("createdCount", { count: counts.created })}</strong>
+        <strong>{t("skippedCount", { count: counts.skipped })}</strong>
+        <strong>{t("failedCount", { count: counts.failed })}</strong>
       </div>
       <ul className="import-result-list">
         {results.rows.map((row) => (
           <li key={row.rowNumber}>
             <span className={"import-status import-status--" + row.state}>
-              {resultLabel(row.state)}
+              {resultLabel(row.state, t)}
             </span>
-            <span>Row {row.rowNumber}: {row.values.name || "Missing name"}</span>
+            <span>{t("rowResult", { row: row.rowNumber, name: row.values.name || t("missingName") })}</span>
             <span>{row.message}</span>
           </li>
         ))}
@@ -236,6 +263,8 @@ function ImportResultsPanel({ results }: { results: ImportResults }) {
 }
 
 export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }) {
+  const locale = useLocale();
+  const t = useTranslations("Import");
   const router = useRouter();
   const [entity, setEntity] = useState<"clients" | "sites">("clients");
   const [previewState, setPreviewState] = useState<PreviewState | null>(null);
@@ -250,6 +279,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
       0,
     [previewState],
   );
+  const translateCsv: ImportCsvTranslator = (key, values) => t(key, values);
 
   function chooseEntity(nextEntity: "clients" | "sites") {
     if (busy) return;
@@ -279,7 +309,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
         entity: targetEntity,
         fileName: file.name,
         preview: {
-          fileError: "The CSV could not be read. Choose the file again.",
+          fileError: t("readFailed"),
           rows: [],
         },
       });
@@ -295,8 +325,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
         entity: targetEntity,
         fileName: file.name,
         preview: {
-          fileError:
-            "This file isn't UTF-8. Re-save it as CSV UTF-8 and choose it again.",
+          fileError: t("notUtf8"),
           rows: [],
         },
       });
@@ -310,13 +339,20 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
         preview: parseClientImportCsv(
           source,
           clients.map((client) => client.name),
+          translateCsv,
+          (message) => localiseUserMessage(message, locale) ?? message,
         ),
       });
     } else {
       setPreviewState({
         entity: targetEntity,
         fileName: file.name,
-        preview: parseSiteImportCsv(source, clients),
+        preview: parseSiteImportCsv(
+          source,
+          clients,
+          translateCsv,
+          (message) => localiseUserMessage(message, locale) ?? message,
+        ),
       });
     }
   }
@@ -355,10 +391,11 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
             values: row.values,
             state: result.ok ? "created" : "failed",
             message: result.ok
-              ? "Client created."
+              ? t("clientCreated")
               : actionError(
                   result,
-                  "The client could not be created. Please try again.",
+                  t("clientCreateFailed"),
+                  locale,
                 ),
           });
         } catch {
@@ -367,7 +404,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
             sourceCells: row.sourceCells,
             values: row.values,
             state: "failed",
-            message: "The client could not be created. Please try again.",
+            message: t("clientCreateFailed"),
           });
         }
       }
@@ -409,10 +446,11 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
             values: row.values,
             state: result.ok ? "created" : "failed",
             message: result.ok
-              ? "Site created."
+              ? t("siteCreated")
               : actionError(
                   result,
-                  "The site could not be created. Please try again.",
+                  t("siteCreateFailed"),
+                  locale,
                 ),
           });
         } catch {
@@ -421,7 +459,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
             sourceCells: row.sourceCells,
             values: row.values,
             state: "failed",
-            message: "The site could not be created. Please try again.",
+            message: t("siteCreateFailed"),
           });
         }
       }
@@ -452,38 +490,36 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
     }
   }
 
-  const entityLabel = entity === "clients" ? "Client" : "Site";
-
   return (
     <div className="import-workspace">
       <section className="import-templates">
         <div className="import-section-heading">
           <FileSpreadsheet aria-hidden="true" size={24} />
           <div>
-            <h2>Start from the published columns</h2>
-            <p>Keep the header row unchanged. Optional cells may be blank.</p>
+            <h2>{t("templatesTitle")}</h2>
+            <p>{t("templatesDescription")}</p>
           </div>
         </div>
         <div className="import-template-grid">
           <div className="import-template">
             <div className="import-template__heading">
-              <h3>Clients</h3>
+              <h3>{t("clients")}</h3>
               <a download className="text-link" href="/templates/clients-import.csv">
                 <Download aria-hidden="true" size={16} />
-                Download client template
+                {t("downloadClientTemplate")}
               </a>
             </div>
-            <ColumnContract label="Client CSV columns" columns={clientColumns} />
+            <ColumnContract label={t("clientColumnsAria")} columns={clientColumns} />
           </div>
           <div className="import-template">
             <div className="import-template__heading">
-              <h3>Sites</h3>
+              <h3>{t("sites")}</h3>
               <a download className="text-link" href="/templates/sites-import.csv">
                 <Download aria-hidden="true" size={16} />
-                Download site template
+                {t("downloadSiteTemplate")}
               </a>
             </div>
-            <ColumnContract label="Site CSV columns" columns={siteColumns} />
+            <ColumnContract label={t("siteColumnsAria")} columns={siteColumns} />
           </div>
         </div>
       </section>
@@ -492,12 +528,12 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
         <div className="import-section-heading">
           <Upload aria-hidden="true" size={24} />
           <div>
-            <h2>Choose records to import</h2>
-            <p>Import clients first when the site file names a new client.</p>
+            <h2>{t("pickerTitle")}</h2>
+            <p>{t("pickerDescription")}</p>
           </div>
         </div>
         <fieldset className="import-entity-picker" disabled={busy}>
-          <legend>Record type</legend>
+          <legend>{t("recordType")}</legend>
           <label>
             <input
               checked={entity === "clients"}
@@ -505,7 +541,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
               onChange={() => chooseEntity("clients")}
               type="radio"
             />
-            <span>Clients</span>
+            <span>{t("clients")}</span>
           </label>
           <label>
             <input
@@ -514,16 +550,16 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
               onChange={() => chooseEntity("sites")}
               type="radio"
             />
-            <span>Sites</span>
+            <span>{t("sites")}</span>
           </label>
         </fieldset>
         <div className="import-file-field">
           <label htmlFor={"import-file-" + entity}>
-            {entityLabel} CSV file
+            {entity === "clients" ? t("clientCsvFile") : t("siteCsvFile")}
           </label>
           <input
             accept=".csv,text/csv"
-            aria-label={entityLabel + " CSV file"}
+            aria-label={entity === "clients" ? t("clientCsvFile") : t("siteCsvFile")}
             disabled={busy}
             id={"import-file-" + entity}
             key={entity}
@@ -534,7 +570,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
           {previewState ? (
             <span className="field-hint">{previewState.fileName}</span>
           ) : (
-            <span className="field-hint">CSV files only</span>
+            <span className="field-hint">{t("csvOnly")}</span>
           )}
         </div>
       </section>
@@ -549,17 +585,13 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
       {previewState && !previewState.preview.fileError ? (
         <section
           aria-busy={busy}
-          aria-label="Import preview"
+          aria-label={t("previewAria")}
           className="import-preview"
         >
           <div className="import-preview__heading">
             <div>
-              <h2>Check the preview</h2>
-              <p>
-                {previewState.preview.rows.length}{" "}
-                {previewState.preview.rows.length === 1 ? "row" : "rows"} found.
-                Nothing is written until you confirm.
-              </p>
+              <h2>{t("previewTitle")}</h2>
+              <p>{t("rowsFound", { count: previewState.preview.rows.length })}</p>
             </div>
             <button
               className="button"
@@ -567,7 +599,7 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
               onClick={confirmImport}
               type="button"
             >
-              {busy ? "Importing…" : "Confirm import"}
+              {busy ? t("importing") : t("confirm")}
             </button>
           </div>
           {previewState.preview.rows.length ? (
@@ -575,12 +607,12 @@ export function ImportWorkspace({ clients }: { clients: ExistingImportClient[] }
           ) : (
             <div className="import-empty">
               <FileSpreadsheet aria-hidden="true" size={24} />
-              <p>The file has a header but no records.</p>
+              <p>{t("headerOnly")}</p>
             </div>
           )}
           {progress ? (
             <p aria-live="polite" className="import-progress" role="status">
-              Importing {progress.current} of {progress.total}
+              {t("progress", { current: progress.current, total: progress.total })}
             </p>
           ) : null}
         </section>

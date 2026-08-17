@@ -1,36 +1,30 @@
 import type { SiteSummary } from "@/features/clients/types";
 
-const audFormatter = new Intl.NumberFormat("en-AU", {
-  style: "currency",
-  currency: "AUD",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const durationFormatter = new Intl.NumberFormat("en-AU", {
-  maximumFractionDigits: 2,
-});
-
-export function formatAud(cents: number) {
-  return audFormatter.format(cents / 100);
+export function formatAud(cents: number, locale = "en-AU") {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "AUD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
 }
 
-export function formatDuration(minutes: number) {
-  return `${durationFormatter.format(minutes / 60)} h`;
+export function formatDuration(minutes: number, locale = "en-AU") {
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(minutes / 60)} h`;
 }
 
-export function formatSiteDefaults(site: SiteSummary) {
+export function formatSiteDefaults(site: SiteSummary, locale = "en-AU") {
   if (
     !site.defaultService ||
     site.defaultDurationMinutes === null ||
     site.defaultRateCents === null
   ) {
-    return "Defaults not set";
+    return locale === "pt-BR" ? "Padrões não definidos" : "Defaults not set";
   }
 
   return [
     site.defaultService.name,
-    formatDuration(site.defaultDurationMinutes),
-    formatAud(site.defaultRateCents),
+    formatDuration(site.defaultDurationMinutes, locale),
+    formatAud(site.defaultRateCents, locale),
   ].join(" · ");
 }

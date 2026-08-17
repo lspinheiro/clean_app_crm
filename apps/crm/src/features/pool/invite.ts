@@ -22,9 +22,16 @@ export function normaliseCleanerAppUrl(cleanerAppUrl: string) {
   return baseUrl.origin;
 }
 
-export function buildInviteMessage(companyName: string, joinUrl: string, code: string) {
+export function buildInviteMessage(
+  companyName: string,
+  joinUrl: string,
+  code: string,
+  locale = "en-AU",
+) {
   assertInviteCode(code);
-  return `Join ${companyName}'s cleaner pool: ${joinUrl}\nInvite code: ${code}`;
+  return locale === "pt-BR"
+    ? `Entre para o banco de profissionais da empresa ${companyName}: ${joinUrl}\nCódigo de convite: ${code}`
+    : `Join ${companyName}'s cleaner pool: ${joinUrl}\nInvite code: ${code}`;
 }
 
 export function isInviteActive(expiresAt: string | null, now = new Date()) {
@@ -33,8 +40,8 @@ export function isInviteActive(expiresAt: string | null, now = new Date()) {
   return Number.isFinite(expiry) && expiry > now.getTime();
 }
 
-export function formatJoinedDate(joinedAt: string) {
-  return new Intl.DateTimeFormat("en-AU", {
+export function formatJoinedDate(joinedAt: string, locale = "en-AU") {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",

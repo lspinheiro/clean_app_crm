@@ -1,15 +1,19 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import {
+  defaultLocale,
+  explicitLocaleCookieName,
+  isAppLocale,
+  localeCookieMaxAgeSeconds,
+  localeCookieName,
+} from "@/i18n/config";
+import { redirect } from "@/i18n/navigation";
 import { evaluateCrmAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
-
-const loginSchema = z.object({
-  email: z.email("Enter a valid email address."),
-  password: z.string().min(1, "Enter your password."),
-});
 
 export type LoginState = { error: string | null };
 
@@ -17,19 +21,25 @@ export async function signInAction(
   _previous: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
+  const locale = await getLocale();
+  const t = await getTranslations("Auth");
+  const loginSchema = z.object({
+    email: z.email(t("invalidEmail")),
+    password: z.string().min(1, t("passwordRequired")),
+  });
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check your details." };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("checkDetails") };
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error || !data.user) return { error: "Email or password is incorrect." };
+  if (error || !data.user) return { error: t("failed") };
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, role")
+    .select("id, role, preferred_locale")
     .eq("id", data.user.id)
     .maybeSingle();
   if (profileError) throw profileError;
@@ -38,15 +48,46 @@ export async function signInAction(
   if (decision.kind === "denied") {
     const { error: signOutError } = await supabase.auth.signOut();
     if (signOutError) throw signOutError;
-    return { error: "This CRM is for company admins." };
+    return { error: t("notAuthorised") };
   }
 
-  redirect("/roster");
+  const cookieStore = await cookies();
+  const explicitLocaleValue = cookieStore.get(explicitLocaleCookieName)?.value;
+  const explicitLocale = isAppLocale(explicitLocaleValue)
+    ? explicitLocaleValue
+    : null;
+  const targetLocale =
+    explicitLocale ??
+    (isAppLocale(profile?.preferred_locale)
+      ? profile.preferred_locale
+      : isAppLocale(locale)
+        ? locale
+        : defaultLocale);
+  if (explicitLocale) {
+    let preferenceIsSaved = explicitLocale === profile?.preferred_locale;
+    if (!preferenceIsSaved) {
+      const { error: localeError } = await supabase.rpc("set_preferred_locale", {
+        target_locale: explicitLocale,
+      });
+      preferenceIsSaved = !localeError;
+    }
+    if (preferenceIsSaved) cookieStore.delete(explicitLocaleCookieName);
+  }
+  cookieStore.set(localeCookieName, targetLocale, {
+    maxAge: localeCookieMaxAgeSeconds,
+    path: "/",
+    sameSite: "lax",
+  });
+  return redirect({ href: "/roster", locale: targetLocale });
 }
 
 export async function signOutAction() {
+  const locale = await getLocale();
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
-  redirect("/login");
+  return redirect({
+    href: "/login",
+    locale: isAppLocale(locale) ? locale : defaultLocale,
+  });
 }

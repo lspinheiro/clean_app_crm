@@ -235,7 +235,7 @@ describe("CLE-22 job detail route", () => {
       .toHaveLength(1);
 
     expect(harness.query("jobs").select).toHaveBeenCalledWith(
-      "id, status, scheduled_start, duration_minutes, cleaner_pay_cents, client_charge_cents, notes, crew_size, site_id, service_id, sites!inner(id, name, address, suburb, access_notes, clients!inner(id, name, company_id)), service_catalogue!inner(name)",
+      "id, status, scheduled_start, duration_minutes, cleaner_pay_cents, client_charge_cents, notes, crew_size, site_id, service_id, sites!inner(id, name, address, suburb, access_notes, clients!inner(id, name, company_id)), service_catalogue!inner(name, slug)",
     );
     expect(harness.query("jobs").eq).toHaveBeenCalledWith(
       "sites.clients.company_id",

@@ -1,9 +1,12 @@
+import { useTranslations } from "next-intl";
+
 export default function RosterLoading() {
+  const t = useTranslations("Roster");
   return (
     <main
       className="page-shell roster-page-shell roster-loading"
       aria-busy="true"
-      aria-label="Loading roster"
+      aria-label={t("loading")}
     >
       <header className="roster-header roster-loading__header" aria-hidden="true">
         <div className="roster-loading__header-copy">

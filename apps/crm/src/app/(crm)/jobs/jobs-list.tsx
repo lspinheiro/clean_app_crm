@@ -1,5 +1,5 @@
 import { Clock3, Users } from "lucide-react";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   formatCleanerPay,
@@ -9,23 +9,27 @@ import {
   formatJobTime,
 } from "@/features/jobs/format";
 import type { JobSummary } from "@/features/jobs/types";
+import type { AppLocale } from "@/i18n/config";
+import { Link } from "@/i18n/navigation";
 
 type JobsListProps = {
   jobs: JobSummary[];
 };
 
 export function JobsList({ jobs }: JobsListProps) {
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("Jobs");
   if (!jobs.length) {
     return (
       <section className="jobs-empty">
-        <h2>No jobs yet</h2>
-        <p>Recurring assignments will place the company&apos;s real week here.</p>
+        <h2>{t("noJobsTitle")}</h2>
+        <p>{t("noJobsDescription")}</p>
       </section>
     );
   }
 
   return (
-    <ul aria-label="Company jobs" className="job-list">
+    <ul aria-label={t("companyJobs")} className="job-list">
       {jobs.map((job) => (
         <li className="job-list-item" key={job.id}>
           <Link
@@ -33,13 +37,13 @@ export function JobsList({ jobs }: JobsListProps) {
             href={`/jobs/${job.id}`}
           >
             <time className="job-date" dateTime={job.scheduledStart}>
-              {formatJobDate(job.scheduledStart)}
+              {formatJobDate(job.scheduledStart, locale)}
             </time>
             <div className="job-primary">
               <div className="job-title-line">
                 <h2>{job.siteName}</h2>
                 <span className={`status-chip status-chip--${job.status}`}>
-                  {formatJobStatus(job.status)}
+                  {formatJobStatus(job.status, locale)}
                 </span>
               </div>
               <p>{job.clientName} · {job.serviceName}</p>
@@ -47,21 +51,25 @@ export function JobsList({ jobs }: JobsListProps) {
                 <span>
                   <Clock3 aria-hidden="true" size={16} />
                   <span className="tabular-numerals">
-                    {formatJobTime(job.scheduledStart)} · {formatJobDuration(job.durationMinutes)}
+                    {formatJobTime(job.scheduledStart, locale)} · {formatJobDuration(job.durationMinutes, locale)}
                   </span>
                 </span>
                 <span>
                   <Users aria-hidden="true" size={16} />
                   <span className="tabular-numerals">
-                    {job.assignedSlots}/{job.crewSize} assigned
+                    {t("assignedCount", {
+                      assigned: job.assignedSlots,
+                      total: job.crewSize,
+                    })}
                   </span>
                 </span>
               </div>
             </div>
             <div className="job-pay">
-              <span>Cleaner pay</span>
+              <span>{t("cleanerPay")}</span>
               <strong className="tabular-numerals">
-                {formatCleanerPay(job.cleanerPayCents)}<small>/slot</small>
+                {formatCleanerPay(job.cleanerPayCents, locale)}
+                <small>{t("perSlot")}</small>
               </strong>
             </div>
           </Link>

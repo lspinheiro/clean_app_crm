@@ -13,5 +13,9 @@ describe("recurring assignment labels", () => {
         namedCleaners: [{ id: "cleaner-a", name: "Maria Santos", slotNumber: 1 }],
       }),
     ).toBe("Maria Santos + 1 open");
+
+    expect(
+      formatRecurrence({ frequency: "weekly", weekday: 2 }, "pt-BR"),
+    ).toBe("Repete semanalmente: terça-feira");
   });
 });

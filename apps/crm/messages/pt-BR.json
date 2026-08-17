@@ -1,0 +1,517 @@
+{
+  "Metadata": {
+    "description": "CRM da The Clean Crew para operações de empresas de limpeza.",
+    "login": "Entrar",
+    "roster": "Escala",
+    "jobs": "Serviços",
+    "newJob": "Novo serviço",
+    "jobDetail": "Detalhes do serviço",
+    "clients": "Clientes",
+    "clientDetail": "Detalhes do cliente",
+    "import": "Importar clientes e locais",
+    "pool": "Banco de profissionais",
+    "money": "Financeiro",
+    "settings": "Configurações da empresa"
+  },
+  "Common": {
+    "add": "Adicionar",
+    "back": "Voltar",
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "create": "Criar",
+    "edit": "Editar",
+    "loading": "Carregando…",
+    "notSet": "Não definido",
+    "save": "Salvar",
+    "saveChanges": "Salvar alterações",
+    "saved": "Salvo",
+    "saving": "Salvando…",
+    "unknownClient": "Cliente desconhecido",
+    "unknownCleaner": "Profissional indisponível",
+    "unknownService": "Serviço indisponível",
+    "unknownSite": "Local desconhecido",
+    "workspaceReady": "Este espaço está pronto."
+  },
+  "ErrorPages": {
+    "notFoundTitle": "Página não encontrada",
+    "notFoundDescription": "A página solicitada não existe ou não está mais disponível.",
+    "backToRoster": "Voltar para a escala",
+    "unexpectedTitle": "Algo deu errado",
+    "unexpectedDescription": "Não foi possível carregar a página. Tente novamente.",
+    "retry": "Tentar novamente"
+  },
+  "Navigation": {
+    "primary": "Navegação principal",
+    "skip": "Pular para o conteúdo",
+    "roster": "Escala",
+    "jobs": "Serviços",
+    "clients": "Clientes",
+    "pool": "Banco",
+    "money": "Financeiro",
+    "settings": "Configurações da empresa",
+    "companyLogo": "Logo da {companyName}",
+    "brandLabel": "{companyName} — The Clean Crew"
+  },
+  "Roster": {
+    "loading": "Carregando escala",
+    "eyebrow": "Operações da empresa",
+    "title": "Escala",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Próxima semana",
+    "thisWeek": "Esta semana",
+    "view": "Visualização da escala",
+    "byCleaner": "Por profissional",
+    "bySite": "Por local",
+    "weekOf": "Semana de {range}",
+    "gap": "VAGA",
+    "slotOf": "posição {slot} de {crewSize}",
+    "noCleanersAssigned": "Nenhum profissional alocado",
+    "cleanerCount": "{count, plural, =0 {Nenhum profissional} one {# profissional} other {# profissionais}}",
+    "unfilled": "{count, plural, =0 {Nenhuma vaga em aberto} one {# vaga em aberto} other {# vagas em aberto}}",
+    "unfilledThisWeek": "{count, plural, =0 {Nenhuma vaga em aberto nesta semana} one {# vaga em aberto nesta semana} other {# vagas em aberto nesta semana}}",
+    "nothingScheduled": "Nada programado",
+    "foundationTitle": "Monte a base da sua escala",
+    "foundationDescription": "Adicione um local de cliente e convide profissionais antes que os serviços recorrentes apareçam aqui.",
+    "goToClients": "Ir para clientes",
+    "rosterByCleaner": "Escala por profissional",
+    "rosterBySite": "Escala por local",
+    "cleaner": "Profissional",
+    "site": "Local",
+    "today": "Hoje",
+    "vacancies": "Vagas a preencher",
+    "noWork": "Sem serviço",
+    "noCleaners": "Nenhum profissional ativo",
+    "noSites": "Nenhum local da empresa",
+    "inviteCleaner": "Convide um profissional para adicionar uma linha à escala desta semana.",
+    "addSite": "Adicione um local de cliente para criar uma linha na escala.",
+    "nothingThisWeek": "Ainda não há nada programado nesta semana. Os serviços recorrentes são gerados com 4 semanas de antecedência.",
+    "offerToPool": "Oferecer ao banco de profissionais",
+    "poolLater": "Disponível após o lançamento do mural de serviços para profissionais.",
+    "unavailableCleaner": "Profissional indisponível",
+    "unfilledSlots": "Posições em aberto"
+  },
+  "LocaleSwitcher": {
+    "heading": "Idioma",
+    "description": "Escolha o idioma usado na The Clean Crew.",
+    "label": "Idioma",
+    "en-AU": "English (Australia)",
+    "pt-BR": "Português (Brasil)",
+    "updating": "Alterando o idioma…",
+    "error": "Não foi possível salvar a preferência de idioma."
+  },
+  "Auth": {
+    "title": "Entrar",
+    "headline": "Sua semana de limpeza, organizada.",
+    "intro": "Clientes, locais, o banco de profissionais e todos os próximos serviços em um só espaço operacional.",
+    "location": "Gold Coast · Australia/Brisbane",
+    "accountHint": "Use sua conta de administrador da empresa.",
+    "alphaNote": "As contas das empresas são criadas pela própria equipe fundadora durante o alfa.",
+    "email": "E-mail",
+    "password": "Senha",
+    "submit": "Entrar",
+    "submitting": "Entrando…",
+    "invalidEmail": "Informe um endereço de e-mail válido.",
+    "passwordRequired": "Informe sua senha.",
+    "checkDetails": "Confira seus dados.",
+    "failed": "Não foi possível entrar. Confira os dados e tente novamente.",
+    "notAuthorised": "Esta conta não tem acesso ao espaço da empresa.",
+    "signOut": "Sair"
+  },
+  "Settings": {
+    "eyebrow": "Cadastro da empresa",
+    "title": "Configurações da empresa",
+    "languageHeading": "Idioma",
+    "languageDescription": "Escolha o idioma da sua conta nos dois aplicativos da The Clean Crew.",
+    "identity": "Identidade da empresa",
+    "companyName": "Nome da empresa",
+    "logoAlt": "Logo da {companyName}",
+    "abnHint": "11 dígitos, conforme o registro",
+    "uploadLogo": "Enviar logo",
+    "saved": "Salvo",
+    "saving": "Salvando…",
+    "saveChanges": "Salvar alterações",
+    "timezone": "Fuso horário · {timezone}",
+    "logoType": "Escolha uma imagem PNG, JPEG ou WebP.",
+    "logoPrepare": "Não foi possível preparar o logo.",
+    "compressFailed": "Não foi possível compactar esse logo para menos de 400 KB."
+  },
+  "Jobs": {
+    "title": "Serviços",
+    "description": "Cada limpeza programada, a situação da equipe e o pagamento acordado por posição.",
+    "count": "{count, plural, =0 {Nenhum serviço} one {# serviço} other {# serviços}}",
+    "newJob": "Novo serviço",
+    "noJobsTitle": "Nenhum serviço ainda",
+    "noJobsDescription": "Os serviços gerados pelas programações recorrentes aparecerão aqui.",
+    "companyJobs": "Serviços da empresa",
+    "assignedCount": "{assigned}/{total} posições preenchidas",
+    "cleanerPay": "Pagamento do profissional",
+    "perSlot": "/posição",
+    "back": "Voltar para serviços",
+    "oneOff": "Serviço avulso",
+    "createTitle": "Criar serviço",
+    "createDescription": "Comece pelos padrões do local e depois ajuste a programação, a equipe e os valores acordados.",
+    "setupSiteTitle": "Cadastre primeiro um local do cliente",
+    "setupSiteDescription": "Um serviço precisa de um local e de um tipo de serviço ativo antes de ser salvo.",
+    "openClients": "Abrir clientes e locais"
+    ,"noDefaults": "Nenhum padrão foi definido para {siteName}. Preencha os detalhes do serviço abaixo."
+    ,"defaultsLoaded": "Os padrões de {siteName} foram carregados. Você pode alterá-los para este serviço."
+    ,"step1": "Etapa 1"
+    ,"chooseSiteTitle": "Escolha o local"
+    ,"chooseSiteDescription": "O cliente determina os locais disponíveis. Os padrões do local servem apenas como ponto de partida."
+    ,"client": "Cliente"
+    ,"chooseClient": "Selecione um cliente"
+    ,"site": "Local"
+    ,"chooseSite": "Selecione um local"
+    ,"step2": "Etapa 2"
+    ,"scheduleTitle": "Defina o serviço e a programação"
+    ,"brisbaneTimes": "Os horários são informados e exibidos em Australia/Brisbane."
+    ,"service": "Serviço"
+    ,"chooseService": "Selecione um serviço"
+    ,"date": "Data do serviço"
+    ,"startTime": "Horário de início"
+    ,"duration": "Duração (horas)"
+    ,"step3": "Etapa 3"
+    ,"commercialTitle": "Defina a equipe e os detalhes comerciais"
+    ,"commercialDescription": "O pagamento do profissional é acordado por posição. O valor cobrado do cliente e as observações ficam visíveis apenas para administradores."
+    ,"crewSize": "Tamanho da equipe"
+    ,"cleanerPayPerSlot": "Pagamento do profissional por posição (AUD)"
+    ,"clientCharge": "Valor cobrado do cliente (AUD, somente administradores)"
+    ,"internalNotes": "Observações internas (somente administradores)"
+    ,"notesPlaceholder": "Adicione contexto operacional para os administradores da empresa"
+    ,"draftHint": "Rascunhos permanecem privados. A publicação cria uma vaga para cada posição aberta na equipe."
+    ,"saveDraft": "Salvar rascunho"
+    ,"saving": "Salvando…"
+    ,"post": "Publicar no banco de profissionais"
+    ,"posting": "Publicando…"
+    ,"saveFailed": "Não foi possível salvar o serviço. Tente novamente."
+    ,"applicationApplied": "Candidatou-se"
+    ,"applicationAssigned": "Selecionado"
+    ,"applicationNotSelected": "Não selecionado"
+    ,"applicationWithdrawn": "Candidatura retirada"
+    ,"preferredCandidate": "{cleanerName} — preferência nº {rank}"
+    ,"slotAssigned": "Preenchida"
+    ,"slotOpen": "Aberta"
+    ,"slotClosed": "Fechada"
+    ,"previouslyAssigned": "Anteriormente preenchida por {cleanerName}"
+    ,"chooseApplicant": "Escolha um candidato ou profissional do banco"
+    ,"noActiveAssignment": "Sem alocação ativa"
+    ,"detailEyebrow": "Detalhes do serviço"
+    ,"cancelJob": "Cancelar serviço"
+    ,"overview": "Visão geral"
+    ,"scheduleAndSite": "Programação e local"
+    ,"start": "Início"
+    ,"siteAddress": "Endereço do local"
+    ,"accessNotes": "Instruções de acesso"
+    ,"noAccessNotes": "Nenhuma instrução de acesso registrada."
+    ,"adminOnly": "Somente administradores"
+    ,"commercialDetail": "Detalhes comerciais"
+    ,"cleanerPayPerSlotLabel": "Pagamento do profissional por posição"
+    ,"clientChargeLabel": "Valor cobrado do cliente"
+    ,"notRecorded": "Não informado"
+    ,"internalNotesLabel": "Observações internas"
+    ,"noInternalNotes": "Nenhuma observação interna registrada."
+    ,"crew": "Equipe"
+    ,"crewSlots": "Posições da equipe"
+    ,"crewSlot": "Posição da equipe {slot}"
+    ,"cleanerForSlot": "Profissional para a posição {slot}"
+    ,"chooseCleaner": "Selecione um profissional"
+    ,"applicantsGroup": "Candidatos"
+    ,"poolMembersGroup": "Profissionais do banco"
+    ,"assignSelected": "Alocar {cleanerName} na posição {slot}"
+    ,"assignSlot": "Alocar profissional na posição {slot}"
+    ,"assigning": "Alocando…"
+    ,"assign": "Alocar"
+    ,"noPoolCandidates": "Nenhum profissional ativo do banco está disponível para alocação."
+    ,"assignmentNotConfirmed": "Não foi possível confirmar a alocação. Revise as posições atualizadas da equipe antes de tentar novamente."
+    ,"cancellationNotConfirmed": "Não foi possível confirmar o cancelamento. Revise o serviço atualizado antes de tentar novamente."
+    ,"poolResponse": "Resposta do banco de profissionais"
+    ,"applicants": "Candidatos"
+    ,"applicantsDescription": "As preferências do local definem a ordem; o status registra o resultado."
+    ,"jobApplicants": "Candidatos ao serviço"
+    ,"preferredRank": "Preferência nº {rank}"
+    ,"noApplications": "Nenhuma candidatura ainda."
+    ,"closeOpenSlots": "Fechar todas as posições em aberto"
+    ,"cancelQuestion": "Cancelar este serviço?"
+    ,"cancelDescription": "As alocações ativas serão liberadas, as vagas serão fechadas e os profissionais afetados verão o cancelamento."
+    ,"keepJob": "Manter serviço"
+    ,"cancelling": "Cancelando…"
+    ,"confirmCancellation": "Confirmar cancelamento"
+  },
+  "Clients": {
+    "eyebrow": "Cadastros da empresa",
+    "title": "Clientes e locais",
+    "description": "Mantenha cada relação comercial e local de limpeza em uma única visão operacional.",
+    "search": "Pesquisar clientes e locais",
+    "searchPlaceholder": "Pesquisar clientes ou locais",
+    "importCsv": "Importar CSV",
+    "addClient": "Adicionar cliente",
+    "records": "Cadastros de clientes",
+    "client": "Cliente",
+    "noContact": "Nenhum contato registrado",
+    "addSiteTo": "Adicionar local a {clientName}",
+    "addSite": "Adicionar local",
+    "noSites": "Nenhum local ainda",
+    "noMatching": "Nenhum cadastro encontrado",
+    "addFirst": "Adicione seu primeiro cliente",
+    "trySearch": "Tente pesquisar pelo nome de um cliente ou local.",
+    "relationshipDescription": "Os clientes representam a relação comercial; cada endereço de limpeza é um local.",
+    "newRecord": "Novo cadastro",
+    "closeAddClient": "Fechar cadastro de cliente",
+    "clientName": "Nome do cliente",
+    "contactPerson": "Pessoa de contato",
+    "phone": "Telefone",
+    "internalNotes": "Observações internas",
+    "cancel": "Cancelar",
+    "creating": "Criando…",
+    "createClient": "Criar cliente",
+    "closeAddSite": "Fechar cadastro de local",
+    "siteName": "Nome do local",
+    "streetAddress": "Endereço",
+    "suburb": "Subúrbio",
+    "accessNotes": "Instruções de acesso",
+    "createSite": "Criar local",
+    "clientCreateFailed": "Não foi possível criar o cliente. Tente novamente.",
+    "siteCreateFailed": "Não foi possível criar o local. Tente novamente.",
+    "defaultsNotSet": "Padrões não definidos"
+  },
+  "ClientDetail": {
+    "breadcrumb": "Trilha de navegação",
+    "clientRecord": "Cadastro do cliente",
+    "clients": "Clientes",
+    "clientName": "Nome do cliente",
+    "contactPerson": "Pessoa de contato",
+    "phone": "Telefone",
+    "internalNotes": "Observações internas",
+    "siteName": "Nome do local",
+    "suburb": "Subúrbio",
+    "streetAddress": "Endereço",
+    "noContact": "Nenhum contato registrado",
+    "siteCount": "{count, plural, =0 {Nenhum local} one {# local} other {# locais}}",
+    "editClient": "Editar cliente",
+    "clientSites": "Locais do cliente",
+    "privacy": "O endereço e as instruções de acesso são exibidos ao profissional somente após a alocação",
+    "accessNotes": "Instruções de acesso",
+    "noneRecorded": "Nenhuma informação registrada",
+    "preferredCleaners": "Profissionais preferenciais",
+    "preferredDescription": "Registrado agora; em uma etapa futura, a escala usará esta ordem.",
+    "preferredForSite": "Profissionais preferenciais de {siteName}",
+    "moveUp": "Mover {cleanerName} para cima",
+    "moveDown": "Mover {cleanerName} para baixo",
+    "remove": "Remover {cleanerName}",
+    "noPreferred": "Nenhum profissional preferencial registrado.",
+    "preferredCleaner": "Profissional preferencial",
+    "chooseFromPool": "Selecione no banco de profissionais",
+    "allAdded": "Todos os profissionais do banco foram adicionados",
+    "addPreferred": "Adicionar profissional preferencial a {siteName}",
+    "add": "Adicionar",
+    "savingOrder": "Salvando a ordem dos profissionais preferenciais…",
+    "refreshingOrder": "Atualizando a ordem salva dos profissionais preferenciais…",
+    "orderSaved": "Ordem dos profissionais preferenciais salva.",
+    "saveNotConfirmed": "Não foi possível confirmar o salvamento. A página será atualizada para verificar a ordem salva.",
+    "defaultService": "Serviço padrão",
+    "duration": "Duração",
+    "durationHours": "Duração (horas)",
+    "rate": "Valor (AUD)",
+    "notSet": "Não definido",
+    "editSite": "Editar local",
+    "editNamed": "Editar {name}",
+    "closeEditClient": "Fechar edição do cliente",
+    "closeEditSite": "Fechar edição do local",
+    "saveClient": "Salvar cliente",
+    "saveSite": "Salvar local",
+    "siteDefaults": "Padrões do local",
+    "chooseService": "Selecione um serviço",
+    "saving": "Salvando…",
+    "cancel": "Cancelar",
+    "clientSaveFailed": "Não foi possível salvar o cliente. Tente novamente.",
+    "siteSaveFailed": "Não foi possível salvar o local. Tente novamente."
+  },
+  "RecurringAssignments": {
+    "section": "Programações recorrentes de {siteName}",
+    "title": "Programações recorrentes",
+    "description": "Uma regra de programação por dia de serviço. Os serviços são gerados na etapa seguinte.",
+    "addSchedule": "Adicionar programação",
+    "perSlot": "/posição",
+    "deactivate": "Desativar {recurrence}",
+    "activate": "Ativar {recurrence}",
+    "active": "Ativa",
+    "inactive": "Inativa",
+    "edit": "Editar {recurrence}",
+    "none": "Nenhuma programação recorrente para este local.",
+    "record": "Programação recorrente",
+    "addForSite": "Adicionar programação para {siteName}",
+    "close": "Fechar programação recorrente",
+    "service": "Serviço",
+    "chooseService": "Selecione um serviço",
+    "frequency": "Frequência",
+    "weekly": "Semanal",
+    "fortnightly": "Quinzenal",
+    "firstDate": "Primeira data de serviço",
+    "startTime": "Horário de início",
+    "estimatedHours": "Horas estimadas",
+    "cleanerPay": "Pagamento do profissional por posição (AUD)",
+    "crewSize": "Tamanho da equipe",
+    "namedCleaners": "Profissionais definidos (opcional)",
+    "namedDescription": "Preencha as posições definidas em ordem. As posições restantes se tornam vagas quando os serviços são gerados.",
+    "slot": "Posição {slot}",
+    "leaveOpen": "Deixar em aberto",
+    "cancel": "Cancelar",
+    "saving": "Salvando…",
+    "saveChanges": "Salvar alterações",
+    "everyWeek": "Toda semana, {weekday}",
+    "everyFortnight": "A cada duas semanas, {weekday}",
+    "openSlots": "{count, plural, =0 {Nenhuma vaga aberta} one {# vaga aberta} other {# vagas abertas}}",
+    "weekday1": "segunda-feira",
+    "weekday2": "terça-feira",
+    "weekday3": "quarta-feira",
+    "weekday4": "quinta-feira",
+    "weekday5": "sexta-feira",
+    "weekday6": "sábado",
+    "weekday7": "domingo",
+    "savingStatus": "Salvando {recurrence}…",
+    "statusSaved": "Status de {recurrence} salvo.",
+    "saveNotConfirmed": "Não foi possível confirmar o salvamento. A página será atualizada para verificar a regra salva.",
+    "statusFailed": "Não foi possível salvar o status da programação recorrente.",
+    "statusNotConfirmed": "Não foi possível confirmar o status. A página será atualizada para verificar a regra salva."
+  },
+  "Import": {
+    "back": "Clientes e locais",
+    "title": "Importar clientes e locais",
+    "description": "Verifique cada linha antes que ela entre nos cadastros da empresa. As linhas válidas são importadas de forma independente, portanto um problema nunca bloqueia as demais.",
+    "commercialClientName": "Nome do cliente",
+    "primaryContact": "Pessoa de contato principal",
+    "contactPhone": "Telefone de contato",
+    "internalNotes": "Observações internas",
+    "existingClientName": "Nome de um cliente existente",
+    "siteName": "Nome do local",
+    "streetAddress": "Endereço",
+    "suburb": "Subúrbio",
+    "internalAccessNotes": "Instruções internas de acesso",
+    "required": "Obrigatório",
+    "optional": "Opcional",
+    "ready": "Pronto",
+    "skipped": "Ignorado",
+    "failed": "Com erro",
+    "created": "Criado",
+    "client": "Cliente",
+    "site": "Local",
+    "clients": "Clientes",
+    "sites": "Locais",
+    "row": "Linha",
+    "status": "Status",
+    "details": "Detalhes",
+    "reason": "Motivo",
+    "clientPreview": "Prévia da importação de clientes",
+    "sitePreview": "Prévia da importação de locais",
+    "missingName": "Nome ausente",
+    "missingClient": "Cliente ausente",
+    "addressIncomplete": "Endereço incompleto",
+    "noOptionalDetails": "Sem detalhes opcionais",
+    "readyToCreate": "Pronto para criar",
+    "resultsAria": "Resultados da importação",
+    "complete": "Importação concluída",
+    "downloadFailed": "{count, plural, =0 {Nenhuma linha com erro} one {Baixar # linha com erro} other {Baixar # linhas com erro}}",
+    "createdCount": "{count, plural, =0 {Nenhum cadastro criado} one {# criado} other {# criados}}",
+    "skippedCount": "{count, plural, =0 {Nenhum cadastro ignorado} one {# ignorado} other {# ignorados}}",
+    "failedCount": "{count, plural, =0 {Nenhum erro} one {# com erro} other {# com erro}}",
+    "rowResult": "Linha {row}: {name}",
+    "readFailed": "Não foi possível ler o CSV. Selecione o arquivo novamente.",
+    "notUtf8": "Este arquivo não está em UTF-8. Salve-o novamente como CSV UTF-8 e selecione-o outra vez.",
+    "clientCreated": "Cliente criado.",
+    "siteCreated": "Local criado.",
+    "clientCreateFailed": "Não foi possível criar o cliente. Tente novamente.",
+    "siteCreateFailed": "Não foi possível criar o local. Tente novamente.",
+    "templatesTitle": "Comece pelas colunas do modelo",
+    "templatesDescription": "Mantenha a linha de cabeçalho sem alterações. As células opcionais podem ficar em branco.",
+    "downloadClientTemplate": "Baixar modelo de clientes",
+    "downloadSiteTemplate": "Baixar modelo de locais",
+    "clientColumnsAria": "Colunas do CSV de clientes",
+    "siteColumnsAria": "Colunas do CSV de locais",
+    "pickerTitle": "Escolha os cadastros para importar",
+    "pickerDescription": "Importe primeiro os clientes quando o arquivo de locais mencionar um cliente novo.",
+    "recordType": "Tipo de cadastro",
+    "clientCsvFile": "Arquivo CSV de clientes",
+    "siteCsvFile": "Arquivo CSV de locais",
+    "csvOnly": "Somente arquivos CSV",
+    "previewAria": "Prévia da importação",
+    "previewTitle": "Verifique a prévia",
+    "rowsFound": "{count, plural, =0 {Nenhuma linha encontrada.} one {# linha encontrada.} other {# linhas encontradas.}} Nada será gravado até você confirmar.",
+    "importing": "Importando…",
+    "confirm": "Confirmar importação",
+    "headerOnly": "O arquivo tem um cabeçalho, mas não contém cadastros.",
+    "progress": "Importando {current} de {total}",
+    "unclosedQuote": "O CSV contém um campo entre aspas que não foi fechado.",
+    "checkRow": "Verifique esta linha e tente novamente.",
+    "clientTemplateColumns": "Use as colunas do modelo de clientes: name, contact_name, phone, notes.",
+    "siteTemplateColumns": "Use as colunas do modelo de locais: client_name, name, address, suburb, access_notes.",
+    "expectedColumns": "Eram esperadas {count} colunas.",
+    "enterClientName": "Insira o nome do cliente.",
+    "clientAlreadyExists": "Já existe um cliente chamado {clientName}.",
+    "clientAlreadyInFile": "O cliente {clientName} já aparece neste arquivo.",
+    "clientDoesNotExist": "Não existe um cliente chamado {clientName}.",
+    "ambiguousClient": "Mais de um cliente se chama {clientName}. Renomeie primeiro o cliente duplicado.",
+    "siteAlreadyExists": "{siteName} já existe para {clientName}.",
+    "siteAlreadyInFile": "{siteName}, de {clientName}, já aparece neste arquivo."
+  },
+  "Pool": {
+    "eyebrow": "Banco privado",
+    "title": "Banco de profissionais",
+    "description": "Compartilhe um convite controlado e mantenha os profissionais ativos visíveis no CRM.",
+    "inviteTitle": "Convite para o banco de profissionais",
+    "inviteDescription": "Publique esta mensagem no grupo de WhatsApp da sua empresa.",
+    "signupLink": "Link de cadastro do profissional",
+    "copySignupLink": "Copiar link de cadastro do profissional",
+    "inviteCode": "Código de convite",
+    "noCode": "Nenhum código de convite ativo.",
+    "generateBeforeSharing": "Gere um código antes de compartilhar o link de cadastro do profissional.",
+    "copying": "Copiando…",
+    "copyInvite": "Copiar mensagem de convite",
+    "generating": "Gerando…",
+    "generateCode": "Gerar novo código",
+    "rotationNote": "Gerar um novo código revoga o código anterior. A participação dos profissionais que já estão no banco permanece a mesma.",
+    "activeCleaners": "Profissionais ativos",
+    "memberCount": "{count, plural, =0 {Nenhum profissional neste banco} one {# profissional neste banco} other {# profissionais neste banco}}",
+    "members": "Profissionais ativos do banco",
+    "joined": "Entrou em {date}",
+    "noMembers": "Nenhum profissional ativo ainda.",
+    "shareToBuild": "Compartilhe a mensagem de convite para começar a formar o banco de profissionais da empresa.",
+    "copyingSignup": "Copiando o link de cadastro do profissional…",
+    "copyingInvite": "Copiando a mensagem de convite…",
+    "signupCopied": "Link de cadastro do profissional copiado.",
+    "inviteCopied": "Mensagem de convite copiada.",
+    "signupCopyFailed": "Não foi possível copiar o link de cadastro do profissional. Selecione o link manualmente.",
+    "inviteCopyFailed": "Não foi possível copiar a mensagem de convite. Copie o link e o código manualmente.",
+    "generatingCode": "Gerando um novo código de convite…",
+    "reloadingInvite": "{error} Recarregando o convite atual…",
+    "newCodeGenerated": "Novo código de convite gerado. O código anterior não está mais ativo.",
+    "activeCodeNotConfirmed": "Não foi possível confirmar o código ativo. Recarregando o convite atual…",
+    "inviteMessage": "Entre para o banco de profissionais da empresa {companyName}: {joinUrl}\nCódigo de convite: {code}"
+  },
+  "Money": {
+    "title": "Financeiro",
+    "description": "Um registro compartilhado dos pagamentos acordados com os profissionais. The Clean Crew registra a quitação; não realiza transferências.",
+    "totals": "Totais financeiros",
+    "totalOwed": "Total a pagar",
+    "awaitingSettlement": "Aguardando quitação",
+    "totalPaid": "Total pago",
+    "recordedSettled": "Registrado como quitado",
+    "history": "Histórico de pagamentos",
+    "entryCount": "{count, plural, =0 {Nenhum lançamento} one {# lançamento} other {# lançamentos}}",
+    "table": "Tabela de pagamentos da empresa",
+    "caption": "Registro de pagamentos da empresa",
+    "cleaner": "Profissional",
+    "job": "Serviço",
+    "site": "Local",
+    "amount": "Valor",
+    "status": "Status",
+    "jobLabel": "Serviço em {siteName} em {date}",
+    "emptyTitle": "Nenhum histórico de pagamentos ainda",
+    "emptyDescription": "Os serviços concluídos aparecerão aqui com um lançamento do valor acordado para cada posição da equipe."
+  },
+  "Services": {
+    "office-clean": "Limpeza de escritório",
+    "standard-clean": "Limpeza padrão",
+    "deep-clean": "Limpeza pesada",
+    "end-of-lease-clean": "Limpeza de fim de locação"
+  }
+}

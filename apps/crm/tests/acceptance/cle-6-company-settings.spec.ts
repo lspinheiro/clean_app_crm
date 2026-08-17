@@ -4,17 +4,17 @@ const adminEmail = "admin@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 test.describe("@CLE-6 company identity settings", () => {
   test("shows persisted identity and the fixed Brisbane timezone", async ({ page }) => {
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/en-AU/settings");
 
     await expect(page.getByLabel("Company name")).toHaveValue("Coastal Demo Cleaning");
     await expect(page.getByLabel("ABN")).toHaveValue("51824753556");
@@ -23,7 +23,7 @@ test.describe("@CLE-6 company identity settings", () => {
 
   test("renders an invalid ABN error inline", async ({ page }) => {
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/en-AU/settings");
     await page.getByLabel("ABN").fill("123");
     await page.getByRole("button", { name: "Save changes" }).click();
 
@@ -32,7 +32,7 @@ test.describe("@CLE-6 company identity settings", () => {
 
   test("persists identity edits across reloads and into the shell", async ({ page }) => {
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/en-AU/settings");
     await page.getByLabel("Company name").fill("Coastal Demo Services");
     await page.getByLabel("ABN").fill("12345678901");
     await page.getByRole("button", { name: "Save changes" }).click();
@@ -51,7 +51,7 @@ test.describe("@CLE-6 company identity settings", () => {
 
   test("compresses a logo, persists it, and renders it in the shell", async ({ page }) => {
     await signIn(page);
-    await page.goto("/settings");
+    await page.goto("/en-AU/settings");
 
     const encodedLogo = await page.evaluate(() => {
       const canvas = document.createElement("canvas");

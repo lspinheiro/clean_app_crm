@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
 import { Plus } from "lucide-react";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { JobsList } from "./jobs-list";
 
 import type { JobSummary } from "@/features/jobs/types";
+import { getServiceLabel } from "@/i18n/service-label";
+import { Link } from "@/i18n/navigation";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
-export const metadata: Metadata = { title: "Jobs" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: t("jobs") };
+}
 
 export default async function JobsPage() {
+  const t = await getTranslations("Jobs");
+  const common = await getTranslations("Common");
+  const services = await getTranslations("Services");
   const { supabase } = await requireCompanyAdmin();
   const [
     { data: jobRows, error: jobError },
@@ -30,7 +38,7 @@ export default async function JobsPage() {
       .is("unassigned_at", null),
     supabase.from("sites").select("id, client_id, name"),
     supabase.from("clients").select("id, name"),
-    supabase.from("service_catalogue").select("id, name"),
+    supabase.from("service_catalogue").select("id, name, slug"),
   ]);
   if (jobError) throw jobError;
   if (assignmentError) throw assignmentError;
@@ -46,9 +54,11 @@ export default async function JobsPage() {
     const client = site ? clientsById.get(site.client_id) : null;
     return {
       id: job.id,
-      siteName: site?.name ?? "Unknown site",
-      clientName: client?.name ?? "Unknown client",
-      serviceName: servicesById.get(job.service_id)?.name ?? "Unknown service",
+      siteName: site?.name ?? common("unknownSite"),
+      clientName: client?.name ?? common("unknownClient"),
+      serviceName: servicesById.has(job.service_id)
+        ? getServiceLabel(servicesById.get(job.service_id)!, services)
+        : common("unknownService"),
       scheduledStart: job.scheduled_start,
       durationMinutes: job.duration_minutes,
       cleanerPayCents: job.cleaner_pay_cents,
@@ -64,18 +74,16 @@ export default async function JobsPage() {
     <main className="page-shell jobs-page-shell">
       <header className="jobs-page-header">
         <div>
-          <h1 className="page-heading">Jobs</h1>
-          <p className="page-description">
-            Every scheduled clean, its staffing state, and the pay agreed per crew slot.
-          </p>
+          <h1 className="page-heading">{t("title")}</h1>
+          <p className="page-description">{t("description")}</p>
         </div>
         <div className="jobs-page-actions">
           <p className="jobs-count tabular-numerals">
-            {jobs.length} {jobs.length === 1 ? "job" : "jobs"}
+            {t("count", { count: jobs.length })}
           </p>
           <Link className="button" href="/jobs/new">
             <Plus aria-hidden="true" size={18} />
-            New job
+            {t("newJob")}
           </Link>
         </div>
       </header>

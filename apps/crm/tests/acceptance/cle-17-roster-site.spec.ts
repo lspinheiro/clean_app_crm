@@ -18,11 +18,11 @@ const weekStart = addDays(currentWeekStart, 7);
 const { startsAt, endsAt } = getRosterWeekBounds(weekStart);
 
 async function signIn(page: import("@playwright/test").Page) {
-  await page.goto("/login");
+  await page.goto("/en-AU/login");
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
 async function expectedRosterEvidence() {
@@ -108,7 +108,7 @@ test("@CLE-17 pivots the same roster week by site without changing vacancy evide
   expect(jobIds.length).toBeGreaterThan(0);
 
   await signIn(page);
-  await page.goto(`/roster?week=${weekStart}`);
+  await page.goto(`/en-AU/roster?week=${weekStart}`);
 
   await expect(page.getByRole("link", { name: "By cleaner" })).toHaveAttribute(
     "aria-current",
@@ -130,9 +130,9 @@ test("@CLE-17 pivots the same roster week by site without changing vacancy evide
     .not.toEqual([]);
 
   const bySite = page.getByRole("link", { name: "By site" });
-  await expect(bySite).toHaveAttribute("href", `/roster?week=${weekStart}&view=site`);
+  await expect(bySite).toHaveAttribute("href", `/en-AU/roster?week=${weekStart}&view=site`);
   await bySite.click();
-  await expect(page).toHaveURL(`/roster?week=${weekStart}&view=site`);
+  await expect(page).toHaveURL(`/en-AU/roster?week=${weekStart}&view=site`);
   await expect(page.getByRole("link", { name: "By site" })).toHaveAttribute(
     "aria-current",
     "page",

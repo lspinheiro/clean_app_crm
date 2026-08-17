@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { JobDetailWorkspace } from "./job-detail-workspace";
@@ -11,15 +12,20 @@ import type {
   JobDetail,
   JobPoolCandidate,
 } from "@/features/jobs/types";
+import { getServiceLabel } from "@/i18n/service-label";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
-export const metadata: Metadata = { title: "Job detail" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: t("jobDetail") };
+}
 
 type JobDetailPageProps = {
   params: Promise<{ jobId: string }>;
 };
 
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
+  const serviceT = await getTranslations("Services");
   const { jobId } = await params;
   if (!z.string().uuid().safeParse(jobId).success) notFound();
 
@@ -27,7 +33,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   const { data: jobRow, error: jobError } = await supabase
     .from("jobs")
     .select(
-      "id, status, scheduled_start, duration_minutes, cleaner_pay_cents, client_charge_cents, notes, crew_size, site_id, service_id, sites!inner(id, name, address, suburb, access_notes, clients!inner(id, name, company_id)), service_catalogue!inner(name)",
+      "id, status, scheduled_start, duration_minutes, cleaner_pay_cents, client_charge_cents, notes, crew_size, site_id, service_id, sites!inner(id, name, address, suburb, access_notes, clients!inner(id, name, company_id)), service_catalogue!inner(name, slug)",
     )
     .eq("id", jobId)
     .eq("sites.clients.company_id", company.id)
@@ -116,7 +122,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     notes: jobRow.notes,
     crewSize: jobRow.crew_size,
     clientName: jobRow.sites.clients.name,
-    serviceName: jobRow.service_catalogue.name,
+    serviceName: getServiceLabel(jobRow.service_catalogue, serviceT),
     site: {
       id: jobRow.sites.id,
       name: jobRow.sites.name,

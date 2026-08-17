@@ -2,8 +2,6 @@
 
 import { randomUUID } from "node:crypto";
 
-import { revalidatePath } from "next/cache";
-
 import {
   COMPANY_LOGO_MAX_BYTES,
 } from "@/features/company-identity/compress-logo";
@@ -12,6 +10,7 @@ import {
   type CompanyIdentityFieldErrors,
 } from "@/features/company-identity/schema";
 import { requireCompanyAdmin } from "@/lib/auth/session";
+import { revalidateLocalizedPath as revalidatePath } from "@/i18n/revalidate";
 
 export type CompanyIdentityActionResult = {
   ok: boolean;

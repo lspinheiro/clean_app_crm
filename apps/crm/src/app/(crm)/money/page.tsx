@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { MoneyList } from "./money-list";
 
@@ -6,12 +7,16 @@ import { buildCompanyMoneyLedger } from "@/features/money/model";
 import type { CompanyLedgerProjection } from "@/features/money/types";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
-export const metadata: Metadata = { title: "Money" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: t("money") };
+}
 
 const ledgerPageSize = 1000;
 const incompleteLedgerMessage = "Could not load the complete company pay ledger.";
 
 export default async function MoneyPage() {
+  const t = await getTranslations("Money");
   const { company, supabase } = await requireCompanyAdmin();
   const ledgerRows: CompanyLedgerProjection[] = [];
   let exactCount: number | null = null;
@@ -44,10 +49,8 @@ export default async function MoneyPage() {
   return (
     <main className="page-shell money-page-shell">
       <header className="money-page-header">
-        <h1 className="page-heading">Money</h1>
-        <p className="page-description">
-          A shared record of agreed cleaner pay. The Clean Crew records settlement; it never moves money.
-        </p>
+        <h1 className="page-heading">{t("title")}</h1>
+        <p className="page-description">{t("description")}</p>
       </header>
       <MoneyList ledger={ledger} />
     </main>

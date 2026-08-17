@@ -17,7 +17,7 @@ export default defineConfig({
   },
   webServer: {
     command: "pnpm exec next dev --webpack -p 3100",
-    url: `${baseURL}/login`,
+    url: `${baseURL}/en-AU/login`,
     reuseExistingServer,
     timeout: 120_000,
   },

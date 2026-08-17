@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarClock, Pencil, Plus, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useRef, useState } from "react";
 
 import {
@@ -20,6 +20,9 @@ import {
 } from "@/features/recurring-assignments/format";
 import type { RecurringAssignmentSummary } from "@/features/recurring-assignments/types";
 import { formatAud, formatDuration } from "@/features/site-defaults/format";
+import type { AppLocale } from "@/i18n/config";
+import { useRouter } from "@/i18n/navigation";
+import { localiseMutationResult, localiseUserMessage } from "@/i18n/user-message";
 import { reloadCurrentPage } from "@/lib/reload-page";
 
 type SiteRecurringAssignmentsProps = {
@@ -68,6 +71,8 @@ export function SiteRecurringAssignments({
   siteId,
   siteName,
 }: SiteRecurringAssignmentsProps) {
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("RecurringAssignments");
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
   const [target, setTarget] = useState<RecurringAssignmentSummary | null>(null);
@@ -108,19 +113,22 @@ export function SiteRecurringAssignments({
     setBusy(true);
     setResult(emptyResult);
     try {
-      const nextResult = await saveRecurringAssignment({
-        clientId,
-        siteId,
-        recurringAssignmentId: target?.id ?? "",
-        serviceId: String(formData.get("serviceId") ?? ""),
-        frequency: String(formData.get("frequency") ?? ""),
-        anchorDate: String(formData.get("anchorDate") ?? ""),
-        startTime: String(formData.get("startTime") ?? ""),
-        durationHours: String(formData.get("durationHours") ?? ""),
-        cleanerPayAud: String(formData.get("cleanerPayAud") ?? ""),
-        crewSize: String(formData.get("crewSize") ?? ""),
-        cleanerIds: selectedCleaners,
-      });
+      const nextResult = localiseMutationResult(
+        await saveRecurringAssignment({
+          clientId,
+          siteId,
+          recurringAssignmentId: target?.id ?? "",
+          serviceId: String(formData.get("serviceId") ?? ""),
+          frequency: String(formData.get("frequency") ?? ""),
+          anchorDate: String(formData.get("anchorDate") ?? ""),
+          startTime: String(formData.get("startTime") ?? ""),
+          durationHours: String(formData.get("durationHours") ?? ""),
+          cleanerPayAud: String(formData.get("cleanerPayAud") ?? ""),
+          crewSize: String(formData.get("crewSize") ?? ""),
+          cleanerIds: selectedCleaners,
+        }),
+        locale,
+      );
       setResult(nextResult);
       if (nextResult.ok) {
         dialog.current?.close();
@@ -131,7 +139,7 @@ export function SiteRecurringAssignments({
         ok: false,
         fieldErrors: {},
         formError:
-          "The save could not be confirmed. The page is refreshing to check the saved rule.",
+          t("saveNotConfirmed"),
       });
       reloadCurrentPage();
     } finally {
@@ -141,7 +149,8 @@ export function SiteRecurringAssignments({
 
   async function handleToggle(rule: RecurringAssignmentSummary) {
     setTogglingId(rule.id);
-    setStatusMessage(`Saving ${formatRecurrence(rule)}…`);
+    const recurrence = formatRecurrence(rule, locale);
+    setStatusMessage(t("savingStatus", { recurrence }));
     try {
       const nextResult = await setRecurringAssignmentActive({
         clientId,
@@ -150,15 +159,15 @@ export function SiteRecurringAssignments({
       });
       if (!nextResult.ok) {
         setStatusMessage(
-          nextResult.formError ?? "The recurring assignment status could not be saved.",
+          localiseUserMessage(nextResult.formError, locale) ?? t("statusFailed"),
         );
         return;
       }
-      setStatusMessage(`${formatRecurrence(rule)} status saved.`);
+      setStatusMessage(t("statusSaved", { recurrence }));
       router.refresh();
     } catch {
       setStatusMessage(
-        "The status could not be confirmed. The page is refreshing to check the saved rule.",
+        t("statusNotConfirmed"),
       );
       reloadCurrentPage();
     } finally {
@@ -167,11 +176,11 @@ export function SiteRecurringAssignments({
   }
 
   return (
-    <section className="recurring-assignments" aria-label={`Recurring assignments for ${siteName}`}>
+    <section className="recurring-assignments" aria-label={t("section", { siteName })}>
       <div className="recurring-heading">
         <div>
-          <h3>Recurring assignments</h3>
-          <p>One schedule rule per service day. Jobs are generated in the next step.</p>
+          <h3>{t("title")}</h3>
+          <p>{t("description")}</p>
         </div>
         <button
           className="button button--secondary button--small"
@@ -179,14 +188,14 @@ export function SiteRecurringAssignments({
           type="button"
         >
           <Plus aria-hidden="true" size={16} />
-          Add schedule
+          {t("addSchedule")}
         </button>
       </div>
 
       {assignments.length ? (
         <ul className="recurring-list">
           {assignments.map((rule) => {
-            const recurrence = formatRecurrence(rule);
+            const recurrence = formatRecurrence(rule, locale);
             return (
               <li className={rule.active ? undefined : "is-inactive"} key={rule.id}>
                 <span className="recurring-icon" aria-hidden="true">
@@ -195,16 +204,16 @@ export function SiteRecurringAssignments({
                 <div className="recurring-copy">
                   <strong>{recurrence}</strong>
                   <span className="tabular-numerals">
-                    {formatLocalTime(rule.startTime)} · {formatDuration(rule.durationMinutes)} · {rule.service.name}
+                    {formatLocalTime(rule.startTime)} · {formatDuration(rule.durationMinutes, locale)} · {rule.service.name}
                   </span>
                   <span>
-                    {formatNamedCoverage(rule)} · {formatAud(rule.cleanerPayCents)}/slot
+                    {formatNamedCoverage(rule, locale)} · {formatAud(rule.cleanerPayCents, locale)}{t("perSlot")}
                   </span>
                 </div>
                 <div className="recurring-actions">
                   <button
                     aria-checked={rule.active}
-                    aria-label={`${rule.active ? "Deactivate" : "Activate"} ${recurrence}`}
+                    aria-label={t(rule.active ? "deactivate" : "activate", { recurrence })}
                     className="status-switch"
                     disabled={togglingId !== null}
                     onClick={() => void handleToggle(rule)}
@@ -212,10 +221,10 @@ export function SiteRecurringAssignments({
                     type="button"
                   >
                     <span aria-hidden="true" />
-                    <small>{rule.active ? "Active" : "Inactive"}</small>
+                    <small>{rule.active ? t("active") : t("inactive")}</small>
                   </button>
                   <button
-                    aria-label={`Edit ${recurrence}`}
+                    aria-label={t("edit", { recurrence })}
                     className="icon-button"
                     onClick={() => openDialog(rule)}
                     type="button"
@@ -228,7 +237,7 @@ export function SiteRecurringAssignments({
           })}
         </ul>
       ) : (
-        <p className="recurring-empty">No recurring assignments for this site.</p>
+        <p className="recurring-empty">{t("none")}</p>
       )}
       <p className="recurring-status" role="status" aria-live="polite">
         {statusMessage}
@@ -247,13 +256,15 @@ export function SiteRecurringAssignments({
         >
           <header className="dialog-header">
             <div>
-              <p className="record-kicker">Recurring assignment</p>
+              <p className="record-kicker">{t("record")}</p>
               <h2 id={`recurring-dialog-title-${siteId}`}>
-                {target ? `Edit ${formatRecurrence(target)}` : `Add schedule for ${siteName}`}
+                {target
+                  ? t("edit", { recurrence: formatRecurrence(target, locale) })
+                  : t("addForSite", { siteName })}
               </h2>
             </div>
             <button
-              aria-label="Close recurring assignment"
+              aria-label={t("close")}
               className="icon-button"
               onClick={() => dialog.current?.close()}
               type="button"
@@ -264,13 +275,13 @@ export function SiteRecurringAssignments({
 
           <div className="dialog-columns">
             <div className="field">
-              <label htmlFor={`recurring-service-${siteId}`}>Service</label>
+              <label htmlFor={`recurring-service-${siteId}`}>{t("service")}</label>
               <select
                 defaultValue={target?.service.id ?? defaultServiceId ?? ""}
                 id={`recurring-service-${siteId}`}
                 name="serviceId"
               >
-                <option disabled value="">Choose service</option>
+                <option disabled value="">{t("chooseService")}</option>
                 {services.map((service) => (
                   <option key={service.id} value={service.id}>{service.name}</option>
                 ))}
@@ -278,21 +289,21 @@ export function SiteRecurringAssignments({
               <FieldError id={`recurring-service-error-${siteId}`} message={result.fieldErrors.serviceId} />
             </div>
             <div className="field">
-              <label htmlFor={`recurring-frequency-${siteId}`}>Frequency</label>
+              <label htmlFor={`recurring-frequency-${siteId}`}>{t("frequency")}</label>
               <select
                 defaultValue={target?.frequency ?? "weekly"}
                 id={`recurring-frequency-${siteId}`}
                 name="frequency"
               >
-                <option value="weekly">Weekly</option>
-                <option value="fortnightly">Fortnightly</option>
+                <option value="weekly">{t("weekly")}</option>
+                <option value="fortnightly">{t("fortnightly")}</option>
               </select>
             </div>
           </div>
 
           <div className="dialog-columns">
             <div className="field">
-              <label htmlFor={`recurring-anchor-${siteId}`}>First service date</label>
+              <label htmlFor={`recurring-anchor-${siteId}`}>{t("firstDate")}</label>
               <input
                 defaultValue={target?.anchorDate ?? todayInBrisbane()}
                 id={`recurring-anchor-${siteId}`}
@@ -302,7 +313,7 @@ export function SiteRecurringAssignments({
               <FieldError id={`recurring-anchor-error-${siteId}`} message={result.fieldErrors.anchorDate} />
             </div>
             <div className="field">
-              <label htmlFor={`recurring-time-${siteId}`}>Start time</label>
+              <label htmlFor={`recurring-time-${siteId}`}>{t("startTime")}</label>
               <input
                 defaultValue={target ? formatLocalTime(target.startTime) : "08:00"}
                 id={`recurring-time-${siteId}`}
@@ -315,7 +326,7 @@ export function SiteRecurringAssignments({
 
           <div className="recurring-form-grid">
             <div className="field">
-              <label htmlFor={`recurring-duration-${siteId}`}>Estimated hours</label>
+              <label htmlFor={`recurring-duration-${siteId}`}>{t("estimatedHours")}</label>
               <input
                 defaultValue={target
                   ? target.durationMinutes / 60
@@ -331,7 +342,7 @@ export function SiteRecurringAssignments({
               <FieldError id={`recurring-duration-error-${siteId}`} message={result.fieldErrors.durationHours} />
             </div>
             <div className="field">
-              <label htmlFor={`recurring-pay-${siteId}`}>Cleaner pay per slot (AUD)</label>
+              <label htmlFor={`recurring-pay-${siteId}`}>{t("cleanerPay")}</label>
               <input
                 defaultValue={target ? (target.cleanerPayCents / 100).toFixed(2) : ""}
                 id={`recurring-pay-${siteId}`}
@@ -344,7 +355,7 @@ export function SiteRecurringAssignments({
               <FieldError id={`recurring-pay-error-${siteId}`} message={result.fieldErrors.cleanerPayAud} />
             </div>
             <div className="field">
-              <label htmlFor={`recurring-crew-${siteId}`}>Crew size</label>
+              <label htmlFor={`recurring-crew-${siteId}`}>{t("crewSize")}</label>
               <input
                 id={`recurring-crew-${siteId}`}
                 max="20"
@@ -359,13 +370,13 @@ export function SiteRecurringAssignments({
           </div>
 
           <fieldset className="named-cleaner-fields">
-            <legend>Named cleaners (optional)</legend>
-            <p>Fill named slots in order. Remaining slots become vacancies when jobs are generated.</p>
+            <legend>{t("namedCleaners")}</legend>
+            <p>{t("namedDescription")}</p>
             <div className="dialog-columns">
               {selectedCleaners.map((cleanerId, index) => (
                 <div className="field" key={index}>
                   <label htmlFor={`recurring-cleaner-${siteId}-${index}`}>
-                    Slot {index + 1}
+                    {t("slot", { slot: index + 1 })}
                   </label>
                   <select
                     id={`recurring-cleaner-${siteId}-${index}`}
@@ -386,7 +397,7 @@ export function SiteRecurringAssignments({
                     }
                     value={cleanerId}
                   >
-                    <option value="">Leave open</option>
+                    <option value="">{t("leaveOpen")}</option>
                     {poolCleaners.map((cleaner) => (
                       <option
                         disabled={selectedCleaners.some(
@@ -413,10 +424,10 @@ export function SiteRecurringAssignments({
               onClick={() => dialog.current?.close()}
               type="button"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button className="button" disabled={busy} type="submit">
-              {busy ? "Saving…" : target ? "Save changes" : "Add schedule"}
+              {busy ? t("saving") : target ? t("saveChanges") : t("addSchedule")}
             </button>
           </footer>
         </form>

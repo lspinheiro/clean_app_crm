@@ -369,6 +369,41 @@ a {
   margin: 0 auto;
 }
 
+.language-control {
+  display: grid;
+  max-width: 280px;
+  gap: 7px;
+}
+
+.language-control label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.language-control select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 8px;
+  padding: 10px 38px 10px 12px;
+  background: var(--color-surface-card);
+  color: var(--color-text-main);
+}
+
+.language-control select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.16);
+  outline: 0;
+}
+
+.auth-panel__inner > .language-control {
+  margin-bottom: 28px;
+}
+
+.settings-card > .language-control {
+  margin-top: 18px;
+}
+
 .auth-panel h2 {
   margin: 0 0 8px;
   font-size: 32px;

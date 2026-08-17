@@ -1,13 +1,12 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import { firstFieldErrors } from "@/features/clients/schema";
 import {
   recurringAssignmentActiveSchema,
   recurringAssignmentSchema,
 } from "@/features/recurring-assignments/schema";
 import { requireCompanyAdmin } from "@/lib/auth/session";
+import { revalidateLocalizedPath as revalidatePath } from "@/i18n/revalidate";
 
 export type RecurringMutationResult = {
   ok: boolean;

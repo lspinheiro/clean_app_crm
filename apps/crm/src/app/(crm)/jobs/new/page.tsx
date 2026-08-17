@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import {
   NewJobForm,
@@ -9,19 +9,26 @@ import {
 } from "./new-job-form";
 
 import { requireCompanyAdmin } from "@/lib/auth/session";
+import { Link } from "@/i18n/navigation";
+import { getServiceLabel } from "@/i18n/service-label";
 
-export const metadata: Metadata = { title: "New job" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return { title: t("newJob") };
+}
 
 export default async function NewJobPage() {
+  const t = await getTranslations("Jobs");
+  const serviceT = await getTranslations("Services");
   const { company, supabase } = await requireCompanyAdmin();
   const [
     { data: clientRows, error: clientError },
     { data: siteRows, error: siteError },
     { data: serviceRows, error: serviceError },
   ] = await Promise.all([
-    supabase
-      .from("clients")
-      .select("id, name")
+      supabase
+        .from("clients")
+        .select("id, name")
       .eq("company_id", company.id)
       .order("name"),
     supabase
@@ -31,9 +38,9 @@ export default async function NewJobPage() {
       )
       .eq("clients.company_id", company.id)
       .order("name"),
-    supabase
-      .from("service_catalogue")
-      .select("id, name")
+      supabase
+        .from("service_catalogue")
+        .select("id, name, slug")
       .eq("active", true)
       .order("sort_order"),
   ]);
@@ -55,32 +62,31 @@ export default async function NewJobPage() {
         defaultRateCents: site.default_rate_cents,
       })),
   }));
-  const services: NewJobService[] = serviceRows;
+  const services: NewJobService[] = serviceRows.map((service) => ({
+    id: service.id,
+    name: getServiceLabel(service, serviceT),
+  }));
   const hasSites = clients.some((client) => client.sites.length > 0);
 
   return (
     <main className="page-shell new-job-page-shell">
       <Link className="back-link" href="/jobs">
         <ArrowLeft aria-hidden="true" size={18} />
-        Back to jobs
+        {t("back")}
       </Link>
       <header className="new-job-page-header">
-        <p className="eyebrow">One-off work</p>
-        <h1 className="page-heading">Create a job</h1>
-        <p className="page-description">
-          Start with the site defaults, then tailor the schedule, crew, and agreed amounts.
-        </p>
+        <p className="eyebrow">{t("oneOff")}</p>
+        <h1 className="page-heading">{t("createTitle")}</h1>
+        <p className="page-description">{t("createDescription")}</p>
       </header>
       {hasSites && services.length ? (
         <NewJobForm clients={clients} services={services} />
       ) : (
         <section className="records-empty">
-          <h2>Set up a client site first</h2>
-          <p>
-            A job needs a site and an active service before it can be saved.
-          </p>
+          <h2>{t("setupSiteTitle")}</h2>
+          <p>{t("setupSiteDescription")}</p>
           <Link className="button" href="/clients">
-            Open clients &amp; sites
+            {t("openClients")}
           </Link>
         </section>
       )}

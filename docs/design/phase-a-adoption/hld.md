@@ -77,6 +77,11 @@ Component responsibilities:
   format, shows a preview with per-row errors, and submits confirmed rows through the
   same server actions and RPCs as one-by-one entry. Reads are company-scoped;
   state-changing mutations go through RPCs.
+- **Locale presentation** — both apps share the `en-AU`/`pt-BR` locale contract and the
+  per-profile preference. The CRM uses canonical locale-prefixed routes, complete
+  app-owned catalogues, device-language negotiation before sign-in, and explicit
+  selection on sign-in and in settings. Locale changes presentation only: AUD,
+  `Australia/Brisbane`, stored values, and user-authored content remain unchanged.
 - **`apps/cleaner`** — the cleaner surface: client-first and static-exportable, so a
   Capacitor store shell stays a bolt-on if alpha iOS push evidence demands it
   ([ADR 0004](../../decisions/0004-cleaner-surface-wrapper-ready-pwa.md)). Client Supabase
@@ -348,3 +353,11 @@ the declined slot off the board until the admin acts — rejected because it nee
 third state and hides unfilled work from every cleaner while the admin is away; the
 vacancy model exists to make gaps visible. Refines the PRD's S29 wording (PRD decision
 log #13).
+
+### 15. Locale is a presentation and profile concern (2026-08-17)
+
+F15 uses canonical `en-AU` and `pt-BR` URL prefixes plus a nullable profile preference.
+An explicit URL controls the current rendering; the saved profile choice controls later
+visits and sign-ins; device language is only the pre-auth fallback. This keeps links
+deterministic and gives both roles one preference contract without making language a
+company property. The app name remains `The Clean Crew` in both locales.

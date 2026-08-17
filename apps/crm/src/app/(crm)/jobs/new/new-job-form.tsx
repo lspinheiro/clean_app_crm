@@ -35,6 +35,19 @@ const emptyResult: JobMutationResult = {
   jobId: null,
 };
 
+const fieldOrder = [
+  "clientId",
+  "siteId",
+  "serviceId",
+  "date",
+  "startTime",
+  "durationHours",
+  "crewSize",
+  "cleanerPayAud",
+  "clientChargeAud",
+  "notes",
+];
+
 function FieldError({ id, message }: { id: string; message?: string }) {
   return message ? (
     <span className="field-error" id={id} role="alert">
@@ -138,6 +151,13 @@ export function NewJobForm({
       setResult(nextResult);
       if (nextResult.ok && nextResult.jobId) {
         router.push(`/jobs/${nextResult.jobId}`);
+      } else {
+        const firstError = fieldOrder.find((field) => nextResult.fieldErrors[field]);
+        if (firstError) {
+          requestAnimationFrame(() => {
+            document.getElementById(`new-job-${firstError}`)?.focus();
+          });
+        }
       }
     } catch {
       setResult({
@@ -219,7 +239,7 @@ export function NewJobForm({
           <h2 id="new-job-service-heading">Set the service and schedule</h2>
           <p>Times are entered and displayed in Australia/Brisbane.</p>
         </div>
-        <div className="new-job-grid new-job-grid--two">
+        <div className="new-job-grid new-job-grid--trio">
           <div className="field new-job-field--wide">
             <label htmlFor="new-job-serviceId">Service</label>
             <select

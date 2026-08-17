@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import { updateCompanyIdentity } from "@/app/actions/company";
+import { BrandBubbles } from "@/components/brand-bubbles";
 import { compressCompanyLogo } from "@/features/company-identity/compress-logo";
 import {
   parseCompanyIdentity,
@@ -154,7 +155,7 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
                   unoptimized
                 />
               ) : (
-                <span aria-hidden="true">CA</span>
+                <BrandBubbles size={56} />
               )}
             </div>
             <label className="logo-upload" htmlFor="company-logo">

@@ -28,7 +28,7 @@ test("@CLE-39 keeps the displayed week and pivot anchored in title and controls"
   await signIn(page);
   await page.goto(`/roster?week=${otherWeekStart}&view=site`);
 
-  await expect(page).toHaveTitle(`${formatRosterTitle(otherWeekStart, "site")} · Clean App`);
+  await expect(page).toHaveTitle(`${formatRosterTitle(otherWeekStart, "site")} · The Clean Crew`);
   const thisWeek = page.getByRole("link", { name: "This week" });
   await expect(thisWeek).toBeVisible();
   const target = await thisWeek.boundingBox();

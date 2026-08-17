@@ -46,7 +46,7 @@ export default async function MoneyPage() {
       <header className="money-page-header">
         <h1 className="page-heading">Money</h1>
         <p className="page-description">
-          A shared record of agreed cleaner pay. Clean App records settlement; it never moves money.
+          A shared record of agreed cleaner pay. The Clean Crew records settlement; it never moves money.
         </p>
       </header>
       <MoneyList ledger={ledger} />

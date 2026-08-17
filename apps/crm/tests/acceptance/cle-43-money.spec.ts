@@ -19,7 +19,7 @@ test.describe("@CLE-43 company Money list", () => {
     await expect(page).toHaveURL(/\/roster$/);
     await page.goto("/money");
 
-    await expect(page).toHaveTitle("Money · Clean App");
+    await expect(page).toHaveTitle("Money · The Clean Crew");
     await expect(page.getByRole("heading", { name: "Money", exact: true })).toBeVisible();
     const totals = page.getByRole("region", { name: "Money totals" });
     await expect(totals.getByText("Total owed")).toBeVisible();

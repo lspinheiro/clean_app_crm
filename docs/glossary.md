@@ -1,6 +1,6 @@
 # Glossary
 
-Canonical vocabulary for Clean App. When code, docs, issues, or conversation conflict
+Canonical vocabulary for The Clean Crew. When code, docs, issues, or conversation conflict
 with this file, either this file wins or this file gets fixed — never both meanings at
 once.
 

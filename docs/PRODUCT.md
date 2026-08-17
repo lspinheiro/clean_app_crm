@@ -1,6 +1,6 @@
 # Product Strategy & Requirements — Cleaning Operations & Recruitment Platform (v1)
 
-**Working title:** CleanerApp (TBD; the co-founders' prototype ships as "Clean App")
+**Working title:** The Clean Crew (the co-founders' prototype ships as "Clean App")
 **Status:** Draft v0.4 — 2026-08-12
 **Owners:** Leonardo Pinheiro (product/engineering), Thiago (industry partner); prototype by two
 prospective co-founders (developer + PM), collaboration not yet formalised (Appendix B)
@@ -1257,7 +1257,7 @@ here, not linked.
 5. Reference checks: fully bot-run or human-assisted (the cost / trust trade-off)?
 6. Candidate-side value adds worth v1 effort (for example, a profile the candidate can share
    outside the platform)?
-7. Name/brand ("Clean App" or new), and whether F2 posts under the platform's identity or the
+7. Name/brand ("The Clean Crew" or new), and whether F2 posts under the platform's identity or the
    company's in groups.
 8. Legal review scope and budget — terms, privacy, vetting consent flows, **dispatch + pay
    ledger against labour-hire "arranging" (QLD)**, client-address privacy — before public

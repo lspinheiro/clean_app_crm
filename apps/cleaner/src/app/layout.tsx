@@ -38,8 +38,8 @@ const poppins = localFont({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Clean App", template: "%s · Clean App" },
-  description: "Find and run cleaning jobs from the companies you work with.",
+  title: { default: "The Clean Crew", template: "%s · The Clean Crew" },
+  description: "The Clean Crew App — find and run cleaning jobs from the companies you work with.",
 };
 
 export const viewport: Viewport = {

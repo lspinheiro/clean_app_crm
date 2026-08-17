@@ -17,7 +17,7 @@ test.describe("@CLE-13 jobs with crew slots", () => {
     await page.goto("/jobs");
 
     await expect(page.getByRole("heading", { name: "Jobs" })).toBeVisible();
-    await expect(page).toHaveTitle("Jobs · Clean App");
+    await expect(page).toHaveTitle("Jobs · The Clean Crew");
     const jobs = page.getByRole("list", { name: "Company jobs" });
     expect(await jobs.getByRole("listitem").count()).toBeGreaterThanOrEqual(3);
 

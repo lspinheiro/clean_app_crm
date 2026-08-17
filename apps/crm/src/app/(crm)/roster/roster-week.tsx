@@ -132,6 +132,8 @@ export function RosterWeek({
               }`}
               data-testid="roster-gap-count"
             >
+              {gapState === "gaps" ? <AlertTriangle aria-hidden="true" size={14} /> : null}
+              {gapState === "clear" ? <Check aria-hidden="true" size={14} /> : null}
               {gapState === "unscheduled" ? "Nothing scheduled" : unfilledLabel(model.vacancyCount)}
             </p>
           ) : null}
@@ -165,6 +167,9 @@ export function RosterWeek({
                       aria-current={day.dateKey === todayKey ? "date" : undefined}
                     >
                       {day.headerLabel}
+                      {day.dateKey === todayKey ? (
+                        <span aria-hidden="true" className="roster-today-tag">Today</span>
+                      ) : null}
                     </th>
                   ))}
                 </tr>
@@ -182,7 +187,10 @@ export function RosterWeek({
                     {days.map((day) => {
                       const items = row.cells[day.dateKey] ?? [];
                       return (
-                        <td key={day.dateKey}>
+                        <td
+                          key={day.dateKey}
+                          className={day.dateKey === todayKey ? "is-today" : undefined}
+                        >
                           {items.length ? items.map((item) => (
                             <RosterEntry item={item} key={item.key} view={view} />
                           )) : (

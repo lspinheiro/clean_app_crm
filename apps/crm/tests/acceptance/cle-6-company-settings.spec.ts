@@ -41,7 +41,7 @@ test.describe("@CLE-6 company identity settings", () => {
     await page.reload();
     await expect(page.getByLabel("Company name")).toHaveValue("Coastal Demo Services");
     await expect(page.getByLabel("ABN")).toHaveValue("12345678901");
-    await expect(page.getByRole("link", { name: "Coastal Demo Services — Clean App" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Coastal Demo Services — The Clean Crew" })).toBeVisible();
 
     await page.getByLabel("Company name").fill("Coastal Demo Cleaning");
     await page.getByLabel("ABN").fill("51824753556");

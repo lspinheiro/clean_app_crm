@@ -2,6 +2,7 @@ import { Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { BrandBubbles } from "./brand-bubbles";
 import { CrmNavigation, CrmSettingsLink } from "./crm-navigation";
 
 type CrmHeaderProps = {
@@ -13,15 +14,15 @@ export function CrmHeader({ companyName, logoUrl }: CrmHeaderProps) {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link className="brand-lockup" href="/roster" aria-label={`${companyName} — Clean App`}>
+        <Link className="brand-lockup" href="/roster" aria-label={`${companyName} — The Clean Crew`}>
           {logoUrl ? (
             <span className="brand-logo">
               <Image alt={`${companyName} logo`} fill sizes="36px" src={logoUrl} unoptimized />
             </span>
           ) : (
-            <span className="brand-mark" aria-hidden="true">CA</span>
+            <BrandBubbles />
           )}
-          <span>Clean App</span>
+          <span>The Clean Crew</span>
         </Link>
         <CrmNavigation />
         <div className="header-actions">

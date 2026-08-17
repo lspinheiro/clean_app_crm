@@ -7,7 +7,7 @@ const globalsPath = path.resolve(process.cwd(), "src/app/globals.css");
 const contractPath = path.resolve(process.cwd(), "../../DESIGN.md");
 
 describe("CLE-19 cleaner app design-system plumbing", () => {
-  it("loads Tailwind v4 and the canonical Clean App semantic colours", async () => {
+  it("loads Tailwind v4 and the canonical The Clean Crew semantic colours", async () => {
     const css = await readFile(globalsPath, "utf8");
 
     expect(css).toContain('@import "tailwindcss"');

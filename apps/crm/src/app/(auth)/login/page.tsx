@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { BrandBubbles } from "../../../components/brand-bubbles";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -9,8 +10,8 @@ export default function LoginPage() {
     <main className="auth-page">
       <section className="auth-intro">
         <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true">CA</span>
-          Clean App
+          <BrandBubbles />
+          The Clean Crew
         </div>
         <div>
           <h1>Your cleaning week, on record.</h1>

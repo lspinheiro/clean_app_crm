@@ -49,12 +49,14 @@ export function ClientsWorkspace({ clients }: ClientsWorkspaceProps) {
   function openClientDialog() {
     setClientResult(emptyResult);
     clientDialog.current?.showModal();
+    clientDialog.current?.querySelector("input")?.focus();
   }
 
   function openSiteDialog(client: ClientWithSites) {
     setSiteTarget(client);
     setSiteResult(emptyResult);
     siteDialog.current?.showModal();
+    siteDialog.current?.querySelector("input")?.focus();
   }
 
   async function handleCreateClient(event: FormEvent<HTMLFormElement>) {

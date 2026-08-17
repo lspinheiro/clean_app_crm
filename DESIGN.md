@@ -1,95 +1,130 @@
-# Clean App — Design System
+# The Clean Crew — Design System
 
 The single visual world for both apps (`apps/crm`, `apps/cleaner`). Canonical: the Stitch
 design system is derived from this file (`upload_design_md`), never edited in Stitch.
-Seeded from the `../clean-app` prototype's tokens (Design System v3.1); the cleaner app's
-parity screens keep visual fidelity to the prototype.
+Current direction: **Trust Blue**, adopted 17 Aug 2026 from the palette exploration in
+`docs/research/ux-design.md`; the approved reference screen is
+`mockups/redesign/trust-blue-approved.html` (Stitch screen
+`af56308a78bf477b9f7f256f1f94974f`, project `clean-app-crm`). This supersedes the
+ink-on-paper system seeded from the `../clean-app` prototype.
 
 ## Point of view
 
-Uber-like utility: **ink on paper, high contrast, strong type, colour only for state.**
-The interface is a tool used one-handed between site visits — quiet surfaces, decisive
-typography, zero decoration that isn't information. The one brand motif is the soap
-bubble (outlined circles, motion makes them read as bubbles); it appears in loaders and
-empty states, never as background decoration.
+Calm operational utility: roughly **80% neutral surfaces, 15% brand colour, 5% semantic
+status colour**. Surfaces stay quiet so structured data reads first; brand blue signals
+the primary action, the active place in the app, and "now" (today) — semantic colour is
+reserved for state. The brand motif remains the soap bubble (outlined circles, motion
+makes them read as bubbles) drawn in brand blue and accent cyan; it appears in loaders
+and empty states, never as background decoration. The brand mark is the **bubble-crew
+cluster** — one filled `primary` bubble with a highlight, one `accent` and one slate
+(`text-muted`) outlined bubble huddled behind it, each separated by a white halo
+(master: `apps/crm/src/components/brand-bubbles.tsx` and `src/app/icon.svg` in both
+apps; source concept: `mockups/brand/bubble_crew.jpeg`). On dark surfaces the mark sits
+on a white circular badge.
 
 ## Colour
 
-Core:
+Brand:
 
-- `ink` `#000000` — text, primary buttons, emphasis surfaces
-- `paper` `#ffffff` — background
-- `bubble` `#00c2ff` — the "clean" accent: progress, highlights, brand moments
-- `success` `#06c167` — confirmations, filled/assigned states
-- `danger` `#e11900` — errors, cancellations, dropouts, unfilled-gap alerts
+- `primary` `#2563EB` — primary buttons, active navigation, today emphasis
+- `primary-hover` `#1E40AF` — hover/pressed brand surfaces
+- `primary-container` `#DBEAFE` with `on-primary-container` `#1E3A8A` — brand tints
+  (today-column wash, selected states)
+- `accent` `#06B6D4` — progress, highlights, brand moments
+- `accent-container` `#CFFAFE` with `on-accent-container` `#164E63`
 
-Neutral scale (surfaces, borders, secondary text): gray-50 `#fafafa`, gray-100 `#f5f5f5`,
-gray-200 `#e8e8e8`, gray-300 `#d6d6d6`, gray-400 `#a8a8a8`, gray-500 `#7a7a7a`,
-gray-600 `#545454`, gray-700 `#3d3d3d`, gray-800 `#262626`, gray-900 `#141414`.
+Semantic status (each pairs a `container` background with an `on-container` text tone —
+never white text on a tint, never the bright core colour as small text):
 
-Semantic status pairs keep readable text separate from the brighter core colour:
+- `success` `#15803D` · container `#DCFCE7` · on-container `#14532D` — confirmations,
+  assigned/filled states
+- `warning` `#D97706` · container `#FEF3C7` · on-container `#78350F` — attention,
+  approaching deadlines
+- `danger` `#B91C1C` · container `#FEE2E2` · on-container `#7F1D1D` — errors,
+  cancellations, dropouts, unfilled gaps
 
-- `status-info-text` `#00566f` on `status-info-tint` (`bubble` at 14%)
-- `status-success-text` `#006735` on `status-success-tint` (`success` at 14%)
-- `status-danger-text` `#9b1100` on `status-danger-tint` (`danger` at 12%)
-- `status-success-border` `rgb(6 193 103 / 0.35)` — outline for successful state chips
-- `status-danger-soft` `rgb(225 25 0 / 0.06)` — unfilled-entry surface
-- `status-danger-faint` `rgb(225 25 0 / 0.025)` — unfilled-row surface
+Neutrals:
 
-Status labels always use the shared semantic text token. Do not repeat status hex or tint
-literals in component rules.
+- `surface` `#F8FAFC` — page background
+- `surface-card` `#FFFFFF` — cards, nav bar, grid cells
+- `surface-alt` `#F1F5F9` — grouped/inset sections (toolbars, banner panels, table heads)
+- `surface-border` `#E2E8F0` — 1px borders and dividers
+- `text-main` `#0F172A` — headings and primary text
+- `text-secondary` `#334155` — supporting text, inactive nav
+- `text-muted` `#64748B` — captions, metadata; the lightest permitted text tone
 
-Rules: colour is **state, not decoration** — a screen at rest is black, white, and grey.
-`bubble` is never a text colour on white (contrast); use it for fills, bars, and accents
-beside ink text. Status colours always pair with a text label, never colour alone.
+Rules: colour is **action and state, not decoration** — a screen at rest is slate text on
+white and `surface`, with blue only on the primary action, the active nav item, and the
+today marker. Status colours always pair container + on-container + icon + text label,
+never colour alone. White text sits only on `primary`, `primary-hover`, and the semantic
+`DEFAULT` colours, never on containers or `accent`.
 
 ## Typography
 
-**Poppins** (weights 400–800), fallback system sans. Scale:
+**Inter** (weights 400–900) for display, headings, and body; **Public Sans** (400–700)
+for labels — the uppercase, letter-spaced micro-labels on table headers, eyebrows, and
+status chips. Fallback system sans. Scale:
 
 - Display 32/38, weight 800 — screen-level numbers, hero states
-- Title 24/30, weight 700 — page titles
-- Heading 18/24, weight 700 — card titles, section heads
+- Title 30/36, weight 700 — page titles
+- Heading 18/24, weight 600–700 — card titles, section heads
 - Body 16/24, weight 400 — default
-- Caption 13/18, weight 400–500 — labels, metadata, table headers
+- Caption 13/18, weight 500 — metadata, helper text
+- Label (Public Sans) 11–12/16, weight 700, uppercase, wide tracking — eyebrows, table
+  headers, chip text
 
 Prices, pay amounts, times, and counts use **tabular numerals**. UI copy is plain
 English: short sentences, no idioms, numerals for times and pay (ESL, phone-only users).
 
 ## Shape, depth, spacing
 
-- Radius: inputs 8px, cards 12px, buttons and chips fully rounded (pill).
-- One shadow level only: `0 4px 16px rgb(0 0 0 / 0.08)` for floating cards and bottom
-  sheets. Everything else is flat with `gray-200` 1px borders.
-- 8pt spacing grid; card padding 16px.
+- Radius: buttons and inputs 8px, cards and panels 12px, feature panels 16px, chips in
+  page headers fully rounded (pill), compact chips inside dense grids 4px.
+- Two shadow levels only: `sm` `0 1px 2px 0 rgb(0 0 0 / 0.05)` for nav, toolbars, and
+  chips-on-cards; `card` `0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 /
+  0.05)` for cards and floating surfaces. Everything still carries a 1px
+  `surface-border`; shadows soften, borders define.
+- 8pt spacing grid; card padding 16px; section gaps 32px.
 
 ## Components
 
-- **Buttons**: pill, bold label, height 44/52px. Primary = ink fill, paper text.
-  Secondary = 1px gray-300 border, ink text. Ghost = text only. Danger = danger fill.
-  Press feedback: scale 0.98. Busy state: inline spinner. One primary action per screen.
-- **Cards**: 12px radius, 16px padding. Paper tone (border) by default; ink tone
-  (inverted) for emphasis moments; floating (shadow) for overlays.
-- **Inputs**: 48px height, 8px radius, gray-300 border, caption-size label above, focus =
-  ink border + soft ring, error = danger border + caption message below.
-- **Status chips**: pill, caption size, tinted background + label (e.g. posted, assigned,
-  in progress, done, gap). Never colour without a word.
-- **Bottom sheets** (mobile): floating card pinned to bottom, drag handle.
-- **Skeletons**: shimmer on gray-100/200; respect reduced motion.
-- **Bubble loader**: outlined ink/bubble circles rising and swaying; static circles under
-  reduced motion.
+- **Buttons**: 8px radius, medium-weight label, height 44px (52px for primary mobile
+  actions). Primary = `primary` fill, white text, `primary-hover` on hover. Secondary =
+  `surface-card` fill, 1px `surface-border`, `text-secondary` label. Ghost = text only.
+  Danger = `danger` fill. Press feedback: scale 0.95. Busy state: inline spinner. One
+  primary action per screen.
+- **Cards**: 12px radius, 16px padding, `surface-card` fill, 1px `surface-border`,
+  `card` shadow. Inset/grouped panels use `surface-alt`.
+- **Inputs**: 48px height, 8px radius, `surface-border` border, caption-size label
+  above, focus = `primary` border + soft ring, error = `danger` border + caption message
+  below.
+- **Status chips**: container background + on-container text + icon + word (e.g. posted,
+  assigned, in progress, done, gap), Public Sans label style. Pill in page headers,
+  4px radius compact form inside dense grids. Never colour without a word.
+- **Segmented controls**: `surface-alt` track with 1px border; the active segment is a
+  `surface-card` pill with `sm` shadow and `primary` text.
+- **Navigation (CRM top bar)**: `surface-card`, bottom `surface-border`, `sm` shadow;
+  active item = `primary` text + 2px `primary` underline; inactive = `text-secondary`.
+- **Exception panels** (e.g. vacancies to fill): `surface-alt` panel, danger icon +
+  heading, white cards inside, one primary action per card.
+- **Today marker** (roster grid): `primary-container` wash on the column, `primary`
+  header text, small `primary`-filled "TODAY" tag.
+- **Bottom sheets** (mobile): floating card pinned to bottom, drag handle, `card` shadow.
+- **Skeletons**: shimmer on `surface-alt`/`surface-border`; respect reduced motion.
+- **Bubble loader**: outlined `primary`/`accent` circles rising and swaying; static
+  circles under reduced motion.
 
 ## Layout
 
 - **Cleaner app (mobile-first PWA, 390px design width)**: single column, bottom-anchored
   primary actions, bottom sheets for detail, thumb-reach first. Screens must survive
   interruption — state is always recoverable.
-- **CRM (desktop-first web, 1280px design width, responsive to tablet/mobile)**: top nav
-  bar — logo, Roster · Jobs · Clients · Pool · Money, with the current section marked.
-  Route-specific primary actions appear only once their workflow ships. No dead action
-  placeholders. Content max-width 1200px. Dense data (roster week grid, client tables)
-  uses caption-size headers, body-size cells, generous row height (44px+). The roster is
-  the default screen.
+- **CRM (desktop-first web, 1280px design width, responsive to tablet/mobile)**: sticky
+  top nav bar — logo, Roster · Jobs · Clients · Pool · Money, with the current section
+  marked. Route-specific primary actions appear only once their workflow ships. No dead
+  action placeholders. Content max-width 1200px. Dense data (roster week grid, client
+  tables) uses label-style headers, body-size cells, generous row height (44px+). The
+  roster is the default screen.
 
 ## Interaction & motion
 
@@ -99,14 +134,26 @@ the only playful motion. Every async action shows busy state on its trigger. Res
 
 ## Accessibility
 
-WCAG 2.2 AA target: 4.5:1 text contrast (ink on paper clears it; grey text no lighter
-than gray-600 for body and caption text on white or gray-50 — gray-500 is 4.29:1 on
-white, under AA at caption sizes, so it is reserved for large text and non-text glyphs
-where 3:1 applies), visible focus rings (ink, soft), 44px minimum touch targets, labels
-tied to inputs, status conveyed by text + colour.
+WCAG 2.2 AA target: 4.5:1 text contrast. `text-muted` `#64748B` is the floor for body and
+caption text on `surface-card` and `surface` (≈4.7:1 on white); nothing lighter carries
+text. On-container tones are the only text colours on status tints. White text only on
+`primary`, `primary-hover`, and semantic `DEFAULT` fills. Visible focus rings
+(`primary`, soft), 44px minimum touch targets, labels tied to inputs, status conveyed by
+text + colour.
 
 ## Content rules
 
 Demo data only in mockups and fixtures — never real client names, addresses, or phone
 numbers. Currency AUD (`$180`), times as `8:00`, dates as `Tue 12 Aug`. Working name in
-UI: **Clean App**.
+UI: **The Clean Crew**.
+
+## Decision log
+
+- **17 Aug 2026 — Trust Blue adopted.** Chosen from the five research palette directions
+  (`docs/research/ux-design.md`; comparison set in `mockups/redesign/`) against Fresh
+  Teal, Warm Clean, Burgundy & Teal, and Utility Orange. Reference screen:
+  `mockups/redesign/trust-blue-approved.html`. Carried over from the research: the
+  80/15/5 neutral/brand/semantic split, container/on-container status pairs, icon + word
+  status semantics, tabular numerals. Supersedes the prototype-seeded ink-on-paper
+  system (Poppins, pill buttons, single shadow level); the soap-bubble motif is retained
+  in brand blue/cyan.

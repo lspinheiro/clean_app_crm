@@ -62,7 +62,7 @@ using (
   )
 );
 
-create function public.prepare_pool_invite_email_batch(
+create or replace function public.prepare_pool_invite_email_batch(
   target_company_id uuid,
   selected_invite_id uuid,
   selected_locale public.app_locale,
@@ -115,6 +115,10 @@ begin
   if jsonb_typeof(recipients) is distinct from 'array'
     or jsonb_array_length(recipients) = 0 then
     raise invalid_parameter_value using message = 'At least one email recipient is required';
+  end if;
+
+  if jsonb_array_length(recipients) > 500 then
+    raise invalid_parameter_value using message = 'A maximum of 500 email recipients is allowed';
   end if;
 
   select invite.code, invite.revoked_at, invite.expires_at
@@ -310,7 +314,7 @@ begin
 end;
 $$;
 
-create function public.record_pool_invite_email_results(
+create or replace function public.record_pool_invite_email_results(
   selected_batch_id uuid,
   attempt_number integer,
   provider_results jsonb
@@ -362,10 +366,13 @@ begin
       or (result_status = 'accepted' and result_message_id is null)
       or (
         result_status = 'failed'
-        and result_failure_reason not in (
-          'provider_invalid_response',
-          'provider_rejected',
-          'provider_unavailable'
+        and (
+          result_failure_reason is null
+          or result_failure_reason not in (
+            'provider_invalid_response',
+            'provider_rejected',
+            'provider_unavailable'
+          )
         )
       ) then
       raise invalid_parameter_value using message = 'Provider results are invalid';

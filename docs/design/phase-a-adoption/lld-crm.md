@@ -25,8 +25,9 @@ The Pool e-mail flow adds `prepare_pool_invite_email_batch` and
 `record_pool_invite_email_results`. `sendPoolInviteEmails` and
 `retryFailedPoolInviteEmails` call these RPCs around the server-only Resend Batch API.
 Both actions call `requireCompanyAdmin` before they resolve the selected active invite.
-The request contains a stable confirmation key, `en-AU` or `pt-BR`, the normalised
-recipients, and the accepted authority statement. It never contains an API key.
+The request contains `en-AU` or `pt-BR`, the normalised recipients, and the accepted
+authority statement. The server derives a stable confirmation key from the invite,
+locale, and sorted unique recipient e-mails. The request never contains an API key.
 
 ## Internal structure — changes by area
 
@@ -84,11 +85,12 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   the exact unique-recipient count, the selected `en-AU` or `pt-BR` copy, and the
   authority statement. Confirm sends the selected active invite only. The server
   repeats schema validation, authorisation, invite-state checks, and deduplication.
-  It calls `https://api.resend.com/emails/batch` with at most 100 messages per call.
+  It rejects more than 500 unique recipients and calls
+  `https://api.resend.com/emails/batch` with at most 100 messages per call.
   `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are server-only. From uses
-  "{company name} via The Clean Crew" with the verified address. Reply-To uses the
-  registered company e-mail, falling back to the admin e-mail. The footer tells an
-  unexpected recipient to ignore the e-mail or reply to the company.
+  an RFC-quoted "{company name} via The Clean Crew" with the verified address. Reply-To
+  uses the authenticated admin e-mail. The footer tells an unexpected recipient to
+  ignore the e-mail or reply to the company.
 - **Job detail (`(crm)/jobs/[jobId]`)** — gains the directed route: an "offer to…"
   picker over active pool members not already assigned, applied, or offered; pending
   offers listed with age and a revoke action; the assign path shows the new invariant
@@ -170,8 +172,8 @@ sequenceDiagram
     T->>B: choose cleaner CSV
     B->>B: validate + deduplicate
     B-->>T: exact count + localised preview + authority statement
-    T->>S: confirm with stable confirmation key
-    S->>S: require company admin + validate again
+    T->>S: confirm normalised list + locale + authority
+    S->>S: require company admin + validate + derive stable confirmation key
     S->>DB: prepare batch for active invite
     loop chunks of at most 100
         S->>R: send with stable provider idempotency key
@@ -194,14 +196,16 @@ per-row outcome, never an abort: the remaining rows still submit.
 
 The e-mail action maps missing configuration to one actionable admin message. It maps a
 provider failure to a safe recipient failure reason. It never returns credentials,
-response bodies, or raw provider errors. A failed provider chunk does not stop later
-chunks. Retry reads failed recipients from company-scoped batch state.
+response bodies, or raw provider errors. It honours Resend rate-limit reset headers and
+retries a 429 with the same provider idempotency key. A failed provider chunk does not
+stop later chunks. Retry reads failed recipients from company-scoped batch state.
 
 ## Performance
 
 Alpha scale; nothing hot. The company-data import submits sequentially by design
 (LLD-db decision — free-tier discipline; a 40-row import is 40 fast calls). Cleaner
-e-mail sends use provider batches of at most 100 messages.
+e-mail sends use provider batches of at most 100 messages and stop at 500 unique
+recipients per confirmed CSV.
 
 ## Open questions
 
@@ -241,7 +245,8 @@ navigation preserves the user's current task.
 ### 4. Cleaner CSV preview stays in the browser; sending stays on the server (2026-08-17)
 
 The browser parses and previews the cleaner send list so no provider call can happen
-before explicit confirmation. The server repeats validation and authorisation, then uses
-the server-only Resend key. This keeps credentials out of the browser and preserves the
-existing Pool route. The alternative, a browser call to Resend, was rejected because it
-would expose the provider credential and bypass company-admin authorisation.
+before explicit confirmation. The server repeats validation and authorisation, derives
+the stable logical confirmation key, then uses the server-only Resend key. This keeps
+credentials out of the browser and preserves the existing Pool route. The alternative,
+a browser call to Resend, was rejected because it would expose the provider credential
+and bypass company-admin authorisation.

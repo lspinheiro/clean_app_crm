@@ -19,12 +19,17 @@ export type PoolInviteEmailCsvPreview = {
 
 const headers = ["email", "name"] as const;
 const emailSchema = z.email().max(320);
+const nameSchema = z.string().max(200);
+
+export const POOL_INVITE_EMAIL_RECIPIENT_LIMIT = 500;
 
 export type PoolInviteEmailCsvMessageKey =
   | "addRecipient"
   | "duplicateEmail"
   | "exactHeaders"
   | "expectedColumns"
+  | "nameLength"
+  | "recipientLimit"
   | "unclosedQuote"
   | "validEmail";
 
@@ -44,6 +49,8 @@ function message(
     case "duplicateEmail": return "This email address is already in the file.";
     case "exactHeaders": return "Use the exact headers: email,name.";
     case "expectedColumns": return "Expected 2 columns.";
+    case "nameLength": return "Name must be 200 characters or fewer.";
+    case "recipientLimit": return "The alpha limit is 500 recipients per CSV.";
     case "unclosedQuote": return "The CSV contains an unclosed quoted field.";
     case "validEmail": return "Enter a valid email address.";
   }
@@ -156,6 +163,17 @@ export function parsePoolInviteEmailCsv(
       continue;
     }
 
+    if (name !== null && !nameSchema.safeParse(name).success) {
+      rows.push({
+        email,
+        name,
+        reason: message(translate, "nameLength"),
+        rowNumber,
+        status: "invalid",
+      });
+      continue;
+    }
+
     if (seen.has(email)) {
       rows.push({
         email,
@@ -168,6 +186,16 @@ export function parsePoolInviteEmailCsv(
     }
 
     seen.add(email);
+    if (recipients.length >= POOL_INVITE_EMAIL_RECIPIENT_LIMIT) {
+      rows.push({
+        email,
+        name,
+        reason: message(translate, "recipientLimit"),
+        rowNumber,
+        status: "invalid",
+      });
+      continue;
+    }
     const recipient = { email, name };
     recipients.push(recipient);
     rows.push({ ...recipient, reason: null, rowNumber, status: "ready" });

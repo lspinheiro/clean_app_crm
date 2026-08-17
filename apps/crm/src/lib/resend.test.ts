@@ -38,9 +38,16 @@ describe("CLE-79 Resend batch adapter", () => {
     expect(outcome.filter((item) => item.status === "accepted")).toHaveLength(101);
   });
 
-  it("marks one rejected chunk safely and continues with later chunks", async () => {
+  it("honours Retry-After and retries a rate-limited chunk with the same key", async () => {
+    const wait = vi.fn().mockResolvedValue(undefined);
     const fetcher = vi.fn()
-      .mockResolvedValueOnce(new Response("provider internals", { status: 429 }))
+      .mockResolvedValueOnce(new Response("provider internals", {
+        headers: { "retry-after": "0.5" },
+        status: 429,
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: messages(100).map((_, index) => ({ id: `accepted-${index}` })),
+      }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ id: "accepted-100" }] }), { status: 200 }));
 
     const outcome = await sendResendEmailBatches({
@@ -51,22 +58,47 @@ describe("CLE-79 Resend batch adapter", () => {
       from: "Company via The Clean Crew <invite@example.com>",
       messages: messages(101),
       replyTo: "admin@example.com",
+      wait,
     });
 
-    expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(outcome.slice(0, 100)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          failureReason: "provider_rejected",
-          status: "failed",
-        }),
-      ]),
-    );
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(wait).toHaveBeenCalledWith(500);
+    expect(fetcher.mock.calls[0][1].headers["Idempotency-Key"])
+      .toBe(fetcher.mock.calls[1][1].headers["Idempotency-Key"]);
+    expect(outcome.slice(0, 100).every((item) => item.status === "accepted")).toBe(true);
     expect(outcome[100]).toMatchObject({
       providerMessageId: "accepted-100",
       status: "accepted",
     });
     expect(JSON.stringify(outcome)).not.toContain("provider internals");
+  });
+
+  it("waits for the advertised rate-limit reset before the next chunk", async () => {
+    const wait = vi.fn().mockResolvedValue(undefined);
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: messages(100).map((_, index) => ({ id: `id-${index}` })),
+      }), {
+        headers: {
+          "ratelimit-remaining": "0",
+          "ratelimit-reset": "0.25",
+        },
+        status: 200,
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ id: "id-100" }] }), { status: 200 }));
+
+    await sendResendEmailBatches({
+      apiKey: "server-secret",
+      attemptNumber: 0,
+      batchId: "batch-id",
+      fetcher,
+      from: "Company via The Clean Crew <invite@example.com>",
+      messages: messages(101),
+      replyTo: "admin@example.com",
+      wait,
+    });
+
+    expect(wait).toHaveBeenCalledWith(250);
   });
 
   it("maps network and malformed responses to safe failures", async () => {

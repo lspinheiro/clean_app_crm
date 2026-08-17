@@ -20,7 +20,6 @@ import {
 const companyId = "10000000-0000-4000-8000-000000000010";
 const inviteId = "10000000-0000-4000-8000-000000000020";
 const batchId = "10000000-0000-4000-8000-000000000030";
-const confirmationKey = "10000000-0000-4000-8000-000000000040";
 const retryKey = "10000000-0000-4000-8000-000000000050";
 
 function preparedRows(attemptNumber = 0) {
@@ -90,7 +89,6 @@ describe("CLE-79 pool invitation email actions", () => {
   it("re-authorises, normalises recipients, and never creates Auth users", async () => {
     const result = await sendPoolInviteEmails({
       authorityConfirmed: true,
-      confirmationKey,
       inviteId,
       locale: "en-AU",
       recipients: [
@@ -108,7 +106,7 @@ describe("CLE-79 pool invitation email actions", () => {
     expect(mocks.requireCompanyAdmin).toHaveBeenCalledOnce();
     expect(rpc).toHaveBeenNthCalledWith(1, "prepare_pool_invite_email_batch", {
       authority_confirmed: true,
-      confirmation_key: confirmationKey,
+      confirmation_key: expect.stringMatching(/^[0-9a-f-]{36}$/),
       recipients: [{ email: "ana@example.com", name: "Ana" }],
       selected_invite_id: inviteId,
       selected_locale: "en-AU",
@@ -119,7 +117,7 @@ describe("CLE-79 pool invitation email actions", () => {
         apiKey: "server-secret",
         attemptNumber: 0,
         batchId,
-        from: "Coastal Cleaning via The Clean Crew <invite@example.com>",
+        from: '"Coastal Cleaning via The Clean Crew" <invite@example.com>',
         replyTo: "admin@example.com",
       }),
     );
@@ -129,7 +127,6 @@ describe("CLE-79 pool invitation email actions", () => {
   it("rejects malformed or unconfirmed input before authentication", async () => {
     const result = await sendPoolInviteEmails({
       authorityConfirmed: false,
-      confirmationKey,
       inviteId,
       locale: "en-AU",
       recipients: [{ email: "not-an-email", name: null }],
@@ -140,12 +137,103 @@ describe("CLE-79 pool invitation email actions", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it("rejects more than 500 recipients before authentication", async () => {
+    const result = await sendPoolInviteEmails({
+      authorityConfirmed: true,
+      inviteId,
+      locale: "en-AU",
+      recipients: Array.from({ length: 501 }, (_, index) => ({
+        email: `cleaner-${index}@example.com`,
+        name: null,
+      })),
+    });
+
+    expect(result).toEqual({ ok: false, error: "user.poolEmailInvalidInput" });
+    expect(mocks.requireCompanyAdmin).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("derives one confirmation key for the same normalised send list", async () => {
+    rpc.mockReset();
+    rpc
+      .mockResolvedValueOnce({ data: preparedRows(), error: null })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            email: "ana@example.com",
+            failure_reason: null,
+            name: "Ana",
+            provider_message_id: "provider-1",
+            recipient_id: "10000000-0000-4000-8000-000000000101",
+            status: "accepted",
+          },
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [{
+          ...preparedRows()[0],
+          provider_message_id: "provider-1",
+          status: "accepted",
+        }],
+        error: null,
+      });
+
+    await sendPoolInviteEmails({
+      authorityConfirmed: true,
+      inviteId,
+      locale: "en-AU",
+      recipients: [
+        { email: "ana@example.com", name: "Ana" },
+        { email: "bruno@example.com", name: null },
+      ],
+    });
+    await sendPoolInviteEmails({
+      authorityConfirmed: true,
+      inviteId,
+      locale: "en-AU",
+      recipients: [
+        { email: "BRUNO@example.com", name: "Changed name" },
+        { email: "ANA@example.com", name: "Ana" },
+      ],
+    });
+
+    const firstKey = rpc.mock.calls[0]?.[1].confirmation_key;
+    const repeatedKey = rpc.mock.calls[2]?.[1].confirmation_key;
+    expect(firstKey).toMatch(/^[0-9a-f-]{36}$/);
+    expect(repeatedKey).toBe(firstKey);
+    expect(mocks.sendResendEmailBatches).toHaveBeenCalledTimes(1);
+  });
+
+  it("quotes commas and escaped quotes in the sender display name", async () => {
+    mocks.requireCompanyAdmin.mockResolvedValueOnce({
+      company: { id: companyId, name: 'Coastal Cleaning, "Gold Coast"' },
+      supabase: {
+        auth: { admin: { inviteUserByEmail } },
+        rpc,
+      },
+      user: { email: "admin@example.com" },
+    });
+
+    await sendPoolInviteEmails({
+      authorityConfirmed: true,
+      inviteId,
+      locale: "en-AU",
+      recipients: [{ email: "ana@example.com", name: null }],
+    });
+
+    expect(mocks.sendResendEmailBatches).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: '"Coastal Cleaning, \\"Gold Coast\\" via The Clean Crew" <invite@example.com>',
+      }),
+    );
+  });
+
   it("returns a safe setup error when the Resend configuration is missing", async () => {
     delete process.env.RESEND_API_KEY;
 
     const result = await sendPoolInviteEmails({
       authorityConfirmed: true,
-      confirmationKey,
       inviteId,
       locale: "en-AU",
       recipients: [{ email: "ana@example.com", name: null }],
@@ -161,7 +249,6 @@ describe("CLE-79 pool invitation email actions", () => {
 
     await expect(sendPoolInviteEmails({
       authorityConfirmed: true,
-      confirmationKey,
       inviteId,
       locale: "en-AU",
       recipients: [{ email: "ana@example.com", name: null }],

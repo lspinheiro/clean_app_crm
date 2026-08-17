@@ -145,9 +145,10 @@ Component responsibilities:
   validates, normalises, and deduplicates `email` plus optional `name`. It shows the
   exact count and localised copy before confirmation. A server action re-authorises the
   company admin, resolves the active invite, creates company-scoped batch state through
-  RPCs, and calls Resend in chunks of at most 100. The provider result updates each
-  recipient to accepted or failed. An explicit retry selects failed recipients only.
-  No step creates a Supabase Auth user or a pool membership.
+  RPCs, and calls Resend in chunks of at most 100, with at most 500 unique recipients in
+  one confirmed alpha send. The provider result updates each recipient to accepted or
+  failed. An explicit retry selects failed recipients only. No step creates a Supabase
+  Auth user or a pool membership.
 - Pay flows as a (basis, value) pair: fixed amount per slot, or hourly rate. Site
   defaults seed the pair; recurring assignments carry it; generated jobs inherit it;
   one-off jobs prefill it from the site default. Every surface shows pay as the admin
@@ -233,8 +234,8 @@ state only), and the vacancy view.
 - **Free-tier discipline**: select only needed columns; push over e-mail; small payloads.
 - **Timezone**: all schedule computation in `Australia/Brisbane`.
 - **E-mail boundary**: `RESEND_API_KEY` and the verified sender address are server-only.
-  The sender display name is "{company name} via The Clean Crew". Reply-To uses the
-  registered company or admin e-mail. Stored provider failures contain no credentials
+  The RFC-quoted sender display name is "{company name} via The Clean Crew". Reply-To
+  uses the authenticated admin e-mail. Stored provider failures contain no credentials
   or raw provider internals.
 
 ## Open questions
@@ -385,7 +386,8 @@ company property. The app name remains `The Clean Crew` in both locales.
 
 Resend is the alpha provider for cleaner send lists. The browser owns CSV validation and
 preview, while the CRM server re-authorises the admin, persists company-scoped submission
-state through RPCs, and sends provider batches of at most 100 messages. Each provider
-batch has a stable idempotency key. The alternative, Supabase Auth invitations, was
-rejected because the CSV is a contact list for the existing link-first registration flow,
-not an account import.
+state through RPCs, derives the logical confirmation key from the selected invite, locale,
+and normalised recipient e-mails, and sends provider batches of at most 100 messages. One
+confirmed alpha send is limited to 500 unique recipients. Each provider batch has a stable
+idempotency key. The alternative, Supabase Auth invitations, was rejected because the CSV
+is a contact list for the existing link-first registration flow, not an account import.

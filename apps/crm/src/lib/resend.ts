@@ -29,10 +29,36 @@ type SendResendEmailBatchesInput = {
   from: string;
   messages: ResendEmailMessage[];
   replyTo: string;
+  wait?: (milliseconds: number) => Promise<void>;
 };
 
 const resendBatchUrl = "https://api.resend.com/emails/batch";
 const resendBatchLimit = 100;
+const resendMaxRateLimitAttempts = 3;
+const resendMaximumWaitMs = 5_000;
+
+function waitFor(milliseconds: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function secondsHeader(response: Response, name: string) {
+  const raw = response.headers.get(name);
+  if (!raw) return null;
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds;
+  if (name === "retry-after") {
+    const date = Date.parse(raw);
+    if (Number.isFinite(date)) return Math.max(0, (date - Date.now()) / 1_000);
+  }
+  return null;
+}
+
+function boundedWaitMs(response: Response, names: string[], fallbackSeconds: number) {
+  const seconds = names
+    .map((name) => secondsHeader(response, name))
+    .find((value): value is number => value !== null) ?? fallbackSeconds;
+  return Math.min(Math.ceil(seconds * 1_000), resendMaximumWaitMs);
+}
 
 function failedChunk(
   messages: ResendEmailMessage[],
@@ -65,40 +91,60 @@ export async function sendResendEmailBatches({
   from,
   messages,
   replyTo,
+  wait = waitFor,
 }: SendResendEmailBatchesInput): Promise<ResendEmailOutcome[]> {
   const outcomes: ResendEmailOutcome[] = [];
 
   for (let offset = 0; offset < messages.length; offset += resendBatchLimit) {
     const chunkIndex = Math.floor(offset / resendBatchLimit);
     const chunk = messages.slice(offset, offset + resendBatchLimit);
-    let response: Response;
+    const request = {
+      body: JSON.stringify(
+        chunk.map(({ html, subject, text, to }) => ({
+          from,
+          html,
+          reply_to: replyTo,
+          subject,
+          text,
+          to: [to],
+        })),
+      ),
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `pool-invite/${batchId}/attempt/${attemptNumber}/chunk/${chunkIndex}`,
+      },
+      method: "POST",
+    } satisfies RequestInit;
+    let response: Response | null = null;
 
-    try {
-      response = await fetcher(resendBatchUrl, {
-        body: JSON.stringify(
-          chunk.map(({ html, subject, text, to }) => ({
-            from,
-            html,
-            reply_to: replyTo,
-            subject,
-            text,
-            to: [to],
-          })),
-        ),
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "Idempotency-Key": `pool-invite/${batchId}/attempt/${attemptNumber}/chunk/${chunkIndex}`,
-        },
-        method: "POST",
-      });
-    } catch {
+    for (let requestAttempt = 0; requestAttempt < resendMaxRateLimitAttempts; requestAttempt += 1) {
+      try {
+        response = await fetcher(resendBatchUrl, request);
+      } catch {
+        response = null;
+        break;
+      }
+      if (response.status !== 429 || requestAttempt === resendMaxRateLimitAttempts - 1) break;
+      await wait(boundedWaitMs(response, ["retry-after", "ratelimit-reset"], 1));
+    }
+
+    if (!response) {
       outcomes.push(...failedChunk(chunk, "provider_unavailable"));
       continue;
     }
 
     if (!response.ok) {
-      outcomes.push(...failedChunk(chunk, "provider_rejected"));
+      outcomes.push(...failedChunk(
+        chunk,
+        response.status === 429 ? "provider_unavailable" : "provider_rejected",
+      ));
+      if (
+        offset + resendBatchLimit < messages.length
+        && response.headers.get("ratelimit-remaining") === "0"
+      ) {
+        await wait(boundedWaitMs(response, ["ratelimit-reset", "retry-after"], 1));
+      }
       continue;
     }
 
@@ -122,6 +168,13 @@ export async function sendResendEmailBatches({
         status: "accepted" as const,
       })),
     );
+
+    if (
+      offset + resendBatchLimit < messages.length
+      && response.headers.get("ratelimit-remaining") === "0"
+    ) {
+      await wait(boundedWaitMs(response, ["ratelimit-reset"], 1));
+    }
   }
 
   return outcomes;

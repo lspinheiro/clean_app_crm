@@ -19,7 +19,6 @@ const props = {
   inviteId: "10000000-0000-4000-8000-000000000201",
   joinUrl: "https://cleaner.example.test/join?code=AB12CD",
 };
-const confirmationKey = "10000000-0000-4000-8000-000000000301";
 const retryKey = "10000000-0000-4000-8000-000000000302";
 
 async function openAndUpload(csv: string) {
@@ -38,7 +37,6 @@ describe("CLE-79 pool email invitation UI", () => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
     vi.spyOn(globalThis.crypto, "randomUUID")
-      .mockReturnValueOnce(confirmationKey)
       .mockReturnValueOnce(retryKey);
   });
 
@@ -102,7 +100,6 @@ describe("CLE-79 pool email invitation UI", () => {
     expect(within(results).getByText("bruno@example.com")).toBeInTheDocument();
     expect(mocks.sendPoolInviteEmails).toHaveBeenCalledWith({
       authorityConfirmed: true,
-      confirmationKey,
       inviteId: props.inviteId,
       locale: "en-AU",
       recipients: [

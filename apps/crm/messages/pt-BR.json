@@ -534,6 +534,8 @@
       "duplicateEmail": "Este endereço de e-mail já está no arquivo.",
       "exactHeaders": "Use exatamente os cabeçalhos: email,name.",
       "expectedColumns": "São esperadas 2 colunas.",
+      "nameLength": "O nome deve ter no máximo 200 caracteres.",
+      "recipientLimit": "O limite do alfa é de 500 destinatários por CSV.",
       "unclosedQuote": "O CSV contém um campo entre aspas que não foi fechado.",
       "validEmail": "Insira um endereço de e-mail válido."
     }

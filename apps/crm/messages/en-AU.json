@@ -534,6 +534,8 @@
       "duplicateEmail": "This email address is already in the file.",
       "exactHeaders": "Use the exact headers: email,name.",
       "expectedColumns": "Expected 2 columns.",
+      "nameLength": "Name must be 200 characters or fewer.",
+      "recipientLimit": "The alpha limit is 500 recipients per CSV.",
       "unclosedQuote": "The CSV contains an unclosed quoted field.",
       "validEmail": "Enter a valid email address."
     }

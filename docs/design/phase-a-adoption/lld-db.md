@@ -260,17 +260,20 @@ New table `pool_invite_email_recipients`:
 - Unique index on `(batch_id, lower(email))` enforces case-insensitive deduplication.
 
 `prepare_pool_invite_email_batch` validates the current company admin, locks and checks
-the selected invite state, validates the accepted authority statement, and inserts the
-batch plus unique normalised recipients. The same `(company, confirmation key)` returns
-the existing batch. It never creates an Auth user or a `company_members` row.
+the selected invite state, validates the accepted authority statement and 500-recipient
+alpha limit, and inserts the batch plus unique normalised recipients. The CRM server
+derives the confirmation key from the invite, locale, and sorted unique recipient
+e-mails; the same `(company, confirmation key)` returns the existing batch. It never
+creates an Auth user or a `company_members` row.
 
 `prepare_pool_invite_email_retry` locks one company-scoped batch and moves failed
 recipients only into the next attempt; accepted recipients remain unchanged. The server
 derives stable provider keys from the batch, attempt, and chunk. The RPC returns the
 company-scoped batch state so the server can send pending recipients and report the whole
 result. `record_pool_invite_email_results` accepts only recipients prepared by the current
-attempt and records accepted or failed outcomes. All three RPCs re-authorise the company
-admin and use explicit authenticated and service-role grants.
+attempt and records accepted or failed outcomes; a failed outcome must carry one of the
+safe non-NULL failure reasons. All three RPCs re-authorise the company admin and use
+explicit authenticated and service-role grants.
 
 RLS permits a company admin to read batches and recipients for their company only.
 Authenticated users get no direct insert, update, or delete grant. `service_role` gets

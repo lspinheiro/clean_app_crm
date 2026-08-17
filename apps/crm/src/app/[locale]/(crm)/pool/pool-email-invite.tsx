@@ -39,7 +39,6 @@ export function PoolEmailInvite({
   const [selectedLocale, setSelectedLocale] = useState<AppLocale>(currentLocale);
   const [preview, setPreview] = useState<PoolInviteEmailCsvPreview>(emptyPreview);
   const [fileName, setFileName] = useState("");
-  const [confirmationKey, setConfirmationKey] = useState("");
   const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<Extract<PoolInviteEmailActionResult, { ok: true }> | null>(null);
@@ -56,7 +55,6 @@ export function PoolEmailInvite({
   const canSend = Boolean(
     inviteId
     && joinUrl
-    && confirmationKey
     && authorityConfirmed
     && preview.recipients.length
     && invalidCount === 0
@@ -74,7 +72,6 @@ export function PoolEmailInvite({
     setAuthorityConfirmed(false);
     if (!file) {
       setFileName("");
-      setConfirmationKey("");
       setPreview(emptyPreview());
       return;
     }
@@ -85,9 +82,7 @@ export function PoolEmailInvite({
         await file.arrayBuffer(),
       );
       setPreview(parsePoolInviteEmailCsv(source, csvMessage));
-      setConfirmationKey(crypto.randomUUID());
     } catch {
-      setConfirmationKey("");
       setPreview({
         fileError: t("emailFileReadFailed"),
         recipients: [],
@@ -107,7 +102,6 @@ export function PoolEmailInvite({
     try {
       const actionResult = await sendPoolInviteEmails({
         authorityConfirmed,
-        confirmationKey,
         inviteId,
         locale: selectedLocale,
         recipients: preview.recipients,

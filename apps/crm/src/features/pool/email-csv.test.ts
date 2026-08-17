@@ -35,6 +35,36 @@ describe("CLE-79 cleaner email CSV", () => {
     ]);
   });
 
+  it("reports an overlong name on its row before confirmation", () => {
+    const result = parsePoolInviteEmailCsv(
+      `email,name\nana@example.com,${"A".repeat(201)}\nbruno@example.com,Bruno\n`,
+    );
+
+    expect(result.recipients).toEqual([
+      { email: "bruno@example.com", name: "Bruno" },
+    ]);
+    expect(result.rows[0]).toMatchObject({
+      reason: "Name must be 200 characters or fewer.",
+      rowNumber: 2,
+      status: "invalid",
+    });
+  });
+
+  it("marks recipients over the 500-row alpha limit before confirmation", () => {
+    const rows = Array.from(
+      { length: 501 },
+      (_, index) => `cleaner-${index}@example.com,Cleaner ${index}`,
+    );
+    const result = parsePoolInviteEmailCsv(`email,name\n${rows.join("\n")}\n`);
+
+    expect(result.recipients).toHaveLength(500);
+    expect(result.rows[500]).toMatchObject({
+      reason: "The alpha limit is 500 recipients per CSV.",
+      rowNumber: 502,
+      status: "invalid",
+    });
+  });
+
   it.each([
     ["email\nana@example.com\n", "Use the exact headers: email,name."],
     ["name,email\nAna,ana@example.com\n", "Use the exact headers: email,name."],

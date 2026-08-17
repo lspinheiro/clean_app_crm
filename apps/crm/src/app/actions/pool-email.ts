@@ -1,9 +1,14 @@
 "use server";
 
+import { createHash } from "node:crypto";
+
 import { z } from "zod";
 
 import { buildPoolInviteEmail } from "@/features/pool/email";
-import type { PoolInviteEmailRecipient } from "@/features/pool/email-csv";
+import {
+  POOL_INVITE_EMAIL_RECIPIENT_LIMIT,
+  type PoolInviteEmailRecipient,
+} from "@/features/pool/email-csv";
 import { buildCleanerJoinUrl } from "@/features/pool/invite";
 import { userMessage } from "@/i18n/user-message";
 import { requireCompanyAdmin } from "@/lib/auth/session";
@@ -19,10 +24,9 @@ const recipientSchema = z.object({
 
 const sendInputSchema = z.object({
   authorityConfirmed: z.literal(true),
-  confirmationKey: z.uuid(),
   inviteId: z.uuid(),
   locale: z.enum(["en-AU", "pt-BR"]),
-  recipients: z.array(recipientSchema).min(1),
+  recipients: z.array(recipientSchema).min(1).max(POOL_INVITE_EMAIL_RECIPIENT_LIMIT),
 });
 
 const retryInputSchema = z.object({
@@ -102,8 +106,33 @@ function loadConfiguration(userEmail: string | undefined): EmailConfiguration | 
   return parsed.success ? parsed.data : null;
 }
 
-function safeSenderName(companyName: string) {
-  return companyName.replace(/[\r\n<>]/g, " ").replace(/\s+/g, " ").trim();
+function confirmationKey(
+  inviteId: string,
+  locale: "en-AU" | "pt-BR",
+  recipients: PoolInviteEmailRecipient[],
+) {
+  const digest = createHash("sha256")
+    .update(JSON.stringify({
+      inviteId,
+      locale,
+      recipients: recipients.map(({ email }) => email).sort(),
+    }))
+    .digest();
+  const bytes = Uint8Array.from(digest.subarray(0, 16));
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x50;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function senderAddress(companyName: string, fromEmail: string) {
+  const displayName = `${companyName} via The Clean Crew`
+    .replace(/[\u0000-\u001f\u007f<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"');
+  return `"${displayName}" <${fromEmail}>`;
 }
 
 function resultFromRows(
@@ -170,7 +199,7 @@ async function deliverPreparedRecipients(
     apiKey: configuration.apiKey,
     attemptNumber: first.attempt_number,
     batchId: first.batch_id,
-    from: `${safeSenderName(companyName)} via The Clean Crew <${configuration.fromEmail}>`,
+    from: senderAddress(companyName, configuration.fromEmail),
     messages: pending.map((recipient) => ({
       ...message,
       recipientId: recipient.recipient_id,
@@ -207,11 +236,16 @@ export async function sendPoolInviteEmails(input: unknown): Promise<PoolInviteEm
     return { error: userMessage("poolEmailNotConfigured"), ok: false };
   }
   const recipients = uniqueRecipients(parsed.data.recipients);
+  const derivedConfirmationKey = confirmationKey(
+    parsed.data.inviteId,
+    parsed.data.locale,
+    recipients,
+  );
   let preparedRows: PreparedRecipient[];
   try {
     const { data, error } = await supabase.rpc("prepare_pool_invite_email_batch", {
       authority_confirmed: parsed.data.authorityConfirmed,
-      confirmation_key: parsed.data.confirmationKey,
+      confirmation_key: derivedConfirmationKey,
       recipients,
       selected_invite_id: parsed.data.inviteId,
       selected_locale: parsed.data.locale,

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(29);
+select plan(31);
 
 -- Shape, grants, and RLS ---------------------------------------------------
 
@@ -268,6 +268,42 @@ select ok(
   ),
   'service role has an explicit outcome RPC grant'
 );
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select throws_ok(
+  $test$select public.record_pool_invite_email_results(
+    current_setting('cle79.batch_id')::uuid,
+    1,
+    jsonb_build_array(jsonb_build_object(
+      'recipient_id', (select id from public.pool_invite_email_recipients
+                       where batch_id = current_setting('cle79.batch_id')::uuid
+                         and email = 'bruno@example.com'),
+      'status', 'failed'
+    ))
+  )$test$,
+  '22023',
+  'Provider results are invalid',
+  'a failed provider result must include a safe failure reason'
+);
+select throws_ok(
+  $test$select public.prepare_pool_invite_email_batch(
+    '10000000-0000-4000-8000-000000000010',
+    '79000000-0000-4000-8000-000000000001',
+    'en-AU',
+    '79000000-0000-4000-8000-000000000099',
+    true,
+    (select jsonb_agg(jsonb_build_object(
+      'email', format('cleaner-%s@example.com', index),
+      'name', null
+    )) from generate_series(1, 501) as index)
+  )$test$,
+  '22023',
+  'A maximum of 500 email recipients is allowed',
+  'the RPC bounds one confirmed send list to 500 recipients'
+);
+reset role;
 
 select * from finish();
 rollback;

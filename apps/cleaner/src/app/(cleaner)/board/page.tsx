@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import { describeApplyError, describeWithdrawError } from "@/features/board/application";
 import { toVacancies } from "@/features/board/model";
 import type { BoardRow, Vacancy } from "@/features/board/types";
 import { useCleaner } from "@/lib/auth/use-cleaner";
@@ -12,33 +13,37 @@ import { VacancyCard } from "./vacancy-card";
 
 // Only the columns the card renders. The view holds no address, access notes, client phone,
 // or client charge at all, so the board cannot leak them — this keeps the payload small.
+// `my_application_status` is her own application on the job, and it is what makes the
+// waiting state survive a reload: the state lives in the database, not in this component.
 const boardColumns =
-  "job_id, company_name, site_name, suburb, service_name, scheduled_start, duration_minutes, cleaner_pay_cents, crew_size, crew_slot";
+  "job_id, company_name, site_name, suburb, service_name, scheduled_start, duration_minutes, cleaner_pay_cents, crew_size, crew_slot, my_application_status";
 
 type BoardState =
   | { status: "loading" }
   | { status: "ready"; vacancies: Vacancy[] }
   | { status: "error" };
 
+async function loadBoard(): Promise<BoardState> {
+  const { data, error } = await getSupabaseClient()
+    .from("cleaner_job_board")
+    .select(boardColumns)
+    .order("scheduled_start");
+
+  if (error) return { status: "error" };
+  return { status: "ready", vacancies: toVacancies((data ?? []) as BoardRow[]) };
+}
+
 export default function BoardPage() {
   const router = useRouter();
   const cleaner = useCleaner();
   const [board, setBoard] = useState<BoardState>({ status: "loading" });
+  const [pendingJobId, setPendingJobId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let active = true;
 
-    async function load(): Promise<BoardState> {
-      const { data, error } = await getSupabaseClient()
-        .from("cleaner_job_board")
-        .select(boardColumns)
-        .order("scheduled_start");
-
-      if (error) return { status: "error" };
-      return { status: "ready", vacancies: toVacancies((data ?? []) as BoardRow[]) };
-    }
-
-    void load().then((next) => {
+    void loadBoard().then((next) => {
       if (active) setBoard(next);
     });
 
@@ -46,6 +51,51 @@ export default function BoardPage() {
       active = false;
     };
   }, []);
+
+  // Both mutations follow the same shape: hold the card busy, run the RPC, then re-read the
+  // board so what she sees is the database's answer rather than an optimistic guess. A
+  // failure re-reads too — "this job is full now" is usually a board that has moved on.
+  const runOnJob = useCallback(
+    async (jobId: string, mutate: () => Promise<string | null>) => {
+      setPendingJobId(jobId);
+      setErrors((previous) => {
+        if (!(jobId in previous)) return previous;
+        const rest = { ...previous };
+        delete rest[jobId];
+        return rest;
+      });
+
+      const failure = await mutate();
+      const next = await loadBoard();
+
+      setBoard(next);
+      if (failure) setErrors((previous) => ({ ...previous, [jobId]: failure }));
+      setPendingJobId(null);
+    },
+    [],
+  );
+
+  const apply = useCallback(
+    (jobId: string) =>
+      void runOnJob(jobId, async () => {
+        const { error } = await getSupabaseClient().rpc("apply_to_job", {
+          target_job_id: jobId,
+        });
+        return error ? describeApplyError(error) : null;
+      }),
+    [runOnJob],
+  );
+
+  const withdraw = useCallback(
+    (jobId: string) =>
+      void runOnJob(jobId, async () => {
+        const { error } = await getSupabaseClient().rpc("withdraw_application", {
+          target_job_id: jobId,
+        });
+        return error ? describeWithdrawError(error) : null;
+      }),
+    [runOnJob],
+  );
 
   // The layout holds the gate; this only renders once it has allowed the cleaner through.
   if (cleaner.status !== "allowed") return null;
@@ -55,6 +105,23 @@ export default function BoardPage() {
   async function signOut() {
     await getSupabaseClient().auth.signOut();
     router.replace("/login");
+  }
+
+  const vacancies = board.status === "ready" ? board.vacancies : [];
+  const applied = vacancies.filter((vacancy) => vacancy.applicationStatus === "applied");
+  const open = vacancies.filter((vacancy) => vacancy.applicationStatus !== "applied");
+
+  function renderCard(vacancy: Vacancy) {
+    return (
+      <VacancyCard
+        busy={pendingJobId === vacancy.jobId}
+        error={errors[vacancy.jobId] ?? null}
+        key={vacancy.jobId}
+        onApply={apply}
+        onWithdraw={withdraw}
+        vacancy={vacancy}
+      />
+    );
   }
 
   return (
@@ -75,18 +142,25 @@ export default function BoardPage() {
         </div>
       ) : null}
 
-      {board.status === "ready" && board.vacancies.length === 0 ? (
+      {applied.length > 0 ? (
+        <section className="board-section">
+          <h2 className="board-section__title">Applied</h2>
+          <ul aria-label="Applied" className="vacancy-list">
+            {applied.map(renderCard)}
+          </ul>
+        </section>
+      ) : null}
+
+      {board.status === "ready" && vacancies.length === 0 ? (
         <div className="empty-state">
           <p>No open jobs yet.</p>
           <p>When a company you work with posts a job, it appears here.</p>
         </div>
       ) : null}
 
-      {board.status === "ready" && board.vacancies.length > 0 ? (
+      {open.length > 0 ? (
         <ul aria-label="Open jobs" className="vacancy-list">
-          {board.vacancies.map((vacancy) => (
-            <VacancyCard key={vacancy.jobId} vacancy={vacancy} />
-          ))}
+          {open.map(renderCard)}
         </ul>
       ) : null}
 

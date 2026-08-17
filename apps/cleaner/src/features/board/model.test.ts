@@ -15,6 +15,7 @@ function row(overrides: Partial<BoardRow> = {}): BoardRow {
     cleaner_pay_cents: 9000,
     crew_size: 1,
     crew_slot: 1,
+    my_application_status: null,
     ...overrides,
   };
 }
@@ -37,8 +38,27 @@ describe("CLE-20 board vacancies", () => {
         cleanerPayCents: 9000,
         crewSize: 1,
         openSlots: 1,
+        applicationStatus: null,
       },
     ]);
+  });
+
+  it("carries her own application status through, so the card can show a waiting state", () => {
+    const vacancies = toVacancies([row({ my_application_status: "applied" })]);
+
+    expect(vacancies[0]).toMatchObject({ applicationStatus: "applied" });
+  });
+
+  it("keeps the application status when a crew job collapses to one card", () => {
+    // The status comes from a left join on her own application, so every slot row of the
+    // same job carries it identically; collapsing must not drop it.
+    const vacancies = toVacancies([
+      row({ crew_size: 2, crew_slot: 1, my_application_status: "applied" }),
+      row({ crew_size: 2, crew_slot: 2, my_application_status: "applied" }),
+    ]);
+
+    expect(vacancies).toHaveLength(1);
+    expect(vacancies[0]).toMatchObject({ openSlots: 2, applicationStatus: "applied" });
   });
 
   it("shows a two-cleaner job once, counting both open slots", () => {

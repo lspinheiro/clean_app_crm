@@ -159,8 +159,10 @@ Only `service_role` has direct table access.
 to `service_role`. It normalises and validates the e-mail, actor, locale, and future
 expiry. It returns the existing pending record with `created = false`, so a repeated
 command sends no second e-mail. It revokes an expired pending record before it creates a
-new record. `revoke_first_admin_invitation(id)` is also service-role only and lets the
-command close prepared state when Supabase Auth rejects the send.
+new record. The result includes `confirmed_auth_user`. The command uses this value to send
+a recovery e-mail instead of a second Auth invitation. The function rejects `NULL` input
+before it writes. `revoke_first_admin_invitation(id)` is also service-role only and lets
+the command close prepared state when Supabase Auth rejects the send.
 
 `get_first_admin_invitation_context()` derives the verified caller e-mail from
 `auth.users`. It returns only that caller's latest invitation state and locale. It never
@@ -594,8 +596,9 @@ mutation.*
   pending offer first" (`assign_job_slot`), "Invite is no longer active" (join on
   revoked/expired/limit-reached), "Amount is required for hourly jobs" / "Amount is
   not accepted for fixed jobs" (`mark_paid`).
-- First-admin preparation rejects invalid e-mail, actor, locale, or expiry before it
-  writes. Acceptance uses one safe "Invitation is no longer available" error for a
+- First-admin preparation rejects invalid or `NULL` e-mail, actor, locale, or expiry
+  before it writes. Acceptance rejects every required `NULL` field before it changes the
+  profile. Acceptance uses one safe "Invitation is no longer available" error for a
   missing, expired, revoked, used, or mismatched record. Field validation errors remain
   distinct. Every acceptance error rolls back the privileged changes.
 - Push is never load-bearing: webhook and Edge Function failures leave the

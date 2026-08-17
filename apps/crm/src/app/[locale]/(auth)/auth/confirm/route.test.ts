@@ -29,9 +29,21 @@ describe("first-admin Auth confirmation route", () => {
     );
   });
 
-  it("does not exchange another token type", async () => {
+  it("exchanges a recovery token for a renewed first-admin invitation", async () => {
     const response = await GET(
       new NextRequest("https://crm.example.test/pt-BR/auth/confirm?token_hash=safe-hash&type=recovery"),
+      { params: Promise.resolve({ locale: "pt-BR" }) },
+    );
+
+    expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "safe-hash", type: "recovery" });
+    expect(response.headers.get("location")).toBe(
+      "https://crm.example.test/pt-BR/invite/accept",
+    );
+  });
+
+  it("does not exchange another token type", async () => {
+    const response = await GET(
+      new NextRequest("https://crm.example.test/pt-BR/auth/confirm?token_hash=safe-hash&type=magiclink"),
       { params: Promise.resolve({ locale: "pt-BR" }) },
     );
 

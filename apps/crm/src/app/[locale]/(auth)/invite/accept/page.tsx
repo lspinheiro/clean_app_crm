@@ -35,12 +35,10 @@ function AuthShell({ children }: Readonly<{ children: React.ReactNode }>) {
 export default async function FirstAdminAcceptancePage({
   searchParams,
 }: FirstAdminAcceptancePageProps) {
+  await searchParams;
   const requestLocale = await getLocale();
   const locale = isAppLocale(requestLocale) ? requestLocale : defaultLocale;
   const t = await getTranslations("FirstAdminInvitation");
-  const { error: queryError } = await searchParams;
-  const invalidFromConfirmation = queryError === "invalid";
-
   let context:
     | {
         invitation_status: string;
@@ -49,17 +47,15 @@ export default async function FirstAdminAcceptancePage({
       }
     | null = null;
 
-  if (!invalidFromConfirmation) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-    if (!userError && user?.email) {
-      const { data, error } = await supabase.rpc("get_first_admin_invitation_context");
-      if (!error && data?.[0]) context = data[0];
-    }
+  if (!userError && user?.email) {
+    const { data, error } = await supabase.rpc("get_first_admin_invitation_context");
+    if (!error && data?.[0]) context = data[0];
   }
 
   if (context?.invitation_status === "accepted") {

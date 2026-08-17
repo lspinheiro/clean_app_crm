@@ -59,6 +59,18 @@ describe("first-admin acceptance page", () => {
     expect(mocks.rpc).toHaveBeenCalledWith("get_first_admin_invitation_context");
   });
 
+  it("recovers a pending invitation when a reused confirmation link leaves a stale error marker", async () => {
+    render(
+      await FirstAdminAcceptancePage({
+        searchParams: Promise.resolve({ error: "invalid" }),
+      }),
+    );
+
+    expect(screen.getByRole("heading", { name: "Create your company account" }))
+      .toBeInTheDocument();
+    expect(mocks.rpc).toHaveBeenCalledWith("get_first_admin_invitation_context");
+  });
+
   it("shows the same unavailable state for an expired application invitation", async () => {
     mocks.rpc.mockResolvedValue({
       data: [

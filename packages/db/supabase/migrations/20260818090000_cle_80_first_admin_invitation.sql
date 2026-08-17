@@ -51,7 +51,8 @@ create function public.prepare_first_admin_invitation(
 returns table (
   invitation_id uuid,
   created boolean,
-  invitation_expires_at timestamptz
+  invitation_expires_at timestamptz,
+  confirmed_auth_user boolean
 )
 language plpgsql
 security definer
@@ -61,7 +62,8 @@ declare
   canonical_email text := lower(btrim(target_email));
   canonical_invited_by text := btrim(invited_by);
 begin
-  if canonical_email = ''
+  if canonical_email is null
+    or canonical_email = ''
     or length(canonical_email) > 320
     or canonical_email !~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$' then
     raise invalid_parameter_value using message = 'A valid invitee e-mail is required';
@@ -71,13 +73,23 @@ begin
     raise invalid_parameter_value using message = 'Supported language required';
   end if;
 
-  if canonical_invited_by = '' or length(canonical_invited_by) > 200 then
+  if canonical_invited_by is null
+    or canonical_invited_by = ''
+    or length(canonical_invited_by) > 200 then
     raise invalid_parameter_value using message = 'The inviting operator is required';
   end if;
 
   if expires_at is null or expires_at <= now() then
     raise invalid_parameter_value using message = 'Invitation expiry must be in the future';
   end if;
+
+  select exists (
+    select 1
+    from auth.users auth_user
+    where lower(btrim(auth_user.email)) = canonical_email
+      and auth_user.email_confirmed_at is not null
+  )
+  into confirmed_auth_user;
 
   perform pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended(canonical_email, 0)
@@ -218,7 +230,7 @@ begin
     raise insufficient_privilege using message = 'Sign in required';
   end if;
 
-  if canonical_full_name = '' then
+  if canonical_full_name is null or canonical_full_name = '' then
     raise check_violation using message = 'Full name is required';
   end if;
 
@@ -226,7 +238,7 @@ begin
     raise check_violation using message = 'Full name must be at most 120 characters';
   end if;
 
-  if canonical_company_name = '' then
+  if canonical_company_name is null or canonical_company_name = '' then
     raise check_violation using message = 'Company name is required';
   end if;
 
@@ -234,11 +246,11 @@ begin
     raise check_violation using message = 'Company name must be at most 120 characters';
   end if;
 
-  if canonical_company_abn !~ '^[0-9]{11}$' then
+  if canonical_company_abn is null or canonical_company_abn !~ '^[0-9]{11}$' then
     raise check_violation using message = 'ABN must contain exactly 11 digits';
   end if;
 
-  if canonical_contact_phone = '' then
+  if canonical_contact_phone is null or canonical_contact_phone = '' then
     raise check_violation using message = 'Contact phone is required';
   end if;
 

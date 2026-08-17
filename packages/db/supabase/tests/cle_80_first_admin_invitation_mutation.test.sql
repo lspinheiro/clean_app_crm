@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(33);
+select plan(42);
 
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -252,6 +252,23 @@ select is(
   'an expired invitation leaves the role unchanged'
 );
 
+create temporary table renewed_expired_prepare on commit drop as
+select to_jsonb(prepared) as result
+from public.prepare_first_admin_invitation(
+  'expired.admin@example.test', 'pt-BR', 'founder@example.test', now() + interval '1 hour'
+) prepared;
+
+select is(
+  (select result ->> 'created' from renewed_expired_prepare),
+  'true',
+  'a trusted rerun renews expired application invitation state'
+);
+select is(
+  (select result ->> 'confirmed_auth_user' from renewed_expired_prepare),
+  'true',
+  'preparation tells the command when recovery e-mail is required'
+);
+
 create temporary table revoked_prepare on commit drop as
 select *
 from public.prepare_first_admin_invitation(
@@ -300,6 +317,47 @@ select throws_ok(
   'Full name is required',
   'invalid form data aborts acceptance'
 );
+
+select throws_ok(
+  $$select public.accept_first_admin_invitation(
+    null::text, 'Retry Company', '53004085616', '0400000004', 'en-AU'
+  )$$,
+  '23514',
+  'Full name is required',
+  'a null full name is rejected explicitly'
+);
+select throws_ok(
+  $$select public.accept_first_admin_invitation(
+    'Retry Admin', null::text, '53004085616', '0400000004', 'en-AU'
+  )$$,
+  '23514',
+  'Company name is required',
+  'a null company name is rejected explicitly'
+);
+select throws_ok(
+  $$select public.accept_first_admin_invitation(
+    'Retry Admin', 'Retry Company', null::text, '0400000004', 'en-AU'
+  )$$,
+  '23514',
+  'ABN must contain exactly 11 digits',
+  'a null ABN is rejected explicitly'
+);
+select throws_ok(
+  $$select public.accept_first_admin_invitation(
+    'Retry Admin', 'Retry Company', '53004085616', null::text, 'en-AU'
+  )$$,
+  '23514',
+  'Contact phone is required',
+  'a null contact phone is rejected explicitly'
+);
+select throws_ok(
+  $$select public.accept_first_admin_invitation(
+    'Retry Admin', 'Retry Company', '53004085616', '0400000004', null::public.app_locale
+  )$$,
+  '22023',
+  'Supported language required',
+  'a null locale is rejected explicitly'
+);
 reset role;
 
 select is(
@@ -332,11 +390,29 @@ select throws_ok(
 
 select throws_ok(
   $$select * from public.prepare_first_admin_invitation(
+    null::text, 'en-AU', 'founder@example.test', now() + interval '1 hour'
+  )$$,
+  '22023',
+  'A valid invitee e-mail is required',
+  'the trusted preparation rejects a null invitee e-mail explicitly'
+);
+
+select throws_ok(
+  $$select * from public.prepare_first_admin_invitation(
     'new.admin@example.test', 'en-AU', '', now() + interval '1 hour'
   )$$,
   '22023',
   'The inviting operator is required',
   'the trusted preparation requires an audit actor'
+);
+
+select throws_ok(
+  $$select * from public.prepare_first_admin_invitation(
+    'new.admin@example.test', 'en-AU', null::text, now() + interval '1 hour'
+  )$$,
+  '22023',
+  'The inviting operator is required',
+  'the trusted preparation rejects a null audit actor explicitly'
 );
 
 select throws_ok(

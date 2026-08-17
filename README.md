@@ -114,28 +114,34 @@ The development launcher injects the local Supabase credentials automatically. U
 
 ### Invite the first company admin
 
-Copy `apps/crm/.env.example` to `apps/crm/.env.local`. Set these server-only values:
+Copy `first-admin.env.example` to `.env.first-admin.local` at the repository root. This
+command-only file is not loaded by Next.js. Set:
 
+- `SUPABASE_URL` — the intended hosted Supabase project URL.
 - `CRM_PUBLIC_URL` — the CRM origin, with no locale path.
 - `SUPABASE_SECRET_KEY` — the hosted Supabase secret key. The command also accepts the
   legacy `SUPABASE_SERVICE_ROLE_KEY` name.
 - `FIRST_ADMIN_INVITER` — the founder name or e-mail stored in the invitation audit row.
 
-Never expose the Supabase secret to the browser or commit `.env.local`. Run one invite:
+Never expose the Supabase secret to the browser or commit `.env.first-admin.local`. Run
+one invite:
 
 ```bash
 pnpm --dir apps/crm invite:first-admin -- --email admin@example.com --locale en-AU
 ```
 
 The command accepts `en-AU` or `pt-BR`. A pending invitation makes a repeated command
-exit without sending another e-mail.
+exit without sending another e-mail. If the person confirmed an earlier Auth invitation
+but the application invitation expired, a rerun sends a recovery e-mail instead.
 
 Configure the hosted Supabase project before a real send:
 
 1. Add `<CRM_PUBLIC_URL>/en-AU/auth/confirm` and
    `<CRM_PUBLIC_URL>/pt-BR/auth/confirm` to the Auth redirect allow list.
 2. Copy `packages/db/supabase/templates/invite.html` into the hosted **Invite user**
-   e-mail template. Keep the `token_hash`, `type=invite`, and `RedirectTo` values intact.
+   e-mail template. Copy `packages/db/supabase/templates/recovery.html` into the hosted
+   **Reset password** template. Keep each `token_hash`, `type`, and `RedirectTo` value
+   intact.
 3. Enable custom SMTP with host `smtp.resend.com`, port `465`, username `resend`, and
    the Resend API key as the SMTP password. Use a From address on a verified domain.
 4. Keep the Supabase e-mail OTP expiry at one hour so it matches the application

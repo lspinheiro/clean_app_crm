@@ -56,7 +56,7 @@ flowchart LR
         PUSH["Web-push dispatch\n(VAPID)"]
     end
     FOUNDER["Trusted founder command\nfirst-admin approval"]
-    AUTH["Supabase Auth Admin\ninvite + verified session"]
+    AUTH["Supabase Auth Admin\ninvite/recovery + verified session"]
     RESEND_BATCH["Resend Batch API\none-time workforce invitation"]
     RESEND_SMTP["Resend custom SMTP\nAuth invitation"]
     FOUNDER -->|"server-only secret"| AUTH
@@ -89,10 +89,11 @@ Component responsibilities:
   in the browser, previews the one-time invitation, and submits a confirmed send list
   to a server-only Resend adapter. The adapter never exposes its API key to the browser.
 - **First-admin bootstrap** — a repository-local command uses a Supabase secret in a
-  trusted environment. It creates one pending application invitation and calls Supabase
-  Auth Admin. Supabase sends the Auth invitation through Resend custom SMTP. The public
-  CRM confirmation route verifies the Auth token and establishes an SSR session. A
-  security-definer RPC then matches the verified e-mail and creates the approved company,
+  trusted environment. A command-only root environment file isolates this secret from
+  the Next.js process. The command creates one pending application invitation and calls
+  Supabase Auth Admin. Supabase sends an invite or recovery e-mail through Resend custom
+  SMTP. The public CRM confirmation route verifies the Auth token and establishes an SSR
+  session. A security-definer RPC then matches the verified e-mail. The RPC creates the approved company,
   privileged profile, and active membership in one transaction. No browser path can call
   Auth Admin or select a privileged role or company.
 - **Resend** — the alpha provider for one-time workforce invitation e-mails. The CRM
@@ -123,8 +124,10 @@ Component responsibilities:
 
 - A founder command creates one pending first-admin invitation before it asks Supabase
   Auth Admin to send the account invitation. A repeated command finds the pending record
-  and sends no duplicate. The e-mail link enters a public locale route, verifies the Auth
-  token, and establishes a cookie session. The acceptance RPC locks the pending record,
+  and sends no duplicate. If a confirmed Auth user has an expired application invitation,
+  the command creates new application state and sends a recovery e-mail. The e-mail link
+  enters a public locale route. The route verifies the Auth token and establishes a cookie
+  session. The acceptance RPC locks the pending record,
   matches it to the verified Auth e-mail, and atomically promotes the profile, creates the
   approved company and active membership, and consumes the invitation. Failed, expired,
   revoked, used, or mismatched invitations create no company or membership.
@@ -422,3 +425,10 @@ creates the approved company, privileged profile, and active membership atomical
 alternative, a platform operator application, adds an alpha surface that the founders did
 not request. Auth metadata is not an authorisation source because the invite caller and the
 browser can supply it.
+
+### 18. Supabase Auth recovers a confirmed invitee without account deletion (2026-08-18)
+
+If a confirmed invitee has an expired application invitation, the trusted command sends
+a Supabase recovery e-mail. The same public route verifies the recovery token before the
+application RPC grants access. This avoids account deletion and keeps Resend behind
+Supabase custom SMTP.

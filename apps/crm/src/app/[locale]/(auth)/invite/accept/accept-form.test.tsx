@@ -1,14 +1,27 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  acceptFirstAdminAction: vi.fn(),
+}));
 
 vi.mock("@/app/actions/first-admin", () => ({
-  acceptFirstAdminAction: vi.fn(),
+  acceptFirstAdminAction: mocks.acceptFirstAdminAction,
   initialFirstAdminState: { fieldErrors: {}, formError: null },
 }));
 
 import { FirstAdminAcceptanceForm } from "./accept-form";
 
 describe("FirstAdminAcceptanceForm", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.acceptFirstAdminAction.mockResolvedValue({
+      fieldErrors: { abn: "Enter exactly 11 digits." },
+      formError: null,
+    });
+  });
+
   it("shows the invited e-mail as read-only context and collects only S1 fields", () => {
     render(
       <FirstAdminAcceptanceForm
@@ -58,5 +71,35 @@ describe("FirstAdminAcceptanceForm", () => {
     expect(screen.getByRole("button", { name: "Criar conta da empresa" })).toBeInTheDocument();
 
     delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
+  });
+
+  it("preserves every entered value when the server action returns a validation error", async () => {
+    const user = userEvent.setup();
+    render(
+      <FirstAdminAcceptanceForm
+        defaultLocale="en-AU"
+        inviteeEmail="admin@example.test"
+      />,
+    );
+
+    await user.type(screen.getByRole("textbox", { name: "Full name" }), "Ana Admin");
+    await user.type(screen.getByRole("textbox", { name: "Company name" }), "Coast Clean");
+    await user.type(screen.getByRole("textbox", { name: "ABN" }), "bad-abn");
+    await user.type(screen.getByRole("textbox", { name: "Contact phone" }), "0412 345 678");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Language" }), "pt-BR");
+    await user.type(screen.getByLabelText("Password"), "safe-password");
+    await user.type(screen.getByLabelText("Confirm password"), "safe-password");
+    await user.click(screen.getByRole("button", { name: "Create company account" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Enter exactly 11 digits.")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("textbox", { name: "Full name" })).toHaveValue("Ana Admin");
+    expect(screen.getByRole("textbox", { name: "Company name" })).toHaveValue("Coast Clean");
+    expect(screen.getByRole("textbox", { name: "ABN" })).toHaveValue("bad-abn");
+    expect(screen.getByRole("textbox", { name: "Contact phone" })).toHaveValue("0412 345 678");
+    expect(screen.getByRole("combobox", { name: "Language" })).toHaveValue("pt-BR");
+    expect(screen.getByLabelText("Password")).toHaveValue("safe-password");
+    expect(screen.getByLabelText("Confirm password")).toHaveValue("safe-password");
   });
 });

@@ -30,14 +30,17 @@ The request contains `en-AU` or `pt-BR`, the normalised recipients, and the acce
 authority statement. The server derives a stable confirmation key from the invite,
 locale, and sorted unique recipient e-mails. The request never contains an API key.
 
-The repository command calls `prepare_first_admin_invitation` with a normalised e-mail,
-locale, future expiry, and the configured operator identity. It calls Supabase Auth
-Admin only when the RPC returns `created = true`. A provider error calls
-`revoke_first_admin_invitation`. The command uses `SUPABASE_SECRET_KEY` or the legacy
-`SUPABASE_SERVICE_ROLE_KEY`; neither value enters the Next.js browser bundle.
+The repository command loads `.env.first-admin.local` from the repository root. Next.js
+does not load this command-only file. The command requires an explicit `SUPABASE_URL` and
+calls `prepare_first_admin_invitation` with a normalised e-mail, locale, future expiry,
+and operator identity. It calls Supabase Auth only when the RPC returns `created = true`.
+If `confirmed_auth_user = true`, it sends a recovery e-mail. Otherwise, it sends an Auth
+invitation. A provider error calls `revoke_first_admin_invitation`. The command uses
+`SUPABASE_SECRET_KEY` or the legacy `SUPABASE_SERVICE_ROLE_KEY`.
 
-The public `/{locale}/auth/confirm` route accepts only a Supabase `invite` token hash. It
-calls `verifyOtp` and redirects to `/{locale}/invite/accept`. The acceptance page calls
+The public `/{locale}/auth/confirm` route accepts a Supabase `invite` or `recovery` token
+hash. It calls `verifyOtp` and redirects to `/{locale}/invite/accept`. A stale error query
+does not override a valid session. The acceptance page calls
 `get_first_admin_invitation_context` for the session e-mail. Its server action validates
 the password and company fields, updates the Auth password, and calls
 `accept_first_admin_invitation`. Success redirects to the guarded `/onboarding` handoff.
@@ -117,10 +120,10 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
 - **First-admin invitation (`scripts/invite-first-admin.mjs`, `(auth)/auth/confirm`,
   `(auth)/invite/accept`, `actions/first-admin.ts`)** — the non-interactive command
   accepts `--email` and `--locale`, loads the trusted Supabase secret and operator identity,
-  and prints no token or credential. The invite template uses locale metadata for
-  `en-AU` or `pt-BR` copy and links to the locale confirmation route with
-  `token_hash` and `type=invite`. The public acceptance page renders the exact profile and
-  company fields from S1. It accepts no role, status, profile identifier, or company
+  and prints no token or credential. The invite and recovery templates use locale metadata
+  for `en-AU` or `pt-BR` copy. They link to the locale confirmation route with a
+  `token_hash` and a restricted token type. The public acceptance page renders the exact
+  profile and company fields from S1. It accepts no role, status, profile identifier, or company
   identifier. The `/onboarding` route stays inside the CRM guard and is the stable CLE-47
   handoff; until CLE-47 lands, it redirects to the roster.
 - **Job detail (`(crm)/jobs/[jobId]`)** — gains the directed route: an "offer to…"
@@ -261,10 +264,12 @@ retries a 429 with the same provider idempotency key. A failed provider chunk do
 stop later chunks. Retry reads failed recipients from company-scoped batch state.
 
 The founder command fails before an Auth call if configuration or input is invalid. A
-repeated pending invitation reports that it sent no e-mail. An Auth Admin error revokes
+repeated pending invitation reports that it sent no e-mail. A confirmed Auth user receives
+a recovery e-mail after the command renews expired application state. An Auth error revokes
 the prepared application record and returns a safe action message. The confirmation route
 maps an invalid token to the public unavailable state. The acceptance action shows field
-errors for form input and one safe unavailable message for every invitation state error.
+errors for form input and keeps the entered values. It uses one safe unavailable message
+for every invitation state error.
 It never returns the Supabase secret, token hash, raw provider error, role, or company id.
 
 ## Performance

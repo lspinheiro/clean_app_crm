@@ -35,7 +35,7 @@ export function parseInvitationCommand(argv, environment = process.env) {
 
   const publicUrl = normalisePublicUrl(environment.CRM_PUBLIC_URL ?? "");
   const operator = environment.FIRST_ADMIN_INVITER?.trim();
-  const supabaseUrl = environment.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const supabaseUrl = environment.SUPABASE_URL?.trim();
   const supabaseSecret = (
     environment.SUPABASE_SECRET_KEY
     ?? environment.SUPABASE_SERVICE_ROLE_KEY
@@ -82,11 +82,39 @@ export async function sendFirstAdminInvitation({ client, command, now = new Date
     };
   }
 
+  const redirectTo = `${command.publicUrl}/${command.locale}/auth/confirm`;
+
+  if (prepared.confirmed_auth_user) {
+    const { error: recoveryError } = await client.auth.resetPasswordForEmail(
+      command.email,
+      { redirectTo },
+    );
+
+    if (recoveryError) {
+      const { error: revokeError } = await client.rpc("revoke_first_admin_invitation", {
+        target_invitation_id: prepared.invitation_id,
+      });
+      if (revokeError) {
+        throw new Error(
+          "Supabase did not send the recovery e-mail, and the application could not revoke its pending record.",
+        );
+      }
+      throw new Error("Supabase did not send the recovery e-mail.");
+    }
+
+    return {
+      email: command.email,
+      expiresAt: prepared.invitation_expires_at,
+      kind: "recovery_sent",
+      locale: command.locale,
+    };
+  }
+
   const { data: inviteData, error: inviteError } = await client.auth.admin.inviteUserByEmail(
     command.email,
     {
       data: { preferred_locale: command.locale },
-      redirectTo: `${command.publicUrl}/${command.locale}/auth/confirm`,
+      redirectTo,
     },
   );
 
@@ -126,6 +154,13 @@ async function main() {
   if (result.kind === "already_pending") {
     console.log(
       `A pending invitation already exists for ${result.email}. No e-mail was sent.`,
+    );
+    return;
+  }
+
+  if (result.kind === "recovery_sent") {
+    console.log(
+      `Recovery invitation sent to ${result.email} in ${result.locale}. It expires at ${result.expiresAt}.`,
     );
     return;
   }

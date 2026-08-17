@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import {
+  useActionState,
+  useState,
+  useTransition,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { useTranslations } from "next-intl";
 
 import {
@@ -20,6 +26,16 @@ type FieldErrorProps = {
   message: string | undefined;
 };
 
+type AcceptanceFormValues = {
+  abn: string;
+  companyName: string;
+  confirmPassword: string;
+  fullName: string;
+  locale: string;
+  password: string;
+  phone: string;
+};
+
 function FieldError({ id, message }: FieldErrorProps) {
   if (!message) return null;
   return <p className="field-error" id={id}>{message}</p>;
@@ -30,13 +46,42 @@ export function FirstAdminAcceptanceForm({
   inviteeEmail,
 }: FirstAdminAcceptanceFormProps) {
   const t = useTranslations("FirstAdminInvitation");
-  const [state, action, pending] = useActionState<FirstAdminState, FormData>(
+  const [state, action, actionPending] = useActionState<FirstAdminState, FormData>(
     acceptFirstAdminAction,
     initialFirstAdminState,
   );
+  const [transitionPending, startTransition] = useTransition();
+  const [values, setValues] = useState<AcceptanceFormValues>({
+    abn: "",
+    companyName: "",
+    confirmPassword: "",
+    fullName: "",
+    locale: defaultLocale,
+    password: "",
+    phone: "",
+  });
+
+  function updateValue(
+    field: keyof AcceptanceFormValues,
+  ) {
+    return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const value = event.target.value;
+      setValues((current) => ({ ...current, [field]: value }));
+    };
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => action(formData));
+  }
 
   return (
-    <form action={action} className="auth-form form-stack" noValidate>
+    <form
+      className="auth-form form-stack"
+      noValidate
+      onSubmit={submit}
+    >
       <div className="field">
         <span className="field-label">{t("invitedEmail")}</span>
         <p className="invited-email">{inviteeEmail}</p>
@@ -50,8 +95,10 @@ export function FirstAdminAcceptanceForm({
           autoComplete="name"
           id="first-admin-full-name"
           name="fullName"
+          onChange={updateValue("fullName")}
           required
           type="text"
+          value={values.fullName}
         />
         <FieldError id="first-admin-full-name-error" message={state.fieldErrors.fullName} />
       </div>
@@ -64,8 +111,10 @@ export function FirstAdminAcceptanceForm({
           autoComplete="organization"
           id="first-admin-company-name"
           name="companyName"
+          onChange={updateValue("companyName")}
           required
           type="text"
+          value={values.companyName}
         />
         <FieldError id="first-admin-company-name-error" message={state.fieldErrors.companyName} />
       </div>
@@ -78,8 +127,10 @@ export function FirstAdminAcceptanceForm({
           id="first-admin-abn"
           inputMode="numeric"
           name="abn"
+          onChange={updateValue("abn")}
           required
           type="text"
+          value={values.abn}
         />
         <p className="field-hint" id="first-admin-abn-hint">{t("abnHint")}</p>
         <FieldError id="first-admin-abn-error" message={state.fieldErrors.abn} />
@@ -93,8 +144,10 @@ export function FirstAdminAcceptanceForm({
           autoComplete="tel"
           id="first-admin-phone"
           name="phone"
+          onChange={updateValue("phone")}
           required
           type="tel"
+          value={values.phone}
         />
         <FieldError id="first-admin-phone-error" message={state.fieldErrors.phone} />
       </div>
@@ -104,9 +157,10 @@ export function FirstAdminAcceptanceForm({
         <select
           aria-describedby={state.fieldErrors.locale ? "first-admin-locale-error" : undefined}
           aria-invalid={state.fieldErrors.locale ? true : undefined}
-          defaultValue={defaultLocale}
           id="first-admin-locale"
           name="locale"
+          onChange={updateValue("locale")}
+          value={values.locale}
         >
           <option value="en-AU">{t("english")}</option>
           <option value="pt-BR">{t("portuguese")}</option>
@@ -122,8 +176,10 @@ export function FirstAdminAcceptanceForm({
           autoComplete="new-password"
           id="first-admin-password"
           name="password"
+          onChange={updateValue("password")}
           required
           type="password"
+          value={values.password}
         />
         <p className="field-hint" id="first-admin-password-hint">{t("passwordHint")}</p>
         <FieldError id="first-admin-password-error" message={state.fieldErrors.password} />
@@ -137,8 +193,10 @@ export function FirstAdminAcceptanceForm({
           autoComplete="new-password"
           id="first-admin-confirm-password"
           name="confirmPassword"
+          onChange={updateValue("confirmPassword")}
           required
           type="password"
+          value={values.confirmPassword}
         />
         <FieldError
           id="first-admin-confirm-password-error"
@@ -148,8 +206,8 @@ export function FirstAdminAcceptanceForm({
 
       {state.formError ? <p className="form-error" role="alert">{state.formError}</p> : null}
 
-      <button className="button" disabled={pending} type="submit">
-        {pending ? t("submitting") : t("submit")}
+      <button className="button" disabled={actionPending || transitionPending} type="submit">
+        {actionPending || transitionPending ? t("submitting") : t("submit")}
       </button>
     </form>
   );

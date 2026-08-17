@@ -1484,6 +1484,7 @@ export type Database = {
           target_locale: Database["public"]["Enums"]["app_locale"]
         }
         Returns: {
+          confirmed_auth_user: boolean
           created: boolean
           invitation_expires_at: string
           invitation_id: string
@@ -1868,4 +1869,3 @@ export const Constants = {
     },
   },
 } as const
-

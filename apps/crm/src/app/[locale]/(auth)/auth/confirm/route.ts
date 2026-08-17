@@ -18,14 +18,14 @@ export async function GET(request: NextRequest, context: ConfirmationRouteContex
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type");
 
-  if (!tokenHash || type !== "invite") {
+  if (!tokenHash || (type !== "invite" && type !== "recovery")) {
     return NextResponse.redirect(acceptanceUrl(request, locale, true));
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.verifyOtp({
     token_hash: tokenHash,
-    type: "invite",
+    type,
   });
 
   return NextResponse.redirect(acceptanceUrl(request, locale, Boolean(error)));

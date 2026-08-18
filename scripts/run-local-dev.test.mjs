@@ -8,6 +8,12 @@ const successfulStatus = [
   'PUBLISHABLE_KEY="local-publishable-key"',
 ].join("\n");
 
+const matchedLocalSupabaseConfig = {
+  currentFingerprint: "current-config",
+  readAppliedFingerprint: () => "current-config",
+  writeAppliedFingerprint() {},
+};
+
 function recordingSpawnSync(calls) {
   return (command, args, options) => {
     calls.push({ command, args, options });
@@ -35,6 +41,7 @@ test("starts Supabase, applies migrations, and launches CRM with local credentia
   const exitCode = runLocalDev({
     spawnSync,
     environment: { PATH: "/test/bin" },
+    localSupabaseConfig: matchedLocalSupabaseConfig,
     write() {},
   });
 
@@ -89,6 +96,7 @@ test("launches the requested workspace app with its own next arguments", () => {
     spawnSync: recordingSpawnSync(calls),
     environment: { PATH: "/test/bin" },
     app: "cleaner",
+    localSupabaseConfig: matchedLocalSupabaseConfig,
     nextArguments: ["--port", "3001"],
     write() {},
   });
@@ -126,6 +134,7 @@ test("spawns through a shell on Windows so the pnpm launcher resolves", () => {
   runLocalDev({
     spawnSync: recordingSpawnSync(calls),
     environment: { PATH: "/test/bin" },
+    localSupabaseConfig: matchedLocalSupabaseConfig,
     platform: "win32",
     write() {},
   });
@@ -140,6 +149,7 @@ test("does not spawn through a shell on POSIX platforms", () => {
   runLocalDev({
     spawnSync: recordingSpawnSync(calls),
     environment: { PATH: "/test/bin" },
+    localSupabaseConfig: matchedLocalSupabaseConfig,
     platform: "linux",
     write() {},
   });
@@ -157,6 +167,7 @@ test("reports the underlying spawn failure instead of a generic message", () => 
       error: new Error("spawnSync pnpm ENOENT"),
     }),
     environment: { PATH: "/test/bin" },
+    localSupabaseConfig: matchedLocalSupabaseConfig,
     write: (message) => messages.push(message),
   });
 
@@ -171,6 +182,7 @@ test("does not launch CRM when Supabase fails to start", () => {
       calls.push({ command, args });
       return { status: 1 };
     },
+    localSupabaseConfig: matchedLocalSupabaseConfig,
     write() {},
   });
 
@@ -187,9 +199,130 @@ test("does not launch CRM when the local credentials are unavailable", () => {
         ? { status: 0, stdout: 'API_URL="http://127.0.0.1:55321"' }
         : { status: 0 };
     },
+    localSupabaseConfig: matchedLocalSupabaseConfig,
     write() {},
   });
 
   assert.equal(exitCode, 1);
   assert.equal(calls.length, 3);
+});
+
+test("restarts a running Supabase stack when committed local configuration changed", () => {
+  const calls = [];
+  const appliedFingerprints = [];
+
+  const exitCode = runLocalDev({
+    spawnSync: recordingSpawnSync(calls),
+    environment: { PATH: "/test/bin" },
+    localSupabaseConfig: {
+      currentFingerprint: "new-config",
+      readAppliedFingerprint: () => "old-config",
+      writeAppliedFingerprint: (fingerprint) => appliedFingerprints.push(fingerprint),
+    },
+    write() {},
+  });
+
+  assert.equal(exitCode, 0);
+  assert.deepEqual(
+    calls.map(({ args }) => args),
+    [
+      [
+        "--dir",
+        "packages/db",
+        "exec",
+        "supabase",
+        "--workdir",
+        ".",
+        "status",
+        "-o",
+        "env",
+      ],
+      ["--dir", "packages/db", "db:stop"],
+      ["--dir", "packages/db", "db:start"],
+      [
+        "--dir",
+        "packages/db",
+        "exec",
+        "supabase",
+        "--workdir",
+        ".",
+        "migration",
+        "up",
+        "--local",
+      ],
+      [
+        "--dir",
+        "packages/db",
+        "exec",
+        "supabase",
+        "--workdir",
+        ".",
+        "status",
+        "-o",
+        "env",
+      ],
+      ["--filter", "crm", "exec", "next", "dev"],
+    ],
+  );
+  assert.deepEqual(appliedFingerprints, ["new-config"]);
+});
+
+test("applies changed local configuration without stopping when Supabase is not running", () => {
+  const calls = [];
+  const appliedFingerprints = [];
+  let statusCalls = 0;
+
+  const exitCode = runLocalDev({
+    spawnSync(command, args, options) {
+      calls.push({ command, args, options });
+      if (args.includes("status")) {
+        statusCalls += 1;
+        if (statusCalls === 1) return { status: 1 };
+        return { status: 0, stdout: successfulStatus };
+      }
+      return { status: 0 };
+    },
+    environment: { PATH: "/test/bin" },
+    localSupabaseConfig: {
+      currentFingerprint: "new-config",
+      readAppliedFingerprint: () => null,
+      writeAppliedFingerprint: (fingerprint) => appliedFingerprints.push(fingerprint),
+    },
+    write() {},
+  });
+
+  assert.equal(exitCode, 0);
+  assert.equal(
+    calls.some(({ args }) => args.includes("db:stop")),
+    false,
+  );
+  assert.deepEqual(appliedFingerprints, ["new-config"]);
+});
+
+test("does not launch the app or record configuration when a required restart fails", () => {
+  const calls = [];
+  const appliedFingerprints = [];
+
+  const exitCode = runLocalDev({
+    spawnSync(command, args, options) {
+      calls.push({ command, args, options });
+      if (args.includes("status")) return { status: 0, stdout: successfulStatus };
+      if (args.includes("db:stop")) return { status: 1 };
+      return { status: 0 };
+    },
+    environment: { PATH: "/test/bin" },
+    localSupabaseConfig: {
+      currentFingerprint: "new-config",
+      readAppliedFingerprint: () => "old-config",
+      writeAppliedFingerprint: (fingerprint) => appliedFingerprints.push(fingerprint),
+    },
+    write() {},
+  });
+
+  assert.equal(exitCode, 1);
+  assert.equal(
+    calls.some(({ args }) => args.includes("db:start")),
+    false,
+  );
+  assert.deepEqual(appliedFingerprints, []);
 });

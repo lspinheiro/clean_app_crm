@@ -12,6 +12,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:e2e": "node ../../scripts/run-local-e2e.mjs",
+    "invite:first-admin": "node --env-file=../../.env.first-admin.local scripts/invite-first-admin.mjs",
     "db:start": "pnpm --dir ../../packages/db db:start",
     "db:stop": "pnpm --dir ../../packages/db db:stop",
     "db:reset": "pnpm --dir ../../packages/db db:reset",

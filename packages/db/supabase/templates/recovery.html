@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <body>
+    {{ if eq .Data.preferred_locale "pt-BR" }}
+      <h1>Continue o cadastro da sua empresa</h1>
+      <p>Seu convite da The Clean Crew foi renovado.</p>
+      <p><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery">Continuar cadastro</a></p>
+      <p>Se você não esperava este e-mail, ignore-o.</p>
+    {{ else }}
+      <h1>Continue your company registration</h1>
+      <p>Your invitation to The Clean Crew has been renewed.</p>
+      <p><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery">Continue registration</a></p>
+      <p>If you did not expect this e-mail, ignore it.</p>
+    {{ end }}
+  </body>
+</html>

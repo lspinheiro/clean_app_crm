@@ -55,10 +55,17 @@ flowchart LR
         CRON["pg_cron nightly generation\nAustralia/Brisbane"]
         PUSH["Web-push dispatch\n(VAPID)"]
     end
-    RESEND["Resend Batch API\none-time workforce invitation"]
+    FOUNDER["Trusted founder command\nfirst-admin approval"]
+    AUTH["Supabase Auth Admin\ninvite/recovery + verified session"]
+    RESEND_BATCH["Resend Batch API\none-time workforce invitation"]
+    RESEND_SMTP["Resend custom SMTP\nAuth invitation"]
+    FOUNDER -->|"server-only secret"| AUTH
+    FOUNDER -->|"prepare pending invitation"| RPC
+    AUTH -->|"invite e-mail"| RESEND_SMTP
+    AUTH -->|"verified invite session"| CRM
     CRM -->|"server actions"| RPC
     CRM -->|"company-scoped reads"| PG
-    CRM -->|"server-only e-mail batches"| RESEND
+    CRM -->|"server-only e-mail batches"| RESEND_BATCH
     CLEANER -->|"client Supabase SDK, PKCE auth"| VIEWS
     CLEANER -->|"mutations"| RPC
     RPC --> PG
@@ -81,6 +88,14 @@ Component responsibilities:
   state-changing mutations go through RPCs. The Pool route also parses a cleaner CSV
   in the browser, previews the one-time invitation, and submits a confirmed send list
   to a server-only Resend adapter. The adapter never exposes its API key to the browser.
+- **First-admin bootstrap** — a repository-local command uses a Supabase secret in a
+  trusted environment. A command-only root environment file isolates this secret from
+  the Next.js process. The command creates one pending application invitation and calls
+  Supabase Auth Admin. Supabase sends an invite or recovery e-mail through Resend custom
+  SMTP. The public CRM confirmation route verifies the Auth token and establishes an SSR
+  session. A security-definer RPC then matches the verified e-mail. The RPC creates the approved company,
+  privileged profile, and active membership in one transaction. No browser path can call
+  Auth Admin or select a privileged role or company.
 - **Resend** — the alpha provider for one-time workforce invitation e-mails. The CRM
   sends no more than 100 messages per provider batch. Stable idempotency keys prevent a
   repeated confirmation from sending a second copy.
@@ -107,6 +122,15 @@ Component responsibilities:
 
 ## Data flow
 
+- A founder command creates one pending first-admin invitation before it asks Supabase
+  Auth Admin to send the account invitation. A repeated command finds the pending record
+  and sends no duplicate. If a confirmed Auth user has an expired application invitation,
+  the command creates new application state and sends a recovery e-mail. The e-mail link
+  enters a public locale route. The route verifies the Auth token and establishes a cookie
+  session. The acceptance RPC locks the pending record,
+  matches it to the verified Auth e-mail, and atomically promotes the profile, creates the
+  approved company and active membership, and consumes the invitation. Failed, expired,
+  revoked, used, or mismatched invitations create no company or membership.
 - Admin writes enter through `apps/crm` server actions, which call security-definer RPCs;
   reads are company-scoped selects under RLS.
 - Cleaners read only through dedicated views and mutate only through RPCs — never direct
@@ -201,7 +225,7 @@ state only), and the vacancy view.
 
 | PRD stories | Components |
 |---|---|
-| S1 (company + ABN) | `apps/crm` settings, `packages/db` `companies` |
+| S1 (invite first admin; company + ABN) | trusted founder command, Supabase Auth + Resend custom SMTP, public `apps/crm` acceptance route, atomic `packages/db` bootstrap RPC, then CRM settings |
 | S2–S4 (clients, sites, defaults, preferred cleaners) | `apps/crm` clients, `packages/db` `clients`/`sites` |
 | S5 (recurring assignments) | `apps/crm`, `packages/db` `recurring_assignments` + named-cleaner side table |
 | S6 (generated instances: consent-gated assignment, offered, posted vacancies) | generation job (pg_cron + on-edit, reads series consent), `offers`, vacancy view |
@@ -391,3 +415,20 @@ and normalised recipient e-mails, and sends provider batches of at most 100 mess
 confirmed alpha send is limited to 500 unique recipients. Each provider batch has a stable
 idempotency key. The alternative, Supabase Auth invitations, was rejected because the CSV
 is a contact list for the existing link-first registration flow, not an account import.
+
+### 17. Supabase Auth invites the first admin; application data grants access (2026-08-18)
+
+The founder command calls Supabase Auth Admin from a trusted environment. Supabase sends
+the identity e-mail through Resend custom SMTP. The verified Auth session does not grant a
+CRM role. One application RPC matches the verified e-mail to a pending invitation and then
+creates the approved company, privileged profile, and active membership atomically. The
+alternative, a platform operator application, adds an alpha surface that the founders did
+not request. Auth metadata is not an authorisation source because the invite caller and the
+browser can supply it.
+
+### 18. Supabase Auth recovers a confirmed invitee without account deletion (2026-08-18)
+
+If a confirmed invitee has an expired application invitation, the trusted command sends
+a Supabase recovery e-mail. The same public route verifies the recovery token before the
+application RPC grants access. This avoids account deletion and keeps Resend behind
+Supabase custom SMTP.

@@ -86,8 +86,9 @@ pnpm crm dev
 
 With Docker running, `pnpm crm dev` starts or reuses the local Supabase stack, applies pending
 migrations without resetting existing data, reads the local URL and publishable key, and starts
-the CRM at `http://localhost:3000`. On a fresh Supabase volume, the configured demo seed is loaded
-as part of initialisation.
+the CRM at `http://localhost:3000`. When the committed local Supabase configuration or Auth e-mail
+templates change, the launcher restarts the stack with its data volume preserved before starting
+the app. On a fresh Supabase volume, the configured demo seed is loaded as part of initialisation.
 
 The local seed is demo-only. The company-admin login is
 `admin@clean-app.example.test` with password `local-demo-only`; it must never be used in a cloud
@@ -111,6 +112,44 @@ pnpm crm db:types     # regenerate TypeScript types from the schema
 The development launcher injects the local Supabase credentials automatically. Use
 `apps/crm/.env.local` only for optional local overrides (never commit `.env*`; keep
 `.env.example` current).
+
+### Invite the first company admin
+
+Copy `first-admin.env.example` to `.env.first-admin.local` at the repository root. This
+command-only file is not loaded by Next.js. Set:
+
+- `SUPABASE_URL` — the intended hosted Supabase project URL.
+- `CRM_PUBLIC_URL` — the CRM origin, with no locale path.
+- `SUPABASE_SECRET_KEY` — the hosted Supabase secret key. The command also accepts the
+  legacy `SUPABASE_SERVICE_ROLE_KEY` name.
+- `FIRST_ADMIN_INVITER` — the founder name or e-mail stored in the invitation audit row.
+
+Never expose the Supabase secret to the browser or commit `.env.first-admin.local`. Run
+one invite:
+
+```bash
+pnpm --dir apps/crm invite:first-admin -- --email admin@example.com --locale en-AU
+```
+
+The command accepts `en-AU` or `pt-BR`. A pending invitation makes a repeated command
+exit without sending another e-mail. If the person confirmed an earlier Auth invitation
+but the application invitation expired, a rerun sends a recovery e-mail instead.
+
+Configure the hosted Supabase project before a real send:
+
+1. Add `<CRM_PUBLIC_URL>/en-AU/auth/confirm` and
+   `<CRM_PUBLIC_URL>/pt-BR/auth/confirm` to the Auth redirect allow list.
+2. Copy `packages/db/supabase/templates/invite.html` into the hosted **Invite user**
+   e-mail template. Copy `packages/db/supabase/templates/recovery.html` into the hosted
+   **Reset password** template. Keep each `token_hash`, `type`, and `RedirectTo` value
+   intact.
+3. Enable custom SMTP with host `smtp.resend.com`, port `465`, username `resend`, and
+   the Resend API key as the SMTP password. Use a From address on a verified domain.
+4. Keep the Supabase e-mail OTP expiry at one hour so it matches the application
+   invitation lifetime.
+
+Local Supabase uses the committed invite template and Inbucket. Hosted SMTP credentials
+live in Supabase Auth settings, not in the application bundle.
 
 ## Status
 

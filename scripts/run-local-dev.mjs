@@ -1,9 +1,46 @@
 import { spawnSync as nodeSpawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "..");
+const localSupabaseDirectory = path.join(repositoryRoot, "packages/db/supabase");
+const localSupabaseConfigPaths = [
+  path.join(localSupabaseDirectory, "config.toml"),
+  path.join(localSupabaseDirectory, "templates/invite.html"),
+  path.join(localSupabaseDirectory, "templates/recovery.html"),
+];
+const appliedConfigFingerprintPath = path.join(
+  localSupabaseDirectory,
+  ".temp/applied-local-config.sha256",
+);
+
+function defaultLocalSupabaseConfig() {
+  const fingerprint = createHash("sha256");
+  for (const configPath of localSupabaseConfigPaths) {
+    fingerprint.update(path.relative(localSupabaseDirectory, configPath));
+    fingerprint.update("\0");
+    fingerprint.update(readFileSync(configPath));
+    fingerprint.update("\0");
+  }
+
+  return {
+    currentFingerprint: fingerprint.digest("hex"),
+    readAppliedFingerprint() {
+      try {
+        return readFileSync(appliedConfigFingerprintPath, "utf8").trim();
+      } catch {
+        return null;
+      }
+    },
+    writeAppliedFingerprint(value) {
+      mkdirSync(path.dirname(appliedConfigFingerprintPath), { recursive: true });
+      writeFileSync(appliedConfigFingerprintPath, `${value}\n`, "utf8");
+    },
+  };
+}
 
 function parseEnvironment(output) {
   return Object.fromEntries(
@@ -62,6 +99,7 @@ export function runLocalDev({
   environment = process.env,
   nextArguments = [],
   app = defaultApp,
+  localSupabaseConfig = defaultLocalSupabaseConfig(),
   platform = process.platform,
   write = (message) => process.stderr.write(message),
 } = {}) {
@@ -86,11 +124,54 @@ export function runLocalDev({
     return result;
   };
 
+  const localConfigChanged =
+    localSupabaseConfig.readAppliedFingerprint()
+    !== localSupabaseConfig.currentFingerprint;
+
+  if (localConfigChanged) {
+    write(`${prefix} Local Supabase configuration changed; refreshing the stack...\n`);
+    const runningStatus = run(
+      [
+        "--dir",
+        "packages/db",
+        "exec",
+        "supabase",
+        "--workdir",
+        ".",
+        "status",
+        "-o",
+        "env",
+      ],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    );
+
+    if (exitCode(runningStatus) === 0) {
+      const stopResult = run(["--dir", "packages/db", "db:stop"]);
+      if (exitCode(stopResult) !== 0) {
+        write(`${prefix} Supabase could not restart; ${app} was not launched.\n`);
+        return exitCode(stopResult);
+      }
+    }
+  }
+
   write(`${prefix} Starting or reusing the local Supabase stack...\n`);
   const startResult = run(["--dir", "packages/db", "db:start"]);
   if (exitCode(startResult) !== 0) {
     write(`${prefix} Supabase did not start; ${app} was not launched.\n`);
     return exitCode(startResult);
+  }
+
+  if (localConfigChanged) {
+    try {
+      localSupabaseConfig.writeAppliedFingerprint(
+        localSupabaseConfig.currentFingerprint,
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? `: ${error.message}` : "";
+      write(
+        `${prefix} Could not remember the applied local Supabase configuration${detail}\n`,
+      );
+    }
   }
 
   write(`${prefix} Applying pending local database migrations...\n`);

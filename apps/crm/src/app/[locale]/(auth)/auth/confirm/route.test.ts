@@ -24,9 +24,7 @@ describe("first-admin Auth confirmation route", () => {
     );
 
     expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "safe-hash", type: "invite" });
-    expect(response.headers.get("location")).toBe(
-      "https://crm.example.test/en-AU/invite/accept",
-    );
+    expect(response.headers.get("location")).toBe("/en-AU/invite/accept");
   });
 
   it("exchanges a recovery token for a renewed first-admin invitation", async () => {
@@ -36,9 +34,16 @@ describe("first-admin Auth confirmation route", () => {
     );
 
     expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "safe-hash", type: "recovery" });
-    expect(response.headers.get("location")).toBe(
-      "https://crm.example.test/pt-BR/invite/accept",
+    expect(response.headers.get("location")).toBe("/pt-BR/invite/accept");
+  });
+
+  it("keeps the browser on its incoming origin after setting the Auth session", async () => {
+    const response = await GET(
+      new NextRequest("http://127.0.0.1:3000/pt-BR/auth/confirm?token_hash=safe-hash&type=recovery"),
+      { params: Promise.resolve({ locale: "pt-BR" }) },
     );
+
+    expect(response.headers.get("location")).toBe("/pt-BR/invite/accept");
   });
 
   it("does not exchange another token type", async () => {
@@ -49,7 +54,7 @@ describe("first-admin Auth confirmation route", () => {
 
     expect(mocks.verifyOtp).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBe(
-      "https://crm.example.test/pt-BR/invite/accept?error=invalid",
+      "/pt-BR/invite/accept?error=invalid",
     );
   });
 
@@ -62,7 +67,7 @@ describe("first-admin Auth confirmation route", () => {
     );
 
     expect(response.headers.get("location")).toBe(
-      "https://crm.example.test/en-AU/invite/accept?error=invalid",
+      "/en-AU/invite/accept?error=invalid",
     );
   });
 });

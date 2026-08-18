@@ -8,6 +8,7 @@ import {
   type FirstAdminAcceptanceFieldErrors,
   type FirstAdminAcceptanceInput,
 } from "@/features/first-admin/schema";
+import type { FirstAdminState } from "@/features/first-admin/state";
 import {
   defaultLocale,
   isAppLocale,
@@ -17,16 +18,6 @@ import {
 import { redirect } from "@/i18n/navigation";
 import { localiseUserMessage } from "@/i18n/user-message";
 import { createClient } from "@/lib/supabase/server";
-
-export type FirstAdminState = {
-  fieldErrors: FirstAdminAcceptanceFieldErrors;
-  formError: string | null;
-};
-
-export const initialFirstAdminState: FirstAdminState = {
-  fieldErrors: {},
-  formError: null,
-};
 
 function localiseErrors(
   fieldErrors: FirstAdminAcceptanceFieldErrors,

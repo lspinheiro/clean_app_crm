@@ -11,9 +11,11 @@ import { useTranslations } from "next-intl";
 
 import {
   acceptFirstAdminAction,
+} from "@/app/actions/first-admin";
+import {
   initialFirstAdminState,
   type FirstAdminState,
-} from "@/app/actions/first-admin";
+} from "@/features/first-admin/state";
 import type { AppLocale } from "@/i18n/config";
 
 type FirstAdminAcceptanceFormProps = {

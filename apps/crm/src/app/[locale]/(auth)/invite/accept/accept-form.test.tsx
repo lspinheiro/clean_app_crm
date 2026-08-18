@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/app/actions/first-admin", () => ({
   acceptFirstAdminAction: mocks.acceptFirstAdminAction,
-  initialFirstAdminState: { fieldErrors: {}, formError: null },
 }));
 
 import { FirstAdminAcceptanceForm } from "./accept-form";

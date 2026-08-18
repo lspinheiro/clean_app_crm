@@ -12,7 +12,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/headers", () => ({ cookies: mocks.cookies }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 
-import { acceptFirstAdminAction, initialFirstAdminState } from "./first-admin";
+import { initialFirstAdminState } from "@/features/first-admin/state";
+
+import { acceptFirstAdminAction } from "./first-admin";
 
 function validFormData() {
   const formData = new FormData();

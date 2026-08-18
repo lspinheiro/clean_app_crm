@@ -86,8 +86,9 @@ pnpm crm dev
 
 With Docker running, `pnpm crm dev` starts or reuses the local Supabase stack, applies pending
 migrations without resetting existing data, reads the local URL and publishable key, and starts
-the CRM at `http://localhost:3000`. On a fresh Supabase volume, the configured demo seed is loaded
-as part of initialisation.
+the CRM at `http://localhost:3000`. When the committed local Supabase configuration or Auth e-mail
+templates change, the launcher restarts the stack with its data volume preserved before starting
+the app. On a fresh Supabase volume, the configured demo seed is loaded as part of initialisation.
 
 The local seed is demo-only. The company-admin login is
 `admin@clean-app.example.test` with password `local-demo-only`; it must never be used in a cloud

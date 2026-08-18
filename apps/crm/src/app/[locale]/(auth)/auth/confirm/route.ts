@@ -7,9 +7,12 @@ type ConfirmationRouteContext = {
   params: Promise<{ locale: string }>;
 };
 
-function acceptanceUrl(request: NextRequest, locale: string, invalid = false) {
-  const path = `/${locale}/invite/accept${invalid ? "?error=invalid" : ""}`;
-  return new URL(path, request.url);
+function acceptanceRedirect(locale: string, invalid = false) {
+  const location = `/${locale}/invite/accept${invalid ? "?error=invalid" : ""}`;
+  return new NextResponse(null, {
+    headers: { location },
+    status: 307,
+  });
 }
 
 export async function GET(request: NextRequest, context: ConfirmationRouteContext) {
@@ -19,7 +22,7 @@ export async function GET(request: NextRequest, context: ConfirmationRouteContex
   const type = request.nextUrl.searchParams.get("type");
 
   if (!tokenHash || (type !== "invite" && type !== "recovery")) {
-    return NextResponse.redirect(acceptanceUrl(request, locale, true));
+    return acceptanceRedirect(locale, true);
   }
 
   const supabase = await createClient();
@@ -28,5 +31,5 @@ export async function GET(request: NextRequest, context: ConfirmationRouteContex
     type,
   });
 
-  return NextResponse.redirect(acceptanceUrl(request, locale, Boolean(error)));
+  return acceptanceRedirect(locale, Boolean(error));
 }

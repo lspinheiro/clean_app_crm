@@ -95,8 +95,9 @@ Component responsibilities:
   (S30): the browser parses and validates the file against the published column
   format, shows a preview with per-row errors, and submits confirmed rows through the
   same server actions and RPCs as one-by-one entry. Reads are company-scoped;
-  state-changing mutations go through RPCs. The Pool route also parses a cleaner CSV
-  in the browser, previews the one-time invitation, and submits a confirmed send list
+  state-changing mutations go through RPCs. The Pool route also accepts directly entered
+  cleaner e-mail addresses or parses an optional cleaner CSV in the browser, previews the
+  one-time invitation, and submits a confirmed send list
   to a server-only Resend adapter. The adapter never exposes its API key to the browser.
 - **First-admin bootstrap** — a repository-local command uses a Supabase secret in a
   trusted environment. A command-only root environment file isolates this secret from
@@ -190,8 +191,9 @@ Component responsibilities:
   it, and the CRM pool screen shows per-link state (active / expired / revoked / limit
   reached) and registration count. The delivered one-active-code-with-rotation model
   (`rotate_company_invite`) gives way to this multi-link model.
-- Cleaner CSV invitations (S8/S30) use one selected active invite. The browser parses,
-  validates, normalises, and deduplicates `email` plus optional `name`. It shows the
+- Cleaner e-mail invitations (S8/S30) use one selected active invite. The browser accepts
+  one or more directly entered e-mail addresses or an optional CSV with `email` plus
+  optional `name`, then validates, normalises, and deduplicates the combined list. It shows the
   exact count and localised copy before confirmation. A server action re-authorises the
   company admin, resolves the active invite, creates company-scoped batch state through
   RPCs, and calls Resend in chunks of at most 100, with at most 500 unique recipients in
@@ -264,7 +266,7 @@ state only), and the vacancy view.
 | S9–S12 (link-first join, auto pool join, PWA + push opt-in, board) | `apps/cleaner` join + board, cleaner views, RPCs |
 | S27 (cleaner sign-in: Google OAuth / email + password) | Supabase Auth (Google provider + email/password, PKCE callback route in `apps/cleaner`) |
 | S28–S29 (directed offers with accept/decline) | `offers` entity + offer RPCs, `apps/crm` job detail + recurring assignment, `apps/cleaner` offers surface, generation job (consent-gated), notifications |
-| S30 (bulk CSV for company data and cleaner send lists) | `apps/crm` client-side parse + preview; existing write RPCs for company data; Resend adapter and batch RPCs for cleaner invitations |
+| S30 (bulk CSV for company data; direct entry or CSV for cleaner send lists) | `apps/crm` client-side validation + preview; existing write RPCs for company data; Resend adapter and batch RPCs for cleaner invitations |
 | S31 (CRM jobs list) | `apps/crm` jobs |
 | S32 (employee invitation with role) | `apps/crm` company settings, Supabase Auth invite + Resend custom SMTP, `employee_invitations` + acceptance RPC |
 | S33 (active company + switcher + no-access screen) | `apps/crm` layout/session, `profiles.last_active_company` |
@@ -441,13 +443,13 @@ company property. The app name remains `The Clean Crew` in both locales.
 
 ### 16. Resend delivers confirmed one-time workforce invitations (2026-08-17)
 
-Resend is the alpha provider for cleaner send lists. The browser owns CSV validation and
-preview, while the CRM server re-authorises the admin, persists company-scoped submission
+Resend is the alpha provider for cleaner send lists. The browser owns direct-entry and CSV
+validation and preview, while the CRM server re-authorises the admin, persists company-scoped submission
 state through RPCs, derives the logical confirmation key from the selected invite, locale,
 and normalised recipient e-mails, and sends provider batches of at most 100 messages. One
 confirmed alpha send is limited to 500 unique recipients. Each provider batch has a stable
-idempotency key. The alternative, Supabase Auth invitations, was rejected because the CSV
-is a contact list for the existing link-first registration flow, not an account import.
+idempotency key. The alternative, Supabase Auth invitations, was rejected because the
+send list is contact input for the existing link-first registration flow, not an account import.
 
 ### 17. Supabase Auth invites the first admin; application data grants access (2026-08-18)
 

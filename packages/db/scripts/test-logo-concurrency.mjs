@@ -166,11 +166,10 @@ try {
       '{"provider":"email","providers":["email"]}',
       '{"full_name":"Logo Race Admin"}', now(), now(), '', '', '', ''
     );
-    update public.profiles set role = 'company_admin' where id = '${adminId}';
     insert into public.companies (id, name, abn, status)
     values ('${companyId}', 'Logo Race Company', '55555555555', 'approved');
-    insert into public.company_members (company_id, profile_id)
-    values ('${companyId}', '${adminId}');
+    insert into public.employee_memberships (company_id, profile_id, role)
+    values ('${companyId}', '${adminId}', 'owner');
     commit;
   `);
 

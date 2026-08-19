@@ -21,37 +21,58 @@ async function loadCompanyAdminContext() {
       supabase,
       user: null,
       profile: null,
+      membership: null,
       company: null,
     } as const;
   }
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, role, full_name, preferred_locale")
+    .select("id, full_name, preferred_locale")
     .eq("id", user.id)
     .maybeSingle();
   if (profileError) throw profileError;
 
-  const decision = evaluateCrmAccess({ userId: user.id, profile });
-  if (decision.kind === "denied") {
-    return { decision, supabase, user, profile, company: null } as const;
+  if (!profile) {
+    return {
+      decision: evaluateCrmAccess({ userId: user.id, profile, membership: null }),
+      supabase,
+      user,
+      profile,
+      membership: null,
+      company: null,
+    } as const;
   }
 
   const { data: membership, error: membershipError } = await supabase
-    .from("company_members")
-    .select("company_id")
+    .from("employee_memberships")
+    .select("company_id, profile_id, role, status")
     .eq("profile_id", user.id)
     .eq("status", "active")
+    .order("joined_at", { ascending: true })
     .limit(1)
     .maybeSingle();
   if (membershipError) throw membershipError;
 
   if (!membership) {
     return {
-      decision: { kind: "denied", reason: "missing_profile" } as const,
+      decision: evaluateCrmAccess({ userId: user.id, profile, membership: null }),
       supabase,
       user,
       profile,
+      membership: null,
+      company: null,
+    } as const;
+  }
+
+  const decision = evaluateCrmAccess({ userId: user.id, profile, membership });
+  if (decision.kind === "denied") {
+    return {
+      decision,
+      supabase,
+      user,
+      profile,
+      membership,
       company: null,
     } as const;
   }
@@ -73,6 +94,7 @@ async function loadCompanyAdminContext() {
       supabase,
       user,
       profile,
+      membership,
       company: null,
     } as const;
   }
@@ -80,6 +102,7 @@ async function loadCompanyAdminContext() {
   const companyDecision = evaluateCrmAccess({
     userId: user.id,
     profile,
+    membership,
     companyStatus: company.status,
   });
   if (companyDecision.kind === "denied") {
@@ -88,11 +111,12 @@ async function loadCompanyAdminContext() {
       supabase,
       user,
       profile,
+      membership,
       company: null,
     } as const;
   }
 
-  return { decision: companyDecision, supabase, user, profile, company } as const;
+  return { decision: companyDecision, supabase, user, profile, membership, company } as const;
 }
 
 export const getCompanyAdminContext = cache(loadCompanyAdminContext);
@@ -104,12 +128,23 @@ export async function requireCompanyAdmin() {
   if (context.decision.kind === "denied") {
     return redirect({ href: "/login?error=not-authorised", locale });
   }
-  if (!context.company || !context.profile) {
+  if (!context.company || !context.profile || !context.membership) {
     return redirect({ href: "/login?error=not-authorised", locale });
   }
   return {
     ...context,
     company: context.company,
+    membership: context.membership,
     profile: context.profile,
   };
+}
+
+export async function requireCompanyOwner() {
+  const context = await requireCompanyAdmin();
+  if (context.membership.role !== "owner") {
+    const requestLocale = await getLocale();
+    const locale = isAppLocale(requestLocale) ? requestLocale : defaultLocale;
+    return redirect({ href: "/login?error=not-authorised", locale });
+  }
+  return context;
 }

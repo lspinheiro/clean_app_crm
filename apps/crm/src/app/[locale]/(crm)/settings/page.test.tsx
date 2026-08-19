@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getCompanyLogoUrl: vi.fn(),
-  requireCompanyAdmin: vi.fn(),
+  requireCompanyOwner: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/auth/session", () => ({
-  requireCompanyAdmin: mocks.requireCompanyAdmin,
+  requireCompanyOwner: mocks.requireCompanyOwner,
 }));
 
 vi.mock("@/lib/company-logo", () => ({
@@ -26,7 +26,7 @@ afterEach(cleanup);
 
 describe("company settings language control", () => {
   it("offers both alpha languages without translating their names", async () => {
-    mocks.requireCompanyAdmin.mockResolvedValue({
+    mocks.requireCompanyOwner.mockResolvedValue({
       company: {
         abn: "53004085616",
         logo_path: null,
@@ -46,7 +46,7 @@ describe("company settings language control", () => {
   });
 
   it("reports the saved profile preference instead of the bookmarked route locale", async () => {
-    mocks.requireCompanyAdmin.mockResolvedValue({
+    mocks.requireCompanyOwner.mockResolvedValue({
       company: {
         abn: "53004085616",
         logo_path: null,

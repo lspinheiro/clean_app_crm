@@ -5,7 +5,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { isAppLocale, type AppLocale } from "@/i18n/config";
 import { CompanyIdentityForm } from "./company-identity-form";
 
-import { requireCompanyAdmin } from "@/lib/auth/session";
+import { requireCompanyOwner } from "@/lib/auth/session";
 import { getCompanyLogoUrl } from "@/lib/company-logo";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SettingsPage() {
-  const { company, profile, supabase } = await requireCompanyAdmin();
+  const { company, profile, supabase } = await requireCompanyOwner();
   const locale = (await getLocale()) as AppLocale;
   const t = await getTranslations("Settings");
   const logoUrl = await getCompanyLogoUrl(supabase, company.logo_path);

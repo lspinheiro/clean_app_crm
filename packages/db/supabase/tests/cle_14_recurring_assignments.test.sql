@@ -141,9 +141,6 @@ insert into auth.users (
     '{"provider":"email","providers":["email"]}',
     '{"full_name":"Tenant B Recurring Cleaner"}', now(), now(), '', '', '', ''
   );
-update public.profiles
-set role = 'company_admin'
-where id = '21000000-0000-4000-8000-000000000001';
 insert into public.companies (id, name, abn, status)
 values (
   '21000000-0000-4000-8000-000000000010',
@@ -151,16 +148,17 @@ values (
   '23232323232',
   'approved'
 );
+insert into public.employee_memberships (company_id, profile_id, role)
+values (
+  '21000000-0000-4000-8000-000000000010',
+  '21000000-0000-4000-8000-000000000001',
+  'owner'
+);
 insert into public.company_members (company_id, profile_id)
-values
-  (
-    '21000000-0000-4000-8000-000000000010',
-    '21000000-0000-4000-8000-000000000001'
-  ),
-  (
-    '21000000-0000-4000-8000-000000000010',
-    '21000000-0000-4000-8000-000000000002'
-  );
+values (
+  '21000000-0000-4000-8000-000000000010',
+  '21000000-0000-4000-8000-000000000002'
+);
 insert into public.clients (id, company_id, name)
 values (
   '21000000-0000-4000-8000-000000000301',
@@ -516,9 +514,10 @@ insert into public.recurring_assignment_cleaners (
 )
 on conflict (recurring_assignment_id, slot_number) do update
 set cleaner_id = excluded.cleaner_id;
-update public.profiles
-set role = 'company_admin'
-where id = '10000000-0000-4000-8000-000000000004';
+update public.company_members
+set status = 'removed'
+where company_id = '10000000-0000-4000-8000-000000000010'
+  and profile_id = '10000000-0000-4000-8000-000000000004';
 select is(
   (
     select count(*)::integer
@@ -526,7 +525,7 @@ select is(
     where cleaner_id = '10000000-0000-4000-8000-000000000004'
   ),
   0,
-  'changing a profile out of the cleaner role opens its named recurring slots'
+  'removing a pool membership opens its named recurring slots'
 );
 
 select * from finish();

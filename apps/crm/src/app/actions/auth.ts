@@ -50,12 +50,22 @@ export async function signInAction(
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, role, preferred_locale")
+    .select("id, preferred_locale")
     .eq("id", data.user.id)
     .maybeSingle();
   if (profileError) throw profileError;
 
-  const decision = evaluateCrmAccess({ userId: data.user.id, profile });
+  const { data: membership, error: membershipError } = await supabase
+    .from("employee_memberships")
+    .select("company_id, profile_id, role, status")
+    .eq("profile_id", data.user.id)
+    .eq("status", "active")
+    .order("joined_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (membershipError) throw membershipError;
+
+  const decision = evaluateCrmAccess({ userId: data.user.id, profile, membership });
   if (decision.kind === "denied") {
     const { error: signOutError } = await supabase.auth.signOut();
     if (signOutError) throw signOutError;

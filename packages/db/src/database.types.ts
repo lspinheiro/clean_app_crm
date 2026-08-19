@@ -183,6 +183,48 @@ export type Database = {
           },
         ]
       }
+      employee_memberships: {
+        Row: {
+          company_id: string
+          id: string
+          joined_at: string
+          profile_id: string
+          role: Database["public"]["Enums"]["employee_role"]
+          status: Database["public"]["Enums"]["member_status"]
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          joined_at?: string
+          profile_id: string
+          role: Database["public"]["Enums"]["employee_role"]
+          status?: Database["public"]["Enums"]["member_status"]
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          joined_at?: string
+          profile_id?: string
+          role?: Database["public"]["Enums"]["employee_role"]
+          status?: Database["public"]["Enums"]["member_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_memberships_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_memberships_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       first_admin_invitations: {
         Row: {
           accepted_at: string | null
@@ -717,7 +759,6 @@ export type Database = {
           id: string
           phone: string | null
           preferred_locale: Database["public"]["Enums"]["app_locale"] | null
-          role: Database["public"]["Enums"]["app_role"]
           suburb: string | null
           updated_at: string
         }
@@ -728,7 +769,6 @@ export type Database = {
           id: string
           phone?: string | null
           preferred_locale?: Database["public"]["Enums"]["app_locale"] | null
-          role?: Database["public"]["Enums"]["app_role"]
           suburb?: string | null
           updated_at?: string
         }
@@ -739,7 +779,6 @@ export type Database = {
           id?: string
           phone?: string | null
           preferred_locale?: Database["public"]["Enums"]["app_locale"] | null
-          role?: Database["public"]["Enums"]["app_role"]
           suburb?: string | null
           updated_at?: string
         }
@@ -1188,6 +1227,29 @@ export type Database = {
           },
         ]
       }
+      cleaner_pool_memberships: {
+        Row: {
+          profile_id: string | null
+          status: Database["public"]["Enums"]["member_status"] | null
+        }
+        Insert: {
+          profile_id?: string | null
+          status?: Database["public"]["Enums"]["member_status"] | null
+        }
+        Update: {
+          profile_id?: string | null
+          status?: Database["public"]["Enums"]["member_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_ledger_entries: {
         Row: {
           amount_cents: number | null
@@ -1430,10 +1492,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      current_app_role: {
-        Args: never
-        Returns: Database["public"]["Enums"]["app_role"]
-      }
       generate_recurring_jobs: { Args: never; Returns: number }
       generate_recurring_jobs_at: {
         Args: { as_of: string; target_recurring_assignment_id?: string }
@@ -1456,6 +1514,14 @@ export type Database = {
         }[]
       }
       is_company_admin: {
+        Args: { target_company_id: string }
+        Returns: boolean
+      }
+      is_company_employee: {
+        Args: { target_company_id: string }
+        Returns: boolean
+      }
+      is_company_owner: {
         Args: { target_company_id: string }
         Returns: boolean
       }
@@ -1696,10 +1762,10 @@ export type Database = {
     }
     Enums: {
       app_locale: "en-AU" | "pt-BR"
-      app_role: "company_admin" | "cleaner" | "admin"
       application_status: "applied" | "assigned" | "not_selected" | "withdrawn"
       assignment_source: "manual" | "recurring"
       company_status: "pending" | "approved" | "suspended"
+      employee_role: "owner" | "staff"
       job_status:
         | "draft"
         | "posted"
@@ -1844,10 +1910,10 @@ export const Constants = {
   public: {
     Enums: {
       app_locale: ["en-AU", "pt-BR"],
-      app_role: ["company_admin", "cleaner", "admin"],
       application_status: ["applied", "assigned", "not_selected", "withdrawn"],
       assignment_source: ["manual", "recurring"],
       company_status: ["pending", "approved", "suspended"],
+      employee_role: ["owner", "staff"],
       job_status: [
         "draft",
         "posted",

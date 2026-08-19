@@ -126,15 +126,12 @@ insert into auth.users (
     '{"provider":"email","providers":["email"]}',
     '{"full_name":"Tenant B Jobs Cleaner"}', now(), now(), '', '', '', ''
   );
-update public.profiles
-set role = 'company_admin'
-where id = '20000000-0000-4000-8000-000000000001';
 insert into public.companies (id, name, abn, status)
 values ('20000000-0000-4000-8000-000000000010', 'Tenant B Jobs Demo', '22222222222', 'approved');
+insert into public.employee_memberships (company_id, profile_id, role)
+values ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000001', 'owner');
 insert into public.company_members (company_id, profile_id)
-values
-  ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000001'),
-  ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000002');
+values ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000002');
 insert into public.clients (id, company_id, name)
 values ('20000000-0000-4000-8000-000000000301', '20000000-0000-4000-8000-000000000010', 'Tenant B Client');
 insert into public.sites (id, client_id, name, address, suburb)

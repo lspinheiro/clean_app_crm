@@ -9,7 +9,7 @@ import {
   parseCompanyIdentity,
   type CompanyIdentityFieldErrors,
 } from "@/features/company-identity/schema";
-import { requireCompanyAdmin } from "@/lib/auth/session";
+import { requireCompanyOwner } from "@/lib/auth/session";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { userMessage } from "@/i18n/user-message";
 
@@ -51,7 +51,7 @@ export async function updateCompanyIdentity(
     };
   }
 
-  const { company, supabase } = await requireCompanyAdmin();
+  const { company, supabase } = await requireCompanyOwner();
   const logoBucket = supabase.storage.from("company-logos");
   const candidateLogoPath = logo
     ? `${company.id}/logo-${randomUUID()}.webp`

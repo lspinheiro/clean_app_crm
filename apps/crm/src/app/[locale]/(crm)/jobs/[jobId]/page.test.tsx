@@ -94,7 +94,6 @@ const defaultResults: Record<string, QueryResult> = {
         profiles: {
           id: "10000000-0000-4000-8000-000000000002",
           full_name: "Demo Cleaner One",
-          role: "cleaner",
         },
       },
       {
@@ -102,7 +101,6 @@ const defaultResults: Record<string, QueryResult> = {
         profiles: {
           id: "10000000-0000-4000-8000-000000000003",
           full_name: "Preferred Applicant",
-          role: "cleaner",
         },
       },
       {
@@ -110,7 +108,6 @@ const defaultResults: Record<string, QueryResult> = {
         profiles: {
           id: "10000000-0000-4000-8000-000000000007",
           full_name: "Pool-only Cleaner",
-          role: "cleaner",
         },
       },
       {
@@ -118,7 +115,6 @@ const defaultResults: Record<string, QueryResult> = {
         profiles: {
           id: "10000000-0000-4000-8000-000000000004",
           full_name: "Unranked Applicant",
-          role: "cleaner",
         },
       },
     ],
@@ -248,10 +244,6 @@ describe("CLE-22 job detail route", () => {
     expect(harness.query("company_members").eq).toHaveBeenCalledWith(
       "status",
       "active",
-    );
-    expect(harness.query("company_members").eq).toHaveBeenCalledWith(
-      "profiles.role",
-      "cleaner",
     );
     expect(harness.query("job_assignments").eq).toHaveBeenCalledWith(
       "job_id",

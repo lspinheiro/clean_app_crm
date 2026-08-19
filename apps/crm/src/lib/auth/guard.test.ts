@@ -2,15 +2,24 @@ import { describe, expect, it } from "vitest";
 
 import { evaluateCrmAccess } from "./access";
 
-describe("CLE-5 company-admin access", () => {
-  it("allows an authenticated company admin from the database profile", () => {
+describe("CLE-81 membership-based CRM access", () => {
+  it.each(["owner", "staff"] as const)(
+    "allows an authenticated account with an active %s employee membership",
+    (role) => {
     expect(
       evaluateCrmAccess({
         userId: "user-1",
-        profile: { id: "user-1", role: "company_admin" },
+          profile: { id: "user-1" },
+          membership: {
+            company_id: "company-1",
+            profile_id: "user-1",
+            role,
+            status: "active",
+          },
       }),
     ).toEqual({ kind: "allowed", userId: "user-1" });
-  });
+    },
+  );
 
   it.each([
     {
@@ -24,21 +33,51 @@ describe("CLE-5 company-admin access", () => {
       reason: "missing_profile",
     },
     {
-      name: "cleaner profile",
+      name: "missing employee membership",
       input: {
         userId: "user-1",
-        profile: { id: "user-1", role: "cleaner" as const },
+        profile: { id: "user-1" },
+        membership: null,
       },
-      reason: "wrong_role",
+      reason: "missing_membership",
     },
     {
-      name: "spoofed metadata with a cleaner database profile",
+      name: "removed employee membership",
       input: {
         userId: "user-1",
-        profile: { id: "user-1", role: "cleaner" as const },
+        profile: { id: "user-1" },
+        membership: {
+          company_id: "company-1",
+          profile_id: "user-1",
+          role: "owner" as const,
+          status: "removed" as const,
+        },
+      },
+      reason: "inactive_membership",
+    },
+    {
+      name: "another account's employee membership",
+      input: {
+        userId: "user-1",
+        profile: { id: "user-1" },
+        membership: {
+          company_id: "company-1",
+          profile_id: "user-2",
+          role: "owner" as const,
+          status: "active" as const,
+        },
+      },
+      reason: "missing_membership",
+    },
+    {
+      name: "spoofed global role without an employee membership",
+      input: {
+        userId: "user-1",
+        profile: { id: "user-1" },
+        membership: null,
         untrustedMetadataRole: "company_admin",
       },
-      reason: "wrong_role",
+      reason: "missing_membership",
     },
   ])("denies $name", ({ input, reason }) => {
     expect(evaluateCrmAccess(input)).toEqual({ kind: "denied", reason });
@@ -49,7 +88,13 @@ describe("CLE-5 company-admin access", () => {
     (companyStatus) => {
       const input = {
         userId: "user-1",
-        profile: { id: "user-1", role: "company_admin" as const },
+        profile: { id: "user-1" },
+        membership: {
+          company_id: "company-1",
+          profile_id: "user-1",
+          role: "staff" as const,
+          status: "active" as const,
+        },
         companyStatus,
       };
 

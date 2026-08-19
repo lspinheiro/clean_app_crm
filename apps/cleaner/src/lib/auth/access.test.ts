@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { evaluateCleanerAccess } from "./access";
 
-describe("CLE-19 cleaner app access", () => {
+describe("CLE-81 membership-based cleaner access", () => {
   it("refuses a visitor with no session", () => {
     expect(evaluateCleanerAccess({ userId: null, profile: null })).toEqual({
       kind: "denied",
@@ -21,54 +21,64 @@ describe("CLE-19 cleaner app access", () => {
     expect(
       evaluateCleanerAccess({
         userId: "user-1",
-        profile: { id: "user-2", role: "cleaner" },
+        profile: { id: "user-2" },
+        membership: {
+          profile_id: "user-1",
+          status: "active",
+        },
       }),
     ).toEqual({ kind: "denied", reason: "missing_profile" });
   });
 
-  it("refuses a company admin — this app is the cleaner side", () => {
+  it("refuses an account without a pool membership", () => {
     expect(
       evaluateCleanerAccess({
         userId: "user-1",
-        profile: { id: "user-1", role: "company_admin" },
+        profile: { id: "user-1" },
+        membership: null,
       }),
-    ).toEqual({ kind: "denied", reason: "wrong_role" });
+    ).toEqual({ kind: "denied", reason: "missing_membership" });
   });
 
-  it("refuses an internal admin", () => {
+  it("admits a removed pool membership so the cleaner keeps the empty-board experience", () => {
     expect(
       evaluateCleanerAccess({
         userId: "user-1",
-        profile: { id: "user-1", role: "admin" },
+        profile: { id: "user-1" },
+        membership: { profile_id: "user-1", status: "removed" },
       }),
-    ).toEqual({ kind: "denied", reason: "wrong_role" });
+    ).toEqual({ kind: "allowed", userId: "user-1" });
   });
 
-  it("ignores a role claimed in token metadata and trusts the profile row", () => {
+  it("ignores a global role claimed in token metadata", () => {
     expect(
       evaluateCleanerAccess({
         userId: "user-1",
-        profile: { id: "user-1", role: "company_admin" },
+        profile: { id: "user-1" },
+        membership: null,
         untrustedMetadataRole: "cleaner",
       }),
-    ).toEqual({ kind: "denied", reason: "wrong_role" });
+    ).toEqual({ kind: "denied", reason: "missing_membership" });
   });
 
-  it("admits a cleaner, whatever the token metadata claims", () => {
+  it("admits an active pool member, whatever the token metadata claims", () => {
     expect(
       evaluateCleanerAccess({
         userId: "user-1",
-        profile: { id: "user-1", role: "cleaner" },
+        profile: { id: "user-1" },
+        membership: { profile_id: "user-1", status: "active" },
         untrustedMetadataRole: "company_admin",
       }),
     ).toEqual({ kind: "allowed", userId: "user-1" });
   });
 
-  it("admits a cleaner who has not joined any pool yet", () => {
+  it("admits one login that also has unrelated company-side authority", () => {
     expect(
       evaluateCleanerAccess({
         userId: "user-9",
-        profile: { id: "user-9", role: "cleaner" },
+        profile: { id: "user-9" },
+        membership: { profile_id: "user-9", status: "active" },
+        untrustedMetadataRole: "owner",
       }),
     ).toEqual({ kind: "allowed", userId: "user-9" });
   });

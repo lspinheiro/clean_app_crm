@@ -10,9 +10,10 @@ import { expect, test, type Page } from "@playwright/test";
 //   Palm Grove Practice crew of 1, no named cleaner   → fully open, no crew line
 //   Southport Office    crew of 1, one named cleaner  → fully assigned, never on the board
 //
-// removed.cleaner belongs to no active pool, so her board is the empty state.
+// removed.cleaner has a historical pool membership but belongs to no active pool, so her
+// board is the empty state.
 const cleanerEmail = "cleaner.two@clean-app.example.test";
-const poollessEmail = "removed.cleaner@clean-app.example.test";
+const removedMembershipEmail = "removed.cleaner@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 // Seeded values the board must never surface.
@@ -103,7 +104,7 @@ test.describe("@CLE-20 the board of open vacancies", () => {
   });
 
   test("explains an empty board instead of showing a blank screen", async ({ page }) => {
-    await signIn(page, poollessEmail);
+    await signIn(page, removedMembershipEmail);
 
     await expect(page.getByText("No open jobs yet.")).toBeVisible();
     await expect(

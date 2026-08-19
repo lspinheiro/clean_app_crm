@@ -131,8 +131,8 @@ select is(
 );
 select is(
   (select pool_size from public.cleaner_invite_preview('ZPOOL1')),
-  1,
-  'the pool size counts active cleaners only — never removed members or company admins'
+  2,
+  'the pool size counts every active pool membership, including an employee of another company'
 );
 select is(
   (select state from public.cleaner_invite_preview('NOPE12')),
@@ -174,10 +174,10 @@ select is(
   'joining creates exactly one active membership'
 );
 select results_eq(
-  $$select full_name, phone, suburb, role
+  $$select full_name, phone, suburb
     from public.profiles
     where id = '30000000-0000-4000-8000-000000000001'$$,
-  $$values ('Ana Silva'::text, '0400 000 111'::text, 'Southport'::text, 'cleaner'::public.app_role)$$,
+  $$values ('Ana Silva'::text, '0400 000 111'::text, 'Southport'::text)$$,
   'registration persists the name, phone, and suburb on the cleaner profile'
 );
 

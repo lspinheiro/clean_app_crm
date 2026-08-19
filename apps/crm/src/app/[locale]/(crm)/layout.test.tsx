@@ -20,6 +20,7 @@ describe("CRM layout accessibility", () => {
   it("puts the skip link before the site header and targets main content", async () => {
     mocks.requireCompanyAdmin.mockResolvedValue({
       company: { name: "Coastal Demo Cleaning", logo_path: null },
+      membership: { role: "owner" },
       supabase: {},
     });
     mocks.getCompanyLogoUrl.mockResolvedValue(null);

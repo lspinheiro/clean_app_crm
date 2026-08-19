@@ -81,10 +81,8 @@ select is(
   (
     select count(*)::integer
     from public.company_members membership
-    join public.profiles profile on profile.id = membership.profile_id
     where membership.company_id = '10000000-0000-4000-8000-000000000010'
       and membership.status = 'active'
-      and profile.role = 'cleaner'
   ),
   3,
   'the demo pool contains exactly three active cleaners'
@@ -97,7 +95,6 @@ select results_eq(
     join public.profiles profile on profile.id = membership.profile_id
     where membership.company_id = '10000000-0000-4000-8000-000000000010'
       and membership.status = 'active'
-      and profile.role = 'cleaner'
     order by membership.joined_at$$,
   $$values
     ('Demo Cleaner One'::text, '2026-08-02'::date),
@@ -130,13 +127,10 @@ insert into auth.users (
   '{"provider":"email","providers":["email"]}',
   '{"full_name":"Tenant B Invite Admin"}', now(), now(), '', '', '', ''
 );
-update public.profiles
-set role = 'company_admin'
-where id = '20000000-0000-4000-8000-000000000001';
 insert into public.companies (id, name, abn, status)
 values ('20000000-0000-4000-8000-000000000010', 'Tenant B Invite Demo', '22222222222', 'approved');
-insert into public.company_members (company_id, profile_id)
-values ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000001');
+insert into public.employee_memberships (company_id, profile_id, role)
+values ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000001', 'owner');
 
 create temp table cle_10_invite_state (
   state text primary key,
@@ -237,10 +231,8 @@ select results_eq(
       membership.status,
       (membership.joined_at at time zone 'Australia/Brisbane')::date
     from public.company_members membership
-    join public.profiles profile on profile.id = membership.profile_id
     where membership.company_id = '10000000-0000-4000-8000-000000000010'
       and membership.status = 'active'
-      and profile.role = 'cleaner'
     order by membership.joined_at$$,
   $$values
     ('10000000-0000-4000-8000-000000000002'::uuid, 'active'::public.member_status, '2026-08-02'::date),

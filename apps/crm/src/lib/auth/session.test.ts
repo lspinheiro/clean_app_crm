@@ -36,18 +36,20 @@ vi.mock("react", async (importOriginal) => ({
   cache: mocks.reactCache,
 }));
 
-import { getCompanyAdminContext, requireCompanyAdmin } from "./session";
+import { getCompanyAdminContext, requireCompanyAdmin, requireCompanyOwner } from "./session";
 
 function queryReturning(data: unknown, singleError: unknown = null) {
   const query = {
     select: vi.fn(),
     eq: vi.fn(),
+    order: vi.fn(),
     limit: vi.fn(),
     maybeSingle: vi.fn().mockResolvedValue({ data, error: null }),
     single: vi.fn().mockResolvedValue({ data: null, error: singleError }),
   };
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
+  query.order.mockReturnValue(query);
   query.limit.mockReturnValue(query);
   return query;
 }
@@ -61,10 +63,14 @@ describe("company-admin session context", () => {
   it("returns a controlled denial when an approved company disappears during lookup", async () => {
     const profileQuery = queryReturning({
       id: "user-1",
-      role: "company_admin",
       full_name: "Company Admin",
     });
-    const membershipQuery = queryReturning({ company_id: "company-1" });
+    const membershipQuery = queryReturning({
+      company_id: "company-1",
+      profile_id: "user-1",
+      role: "owner",
+      status: "active",
+    });
     const companyQuery = queryReturning(null, {
       name: "PostgrestError",
       message: "JSON object requested, multiple (or no) rows returned",
@@ -78,7 +84,7 @@ describe("company-admin session context", () => {
       },
       from: vi.fn((table: string) => {
         if (table === "profiles") return profileQuery;
-        if (table === "company_members") return membershipQuery;
+        if (table === "employee_memberships") return membershipQuery;
         if (table === "companies") return companyQuery;
         throw new Error(`Unexpected table: ${table}`);
       }),
@@ -158,10 +164,14 @@ describe("company-admin session context", () => {
   it("initialises the company-admin context once for two request consumers", async () => {
     const profileQuery = queryReturning({
       id: "user-1",
-      role: "company_admin",
       full_name: "Company Admin",
     });
-    const membershipQuery = queryReturning({ company_id: "company-1" });
+    const membershipQuery = queryReturning({
+      company_id: "company-1",
+      profile_id: "user-1",
+      role: "owner",
+      status: "active",
+    });
     const companyQuery = queryReturning({
       id: "company-1",
       name: "Coastal Demo Cleaning",
@@ -176,7 +186,7 @@ describe("company-admin session context", () => {
       },
       from: vi.fn((table: string) => {
         if (table === "profiles") return profileQuery;
-        if (table === "company_members") return membershipQuery;
+        if (table === "employee_memberships") return membershipQuery;
         if (table === "companies") return companyQuery;
         throw new Error(`Unexpected table: ${table}`);
       }),
@@ -192,5 +202,38 @@ describe("company-admin session context", () => {
     expect(pageContext.company.id).toBe("company-1");
     expect(mocks.createClient).toHaveBeenCalledOnce();
     expect(supabase.auth.getUser).toHaveBeenCalledOnce();
+  });
+
+  it("refuses an owner-only route to an active staff member", async () => {
+    const profileQuery = queryReturning({ id: "user-1", full_name: "Staff Member" });
+    const membershipQuery = queryReturning({
+      company_id: "company-1",
+      profile_id: "user-1",
+      role: "staff",
+      status: "active",
+    });
+    const companyQuery = queryReturning({
+      id: "company-1",
+      name: "Coastal Demo Cleaning",
+      status: "approved",
+    });
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+          error: null,
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") return profileQuery;
+        if (table === "employee_memberships") return membershipQuery;
+        if (table === "companies") return companyQuery;
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+    });
+
+    await expect(requireCompanyOwner()).rejects.toThrow(
+      "NEXT_REDIRECT:/en-AU/login?error=not-authorised",
+    );
   });
 });

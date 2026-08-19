@@ -18,7 +18,7 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
     expect(css).toContain("--color-danger: #e11900");
   });
 
-  it("keeps the sanctioned radii and the one shadow level", async () => {
+  it("keeps the implemented radii and tracks the canonical card shadow", async () => {
     const css = await readFile(globalsPath, "utf8");
     const contract = await readFile(contractPath, "utf8");
 
@@ -26,7 +26,9 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
     expect(css).toMatch(/\.invite-card\s*\{[^}]*border-radius: 12px;/);
     expect(css).toMatch(/\.button\s*\{[^}]*border-radius: 999px;/);
     expect(css).toContain("--shadow-floating: 0 4px 16px rgb(0 0 0 / 0.08);");
-    expect(contract).toContain("0 4px 16px rgb(0 0 0 / 0.08)");
+    expect(contract).toContain(
+      "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 /",
+    );
   });
 
   it("meets the 44px touch floor and the 48px input height", async () => {

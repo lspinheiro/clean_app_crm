@@ -154,9 +154,6 @@ insert into auth.users (
     '{"provider":"email","providers":["email"]}',
     '{"full_name":"CLE-50 Foreign Cleaner"}', now(), now(), '', '', '', ''
   );
-update public.profiles
-set role = 'company_admin'
-where id = '50000000-0000-4000-8000-000000000001';
 insert into public.companies (id, name, abn, status)
 values (
   '50000000-0000-4000-8000-000000000010',
@@ -164,16 +161,17 @@ values (
   '50999999999',
   'approved'
 );
+insert into public.employee_memberships (company_id, profile_id, role)
+values (
+  '50000000-0000-4000-8000-000000000010',
+  '50000000-0000-4000-8000-000000000001',
+  'owner'
+);
 insert into public.company_members (company_id, profile_id)
-values
-  (
-    '50000000-0000-4000-8000-000000000010',
-    '50000000-0000-4000-8000-000000000001'
-  ),
-  (
-    '50000000-0000-4000-8000-000000000010',
-    '50000000-0000-4000-8000-000000000002'
-  );
+values (
+  '50000000-0000-4000-8000-000000000010',
+  '50000000-0000-4000-8000-000000000002'
+);
 insert into public.clients (id, company_id, name, phone)
 values (
   '50000000-0000-4000-8000-000000000301',

@@ -75,9 +75,8 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
     memberIds.length
       ? supabase
           .from("profiles")
-          .select("id, full_name, role")
+          .select("id, full_name")
           .in("id", memberIds)
-          .eq("role", "cleaner")
           .order("full_name")
       : Promise.resolve({ data: [], error: null }),
     siteIds.length

@@ -371,3 +371,94 @@ where entry.job_id = '10000000-0000-4000-8000-000000000801'
   and entry.status = 'owed';
 reset request.jwt.claim.sub;
 reset request.jwt.claim.role;
+
+-- CLE-24 my-jobs fixtures. The job above is `completed`, which `cleaner_my_jobs` filters,
+-- so without these two nothing at all would appear on the cleaner's my-jobs screen.
+-- Scheduled relative to now so the acceptance suite does not drift with the calendar the
+-- way CLE-20's did before CLE-20's follow-up fix.
+insert into public.jobs (
+  id,
+  site_id,
+  service_id,
+  scheduled_start,
+  duration_minutes,
+  cleaner_pay_cents,
+  client_charge_cents,
+  status,
+  crew_size
+) values
+  (
+    -- Fully crewed: carries the whole status chain and the crew-2 criterion.
+    '10000000-0000-4000-8000-000000000802',
+    '10000000-0000-4000-8000-000000000401',
+    '30000000-0000-4000-8000-000000000002',
+    now() + interval '1 day',
+    120,
+    12000,
+    21000,
+    'assigned',
+    2
+  ),
+  (
+    -- A second fully crewed job, on a different site so the crew-2 test can target it by
+    -- name without colliding with the job the status-chain test drives to completion.
+    '10000000-0000-4000-8000-000000000804',
+    '10000000-0000-4000-8000-000000000404',
+    '30000000-0000-4000-8000-000000000002',
+    now() + interval '3 days',
+    60,
+    6000,
+    11000,
+    'assigned',
+    2
+  ),
+  (
+    -- One slot still open, so the job stays `posted` and she cannot start it yet.
+    '10000000-0000-4000-8000-000000000803',
+    '10000000-0000-4000-8000-000000000401',
+    '30000000-0000-4000-8000-000000000002',
+    now() + interval '2 days',
+    90,
+    9000,
+    16000,
+    'posted',
+    2
+  )
+on conflict (id) do nothing;
+
+insert into public.job_assignments (job_id, slot_number, cleaner_id)
+select assignment.job_id, assignment.slot_number, assignment.cleaner_id
+from (values
+  (
+    '10000000-0000-4000-8000-000000000802'::uuid,
+    1,
+    '10000000-0000-4000-8000-000000000002'::uuid
+  ),
+  (
+    '10000000-0000-4000-8000-000000000802'::uuid,
+    2,
+    '10000000-0000-4000-8000-000000000003'::uuid
+  ),
+  (
+    '10000000-0000-4000-8000-000000000803'::uuid,
+    1,
+    '10000000-0000-4000-8000-000000000002'::uuid
+  ),
+  (
+    '10000000-0000-4000-8000-000000000804'::uuid,
+    1,
+    '10000000-0000-4000-8000-000000000002'::uuid
+  ),
+  (
+    '10000000-0000-4000-8000-000000000804'::uuid,
+    2,
+    '10000000-0000-4000-8000-000000000003'::uuid
+  )
+) as assignment(job_id, slot_number, cleaner_id)
+where not exists (
+  select 1
+  from public.job_assignments existing
+  where existing.job_id = assignment.job_id
+    and existing.slot_number = assignment.slot_number
+    and existing.unassigned_at is null
+);

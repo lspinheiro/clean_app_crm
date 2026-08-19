@@ -35,6 +35,10 @@ changes. Delivered:
   jobs — no pay basis (PRD decision #10 not yet built).
 - Notifications are rows in a `notifications` table only; web-push, `product_events`
   (S26), and bulk CSV import (S30) are absent.
+- Identity is the superseded global-role model: `profiles.role` is the single
+  authority, `company_members` holds both the admin link and pool memberships, and one
+  company has exactly one admin. PRD decisions #16–#20 (2026-08-19) replace this with
+  the membership model below.
 
 At the 2026-08-08 session the repo was scaffold-only; the prototype findings that shaped
 the first design round (schema-only `job_series`, merged client/site rows, single-cleaner
@@ -81,8 +85,14 @@ Component responsibilities:
   views, and the generation job. Seeded by adaptation of the prototype's migrations, then
   evolved freely ([ADR 0001](../../decisions/0001-alpha-database-fresh-supabase-project.md)).
 - **`apps/crm`** — the company-admin dashboard (Next.js, SSR): roster, clients/sites,
-  recurring assignments, pool, company settings, minimal dispatch, and the bulk CSV
-  import (S30): the browser parses and validates the file against the published column
+  recurring assignments, pool, company settings (employees list, S34), minimal
+  dispatch, and the bulk CSV import (S30). Every screen operates in one active company
+  (S33): the layout resolves it from the session account's employee memberships, shows
+  the switcher only when the account holds two or more, persists the last-active
+  company on the profile, and routes membership-less accounts to the no-access screen.
+  Route guards derive authority from the active employee membership's role — owner
+  gates employees and company settings; staff reaches everything else. Bulk CSV import
+  (S30): the browser parses and validates the file against the published column
   format, shows a preview with per-row errors, and submits confirmed rows through the
   same server actions and RPCs as one-by-one entry. Reads are company-scoped;
   state-changing mutations go through RPCs. The Pool route also parses a cleaner CSV
@@ -93,9 +103,9 @@ Component responsibilities:
   the Next.js process. The command creates one pending application invitation and calls
   Supabase Auth Admin. Supabase sends an invite or recovery e-mail through Resend custom
   SMTP. The public CRM confirmation route verifies the Auth token and establishes an SSR
-  session. A security-definer RPC then matches the verified e-mail. The RPC creates the approved company,
-  privileged profile, and active membership in one transaction. No browser path can call
-  Auth Admin or select a privileged role or company.
+  session. A security-definer RPC then matches the verified e-mail. The RPC creates the approved company
+  and its first active owner employee membership in one transaction. No browser path
+  can call Auth Admin or choose a role or company.
 - **Resend** — the alpha provider for one-time workforce invitation e-mails. The CRM
   sends no more than 100 messages per provider batch. Stable idempotency keys prevent a
   repeated confirmation from sending a second copy.
@@ -128,11 +138,26 @@ Component responsibilities:
   the command creates new application state and sends a recovery e-mail. The e-mail link
   enters a public locale route. The route verifies the Auth token and establishes a cookie
   session. The acceptance RPC locks the pending record,
-  matches it to the verified Auth e-mail, and atomically promotes the profile, creates the
-  approved company and active membership, and consumes the invitation. Failed, expired,
-  revoked, used, or mismatched invitations create no company or membership.
+  matches it to the verified Auth e-mail, and atomically creates the approved company
+  and its first active owner employee membership, and consumes the invitation. Failed,
+  expired, revoked, used, or mismatched invitations create no company or membership.
+- Authority derives from memberships only (HLD decision 19). An account holds employee
+  memberships (role `owner` or `staff`) and pool memberships; no global account role
+  exists. RLS policies and the cleaner views ask "does this account hold an active
+  membership of the required kind in this company", never "what is this profile".
+  A platform-internal admin marker exists outside the product model.
+- Employee invitations (S32) reuse the first-admin pattern: an owner-called RPC
+  records a pending invitation (invited e-mail, chosen role, 7-day expiry) and a
+  server action asks Supabase Auth to invite a new e-mail or the sign-in path serves
+  an existing account. The public acceptance route verifies the session e-mail; the
+  acceptance RPC locks the invitation, matches the verified e-mail, and creates the
+  active employee membership atomically. Owners see and revoke pending invitations.
+  Role change and removal (S34) are owner-called RPCs; every mutation refuses a result
+  that leaves the company with zero owners. A removal ends the membership but keeps
+  the row.
 - Admin writes enter through `apps/crm` server actions, which call security-definer RPCs;
-  reads are company-scoped selects under RLS.
+  reads are scoped to the active company under RLS, checked against the caller's
+  employee membership.
 - Cleaners read only through dedicated views and mutate only through RPCs — never direct
   selects on company tables. The assignment-gated address/access-notes boundary keys on
   the cleaner's slot assignment.
@@ -206,8 +231,13 @@ sequenceDiagram
 
 Entity-level outline; table detail belongs to migrations (no LLD exists for this cycle).
 
-`companies` (+ ABN), `profiles` (role enum `company_admin`/`cleaner`/`admin`),
-`company_members` (each membership attributes to its admitting invite),
+`companies` (+ ABN), `profiles` (no role — authority is membership-only; platform
+admin is a separate internal marker; `last_active_company` for S33),
+`employee_memberships` (company + profile + role `owner`/`staff` + status; a partial
+unique index guarantees at least one owner via the guard RPCs),
+`employee_invitations` (invited e-mail, chosen role, 7-day expiry, state:
+pending/accepted/expired/revoked), `company_members` (pool memberships only — the
+cleaner side; each membership attributes to its admitting invite),
 `company_invites` (multi-link: admin-authored offer details, pay shape, optional expiry
 and registration cap, revocation), `clients`, `sites` (address, access notes, defaults,
 ordered preferred cleaners), `service_catalogue` (platform-owned, seeded), `recurring_assignments` (one row per weekday,
@@ -236,6 +266,9 @@ state only), and the vacancy view.
 | S28–S29 (directed offers with accept/decline) | `offers` entity + offer RPCs, `apps/crm` job detail + recurring assignment, `apps/cleaner` offers surface, generation job (consent-gated), notifications |
 | S30 (bulk CSV for company data and cleaner send lists) | `apps/crm` client-side parse + preview; existing write RPCs for company data; Resend adapter and batch RPCs for cleaner invitations |
 | S31 (CRM jobs list) | `apps/crm` jobs |
+| S32 (employee invitation with role) | `apps/crm` company settings, Supabase Auth invite + Resend custom SMTP, `employee_invitations` + acceptance RPC |
+| S33 (active company + switcher + no-access screen) | `apps/crm` layout/session, `profiles.last_active_company` |
+| S34 (employees list, role change, removal, last-owner guard) | `apps/crm` company settings, `employee_memberships` RPCs |
 | S16 (board apply/withdraw) | `apps/cleaner` board, `job_applications` RPCs |
 | S17–S18 (my jobs, gated address, status taps) | `apps/cleaner`, cleaner views, assignment-gated boundary |
 | S19, S24 (money views, mark-paid) | `apps/cleaner` money, `apps/crm` money, `ledger_entries`, mark-paid RPC (amount stated for hourly jobs) |
@@ -432,3 +465,34 @@ If a confirmed invitee has an expired application invitation, the trusted comman
 a Supabase recovery e-mail. The same public route verifies the recovery token before the
 application RPC grants access. This avoids account deletion and keeps Resend behind
 Supabase custom SMTP.
+
+### 19. Authority derives from memberships only (2026-08-19)
+
+Delivers PRD decisions #16–#17. The global `profiles.role` is removed. An account
+holds employee memberships (role `owner` or `staff` per company) and pool memberships
+(cleaner in a company's pool); every RLS policy, view, and route guard asks for an
+active membership of the required kind, never for an account role. A
+platform-internal admin marker lives outside the product model. Considered option:
+keep `profiles.role` beside memberships — rejected because two authority sources must
+be kept consistent forever, and the divergence bug class never closes. Consequence:
+the delivered policies, cleaner views, and the bootstrap/join RPCs that set
+`profiles.role` all change; AGENTS.md's role-enum sentence needs the matching edit.
+
+### 20. Employee identity reuses the first-admin invitation machinery (2026-08-19)
+
+Delivers PRD decision #18. `employee_invitations` + an acceptance RPC follow the
+first-admin pattern: pending record first, Supabase Auth invite (or plain sign-in for
+an existing account), public route verifies the session e-mail, atomic acceptance
+creates the membership. The founder command remains the only source of a company's
+first owner and now creates it as an `owner` employee membership. Pool membership
+stays a separate table with its own lifecycle (`company_members`, link-attributed) —
+PRD decision #17's two kinds are two tables.
+
+### 21. The active company is session state persisted on the profile (2026-08-19)
+
+Delivers PRD decision #19 / S33. `profiles.last_active_company` stores the last
+choice; the CRM layout resolves the active company from it, falls back to the single
+membership, and never shows a picker to single-membership accounts. Company scoping in
+queries always uses the resolved active company. RLS remains the enforcement layer —
+the active-company value is a convenience, not an authority: a request scoped to a
+company where the caller holds no active employee membership returns nothing.

@@ -407,17 +407,6 @@ a {
   }
 }
 
-/* Screen-level twin of the per-card error, for reasons whose card has left the list. */
-.board-notice {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--color-status-danger-tint);
-  color: var(--color-status-danger-text);
-  font-size: 14px;
-  line-height: 20px;
-}
-
 .my-job-card {
   display: flex;
   flex-direction: column;

@@ -28,10 +28,14 @@ describe("CLE-21 vacancy state", () => {
     });
   });
 
-  it("closes the card when she already holds the slot", () => {
+  it("never claims she is on a job the board only shows because she is not", () => {
+    // `cleaner_job_board` hides any job she holds an active assignment on, and the unassign
+    // RPC rewrites the application to `not_selected` in the same transaction. An `assigned`
+    // status therefore cannot reach a card while it is true — the only honest reason left
+    // is the one the other closed states give: a prior application row exists.
     expect(toVacancyState("assigned")).toEqual({
       kind: "closed",
-      reason: "You are already on this job.",
+      reason: "You already applied to this job.",
     });
   });
 

@@ -352,6 +352,17 @@ a {
   cursor: not-allowed;
 }
 
+/* The board-level twin of .vacancy-card__error, for reasons whose card has left the list. */
+.board-notice {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--color-status-danger-tint);
+  color: var(--color-status-danger-text);
+  font-size: 14px;
+  line-height: 20px;
+}
+
 .board-section {
   display: flex;
   flex-direction: column;

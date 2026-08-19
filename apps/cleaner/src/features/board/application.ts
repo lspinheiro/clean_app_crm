@@ -25,7 +25,12 @@ export function toVacancyState(status: ApplicationStatus | null): VacancyState {
     case "not_selected":
       return { kind: "closed", reason: "This job went to someone else." };
     case "assigned":
-      return { kind: "closed", reason: "You are already on this job." };
+      // Not "you are already on this job": `cleaner_job_board` excludes every job she holds
+      // an active assignment on, and `unassign_cleaner` rewrites the application to
+      // `not_selected` in the same transaction that releases the slot. So a card can never
+      // carry `assigned` while it is true. The honest reason is the one the other closed
+      // states give — a prior application row exists, and `apply_to_job` refuses a second.
+      return { kind: "closed", reason: "You already applied to this job." };
   }
 }
 

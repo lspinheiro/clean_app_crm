@@ -65,14 +65,14 @@ describe("CLE-78 WhatsApp pool invitation", () => {
 });
 
 describe("CLE-79 bulk pool invitation by email", () => {
-  it("offers a CSV email invitation flow when an active invite exists", () => {
+  it("offers manual and CSV email invitation inputs when an active invite exists", () => {
     render(<PoolWorkspace {...baseProps} initialCode="AB12CD" />);
 
     expect(
       screen.getByRole("button", { name: "Invite by email" }),
     ).toBeEnabled();
     expect(
-      screen.getByText("Upload a CSV with email and optional name columns."),
+      screen.getByText("Enter email addresses directly, or upload a CSV for a longer list."),
     ).toBeInTheDocument();
   });
 

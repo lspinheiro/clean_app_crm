@@ -105,9 +105,11 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   `rotate` action is deleted with its RPC. Link URL format is unchanged
   (`<CLEANER_APP_URL>/join?code=…`).
 - **Cleaner e-mail send list (`(crm)/pool`, `actions/pool-email.ts`,
-  `features/pool/email-csv.ts`, `lib/resend.ts`)** — the admin uploads a UTF-8 CSV with
-  the exact headers `email,name`. The browser accepts an empty `name`, reports row-level
-  address errors, and deduplicates e-mail addresses case-insensitively. It then shows
+  `features/pool/email-csv.ts`, `lib/resend.ts`)** — the admin can enter one or more
+  e-mail addresses directly, adding or removing form rows, and can optionally upload a
+  UTF-8 CSV with the exact headers `email,name` for a longer list. The browser accepts an
+  empty CSV `name`, reports address errors, and deduplicates the combined send list
+  case-insensitively. It then shows
   the exact unique-recipient count, the selected `en-AU` or `pt-BR` copy, and the
   authority statement. Confirm sends the selected active invite only. The server
   repeats schema validation, authorisation, invite-state checks, and deduplication.
@@ -220,8 +222,9 @@ sequenceDiagram
 *Nothing is written before confirm; a mid-batch failure is a per-row outcome, never an
 abort.*
 
-**Cleaner e-mail send list (S8/S30).** Choose file → parse and deduplicate → row-level
-preview → choose locale → preview exact e-mail and recipient count → confirm authority →
+**Cleaner e-mail send list (S8/S30).** Enter addresses and add further rows, or choose an
+optional CSV → validate and deduplicate → choose locale → preview exact e-mail and
+recipient count → confirm authority →
 submit once → show accepted and failed recipients. Retry creates a new confirmed attempt
 for failed recipients only. It never resends an accepted recipient.
 
@@ -232,7 +235,7 @@ sequenceDiagram
     participant S as CRM server
     participant DB as Batch RPCs
     participant R as Resend
-    T->>B: choose cleaner CSV
+    T->>B: type addresses or choose cleaner CSV
     B->>B: validate + deduplicate
     B-->>T: exact count + localised preview + authority statement
     T->>S: confirm normalised list + locale + authority
@@ -277,7 +280,7 @@ It never returns the Supabase secret, token hash, raw provider error, role, or c
 Alpha scale; nothing hot. The company-data import submits sequentially by design
 (LLD-db decision — free-tier discipline; a 40-row import is 40 fast calls). Cleaner
 e-mail sends use provider batches of at most 100 messages and stop at 500 unique
-recipients per confirmed CSV.
+recipients per confirmed send.
 The first-admin command and acceptance form each handle one invitation. No queue or bulk
 path exists.
 
@@ -316,7 +319,7 @@ contract, so Portuguese cannot silently fall back to English. The two supported
 locales are configuration, not flags or duplicated page implementations; locale-aware
 navigation preserves the user's current task.
 
-### 4. Cleaner CSV preview stays in the browser; sending stays on the server (2026-08-17)
+### 4. Cleaner recipient entry and CSV preview stay in the browser; sending stays on the server (2026-08-17)
 
 The browser parses and previews the cleaner send list so no provider call can happen
 before explicit confirmation. The server repeats validation and authorisation, derives

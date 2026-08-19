@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckCircle2, Download, Mail, RefreshCw, Upload } from "lucide-react";
+import { CheckCircle2, Download, Mail, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { type ChangeEvent, useMemo, useState } from "react";
+import { z } from "zod";
 
 import {
   retryFailedPoolInviteEmails,
@@ -10,6 +11,7 @@ import {
   type PoolInviteEmailActionResult,
 } from "@/app/actions/pool-email";
 import {
+  POOL_INVITE_EMAIL_RECIPIENT_LIMIT,
   parsePoolInviteEmailCsv,
   type PoolInviteEmailCsvMessageKey,
   type PoolInviteEmailCsvPreview,
@@ -24,6 +26,15 @@ type PoolEmailInviteProps = {
   joinUrl: string | null;
 };
 
+type ManualRecipientInput = {
+  email: string;
+  id: number;
+};
+
+type ManualRecipientIssue = "duplicate" | "invalid" | null;
+
+const manualEmailSchema = z.email().max(320);
+
 function emptyPreview(): PoolInviteEmailCsvPreview {
   return { fileError: null, recipients: [], rows: [] };
 }
@@ -37,6 +48,9 @@ export function PoolEmailInvite({
   const t = useTranslations("Pool");
   const [expanded, setExpanded] = useState(false);
   const [selectedLocale, setSelectedLocale] = useState<AppLocale>(currentLocale);
+  const [manualRecipients, setManualRecipients] = useState<ManualRecipientInput[]>([
+    { email: "", id: 1 },
+  ]);
   const [preview, setPreview] = useState<PoolInviteEmailCsvPreview>(emptyPreview);
   const [fileName, setFileName] = useState("");
   const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
@@ -50,14 +64,45 @@ export function PoolEmailInvite({
       : null,
     [companyName, joinUrl, selectedLocale],
   );
-  const invalidCount = preview.rows.filter((row) => row.status === "invalid").length;
+  const manualRecipientRows = useMemo(() => {
+    const seen = new Set(
+      preview.recipients.map((recipient) => recipient.email.toLocaleLowerCase("en-AU")),
+    );
+    return manualRecipients.map((recipient) => {
+      const email = recipient.email.trim().toLocaleLowerCase("en-AU");
+      let issue: ManualRecipientIssue = null;
+      if (email && !manualEmailSchema.safeParse(email).success) issue = "invalid";
+      else if (email && seen.has(email)) issue = "duplicate";
+      else if (email) seen.add(email);
+      return {
+        ...recipient,
+        issue,
+        normalisedEmail: email && !issue ? email : null,
+      };
+    });
+  }, [manualRecipients, preview.recipients]);
+  const recipients = useMemo(
+    () => [
+      ...preview.recipients,
+      ...manualRecipientRows.flatMap((recipient) =>
+        recipient.normalisedEmail
+          ? [{ email: recipient.normalisedEmail, name: null }]
+          : []),
+    ],
+    [manualRecipientRows, preview.recipients],
+  );
+  const csvInvalidCount = preview.rows.filter((row) => row.status === "invalid").length;
   const duplicateCount = preview.rows.filter((row) => row.status === "duplicate").length;
+  const hasManualIssues = manualRecipientRows.some((recipient) => recipient.issue !== null);
+  const exceedsRecipientLimit = recipients.length > POOL_INVITE_EMAIL_RECIPIENT_LIMIT;
   const canSend = Boolean(
     inviteId
     && joinUrl
     && authorityConfirmed
-    && preview.recipients.length
-    && invalidCount === 0
+    && recipients.length
+    && csvInvalidCount === 0
+    && !hasManualIssues
+    && !exceedsRecipientLimit
     && !submitting,
   );
 
@@ -91,6 +136,36 @@ export function PoolEmailInvite({
     }
   }
 
+  function updateManualRecipient(id: number, email: string) {
+    setManualRecipients((recipients) => recipients.map((recipient) =>
+      recipient.id === id ? { ...recipient, email } : recipient));
+    setAuthorityConfirmed(false);
+    setResult(null);
+    setError("");
+  }
+
+  function addManualRecipient() {
+    setManualRecipients((recipients) => [
+      ...recipients,
+      {
+        email: "",
+        id: Math.max(...recipients.map((recipient) => recipient.id), 0) + 1,
+      },
+    ]);
+    setAuthorityConfirmed(false);
+    setResult(null);
+    setError("");
+  }
+
+  function removeManualRecipient(id: number) {
+    setManualRecipients((recipients) => recipients.length === 1
+      ? [{ email: "", id: recipients[0]?.id ?? 1 }]
+      : recipients.filter((recipient) => recipient.id !== id));
+    setAuthorityConfirmed(false);
+    setResult(null);
+    setError("");
+  }
+
   function showActionError(actionResult: Extract<PoolInviteEmailActionResult, { ok: false }>) {
     setError(localiseUserMessage(actionResult.error, currentLocale) ?? t("emailSendFailed"));
   }
@@ -104,7 +179,7 @@ export function PoolEmailInvite({
         authorityConfirmed,
         inviteId,
         locale: selectedLocale,
-        recipients: preview.recipients,
+        recipients,
       });
       if (actionResult.ok) setResult(actionResult);
       else showActionError(actionResult);
@@ -153,8 +228,82 @@ export function PoolEmailInvite({
       </div>
 
       {expanded ? (
-        <div className="pool-email-invite__flow">
+        <form
+          aria-label={t("emailRecipientsForm")}
+          className="pool-email-invite__flow"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            void sendInvitations();
+          }}
+        >
           <div className="pool-email-invite__controls">
+            <div>
+              <p className="field-label">{t("emailRecipientsForm")}</p>
+              <p className="field-hint">{t("emailManualDescription")}</p>
+            </div>
+            {manualRecipientRows.map((recipient, index) => {
+              const errorId = `pool-email-manual-${recipient.id}-error`;
+              const inputId = `pool-email-manual-${recipient.id}`;
+              const issue = recipient.issue === "invalid"
+                ? t("emailCsv.validEmail")
+                : recipient.issue === "duplicate"
+                  ? t("emailManualDuplicate")
+                  : null;
+              return (
+                <div className="field" key={recipient.id}>
+                  <label htmlFor={inputId}>
+                    {t("emailManualAddress", { index: index + 1 })}
+                  </label>
+                  <div className="pool-email-invite__file-row">
+                    <input
+                      aria-describedby={issue ? errorId : undefined}
+                      aria-invalid={Boolean(issue)}
+                      autoComplete="email"
+                      className="form-control"
+                      disabled={submitting}
+                      id={inputId}
+                      maxLength={320}
+                      onChange={(event) => updateManualRecipient(recipient.id, event.target.value)}
+                      type="email"
+                      value={recipient.email}
+                    />
+                    {manualRecipients.length > 1 ? (
+                      <button
+                        aria-label={t("emailRemoveAddress", { index: index + 1 })}
+                        className="button button--secondary"
+                        disabled={submitting}
+                        onClick={() => removeManualRecipient(recipient.id)}
+                        type="button"
+                      >
+                        <Trash2 aria-hidden="true" size={16} />
+                        {t("emailRemoveAddress", { index: index + 1 })}
+                      </button>
+                    ) : null}
+                  </div>
+                  {issue ? (
+                    <span className="field-error" id={errorId}>
+                      {issue}
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
+            <button
+              className="button button--secondary"
+              disabled={
+                submitting
+                || manualRecipients.length + preview.recipients.length
+                  >= POOL_INVITE_EMAIL_RECIPIENT_LIMIT
+              }
+              onClick={addManualRecipient}
+              type="button"
+            >
+              <Plus aria-hidden="true" size={17} />
+              {t("emailAddAddress")}
+            </button>
+
+            <p className="field-hint">{t("emailCsvAlternative")}</p>
             <label className="field-label" htmlFor="pool-email-csv">
               {t("emailCsvFile")}
             </label>
@@ -201,13 +350,21 @@ export function PoolEmailInvite({
             <p className="pool-email-invite__error" role="alert">{preview.fileError}</p>
           ) : null}
 
-          {preview.rows.length ? (
-            <>
-              <div className="pool-email-invite__counts" aria-live="polite">
-                <strong>{t("emailRecipientCount", { count: preview.recipients.length })}</strong>
+          {exceedsRecipientLimit ? (
+            <p className="pool-email-invite__error" role="alert">
+              {t("emailRecipientLimit")}
+            </p>
+          ) : null}
+
+          {recipients.length || preview.rows.length ? (
+            <div className="pool-email-invite__counts" aria-live="polite">
+              <strong>{t("emailRecipientCount", { count: recipients.length })}</strong>
                 {duplicateCount ? <span>{t("emailDuplicateCount", { count: duplicateCount })}</span> : null}
-                {invalidCount ? <span>{t("emailInvalidCount", { count: invalidCount })}</span> : null}
-              </div>
+              {csvInvalidCount ? <span>{t("emailInvalidCount", { count: csvInvalidCount })}</span> : null}
+            </div>
+          ) : null}
+
+          {preview.rows.length ? (
               <div className="pool-email-invite__table-scroll">
                 <table aria-label={t("emailCsvPreview")} className="pool-email-invite__table">
                   <thead>
@@ -230,10 +387,9 @@ export function PoolEmailInvite({
                   </tbody>
                 </table>
               </div>
-            </>
           ) : null}
 
-          {preview.recipients.length && emailPreview ? (
+          {recipients.length && emailPreview ? (
             <section aria-label={t("emailMessagePreview")} className="pool-email-invite__message">
               <h3>{t("emailMessagePreview")}</h3>
               <dl>
@@ -243,7 +399,7 @@ export function PoolEmailInvite({
             </section>
           ) : null}
 
-          {preview.recipients.length ? (
+          {recipients.length ? (
             <label className="pool-email-invite__authority">
               <input
                 checked={authorityConfirmed}
@@ -255,19 +411,14 @@ export function PoolEmailInvite({
             </label>
           ) : null}
 
-          {preview.recipients.length ? (
-            <button
-              className="button"
-              disabled={!canSend}
-              onClick={() => void sendInvitations()}
-              type="button"
-            >
-              {submitting ? <RefreshCw aria-hidden="true" className="button-spinner" size={17} /> : <Mail aria-hidden="true" size={17} />}
-              {submitting
-                ? t("emailSending")
-                : t("emailSendCount", { count: preview.recipients.length })}
-            </button>
-          ) : null}
+          <button className="button" disabled={!canSend} type="submit">
+            {submitting ? <RefreshCw aria-hidden="true" className="button-spinner" size={17} /> : <Mail aria-hidden="true" size={17} />}
+            {submitting
+              ? t("emailSending")
+              : recipients.length
+                ? t("emailSendCount", { count: recipients.length })
+                : t("emailSend")}
+          </button>
 
           {error ? <p className="pool-email-invite__error" role="alert">{error}</p> : null}
 
@@ -298,7 +449,7 @@ export function PoolEmailInvite({
               ) : null}
             </section>
           ) : null}
-        </div>
+        </form>
       ) : null}
     </section>
   );

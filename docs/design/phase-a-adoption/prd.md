@@ -68,8 +68,8 @@ flowchart LR
 - **S1** — A founder invites the first company admin through a trusted repository command.
   Sending the invitation approves that company for the alpha. The invited person verifies
   the invited e-mail, sets a password, and enters their name, company name, ABN, contact
-  phone, and locale. The app then creates the approved company and active admin membership
-  in one transaction. The admin confirms or corrects these details in the skippable
+  phone, and locale. The app then creates the approved company and the first active owner
+  membership in one transaction. The admin confirms or corrects these details in the skippable
   onboarding flow. There is no public signup. Service areas and logo (F1) arrive at MVP;
   no alpha surface consumes them.
 - **S2** — Create clients and their sites as separate records: at least one multi-site
@@ -178,6 +178,39 @@ These serve the middle journeys at parity until the Phase B/C cycle designs them
 - **S31** — Jobs list in the CRM (today and upcoming, with statuses) — found by the
   persona walk: CA-5 ("run the day") has no surface without it; the job detail (S22)
   needs a list to be reached from.
+
+### Employee memberships (extends CA-1)
+
+The multi-membership account model (decisions #16–#18): a company has employees beyond
+the first owner, and one account can belong to more than one company.
+
+- **S32** — An owner invites an employee by e-mail and picks the role — owner or
+  staff — at send time. The invitee receives an e-mail link with a fixed 7-day expiry.
+  A new e-mail sets up the account first; an existing account signs in and accepts.
+  Acceptance creates the employee membership atomically. The owner sees each
+  invitation's state (pending / accepted / expired / revoked) and can revoke a pending
+  invitation. There is no resend and no bulk invitation in alpha. The founder command
+  stays the only source of a company's **first** owner. Staff cannot manage employees
+  or company settings; every other CRM capability in this cycle is available to both
+  roles.
+
+- **S33** — The CRM is always scoped to one active company. The switcher lives in the
+  account menu and appears only when the account holds two or more employee
+  memberships; a switch swaps the whole CRM context and returns to the roster. The
+  last-active company is stored on the profile and restored at sign-in. A
+  single-membership account is scoped automatically and never sees a picker. An account
+  with no employee membership sees a "no company access" screen that tells the person
+  to ask an owner for an invitation and links to the cleaner app. The cleaner app has
+  no switcher — the board already aggregates all joined pools.
+
+- **S34** — Company settings shows the employees list: each employee membership with
+  name, e-mail, role, and joined date. An owner can change any employee's role and
+  remove any employee, including themselves — but the database refuses any change that
+  would leave the company with zero owners. Removal ends the membership (the record is
+  kept, not deleted, so history keeps its references), and the removed person's CRM
+  access to that company dies on their next request — the S33 no-access or switcher
+  logic catches them. Staff have no self-service "leave company" in alpha; removal is
+  owner-initiated only.
 
 ### Directed offers (serves CA-3/CA-4 with acceptance)
 
@@ -402,3 +435,61 @@ person verifies the invited e-mail before the app creates an approved company, p
 profile, and creates the first active membership in one transaction. A platform operator
 application and invitations for additional company admins remain out of scope. This keeps
 the alpha invite-only without restoring the concierge model or adding public signup.
+
+### 16. Employees are memberships; the roles are owner and staff (2026-08-19)
+
+Partly supersedes #15 (which kept additional company-admin invitations out of scope).
+The identity model becomes the standard multi-membership account model: one user
+account can hold memberships in more than one company, and each membership carries one
+company-side role. The alpha has exactly two roles: **owner** — everything, including
+employee management and company settings — and **staff** — day-to-day operations
+(clients, sites, recurring assignments, roster, jobs, dispatch, pool), with no employee
+management and no company settings. All of it is alpha-usable: an owner invites
+employees and picks the role, one person can belong to more than one company, and the
+CRM has a company switcher. Considered option: make only the schema ready and defer the
+switcher — rejected; the product owner wants the cohort to exercise the full model. The
+founder-invited first admin becomes the first owner. Finer roles (for example a money
+boundary) are added only when a cohort company asks for one.
+
+### 17. One account, two membership kinds (2026-08-19)
+
+Refines #16. A user account can hold an employee membership (role owner or staff,
+created by an owner's invitation) and a pool membership (cleaner in a company's pool,
+created through an invite link) at the same time — including across different
+companies. The supervisor who also cleans holds one login. The two kinds stay separate
+concepts: they have different creators, different lifecycles, and different privacy
+consequences. Considered option: one membership object with a third role `cleaner` —
+rejected because pool joining (link attribution, registration caps) and employee
+management would share a table that every RLS policy must then disambiguate row by row.
+
+### 18. Employee invitation: owner-sent, e-mail-verified, minimal (2026-08-19)
+
+Delivers #16 at the flow level. Only an owner invites, by e-mail, and picks the role at
+send time. The invitee verifies the e-mail through the invitation link (7-day fixed
+expiry, matching the first-admin invitation). A new e-mail sets up an account first; an
+existing account signs in and accepts — this path is required, because multi-membership
+makes "the invited e-mail already has an account" the normal case. Acceptance creates
+the employee membership atomically. The owner sees invitation state (pending /
+accepted / expired / revoked) and can revoke. No resend, no bulk, no invitee-picks-role
+step. The founder command remains the only source of a company's first owner.
+
+### 19. One active company scopes the CRM; the switcher is membership-gated (2026-08-19)
+
+Delivers #16 at the session level. The CRM always operates in exactly one active
+company. The switcher shows only for accounts with two or more employee memberships;
+the last-active company persists on the profile and is restored at sign-in; a
+single-membership account never sees a picker. An account with no employee membership
+gets a deliberate "no company access" screen, not an error. The cleaner app gets no
+switcher: the board aggregates all joined pools already, so cleaners never pick a
+company. Considered option: a per-session company picker at every sign-in — rejected
+because almost every cohort account holds one membership.
+
+### 20. Owners manage employees; the last owner is protected (2026-08-19)
+
+Completes #16–#18. Owners see an employees list in company settings and can change
+roles and remove employees, themselves included. The database refuses any role change
+or removal that would leave a company with zero owners — with no public signup and
+first owners made only by the founder command, a zero-owner company is locked out
+permanently. Removal ends the membership but keeps the record for history. Considered
+option: no post-acceptance management in alpha — rejected because a departed employee
+would keep company access.

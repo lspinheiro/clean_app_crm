@@ -60,12 +60,15 @@ demonstrates the core job-matching loop, and the alpha runs entirely on monorepo
 (`docs/decisions/0002`). Consult it for mechanics (RPC patterns, push plumbing) and for
 visual fidelity on parity screens; wherever its UI/UX and `docs/PRODUCT.md` disagree,
 PRODUCT.md wins. Never carry its "boss" jargon — say *cleaning company* / *company admin*;
-the role enum is `company_admin` / `cleaner` / `admin` and "boss" appears nowhere.
+authority is membership-based (see `docs/glossary.md`: employee memberships carry the
+role `owner` / `staff`, cleaners hold pool memberships) and "boss" appears nowhere.
 Conventions carried over from the prototype:
 
 - **UI in English**; currency AUD; timezone `Australia/Brisbane`.
-- **Roles**: `company_admin` / `cleaner` / `admin` (internal), enforced in layouts and route
-  guards.
+- **Roles**: authority derives from memberships, never from a global account role
+  (Phase A HLD decision #19). An employee membership carries `owner` or `staff`; a pool
+  membership makes the account a cleaner; a platform-internal admin marker sits outside
+  the product model. Enforced in RLS, layouts, and route guards.
 - **Flow mutations are Postgres RPCs** (security definer, atomic): apply, assign, status changes,
   cancel, mark paid, mark dropped. Assignment races resolve first-accept-wins.
 - **Cleaner privacy boundary**: cleaners read through dedicated views and mutate through RPCs —

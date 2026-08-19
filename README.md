@@ -151,6 +151,33 @@ Configure the hosted Supabase project before a real send:
 Local Supabase uses the committed invite template and Inbucket. Hosted SMTP credentials
 live in Supabase Auth settings, not in the application bundle.
 
+### Daily production release
+
+`.github/workflows/daily-production.yml` runs at 07:17 in `Australia/Brisbane` and can
+also be dispatched manually. It checks only the default-branch commit, runs `pnpm check`
+and `pnpm test:e2e`, then deploys Supabase, Cleaner, and CRM in that order. A scheduled
+run still performs all checks but skips provider writes when the same commit already
+completed the workflow; a manual run always deploys. Vercel's native Git integration is
+not required.
+
+Create a GitHub environment named `internal-production` under **Settings → Environments**
+and add:
+
+| Kind | Name | Source |
+| --- | --- | --- |
+| Secret | `SUPABASE_ACCESS_TOKEN` | Create an account access token at `https://supabase.com/dashboard/account/tokens`. |
+| Secret | `SUPABASE_DB_PASSWORD` | Use the hosted project's database password from **Supabase → Project Settings → Database**; reset it there if it is no longer available. |
+| Secret | `VERCEL_TOKEN` | Create a token at `https://vercel.com/account/settings/tokens` under the account or team that owns both projects. |
+| Variable | `SUPABASE_PROJECT_ID` | Copy the reference from the Supabase project URL or **Project Settings → General**. |
+| Variable | `VERCEL_ORG_ID` | Copy `orgId` from `.vercel/project.json` after linking either Vercel project. |
+| Variable | `VERCEL_CLEANER_PROJECT_ID` | Copy the Cleaner project's **Project ID** from Vercel project settings or `.vercel/project.json`. |
+| Variable | `VERCEL_CRM_PROJECT_ID` | Copy the CRM project's **Project ID** from Vercel project settings or `.vercel/project.json`. |
+
+Keep secrets in the GitHub environment, never repository files or variables. Resend
+credentials remain configured in Vercel and Supabase and are not copied into GitHub.
+Only backward-compatible hosted migrations belong in this automated path; destructive
+or data-rewriting migrations require a manual release.
+
 ## Status
 
 M1 delivery is active: the workspace, fresh Supabase baseline, deterministic local seed,

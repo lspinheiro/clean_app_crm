@@ -18,6 +18,19 @@ export type LoginState = {
   fieldErrors: { email?: string; password?: string };
 };
 
+function employeeInvitationReturnTo(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value, "https://crm.invalid");
+    if (url.origin !== "https://crm.invalid" || url.pathname !== "/invite/accept") return null;
+    const invitationId = z.uuid().safeParse(url.searchParams.get("employeeInvitation"));
+    if (!invitationId.success || Array.from(url.searchParams.keys()).length !== 1) return null;
+    return `/invite/accept?employeeInvitation=${invitationId.data}`;
+  } catch {
+    return null;
+  }
+}
+
 export async function signInAction(
   _previous: LoginState,
   formData: FormData,
@@ -32,6 +45,7 @@ export async function signInAction(
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
   });
+  const returnTo = employeeInvitationReturnTo(formData.get("returnTo"));
   if (!parsed.success) {
     const fieldErrors = z.flattenError(parsed.error).fieldErrors;
     return {
@@ -80,6 +94,7 @@ export async function signInAction(
     path: "/",
     sameSite: "lax",
   });
+  if (returnTo) return redirect({ href: returnTo, locale: targetLocale });
   if (!membership) {
     return redirect({ href: "/no-company-access", locale: targetLocale });
   }

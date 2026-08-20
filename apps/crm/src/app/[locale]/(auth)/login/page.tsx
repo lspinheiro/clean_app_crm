@@ -11,7 +11,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("login") };
 }
 
-export default async function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{ returnTo?: string | string[] }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const query = await searchParams;
   const locale = (await getLocale()) as AppLocale;
   const t = await getTranslations("Auth");
 
@@ -33,7 +38,7 @@ export default async function LoginPage() {
           <LanguageSwitcher currentLocale={locale} />
           <h2 id="sign-in-title">{t("title")}</h2>
           <p className="auth-panel__intro">{t("accountHint")}</p>
-          <LoginForm />
+          <LoginForm returnTo={Array.isArray(query.returnTo) ? query.returnTo[0] : query.returnTo} />
           <p className="auth-note">{t("alphaNote")}</p>
         </div>
       </section>

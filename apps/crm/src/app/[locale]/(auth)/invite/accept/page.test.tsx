@@ -95,4 +95,60 @@ describe("first-admin acceptance page", () => {
     expect(screen.queryByRole("button", { name: "Create company account" }))
       .not.toBeInTheDocument();
   });
+
+  it("offers one-login acceptance to an existing account with an employee invitation", async () => {
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === "get_employee_invitation_context") {
+        return Promise.resolve({
+          data: [{
+            account_existed_at_invitation: true,
+            company_name: "Coastal Demo Cleaning",
+            invitation_id: "83000000-0000-4000-8000-000000000101",
+            invitation_status: "pending",
+            invitee_email: "cleaner@example.test",
+            locale: "en-AU",
+            role: "staff",
+          }],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    render(
+      await FirstAdminAcceptancePage({
+        searchParams: Promise.resolve({
+          employeeInvitation: "83000000-0000-4000-8000-000000000101",
+        }),
+      }),
+    );
+
+    expect(screen.getByRole("heading", { name: "Join Coastal Demo Cleaning" }))
+      .toBeInTheDocument();
+    expect(screen.getByText("Staff", { exact: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Accept invitation" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+    expect(mocks.rpc).toHaveBeenCalledWith("get_employee_invitation_context", {
+      target_invitation_id: "83000000-0000-4000-8000-000000000101",
+    });
+  });
+
+  it("asks an unauthenticated existing account to sign in and preserves the invitation target", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+
+    render(
+      await FirstAdminAcceptancePage({
+        searchParams: Promise.resolve({
+          employeeInvitation: "83000000-0000-4000-8000-000000000101",
+        }),
+      }),
+    );
+
+    expect(screen.getByRole("heading", { name: "Sign in to accept your invitation" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/login?returnTo=%2Finvite%2Faccept%3FemployeeInvitation%3D83000000-0000-4000-8000-000000000101",
+    );
+  });
 });

@@ -225,6 +225,76 @@ export type Database = {
           },
         ]
       }
+      employee_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by_profile_id: string | null
+          account_existed_at_invitation: boolean
+          company_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by_profile_id: string
+          locale: Database["public"]["Enums"]["app_locale"]
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["employee_role"]
+          superseded_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          account_existed_at_invitation: boolean
+          company_id: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by_profile_id: string
+          locale: Database["public"]["Enums"]["app_locale"]
+          revoked_at?: string | null
+          role: Database["public"]["Enums"]["employee_role"]
+          superseded_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          account_existed_at_invitation?: boolean
+          company_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by_profile_id?: string
+          locale?: Database["public"]["Enums"]["app_locale"]
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["employee_role"]
+          superseded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_invitations_accepted_by_profile_id_fkey"
+            columns: ["accepted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_invitations_invited_by_profile_id_fkey"
+            columns: ["invited_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       first_admin_invitations: {
         Row: {
           accepted_at: string | null
@@ -1125,6 +1195,41 @@ export type Database = {
       }
     }
     Views: {
+      employee_invitation_states: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          invitation_state: string | null
+          role: Database["public"]["Enums"]["employee_role"] | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          invitation_state?: never
+          role?: Database["public"]["Enums"]["employee_role"] | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          invitation_state?: never
+          role?: Database["public"]["Enums"]["employee_role"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_job_board: {
         Row: {
           cleaner_pay_cents: number | null
@@ -1372,6 +1477,14 @@ export type Database = {
       }
     }
     Functions: {
+      accept_employee_invitation: {
+        Args: {
+          full_name: string
+          target_invitation_id: string
+          target_locale: Database["public"]["Enums"]["app_locale"]
+        }
+        Returns: string
+      }
       accept_first_admin_invitation: {
         Args: {
           company_abn: string
@@ -1524,6 +1637,21 @@ export type Database = {
           locale: Database["public"]["Enums"]["app_locale"]
         }[]
       }
+      get_employee_invitation_context: {
+        Args: { target_invitation_id: string }
+        Returns: {
+          account_existed_at_invitation: boolean
+          company_name: string
+          expires_at: string
+          invitation_id: string
+          invitation_status: string
+          invitee_email: string
+          locale: Database["public"]["Enums"]["app_locale"]
+          profile_full_name: string
+          profile_locale: Database["public"]["Enums"]["app_locale"] | null
+          role: Database["public"]["Enums"]["employee_role"]
+        }[]
+      }
       is_company_admin: {
         Args: { target_company_id: string }
         Returns: boolean
@@ -1563,6 +1691,19 @@ export type Database = {
         Returns: {
           confirmed_auth_user: boolean
           created: boolean
+          invitation_expires_at: string
+          invitation_id: string
+        }[]
+      }
+      prepare_employee_invitation: {
+        Args: {
+          target_company_id: string
+          target_email: string
+          target_locale: Database["public"]["Enums"]["app_locale"]
+          target_role: Database["public"]["Enums"]["employee_role"]
+        }
+        Returns: {
+          account_existed: boolean
           invitation_expires_at: string
           invitation_id: string
         }[]
@@ -1633,6 +1774,10 @@ export type Database = {
       }
       revoke_first_admin_invitation: {
         Args: { target_invitation_id: string }
+        Returns: undefined
+      }
+      revoke_employee_invitation: {
+        Args: { target_company_id: string; target_invitation_id: string }
         Returns: undefined
       }
       rotate_company_invite: {

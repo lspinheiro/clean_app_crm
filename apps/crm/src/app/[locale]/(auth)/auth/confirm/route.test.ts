@@ -27,6 +27,19 @@ describe("first-admin Auth confirmation route", () => {
     expect(response.headers.get("location")).toBe("/en-AU/invite/accept");
   });
 
+  it("preserves the employee invitation identifier after establishing a new account session", async () => {
+    const response = await GET(
+      new NextRequest(
+        "https://crm.example.test/en-AU/auth/confirm?employeeInvitation=83000000-0000-4000-8000-000000000101&token_hash=safe-hash&type=invite",
+      ),
+      { params: Promise.resolve({ locale: "en-AU" }) },
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "/en-AU/invite/accept?employeeInvitation=83000000-0000-4000-8000-000000000101",
+    );
+  });
+
   it("exchanges a recovery token for a renewed first-admin invitation", async () => {
     const response = await GET(
       new NextRequest("https://crm.example.test/pt-BR/auth/confirm?token_hash=safe-hash&type=recovery"),

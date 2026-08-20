@@ -21,7 +21,8 @@ from (values
   ('10000000-0000-4000-8000-000000000003'::uuid, 'cleaner.two@clean-app.example.test', 'Demo Cleaner Two'),
   ('10000000-0000-4000-8000-000000000004'::uuid, 'cleaner.three@clean-app.example.test', 'Demo Cleaner Three'),
   ('10000000-0000-4000-8000-000000000005'::uuid, 'removed.cleaner@clean-app.example.test', 'Demo Removed Cleaner'),
-  ('10000000-0000-4000-8000-000000000006'::uuid, 'owner.harbour@clean-app.example.test', 'Harbour Demo Owner')
+  ('10000000-0000-4000-8000-000000000006'::uuid, 'owner.harbour@clean-app.example.test', 'Harbour Demo Owner'),
+  ('10000000-0000-4000-8000-000000000007'::uuid, 'new.employee@clean-app.example.test', 'New cleaner')
 ) as fixture(id, email, full_name)
 on conflict (id) do nothing;
 
@@ -88,6 +89,107 @@ values
     '2026-08-02T00:00:00+10'
   )
 on conflict (company_id, profile_id) do nothing;
+
+insert into public.employee_invitations (
+  id,
+  company_id,
+  email,
+  role,
+  locale,
+  invited_by_profile_id,
+  account_existed_at_invitation,
+  expires_at,
+  accepted_at,
+  revoked_at,
+  accepted_by_profile_id,
+  created_at
+)
+values
+  (
+    '83000000-0000-4000-8000-000000000201',
+    '10000000-0000-4000-8000-000000000010',
+    'cleaner.one@clean-app.example.test',
+    'staff',
+    'en-AU',
+    '10000000-0000-4000-8000-000000000001',
+    true,
+    now() + interval '7 days',
+    null,
+    null,
+    null,
+    now()
+  ),
+  (
+    '83000000-0000-4000-8000-000000000202',
+    '10000000-0000-4000-8000-000000000010',
+    'owner.harbour@clean-app.example.test',
+    'staff',
+    'en-AU',
+    '10000000-0000-4000-8000-000000000001',
+    true,
+    now() + interval '6 days',
+    now() - interval '1 day',
+    null,
+    '10000000-0000-4000-8000-000000000006',
+    now() - interval '2 days'
+  ),
+  (
+    '83000000-0000-4000-8000-000000000203',
+    '10000000-0000-4000-8000-000000000010',
+    'cleaner.two@clean-app.example.test',
+    'staff',
+    'en-AU',
+    '10000000-0000-4000-8000-000000000001',
+    true,
+    now() + interval '5 days',
+    null,
+    now() - interval '1 day',
+    null,
+    now() - interval '2 days'
+  ),
+  (
+    '83000000-0000-4000-8000-000000000204',
+    '10000000-0000-4000-8000-000000000010',
+    'cleaner.two@clean-app.example.test',
+    'owner',
+    'pt-BR',
+    '10000000-0000-4000-8000-000000000001',
+    true,
+    now() - interval '1 day',
+    null,
+    null,
+    null,
+    now() - interval '8 days'
+  ),
+  (
+    '83000000-0000-4000-8000-000000000205',
+    '10000000-0000-4000-8000-000000000010',
+    'pending.employee@example.test',
+    'owner',
+    'pt-BR',
+    '10000000-0000-4000-8000-000000000001',
+    false,
+    now() + interval '4 days',
+    null,
+    null,
+    null,
+    now() - interval '3 days'
+  ),
+  (
+    '83000000-0000-4000-8000-000000000206',
+    '10000000-0000-4000-8000-000000000010',
+    'new.employee@clean-app.example.test',
+    'owner',
+    'pt-BR',
+    '10000000-0000-4000-8000-000000000001',
+    false,
+    now() + interval '7 days',
+    null,
+    null,
+    null,
+    now()
+  )
+on conflict (id) do nothing;
 
 insert into public.company_members (id, company_id, profile_id, status, joined_at)
 values

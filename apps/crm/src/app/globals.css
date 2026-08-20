@@ -747,6 +747,158 @@ a {
   letter-spacing: -0.025em;
 }
 
+.settings-shell > .settings-card {
+  margin-top: 24px;
+}
+
+.employee-invitations {
+  display: grid;
+  gap: 24px;
+}
+
+.employee-invitations__heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.employee-invitations__heading h2 {
+  margin-bottom: 6px;
+}
+
+.employee-invitations__heading p,
+.employee-invitation-list__empty {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--color-gray-600);
+}
+
+.employee-invitations__expiry {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.employee-invitation-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px auto;
+  align-items: end;
+  gap: 12px;
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--color-gray-50);
+}
+
+.employee-invitation-form .button {
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+.employee-invitation-list {
+  display: grid;
+  border-block: 1px solid var(--color-gray-200);
+}
+
+.employee-invitation-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 104px;
+  align-items: center;
+  gap: 16px;
+  min-height: 72px;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.employee-invitation-row:last-child {
+  border-bottom: 0;
+}
+
+.employee-invitation-row__identity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.employee-invitation-row__identity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-invitation-row__identity span {
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.invitation-state {
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.invitation-state--pending {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.invitation-state--accepted {
+  background: var(--color-success-container);
+  color: var(--color-on-success-container);
+}
+
+.invitation-state--expired {
+  background: var(--color-warning-container);
+  color: var(--color-on-warning-container);
+}
+
+.invitation-state--revoked {
+  background: var(--color-danger-container);
+  color: var(--color-on-danger-container);
+}
+
+.employee-invitation-row__action {
+  width: 104px;
+  padding-inline: 12px;
+}
+
+.employee-invitation-summary {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 24px;
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--color-gray-50);
+}
+
+.employee-invitation-summary > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.employee-invitation-summary dt {
+  color: var(--color-gray-600);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.employee-invitation-summary dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .identity-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 132px;
@@ -3677,6 +3829,8 @@ a {
   .page-shell { width: min(calc(100% - 32px), var(--shell-max)); padding-top: 32px; }
   .settings-card { padding: 22px; }
   .identity-grid { grid-template-columns: 1fr; }
+  .employee-invitation-form { grid-template-columns: minmax(0, 1fr) 150px; }
+  .employee-invitation-form .button { grid-column: 1 / -1; justify-self: start; }
   .logo-field { justify-items: start; }
   .logo-error { text-align: left; }
   .clients-toolbar { align-items: stretch; flex-direction: column; }
@@ -3727,6 +3881,17 @@ a {
 }
 
 @media (max-width: 560px) {
+  .employee-invitations__heading { align-items: flex-start; flex-direction: column; }
+  .employee-invitation-form { grid-template-columns: 1fr; }
+  .employee-invitation-form .button { width: 100%; }
+  .employee-invitation-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 12px;
+    padding-block: 14px;
+  }
+  .employee-invitation-row__action,
+  .employee-invitation-row__action-placeholder { grid-column: 1 / -1; }
+  .employee-invitation-row__action { width: 100%; }
   .clients-toolbar__actions { align-items: stretch; flex-direction: column; }
   .clients-toolbar__actions .button { width: 100%; }
   .import-templates,

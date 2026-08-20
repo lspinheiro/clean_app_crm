@@ -21,7 +21,7 @@ select cmp_ok(
 );
 select is(
   (select count(*)::integer from auth.users where email like '%@clean-app.example.test'),
-  6,
+  7,
   'seed accounts are deterministic and explicitly local-only'
 );
 select results_eq(

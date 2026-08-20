@@ -128,4 +128,36 @@ describe("signInAction locale persistence", () => {
 
     expect(mocks.signOut).not.toHaveBeenCalled();
   });
+
+  it("returns an existing account to one employee invitation after sign-in", async () => {
+    mocks.maybeSingle
+      .mockReset()
+      .mockResolvedValueOnce({
+        data: { id: "user-1", preferred_locale: "en-AU" },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+    const formData = new FormData();
+    formData.set("email", "cleaner@example.com");
+    formData.set("password", "local-demo-only");
+    formData.set(
+      "returnTo",
+      "/invite/accept?employeeInvitation=83000000-0000-4000-8000-000000000101",
+    );
+
+    await expect(signInAction({ error: null, fieldErrors: {} }, formData)).rejects.toThrow(
+      "NEXT_REDIRECT:/en-AU/invite/accept?employeeInvitation=83000000-0000-4000-8000-000000000101",
+    );
+  });
+
+  it("ignores an external return target after sign-in", async () => {
+    const formData = new FormData();
+    formData.set("email", "admin@example.com");
+    formData.set("password", "local-demo-only");
+    formData.set("returnTo", "https://attacker.example.test/collect-session");
+
+    await expect(signInAction({ error: null, fieldErrors: {} }, formData)).rejects.toThrow(
+      "NEXT_REDIRECT:/en-AU/roster",
+    );
+  });
 });

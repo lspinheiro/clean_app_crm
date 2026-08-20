@@ -751,6 +751,99 @@ a {
   margin-top: 24px;
 }
 
+.employee-management {
+  display: grid;
+  gap: 20px;
+}
+
+.employee-management__heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.employee-management__heading h2 {
+  margin-bottom: 6px;
+}
+
+.employee-management__heading p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--color-gray-600);
+}
+
+.employee-management__count {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.employee-management__list {
+  display: grid;
+  border-block: 1px solid var(--color-gray-200);
+}
+
+.employee-management__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding-block: 16px;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.employee-management__row:last-child {
+  border-bottom: 0;
+}
+
+.employee-management__identity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.employee-management__identity strong,
+.employee-management__identity a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-management__identity a {
+  width: fit-content;
+  max-width: 100%;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.employee-management__identity span {
+  color: var(--color-gray-600);
+  font-size: 12px;
+}
+
+.employee-management__role {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.employee-management__role select {
+  min-width: 118px;
+}
+
+.employee-management__remove {
+  min-width: 82px;
+}
+
 .employee-invitations {
   display: grid;
   gap: 24px;
@@ -3881,6 +3974,11 @@ a {
 }
 
 @media (max-width: 560px) {
+  .employee-management__heading { align-items: flex-start; flex-direction: column; }
+  .employee-management__row { grid-template-columns: 1fr; gap: 12px; }
+  .employee-management__role { align-items: stretch; }
+  .employee-management__role select { flex: 1 1 auto; min-width: 0; }
+  .employee-management__remove { width: 100%; }
   .employee-invitations__heading { align-items: flex-start; flex-direction: column; }
   .employee-invitation-form { grid-template-columns: 1fr; }
   .employee-invitation-form .button { width: 100%; }

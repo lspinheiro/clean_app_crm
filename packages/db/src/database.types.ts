@@ -1230,6 +1230,33 @@ export type Database = {
           },
         ]
       }
+      employee_membership_details: {
+        Row: {
+          company_id: string | null
+          email: string | null
+          full_name: string | null
+          joined_at: string | null
+          membership_id: string | null
+          profile_id: string | null
+          role: Database["public"]["Enums"]["employee_role"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_memberships_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_memberships_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_job_board: {
         Row: {
           cleaner_pay_cents: number | null
@@ -1521,6 +1548,14 @@ export type Database = {
         Returns: boolean
       }
       cancel_job: { Args: { target_job_id: string }; Returns: undefined }
+      change_employee_role: {
+        Args: {
+          target_company_id: string
+          target_membership_id: string
+          target_role: Database["public"]["Enums"]["employee_role"]
+        }
+        Returns: undefined
+      }
       cleaner_invite_preview: {
         Args: { invite_code: string }
         Returns: {
@@ -1766,6 +1801,10 @@ export type Database = {
       }
       release_cleaner_loop_state: {
         Args: { target_cleaner_id: string; target_company_id: string }
+        Returns: undefined
+      }
+      remove_employee: {
+        Args: { target_company_id: string; target_membership_id: string }
         Returns: undefined
       }
       reserve_company_logo_upload: {

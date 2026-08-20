@@ -21,11 +21,13 @@ test.describe("@CLE-83 owner employee invitations", () => {
     await signIn(page, "admin@clean-app.example.test");
     await page.getByRole("link", { name: "Company settings" }).click();
 
-    await expect(page.getByRole("heading", { name: "Invite an employee" })).toBeVisible();
-    await expect(page.getByRole("combobox", { name: "Role" })).toHaveValue("staff");
-    await expect(page.getByRole("option", { name: "Owner" })).toHaveCount(1);
+    const invitations = page.getByRole("region", { name: "Invite an employee" });
+    await expect(invitations).toBeVisible();
+    await expect(invitations.getByRole("combobox", { name: "Role", exact: true }))
+      .toHaveValue("staff");
+    await expect(invitations.getByRole("option", { name: "Owner" })).toHaveCount(1);
     for (const state of ["Pending", "Accepted", "Expired", "Revoked"]) {
-      await expect(page.getByText(state, { exact: true }).first()).toBeVisible();
+      await expect(invitations.getByText(state, { exact: true }).first()).toBeVisible();
     }
     await expect(page.getByText(/resend/i)).toHaveCount(0);
     await expect(page.getByText(/bulk/i)).toHaveCount(0);

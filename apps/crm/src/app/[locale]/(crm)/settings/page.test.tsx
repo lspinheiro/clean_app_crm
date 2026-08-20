@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -29,16 +29,23 @@ import SettingsPage from "./page";
 afterEach(cleanup);
 
 describe("company settings language control", () => {
-  function ownerContext(invitations: unknown[] = []) {
+  function ownerContext(invitations: unknown[] = [], employees: unknown[] = []) {
+    let currentRelation = "";
     const query = {
       eq: mocks.eq,
       order: mocks.order,
       select: mocks.select,
     };
-    mocks.from.mockReturnValue(query);
+    mocks.from.mockImplementation((relation: string) => {
+      currentRelation = relation;
+      return query;
+    });
     mocks.select.mockReturnValue(query);
     mocks.eq.mockReturnValue(query);
-    mocks.order.mockResolvedValue({ data: invitations, error: null });
+    mocks.order.mockImplementation(() => Promise.resolve({
+      data: currentRelation === "employee_membership_details" ? employees : invitations,
+      error: null,
+    }));
     return {
       company: {
         abn: "53004085616",
@@ -137,5 +144,40 @@ describe("company settings language control", () => {
       "10000000-0000-4000-8000-000000000010",
     );
     expect(mocks.from).toHaveBeenCalledWith("employee_invitation_states");
+  });
+
+  it("shows active employees with identity, role, and Brisbane joined date", async () => {
+    mocks.requireCompanyOwner.mockResolvedValue(ownerContext([], [
+      {
+        company_id: "10000000-0000-4000-8000-000000000010",
+        email: "admin@clean-app.example.test",
+        full_name: "Demo Company Admin",
+        joined_at: "2026-08-01T00:00:00+10:00",
+        membership_id: "10000000-0000-4000-8000-000000000091",
+        profile_id: "10000000-0000-4000-8000-000000000001",
+        role: "owner",
+      },
+      {
+        company_id: "10000000-0000-4000-8000-000000000010",
+        email: "owner.harbour@clean-app.example.test",
+        full_name: "Harbour Demo Owner",
+        joined_at: "2026-08-02T00:00:00+10:00",
+        membership_id: "10000000-0000-4000-8000-000000000093",
+        profile_id: "10000000-0000-4000-8000-000000000006",
+        role: "staff",
+      },
+    ]));
+    mocks.getCompanyLogoUrl.mockResolvedValue(null);
+
+    render(await SettingsPage());
+
+    const employees = screen.getByRole("region", { name: "Employees" });
+    expect(within(employees).getByText("Demo Company Admin")).toBeInTheDocument();
+    expect(within(employees).getByText("admin@clean-app.example.test")).toBeInTheDocument();
+    expect(within(employees).getByText("Joined 1 Aug 2026")).toBeInTheDocument();
+    expect(within(employees).getByRole("combobox", {
+      name: "Role for Harbour Demo Owner",
+    })).toHaveValue("staff");
+    expect(mocks.from).toHaveBeenCalledWith("employee_membership_details");
   });
 });

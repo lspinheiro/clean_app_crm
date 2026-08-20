@@ -96,18 +96,28 @@ try {
     runSqlConcurrently(`
       begin;
       set local statement_timeout = '10s';
-      update public.employee_memberships
-      set status = 'removed'
-      where company_id = '${companyId}' and profile_id = '${ownerAId}';
+      set local role authenticated;
+      select set_config('request.jwt.claim.sub', '${ownerAId}', true);
+      select set_config('request.jwt.claim.role', 'authenticated', true);
+      select public.remove_employee(
+        '${companyId}',
+        (select id from public.employee_memberships
+         where company_id = '${companyId}' and profile_id = '${ownerAId}')
+      );
       select pg_sleep(0.75);
       commit;
     `),
     runSqlConcurrently(`
       begin;
       set local statement_timeout = '10s';
-      update public.employee_memberships
-      set status = 'removed'
-      where company_id = '${companyId}' and profile_id = '${ownerBId}';
+      set local role authenticated;
+      select set_config('request.jwt.claim.sub', '${ownerBId}', true);
+      select set_config('request.jwt.claim.role', 'authenticated', true);
+      select public.remove_employee(
+        '${companyId}',
+        (select id from public.employee_memberships
+         where company_id = '${companyId}' and profile_id = '${ownerBId}')
+      );
       select pg_sleep(0.75);
       commit;
     `),
@@ -122,7 +132,7 @@ try {
     rejected !== 1 ||
     !/Company must retain at least one active owner/.test(loserMessage)
   ) {
-    throw new Error("Concurrent owner removal did not produce one protected owner.");
+    throw new Error("Concurrent owner-removal RPCs did not produce one protected owner.");
   }
 
   const activeOwners = runSql(`
@@ -136,7 +146,7 @@ try {
     throw new Error(`Concurrent owner removal left ${activeOwners || "no"} active owners.`);
   }
 
-  console.log("Owner concurrency check passed: one removal won and one active owner remains.");
+  console.log("Owner RPC concurrency check passed: one removal won and one active owner remains.");
 } finally {
   runSql(cleanupSql);
 }

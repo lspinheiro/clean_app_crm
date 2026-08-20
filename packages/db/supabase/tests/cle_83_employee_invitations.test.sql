@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(43);
+select plan(45);
 
 select has_table(
   'public',
@@ -186,7 +186,8 @@ select lives_ok(
       ('83000000-0000-4000-8000-000000000002'::uuid, 'staff@cle-83.example.test', 'CLE-83 Staff'),
       ('83000000-0000-4000-8000-000000000003'::uuid, 'cleaner@cle-83.example.test', 'CLE-83 Existing Cleaner'),
       ('83000000-0000-4000-8000-000000000004'::uuid, 'revoked@cle-83.example.test', 'CLE-83 Revoked'),
-      ('83000000-0000-4000-8000-000000000005'::uuid, 'expired@cle-83.example.test', 'CLE-83 Expired')
+      ('83000000-0000-4000-8000-000000000005'::uuid, 'expired@cle-83.example.test', 'CLE-83 Expired'),
+      ('83000000-0000-4000-8000-000000000006'::uuid, 'removed@cle-83.example.test', 'CLE-83 Removed')
     ) as fixture(id, email, full_name);
 
     insert into public.companies (id, name, abn, status)
@@ -197,7 +198,8 @@ select lives_ok(
     insert into public.employee_memberships (company_id, profile_id, role, status)
     values
       ('83000000-0000-4000-8000-000000000010', '83000000-0000-4000-8000-000000000001', 'owner', 'active'),
-      ('83000000-0000-4000-8000-000000000010', '83000000-0000-4000-8000-000000000002', 'staff', 'active');
+      ('83000000-0000-4000-8000-000000000010', '83000000-0000-4000-8000-000000000002', 'staff', 'active'),
+      ('83000000-0000-4000-8000-000000000010', '83000000-0000-4000-8000-000000000006', 'owner', 'removed');
 
     insert into public.company_members (company_id, profile_id, status)
     values (
@@ -521,6 +523,45 @@ select throws_ok(
   '22023',
   'Invitation is no longer available',
   'an accepted invitation cannot be accepted twice'
+);
+
+reset role;
+
+insert into public.employee_invitations (
+  id, company_id, email, role, locale, invited_by_profile_id,
+  account_existed_at_invitation, expires_at
+) values (
+  '83000000-0000-4000-8000-000000000703',
+  '83000000-0000-4000-8000-000000000010',
+  'removed@cle-83.example.test',
+  'staff',
+  'en-AU',
+  '83000000-0000-4000-8000-000000000001',
+  true,
+  now() + interval '7 days'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '83000000-0000-4000-8000-000000000006', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+
+select lives_ok(
+  $$select public.accept_employee_invitation(
+      '83000000-0000-4000-8000-000000000703',
+      'CLE-83 Removed',
+      'en-AU'
+    )$$,
+  'a removed employee can accept a new invitation without a unique-membership failure'
+);
+
+reset role;
+select results_eq(
+  $$select role::text collate "C", status::text collate "C"
+    from public.employee_memberships
+    where company_id = '83000000-0000-4000-8000-000000000010'
+      and profile_id = '83000000-0000-4000-8000-000000000006'$$,
+  $$values ('staff'::text collate "C", 'active'::text collate "C")$$,
+  're-acceptance reactivates the retained membership with the newly invited role'
 );
 
 reset role;

@@ -39,6 +39,7 @@ export function toVacancies(rows: BoardRow[]): Vacancy[] {
       cleanerPayCents: row.cleaner_pay_cents,
       crewSize: row.crew_size,
       openSlots: 1,
+      applicationStatus: row.my_application_status,
     });
   }
 

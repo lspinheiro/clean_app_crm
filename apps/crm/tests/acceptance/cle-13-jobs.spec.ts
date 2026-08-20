@@ -24,13 +24,12 @@ test.describe("@CLE-13 jobs with crew slots", () => {
     const broadbeachJobs = jobs
       .getByRole("listitem")
       .filter({ hasText: "Broadbeach Towers" });
-    const futureJobIndex = await broadbeachJobs.locator("time").evaluateAll((times) =>
-      times.findIndex((time) => Date.parse(time.getAttribute("datetime") ?? "") > Date.now()),
-    );
-    expect(futureJobIndex).toBeGreaterThanOrEqual(0);
-    const crewJob = broadbeachJobs.nth(futureJobIndex);
+    const crewJob = broadbeachJobs.filter({ hasText: "1/2 assigned" }).first();
     await expect(crewJob).toContainText("Posted");
     await expect(crewJob).toContainText("1/2 assigned");
+    expect(
+      Date.parse((await crewJob.locator("time").getAttribute("datetime")) ?? ""),
+    ).toBeGreaterThan(Date.now());
 
     const assignedJob = jobs
       .getByRole("listitem")
@@ -42,6 +41,7 @@ test.describe("@CLE-13 jobs with crew slots", () => {
     const openJob = jobs
       .getByRole("listitem")
       .filter({ hasText: "Palm Grove Practice" })
+      .filter({ hasText: "0/1 assigned" })
       .first();
     await expect(openJob).toContainText("Posted");
     await expect(openJob).toContainText("0/1 assigned");

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   requireCompanyAdmin: vi.fn(),
@@ -8,52 +8,36 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/session", () => ({
   requireCompanyAdmin: mocks.requireCompanyAdmin,
 }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+vi.mock("@/app/actions/clients", () => ({
+  createClient: vi.fn(),
+  createSite: vi.fn(),
+}));
 
-import JobsPage from "./page";
+import ClientsPage from "./page";
 
-type QueryResult = {
-  data: Record<string, unknown>[];
-  error: null;
-};
+type QueryResult = { data: Record<string, unknown>[]; error: null };
 
 function queryBuilder(result: QueryResult) {
   const builder = {
     eq: vi.fn(),
-    select: vi.fn(),
     order: vi.fn(),
-    is: vi.fn(),
+    select: vi.fn(),
     then: <TResult1 = QueryResult, TResult2 = never>(
       onFulfilled?: ((value: QueryResult) => TResult1 | PromiseLike<TResult1>) | null,
       onRejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
     ) => Promise.resolve(result).then(onFulfilled, onRejected),
   };
   builder.eq.mockReturnValue(builder);
-  builder.select.mockReturnValue(builder);
   builder.order.mockReturnValue(builder);
-  builder.is.mockReturnValue(builder);
+  builder.select.mockReturnValue(builder);
   return builder;
 }
 
-describe("CLE-23 jobs entry point", () => {
-  beforeEach(() => {
-    mocks.requireCompanyAdmin.mockResolvedValue({
-      company: { id: "company-1" },
-      supabase: {
-        from: vi.fn(() => queryBuilder({ data: [], error: null })),
-      },
-    });
-  });
-
-  it("offers one contextual link to create a new job", async () => {
-    render(await JobsPage());
-
-    expect(screen.getByRole("link", { name: "New job" })).toHaveAttribute(
-      "href",
-      "/jobs/new",
-    );
-  });
-
-  it("scopes every company-owned list query to the active company", async () => {
+describe("S33 clients company scope", () => {
+  it("filters clients and sites to the active company", async () => {
     const queries = new Map<string, ReturnType<typeof queryBuilder>>();
     mocks.requireCompanyAdmin.mockResolvedValue({
       company: { id: "company-1" },
@@ -66,16 +50,13 @@ describe("CLE-23 jobs entry point", () => {
       },
     });
 
-    render(await JobsPage());
+    render(await ClientsPage());
 
-    expect(queries.get("jobs")?.eq).toHaveBeenCalledWith(
-      "sites.clients.company_id",
-      "company-1",
-    );
+    expect(screen.getByRole("heading", { name: "Clients & sites" })).toBeInTheDocument();
+    expect(queries.get("clients")?.eq).toHaveBeenCalledWith("company_id", "company-1");
     expect(queries.get("sites")?.eq).toHaveBeenCalledWith(
       "clients.company_id",
       "company-1",
     );
-    expect(queries.get("clients")?.eq).toHaveBeenCalledWith("company_id", "company-1");
   });
 });

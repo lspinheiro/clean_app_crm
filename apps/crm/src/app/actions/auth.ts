@@ -11,7 +11,6 @@ import {
   localeCookieName,
 } from "@/i18n/config";
 import { redirect } from "@/i18n/navigation";
-import { evaluateCrmAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginState = {
@@ -54,23 +53,20 @@ export async function signInAction(
     .eq("id", data.user.id)
     .maybeSingle();
   if (profileError) throw profileError;
-
-  const { data: membership, error: membershipError } = await supabase
-    .from("employee_memberships")
-    .select("company_id, profile_id, role, status")
-    .eq("profile_id", data.user.id)
-    .eq("status", "active")
-    .order("joined_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (membershipError) throw membershipError;
-
-  const decision = evaluateCrmAccess({ userId: data.user.id, profile, membership });
-  if (decision.kind === "denied") {
+  if (!profile) {
     const { error: signOutError } = await supabase.auth.signOut();
     if (signOutError) throw signOutError;
     return { error: t("notAuthorised"), fieldErrors: {} };
   }
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("employee_memberships")
+    .select("company_id")
+    .eq("profile_id", data.user.id)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+  if (membershipError) throw membershipError;
 
   const cookieStore = await cookies();
   const targetLocale =
@@ -84,6 +80,9 @@ export async function signInAction(
     path: "/",
     sameSite: "lax",
   });
+  if (!membership) {
+    return redirect({ href: "/no-company-access", locale: targetLocale });
+  }
   return redirect({ href: "/roster", locale: targetLocale });
 }
 

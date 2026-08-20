@@ -50,8 +50,19 @@
     "pool": "Pool",
     "money": "Money",
     "settings": "Company settings",
+    "accountMenu": "Account menu",
+    "switchCompany": "Switch company",
+    "switchToCompany": "Switch to {companyName}",
+    "signOut": "Sign out",
     "companyLogo": "{companyName} logo",
     "brandLabel": "{companyName} — The Clean Crew"
+  },
+  "NoCompanyAccess": {
+    "eyebrow": "Company access",
+    "title": "No company access",
+    "description": "Ask an owner for an invitation to their cleaning company. If you are here to find or manage your cleaning work, continue in the cleaner app.",
+    "cleanerApp": "Open the cleaner app",
+    "signOut": "Sign out"
   },
   "Roster": {
     "loading": "Loading roster",

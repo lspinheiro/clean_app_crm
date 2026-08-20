@@ -757,6 +757,7 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          last_active_company: string | null
           phone: string | null
           preferred_locale: Database["public"]["Enums"]["app_locale"] | null
           suburb: string | null
@@ -767,6 +768,7 @@ export type Database = {
           email?: string | null
           full_name: string
           id: string
+          last_active_company?: string | null
           phone?: string | null
           preferred_locale?: Database["public"]["Enums"]["app_locale"] | null
           suburb?: string | null
@@ -777,12 +779,21 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          last_active_company?: string | null
           phone?: string | null
           preferred_locale?: Database["public"]["Enums"]["app_locale"] | null
           suburb?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_last_active_company_fkey"
+            columns: ["last_active_company"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recurring_assignment_cleaners: {
         Row: {
@@ -1640,6 +1651,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_active_company: {
+        Args: { target_company_id: string }
+        Returns: string
       }
       set_preferred_locale: {
         Args: { target_locale: Database["public"]["Enums"]["app_locale"] }

@@ -108,4 +108,24 @@ describe("signInAction locale persistence", () => {
     });
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
+
+  it("keeps a membership-less account signed in and sends it to the no-access screen", async () => {
+    mocks.maybeSingle
+      .mockReset()
+      .mockResolvedValueOnce({
+        data: { id: "user-1", preferred_locale: "en-AU" },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+    mocks.signOut.mockResolvedValue({ error: null });
+    const formData = new FormData();
+    formData.set("email", "cleaner@example.com");
+    formData.set("password", "local-demo-only");
+
+    await expect(signInAction({ error: null, fieldErrors: {} }, formData)).rejects.toThrow(
+      "NEXT_REDIRECT:/en-AU/no-company-access",
+    );
+
+    expect(mocks.signOut).not.toHaveBeenCalled();
+  });
 });

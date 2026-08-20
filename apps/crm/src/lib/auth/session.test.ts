@@ -39,16 +39,23 @@ vi.mock("react", async (importOriginal) => ({
 import { getCompanyAdminContext, requireCompanyAdmin, requireCompanyOwner } from "./session";
 
 function queryReturning(data: unknown, singleError: unknown = null) {
+  const listData = Array.isArray(data) ? data : data === null ? [] : [data];
   const query = {
     select: vi.fn(),
     eq: vi.fn(),
+    in: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
     maybeSingle: vi.fn().mockResolvedValue({ data, error: null }),
     single: vi.fn().mockResolvedValue({ data: null, error: singleError }),
+    then: <TResult1 = { data: unknown[]; error: null }, TResult2 = never>(
+      onFulfilled?: ((value: { data: unknown[]; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
+      onRejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    ) => Promise.resolve({ data: listData, error: null }).then(onFulfilled, onRejected),
   };
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
+  query.in.mockReturnValue(query);
   query.order.mockReturnValue(query);
   query.limit.mockReturnValue(query);
   return query;
@@ -64,6 +71,7 @@ describe("company-admin session context", () => {
     const profileQuery = queryReturning({
       id: "user-1",
       full_name: "Company Admin",
+      last_active_company: "company-1",
     });
     const membershipQuery = queryReturning({
       company_id: "company-1",
@@ -95,7 +103,7 @@ describe("company-admin session context", () => {
       decision: { kind: "denied", reason: "company_not_approved" },
       company: null,
     });
-    expect(companyQuery.maybeSingle).toHaveBeenCalledOnce();
+    expect(companyQuery.maybeSingle).not.toHaveBeenCalled();
     expect(companyQuery.single).not.toHaveBeenCalled();
   });
 
@@ -165,6 +173,7 @@ describe("company-admin session context", () => {
     const profileQuery = queryReturning({
       id: "user-1",
       full_name: "Company Admin",
+      last_active_company: "company-1",
     });
     const membershipQuery = queryReturning({
       company_id: "company-1",
@@ -205,7 +214,11 @@ describe("company-admin session context", () => {
   });
 
   it("refuses an owner-only route to an active staff member", async () => {
-    const profileQuery = queryReturning({ id: "user-1", full_name: "Staff Member" });
+    const profileQuery = queryReturning({
+      id: "user-1",
+      full_name: "Staff Member",
+      last_active_company: "company-1",
+    });
     const membershipQuery = queryReturning({
       company_id: "company-1",
       profile_id: "user-1",
@@ -234,6 +247,80 @@ describe("company-admin session context", () => {
 
     await expect(requireCompanyOwner()).rejects.toThrow(
       "NEXT_REDIRECT:/en-AU/login?error=not-authorised",
+    );
+  });
+
+  it("restores the profile's last active company instead of the earliest membership", async () => {
+    const profileQuery = queryReturning({
+      id: "user-1",
+      full_name: "Multi-company Owner",
+      last_active_company: "company-2",
+    });
+    const membershipQuery = queryReturning([
+      {
+        company_id: "company-1",
+        profile_id: "user-1",
+        role: "owner",
+        status: "active",
+      },
+      {
+        company_id: "company-2",
+        profile_id: "user-1",
+        role: "staff",
+        status: "active",
+      },
+    ]);
+    const companyQuery = queryReturning([
+      { id: "company-1", name: "First Company", status: "approved" },
+      { id: "company-2", name: "Second Company", status: "approved" },
+    ]);
+    const supabase = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+          error: null,
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") return profileQuery;
+        if (table === "employee_memberships") return membershipQuery;
+        if (table === "companies") return companyQuery;
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+      rpc: vi.fn(),
+    };
+    mocks.createClient.mockResolvedValue(supabase);
+
+    await expect(getCompanyAdminContext()).resolves.toMatchObject({
+      company: { id: "company-2" },
+      membership: { company_id: "company-2" },
+    });
+    expect(supabase.rpc).not.toHaveBeenCalled();
+  });
+
+  it("routes an authenticated account with no active employee membership to no access", async () => {
+    const profileQuery = queryReturning({
+      id: "user-1",
+      full_name: "Pool-only Account",
+      last_active_company: null,
+    });
+    const membershipQuery = queryReturning(null);
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+          error: null,
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") return profileQuery;
+        if (table === "employee_memberships") return membershipQuery;
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+    });
+
+    await expect(requireCompanyAdmin()).rejects.toThrow(
+      "NEXT_REDIRECT:/en-AU/no-company-access",
     );
   });
 });

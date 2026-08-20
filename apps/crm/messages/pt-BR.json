@@ -50,8 +50,19 @@
     "pool": "Banco",
     "money": "Financeiro",
     "settings": "Configurações da empresa",
+    "accountMenu": "Menu da conta",
+    "switchCompany": "Trocar de empresa",
+    "switchToCompany": "Trocar para {companyName}",
+    "signOut": "Sair",
     "companyLogo": "Logo da {companyName}",
     "brandLabel": "{companyName} — The Clean Crew"
+  },
+  "NoCompanyAccess": {
+    "eyebrow": "Acesso à empresa",
+    "title": "Sem acesso a uma empresa",
+    "description": "Peça a um proprietário um convite para a empresa de limpeza. Se você veio procurar ou gerenciar seu trabalho de limpeza, continue no aplicativo de profissionais.",
+    "cleanerApp": "Abrir o aplicativo de profissionais",
+    "signOut": "Sair"
   },
   "Roster": {
     "loading": "Carregando escala",

@@ -40,6 +40,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
       .from("clients")
       .select("id, name, contact_name, phone, notes")
       .eq("id", clientId)
+      .eq("company_id", company.id)
       .maybeSingle(),
     supabase
       .from("sites")

@@ -1,7 +1,19 @@
 <!doctype html>
 <html lang="en">
   <body>
-    {{ if eq .Data.preferred_locale "pt-BR" }}
+    {{ if eq .Data.invitation_kind "employee" }}
+      {{ if eq .Data.preferred_locale "pt-BR" }}
+        <h1>Entre para a equipe da {{ .Data.company_name }}</h1>
+        <p>Um proprietário convidou você para trabalhar na empresa pelo CRM da The Clean Crew.</p>
+        <p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=invite">Configurar conta e aceitar convite</a></p>
+        <p>O convite vence em 7 dias. Se você não esperava este convite, ignore este e-mail.</p>
+      {{ else }}
+        <h1>Join the {{ .Data.company_name }} team</h1>
+        <p>An owner invited you to work with the company in The Clean Crew CRM.</p>
+        <p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=invite">Set up your account and accept</a></p>
+        <p>The invitation expires in 7 days. If you did not expect this invitation, ignore this e-mail.</p>
+      {{ end }}
+    {{ else if eq .Data.preferred_locale "pt-BR" }}
       <h1>Crie a conta da sua empresa</h1>
       <p>A equipe fundadora da The Clean Crew convidou você para administrar uma empresa no CRM.</p>
       <p><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite">Aceitar convite</a></p>

@@ -3,12 +3,27 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { BrandBubbles } from "@/components/brand-bubbles";
 import { FirstAdminAcceptanceForm } from "./accept-form";
+import { EmployeeAcceptance } from "./employee-acceptance";
+import { employeeInvitationIdSchema } from "@/features/employee-invitations/schema";
 import { defaultLocale, isAppLocale } from "@/i18n/config";
 import { Link, redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 type FirstAdminAcceptancePageProps = {
-  searchParams: Promise<{ error?: string | string[] }>;
+  searchParams: Promise<{
+    employeeInvitation?: string | string[];
+    error?: string | string[];
+  }>;
+};
+
+type EmployeeInvitationContext = {
+  account_existed_at_invitation: boolean;
+  company_name: string;
+  invitation_id: string;
+  invitation_status: string;
+  invitee_email: string;
+  locale: "en-AU" | "pt-BR";
+  role: "owner" | "staff";
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -35,10 +50,16 @@ function AuthShell({ children }: Readonly<{ children: React.ReactNode }>) {
 export default async function FirstAdminAcceptancePage({
   searchParams,
 }: FirstAdminAcceptancePageProps) {
-  await searchParams;
+  const query = await searchParams;
   const requestLocale = await getLocale();
   const locale = isAppLocale(requestLocale) ? requestLocale : defaultLocale;
   const t = await getTranslations("FirstAdminInvitation");
+  const employeeT = await getTranslations("EmployeeInvitationAcceptance");
+  const employeeInvitation = employeeInvitationIdSchema.safeParse(
+    Array.isArray(query.employeeInvitation)
+      ? query.employeeInvitation[0]
+      : query.employeeInvitation,
+  );
   let context:
     | {
         invitation_status: string;
@@ -52,6 +73,72 @@ export default async function FirstAdminAcceptancePage({
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
+
+  if (employeeInvitation.success) {
+    if (userError || !user?.email) {
+      if (query.error === "invalid") {
+        return (
+          <AuthShell>
+            <p className="eyebrow">{employeeT("eyebrow")}</p>
+            <h1>{employeeT("unavailableTitle")}</h1>
+            <p className="auth-panel__intro">{employeeT("unavailableDescription")}</p>
+            <Link className="button button--secondary" href="/login">
+              {employeeT("backToLogin")}
+            </Link>
+          </AuthShell>
+        );
+      }
+      const returnTo = `/invite/accept?employeeInvitation=${employeeInvitation.data}`;
+      return (
+        <AuthShell>
+          <p className="eyebrow">{employeeT("eyebrow")}</p>
+          <h1>{employeeT("signInTitle")}</h1>
+          <p className="auth-panel__intro">{employeeT("signInDescription")}</p>
+          <Link
+            className="button"
+            href={`/login?returnTo=${encodeURIComponent(returnTo)}`}
+          >
+            {employeeT("signIn")}
+          </Link>
+        </AuthShell>
+      );
+    }
+
+    let employeeContext: EmployeeInvitationContext | null = null;
+    const { data, error } = await supabase.rpc("get_employee_invitation_context", {
+      target_invitation_id: employeeInvitation.data,
+    });
+    if (!error && data?.[0]) employeeContext = data[0];
+
+    if (employeeContext?.invitation_status === "accepted") {
+      return redirect({ href: "/roster", locale });
+    }
+    if (!employeeContext || employeeContext.invitation_status !== "pending") {
+      return (
+        <AuthShell>
+          <p className="eyebrow">{employeeT("eyebrow")}</p>
+          <h1>{employeeT("unavailableTitle")}</h1>
+          <p className="auth-panel__intro">{employeeT("unavailableDescription")}</p>
+          <Link className="button button--secondary" href="/login">
+            {employeeT("backToLogin")}
+          </Link>
+        </AuthShell>
+      );
+    }
+
+    return (
+      <AuthShell>
+        <EmployeeAcceptance
+          accountExisted={employeeContext.account_existed_at_invitation}
+          companyName={employeeContext.company_name}
+          defaultLocale={employeeContext.locale}
+          invitationId={employeeContext.invitation_id}
+          inviteeEmail={employeeContext.invitee_email}
+          role={employeeContext.role}
+        />
+      </AuthShell>
+    );
+  }
 
   if (!userError && user?.email) {
     const { data, error } = await supabase.rpc("get_first_admin_invitation_context");

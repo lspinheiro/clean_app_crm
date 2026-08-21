@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-import { evaluateCleanerAccess, type AppRole } from "./access";
+import { evaluateCleanerAccess } from "./access";
 import { isStaleSessionError } from "./session-error";
 
 export type CleanerProfile = {
   id: string;
-  role: AppRole;
   full_name: string;
   suburb: string | null;
 };
@@ -42,12 +41,24 @@ export function useCleaner(): CleanerState {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("id, role, full_name, suburb")
+        .select("id, full_name, suburb")
         .eq("id", data.user.id)
         .maybeSingle();
       if (profileError || !profile) return { status: "denied" };
 
-      const decision = evaluateCleanerAccess({ userId: data.user.id, profile });
+      const { data: membership, error: membershipError } = await supabase
+        .from("cleaner_pool_memberships")
+        .select("profile_id, status")
+        .eq("profile_id", data.user.id)
+        .limit(1)
+        .maybeSingle();
+      if (membershipError) return { status: "denied" };
+
+      const decision = evaluateCleanerAccess({
+        userId: data.user.id,
+        profile,
+        membership,
+      });
       return decision.kind === "allowed"
         ? { status: "allowed", profile }
         : { status: "denied" };

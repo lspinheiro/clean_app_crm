@@ -63,10 +63,9 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       .order("applied_at"),
     supabase
       .from("company_members")
-      .select("profile_id, profiles!inner(id, full_name, role)")
+      .select("profile_id, profiles!inner(id, full_name)")
       .eq("company_id", company.id)
-      .eq("status", "active")
-      .eq("profiles.role", "cleaner"),
+      .eq("status", "active"),
     supabase
       .from("site_preferred_cleaners")
       .select("cleaner_id, rank")

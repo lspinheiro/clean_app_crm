@@ -31,7 +31,8 @@ const localEnvironment = Object.fromEntries(
 
 const url = localEnvironment.API_URL;
 const publishableKey = localEnvironment.PUBLISHABLE_KEY ?? localEnvironment.ANON_KEY;
-if (!url || !publishableKey) {
+const secretKey = localEnvironment.SECRET_KEY ?? localEnvironment.SERVICE_ROLE_KEY;
+if (!url || !publishableKey || !secretKey) {
   throw new Error(
     `Local Supabase status is missing API_URL or a client key. Available fields: ${Object.keys(localEnvironment).join(", ")}`,
   );
@@ -64,8 +65,10 @@ const result = spawnSync(
       ...process.env,
       NEXT_PUBLIC_SUPABASE_URL: url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,
+      NEXT_PUBLIC_CRM_APP_URL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3100",
       NEXT_PUBLIC_CLEANER_APP_URL:
         process.env.NEXT_PUBLIC_CLEANER_APP_URL ?? "http://127.0.0.1:3001",
+      SUPABASE_SECRET_KEY: secretKey,
     },
     stdio: "inherit",
     shell,

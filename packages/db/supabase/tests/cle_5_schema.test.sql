@@ -2,19 +2,19 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(17);
 
-select has_type('public', 'app_role', 'app_role enum exists');
+select has_type('public', 'employee_role', 'employee_role enum exists');
 select is(
   (
     select e.enumlabel::text
     from pg_type t
     join pg_enum e on e.enumtypid = t.oid
     join pg_namespace n on n.oid = t.typnamespace
-    where n.nspname = 'public' and t.typname = 'app_role'
+    where n.nspname = 'public' and t.typname = 'employee_role'
     order by e.enumsortorder
     limit 1
   ),
-  'company_admin',
-  'company_admin is the first canonical role'
+  'owner',
+  'owner is the first employee role'
 );
 select is(
   (
@@ -22,10 +22,10 @@ select is(
     from pg_type t
     join pg_enum e on e.enumtypid = t.oid
     join pg_namespace n on n.oid = t.typnamespace
-    where n.nspname = 'public' and t.typname = 'app_role'
+    where n.nspname = 'public' and t.typname = 'employee_role'
   ),
-  'company_admin,cleaner,admin',
-  'app_role uses only canonical vocabulary'
+  'owner,staff',
+  'employee_role uses only membership authority vocabulary'
 );
 select has_table('public', 'profiles', 'profiles exists');
 select has_table('public', 'companies', 'companies exists');
@@ -56,10 +56,11 @@ select results_eq(
   'company_invites has RLS enabled'
 );
 select throws_ok(
-  $$insert into public.profiles (id, role, full_name) values (gen_random_uuid(), 'legacy_role', 'Invalid')$$,
+  $$insert into public.employee_memberships (company_id, profile_id, role)
+    values (gen_random_uuid(), gen_random_uuid(), 'legacy_role')$$,
   '22P02',
   null,
-  'invalid roles are rejected'
+  'invalid employee roles are rejected'
 );
 select throws_ok(
   $$insert into public.companies (name) values ('Missing ABN')$$,

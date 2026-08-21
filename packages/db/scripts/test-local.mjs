@@ -32,3 +32,6 @@ run(process.execPath, [
 run(process.execPath, [
   fileURLToPath(new URL("./test-generation-concurrency.mjs", import.meta.url)),
 ]);
+run(process.execPath, [
+  fileURLToPath(new URL("./test-owner-concurrency.mjs", import.meta.url)),
+]);

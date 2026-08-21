@@ -28,10 +28,11 @@ test.describe("@CLE-5 company-admin sign-in and shell", () => {
     await expect(page.getByRole("navigation")).toHaveCount(0);
   });
 
-  test("a cleaner account is refused without exposing the shell", async ({ page }) => {
+  test("an account without employee membership gets guidance without exposing the shell", async ({ page }) => {
     await signIn(page, cleanerEmail, demoPassword);
 
-    await expect(page.locator(".form-error")).toContainText("for company admins");
+    await expect(page).toHaveURL(/\/en-AU\/no-company-access$/);
+    await expect(page.getByRole("heading", { name: "No company access" })).toBeVisible();
     await expect(page.getByRole("navigation")).toHaveCount(0);
   });
 

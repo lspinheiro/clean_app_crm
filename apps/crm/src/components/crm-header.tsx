@@ -3,15 +3,27 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
+import { AccountMenu, type CrmMembershipOption } from "./account-menu";
 import { BrandBubbles } from "./brand-bubbles";
 import { CrmNavigation, CrmSettingsLink } from "./crm-navigation";
 
 type CrmHeaderProps = {
+  companyId: string;
   companyName: string;
+  employeeRole: "owner" | "staff";
   logoUrl: string | null;
+  memberships: CrmMembershipOption[];
+  profileName: string;
 };
 
-export function CrmHeader({ companyName, logoUrl }: CrmHeaderProps) {
+export function CrmHeader({
+  companyId,
+  companyName,
+  employeeRole,
+  logoUrl,
+  memberships,
+  profileName,
+}: CrmHeaderProps) {
   const t = useTranslations("Navigation");
   return (
     <header className="site-header">
@@ -38,9 +50,17 @@ export function CrmHeader({ companyName, logoUrl }: CrmHeaderProps) {
         </Link>
         <CrmNavigation />
         <div className="header-actions">
-          <CrmSettingsLink>
-            <Settings aria-hidden="true" size={21} strokeWidth={2.25} />
-          </CrmSettingsLink>
+          {employeeRole === "owner" ? (
+            <CrmSettingsLink>
+              <Settings aria-hidden="true" size={21} strokeWidth={2.25} />
+            </CrmSettingsLink>
+          ) : null}
+          <AccountMenu
+            activeCompanyId={companyId}
+            key={companyId}
+            memberships={memberships}
+            profileName={profileName}
+          />
         </div>
       </div>
     </header>

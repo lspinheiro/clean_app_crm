@@ -116,13 +116,10 @@ insert into auth.users (
   '{"provider":"email","providers":["email"]}',
   '{"full_name":"Tenant B Logo Admin"}', now(), now(), '', '', '', ''
 );
-update public.profiles
-set role = 'company_admin'
-where id = '20000000-0000-4000-8000-000000000001';
 insert into public.companies (id, name, abn, status)
 values ('20000000-0000-4000-8000-000000000010', 'Tenant B Logo Demo', '22222222222', 'approved');
-insert into public.company_members (company_id, profile_id)
-values ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000001');
+insert into public.employee_memberships (company_id, profile_id, role)
+values ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000001', 'owner');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);

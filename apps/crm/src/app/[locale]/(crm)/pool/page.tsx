@@ -50,9 +50,8 @@ export default async function PoolPage() {
   const { data: profileRows, error: profileError } = memberIds.length
     ? await supabase
         .from("profiles")
-        .select("id, full_name, role")
+        .select("id, full_name")
         .in("id", memberIds)
-        .eq("role", "cleaner")
     : { data: [], error: null };
   if (profileError) throw profileError;
 

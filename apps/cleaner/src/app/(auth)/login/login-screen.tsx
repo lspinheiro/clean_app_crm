@@ -44,11 +44,20 @@ export function LoginScreen() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("id, role")
+      .select("id")
       .eq("id", data.user.id)
       .maybeSingle();
 
-    if (evaluateCleanerAccess({ userId: data.user.id, profile }).kind === "denied") {
+    const { data: membership } = await supabase
+      .from("cleaner_pool_memberships")
+      .select("profile_id, status")
+      .eq("profile_id", data.user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (
+      evaluateCleanerAccess({ userId: data.user.id, profile, membership }).kind === "denied"
+    ) {
       await supabase.auth.signOut();
       setError("This app is for cleaners. Company admins use the CRM.");
       setPending(false);

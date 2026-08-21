@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ClientsPage() {
   const t = await getTranslations("Clients");
   const serviceT = await getTranslations("Services");
-  const { supabase } = await requireCompanyAdmin();
+  const { company, supabase } = await requireCompanyAdmin();
   const [
     { data: clientRows, error: clientError },
     { data: siteRows, error: siteError },
@@ -24,12 +24,14 @@ export default async function ClientsPage() {
       supabase
         .from("clients")
         .select("id, name, contact_name, phone, notes")
+        .eq("company_id", company.id)
         .order("name"),
       supabase
         .from("sites")
         .select(
-          "id, client_id, name, address, suburb, access_notes, default_service_id, default_duration_minutes, default_rate_cents",
+          "id, client_id, name, address, suburb, access_notes, default_service_id, default_duration_minutes, default_rate_cents, clients!inner(company_id)",
         )
+        .eq("clients.company_id", company.id)
         .order("name"),
       supabase
         .from("service_catalogue")

@@ -193,6 +193,162 @@ a {
   gap: 8px;
 }
 
+.account-menu {
+  position: relative;
+}
+
+.account-menu__trigger {
+  list-style: none;
+  cursor: pointer;
+}
+
+.account-menu__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.account-menu[open] .account-menu__trigger {
+  border-color: var(--color-primary);
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.account-menu__panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(320px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid var(--color-surface-border);
+  border-radius: 12px;
+  background: var(--color-surface-card);
+  box-shadow: var(--shadow-card);
+}
+
+.account-menu__identity {
+  display: grid;
+  gap: 2px;
+  padding: 16px;
+}
+
+.account-menu__identity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__identity span,
+.account-menu__companies > p {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.account-menu__companies {
+  display: grid;
+  gap: 4px;
+  border-top: 1px solid var(--color-surface-border);
+  padding: 12px 8px;
+}
+
+.account-menu__companies > p {
+  margin: 0;
+  padding: 0 8px 4px;
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-menu__company-button,
+.account-menu__sign-out-button {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.account-menu__company-button,
+.account-menu__sign-out-button {
+  cursor: pointer;
+}
+
+.account-menu__company-button:hover,
+.account-menu__sign-out-button:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text-main);
+}
+
+.account-menu__company-button:disabled,
+.account-menu__sign-out-button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.account-menu__sign-out {
+  border-top: 1px solid var(--color-surface-border);
+  padding: 8px;
+}
+
+.no-company-page {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 32px 20px;
+  background: var(--color-surface);
+}
+
+.no-company-card {
+  position: relative;
+  width: min(100%, 600px);
+  border: 1px solid var(--color-surface-border);
+  border-radius: 16px;
+  padding: clamp(32px, 7vw, 64px);
+  background: var(--color-surface-card);
+  box-shadow: var(--shadow-card);
+}
+
+.no-company-card > .brand-bubbles {
+  margin-bottom: 40px;
+}
+
+.no-company-card__icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 20px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.no-company-card h1 {
+  margin: 0 0 12px;
+  font-size: clamp(30px, 6vw, 40px);
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+
+.no-company-card > p:not(.eyebrow) {
+  max-width: 52ch;
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.no-company-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
 .button {
   display: inline-flex;
   min-height: 44px;
@@ -589,6 +745,251 @@ a {
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.025em;
+}
+
+.settings-shell > .settings-card {
+  margin-top: 24px;
+}
+
+.employee-management {
+  display: grid;
+  gap: 20px;
+}
+
+.employee-management__heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.employee-management__heading h2 {
+  margin-bottom: 6px;
+}
+
+.employee-management__heading p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--color-gray-600);
+}
+
+.employee-management__count {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.employee-management__list {
+  display: grid;
+  border-block: 1px solid var(--color-gray-200);
+}
+
+.employee-management__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding-block: 16px;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.employee-management__row:last-child {
+  border-bottom: 0;
+}
+
+.employee-management__identity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.employee-management__identity strong,
+.employee-management__identity a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-management__identity a {
+  width: fit-content;
+  max-width: 100%;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.employee-management__identity span {
+  color: var(--color-gray-600);
+  font-size: 12px;
+}
+
+.employee-management__role {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.employee-management__role select {
+  min-width: 118px;
+}
+
+.employee-management__remove {
+  min-width: 82px;
+}
+
+.employee-invitations {
+  display: grid;
+  gap: 24px;
+}
+
+.employee-invitations__heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.employee-invitations__heading h2 {
+  margin-bottom: 6px;
+}
+
+.employee-invitations__heading p,
+.employee-invitation-list__empty {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--color-gray-600);
+}
+
+.employee-invitations__expiry {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.employee-invitation-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px auto;
+  align-items: end;
+  gap: 12px;
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--color-gray-50);
+}
+
+.employee-invitation-form .button {
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+.employee-invitation-list {
+  display: grid;
+  border-block: 1px solid var(--color-gray-200);
+}
+
+.employee-invitation-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 104px;
+  align-items: center;
+  gap: 16px;
+  min-height: 72px;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.employee-invitation-row:last-child {
+  border-bottom: 0;
+}
+
+.employee-invitation-row__identity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.employee-invitation-row__identity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-invitation-row__identity span {
+  color: var(--color-gray-600);
+  font-size: 13px;
+}
+
+.invitation-state {
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.invitation-state--pending {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.invitation-state--accepted {
+  background: var(--color-success-container);
+  color: var(--color-on-success-container);
+}
+
+.invitation-state--expired {
+  background: var(--color-warning-container);
+  color: var(--color-on-warning-container);
+}
+
+.invitation-state--revoked {
+  background: var(--color-danger-container);
+  color: var(--color-on-danger-container);
+}
+
+.employee-invitation-row__action {
+  width: 104px;
+  padding-inline: 12px;
+}
+
+.employee-invitation-summary {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 24px;
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--color-gray-50);
+}
+
+.employee-invitation-summary > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.employee-invitation-summary dt {
+  color: var(--color-gray-600);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.employee-invitation-summary dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .identity-grid {
@@ -3521,6 +3922,8 @@ a {
   .page-shell { width: min(calc(100% - 32px), var(--shell-max)); padding-top: 32px; }
   .settings-card { padding: 22px; }
   .identity-grid { grid-template-columns: 1fr; }
+  .employee-invitation-form { grid-template-columns: minmax(0, 1fr) 150px; }
+  .employee-invitation-form .button { grid-column: 1 / -1; justify-self: start; }
   .logo-field { justify-items: start; }
   .logo-error { text-align: left; }
   .clients-toolbar { align-items: stretch; flex-direction: column; }
@@ -3571,6 +3974,22 @@ a {
 }
 
 @media (max-width: 560px) {
+  .employee-management__heading { align-items: flex-start; flex-direction: column; }
+  .employee-management__row { grid-template-columns: 1fr; gap: 12px; }
+  .employee-management__role { align-items: stretch; }
+  .employee-management__role select { flex: 1 1 auto; min-width: 0; }
+  .employee-management__remove { width: 100%; }
+  .employee-invitations__heading { align-items: flex-start; flex-direction: column; }
+  .employee-invitation-form { grid-template-columns: 1fr; }
+  .employee-invitation-form .button { width: 100%; }
+  .employee-invitation-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 12px;
+    padding-block: 14px;
+  }
+  .employee-invitation-row__action,
+  .employee-invitation-row__action-placeholder { grid-column: 1 / -1; }
+  .employee-invitation-row__action { width: 100%; }
   .clients-toolbar__actions { align-items: stretch; flex-direction: column; }
   .clients-toolbar__actions .button { width: 100%; }
   .import-templates,

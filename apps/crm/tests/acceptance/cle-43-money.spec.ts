@@ -41,10 +41,12 @@ test.describe("@CLE-43 company Money list", () => {
 
   test("refuses a cleaner account and never exposes the Money table", async ({ page }) => {
     await signIn(page, cleanerEmail);
-    await expect(page.locator(".form-error")).toContainText("for company admins");
+    await expect(page).toHaveURL(/\/en-AU\/no-company-access$/);
+    await expect(page.getByRole("heading", { name: "No company access" })).toBeVisible();
 
     await page.goto("/en-AU/money");
-    await expect(page).toHaveURL(/\/en-AU\/login\?error=not-authorised$/);
+    await expect(page).toHaveURL(/\/en-AU\/no-company-access$/);
+    await expect(page.getByRole("heading", { name: "No company access" })).toBeVisible();
     await expect(page.getByRole("table", { name: "Company pay ledger" })).toHaveCount(0);
   });
 });

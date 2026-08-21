@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  requireCompanyAdmin: vi.fn(),
+  requireCompanyOwner: vi.fn(),
   revalidatePath: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("@/lib/auth/session", () => ({
-  requireCompanyAdmin: mocks.requireCompanyAdmin,
+  requireCompanyOwner: mocks.requireCompanyOwner,
 }));
 
 import { updateCompanyIdentity } from "./company";
@@ -62,7 +62,7 @@ function arrangeSupabase(
     if (name === "update_company_identity") return updateIdentity(args);
     throw new Error(`Unexpected RPC: ${name}`);
   });
-  mocks.requireCompanyAdmin.mockResolvedValue({
+  mocks.requireCompanyOwner.mockResolvedValue({
     company: { id: companyId, logo_path: previousLogoPath },
     supabase: { storage: { from }, rpc },
   });

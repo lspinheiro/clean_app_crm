@@ -18,7 +18,7 @@ export default async function JobsPage() {
   const t = await getTranslations("Jobs");
   const common = await getTranslations("Common");
   const services = await getTranslations("Services");
-  const { supabase } = await requireCompanyAdmin();
+  const { company, supabase } = await requireCompanyAdmin();
   const [
     { data: jobRows, error: jobError },
     { data: assignmentRows, error: assignmentError },
@@ -29,15 +29,20 @@ export default async function JobsPage() {
     supabase
       .from("jobs")
       .select(
-        "id, site_id, service_id, scheduled_start, duration_minutes, cleaner_pay_cents, status, crew_size",
+        "id, site_id, service_id, scheduled_start, duration_minutes, cleaner_pay_cents, status, crew_size, sites!inner(clients!inner(company_id))",
       )
+      .eq("sites.clients.company_id", company.id)
       .order("scheduled_start"),
     supabase
       .from("job_assignments")
-      .select("job_id, unassigned_at")
+      .select("job_id, unassigned_at, jobs!inner(sites!inner(clients!inner(company_id)))")
+      .eq("jobs.sites.clients.company_id", company.id)
       .is("unassigned_at", null),
-    supabase.from("sites").select("id, client_id, name"),
-    supabase.from("clients").select("id, name"),
+    supabase
+      .from("sites")
+      .select("id, client_id, name, clients!inner(company_id)")
+      .eq("clients.company_id", company.id),
+    supabase.from("clients").select("id, name").eq("company_id", company.id),
     supabase.from("service_catalogue").select("id, name, slug"),
   ]);
   if (jobError) throw jobError;

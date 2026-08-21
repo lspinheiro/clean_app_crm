@@ -43,10 +43,6 @@ select lives_ok(
   'account creation accepts valid, absent, and unknown locale metadata'
 );
 
-update public.profiles
-set role = 'company_admin'
-where id = '15000000-0000-4000-8000-000000000001';
-
 select is(
   (select preferred_locale from public.profiles where id = '15000000-0000-4000-8000-000000000001'),
   'pt-BR'::public.app_locale,

@@ -108,7 +108,6 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
       .select("profile_id, profiles!inner(id, full_name)", { count: "exact" })
       .eq("company_id", company.id)
       .eq("status", "active")
-      .eq("profiles.role", "cleaner")
       .order("profile_id")
       .overrideTypes<MemberQueryRow[], { merge: false }>(),
     supabase

@@ -89,11 +89,12 @@ try {
         '{"provider":"email","providers":["email"]}',
         '{"full_name":"Recurring Race Cleaner"}', now(), now(), '', '', '', ''
       );
-    update public.profiles set role = 'company_admin' where id = '${adminId}';
     insert into public.companies (id, name, abn, status)
     values ('${companyId}', 'Recurring Race Company', '62626262626', 'approved');
+    insert into public.employee_memberships (company_id, profile_id, role)
+    values ('${companyId}', '${adminId}', 'owner');
     insert into public.company_members (company_id, profile_id)
-    values ('${companyId}', '${adminId}'), ('${companyId}', '${cleanerId}');
+    values ('${companyId}', '${cleanerId}');
     insert into public.clients (id, company_id, name)
     values ('${clientId}', '${companyId}', 'Recurring Race Client');
     insert into public.sites (id, client_id, name, address, suburb)
@@ -141,10 +142,8 @@ try {
       where client.company_id = '${companyId}'
         and not exists (
           select 1
-          from public.profiles profile
-          join public.company_members membership on membership.profile_id = profile.id
-          where profile.id = named.cleaner_id
-            and profile.role = 'cleaner'
+          from public.company_members membership
+          where membership.profile_id = named.cleaner_id
             and membership.company_id = client.company_id
             and membership.status = 'active'
         )

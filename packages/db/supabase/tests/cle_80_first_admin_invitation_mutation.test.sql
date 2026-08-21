@@ -57,9 +57,9 @@ values
   );
 
 select is(
-  (select role from public.profiles where id = '80000000-0000-4000-8000-000000000001'),
-  'cleaner'::public.app_role,
-  'untrusted Auth metadata cannot create a privileged profile'
+  (select count(*)::integer from public.employee_memberships where profile_id = '80000000-0000-4000-8000-000000000001'),
+  0,
+  'untrusted Auth metadata cannot create an employee membership'
 );
 
 create temporary table first_prepare on commit drop as
@@ -127,9 +127,9 @@ select public.accept_first_admin_invitation(
 reset role;
 
 select is(
-  (select role from public.profiles where id = '80000000-0000-4000-8000-000000000001'),
-  'company_admin'::public.app_role,
-  'acceptance promotes the trusted profile role'
+  (select role from public.employee_memberships where profile_id = '80000000-0000-4000-8000-000000000001'),
+  'owner'::public.employee_role,
+  'acceptance creates an owner employee membership'
 );
 select is(
   (select full_name from public.profiles where id = '80000000-0000-4000-8000-000000000001'),
@@ -154,11 +154,11 @@ select results_eq(
   'acceptance creates one approved company with canonical identity'
 );
 select results_eq(
-  $$select profile_id, status::text
-    from public.company_members
+  $$select profile_id, role::text, status::text
+    from public.employee_memberships
     where company_id = (select company_id from accepted_company)$$,
-  $$values ('80000000-0000-4000-8000-000000000001'::uuid, 'active'::text)$$,
-  'acceptance creates one active membership for the caller'
+  $$values ('80000000-0000-4000-8000-000000000001'::uuid, 'owner'::text, 'active'::text)$$,
+  'acceptance creates one active owner membership for the caller'
 );
 select results_eq(
   $$select accepted_by_profile_id, company_id, accepted_at is not null
@@ -191,7 +191,7 @@ select is(
   'a replay creates no duplicate company'
 );
 select is(
-  (select count(*)::integer from public.company_members where profile_id = '80000000-0000-4000-8000-000000000001'),
+  (select count(*)::integer from public.employee_memberships where profile_id = '80000000-0000-4000-8000-000000000001'),
   1,
   'a replay creates no duplicate membership'
 );
@@ -215,12 +215,12 @@ select throws_ok(
 reset role;
 
 select is(
-  (select role from public.profiles where id = '80000000-0000-4000-8000-000000000002'),
-  'cleaner'::public.app_role,
-  'a mismatched user keeps the least-privilege role'
+  (select count(*)::integer from public.employee_memberships where profile_id = '80000000-0000-4000-8000-000000000002'),
+  0,
+  'a mismatched user receives no employee membership'
 );
 select is(
-  (select count(*)::integer from public.company_members where profile_id = '80000000-0000-4000-8000-000000000002'),
+  (select count(*)::integer from public.employee_memberships where profile_id = '80000000-0000-4000-8000-000000000002'),
   0,
   'a mismatched user receives no membership'
 );
@@ -247,9 +247,9 @@ select throws_ok(
 reset role;
 
 select is(
-  (select role from public.profiles where id = '80000000-0000-4000-8000-000000000003'),
-  'cleaner'::public.app_role,
-  'an expired invitation leaves the role unchanged'
+  (select count(*)::integer from public.employee_memberships where profile_id = '80000000-0000-4000-8000-000000000003'),
+  0,
+  'an expired invitation creates no employee membership'
 );
 
 create temporary table renewed_expired_prepare on commit drop as
@@ -295,7 +295,7 @@ select throws_ok(
 reset role;
 
 select is(
-  (select count(*)::integer from public.company_members where profile_id = '80000000-0000-4000-8000-000000000004'),
+  (select count(*)::integer from public.employee_memberships where profile_id = '80000000-0000-4000-8000-000000000004'),
   0,
   'a revoked invitation creates no membership'
 );
@@ -361,12 +361,12 @@ select throws_ok(
 reset role;
 
 select is(
-  (select role from public.profiles where id = '80000000-0000-4000-8000-000000000005'),
-  'cleaner'::public.app_role,
-  'a failed acceptance rolls the privileged role back'
+  (select count(*)::integer from public.employee_memberships where profile_id = '80000000-0000-4000-8000-000000000005'),
+  0,
+  'a failed acceptance creates no employee membership'
 );
 select is(
-  (select count(*)::integer from public.company_members where profile_id = '80000000-0000-4000-8000-000000000005'),
+  (select count(*)::integer from public.employee_memberships where profile_id = '80000000-0000-4000-8000-000000000005'),
   0,
   'a failed acceptance creates no membership'
 );

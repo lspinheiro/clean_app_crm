@@ -92,11 +92,12 @@ try {
         '{"provider":"email","providers":["email"]}',
         '{"full_name":"Generation Race Cleaner"}', now(), now(), '', '', '', ''
       );
-    update public.profiles set role = 'company_admin' where id = '${adminId}';
     insert into public.companies (id, name, abn, status)
     values ('${companyId}', 'Generation Race Company', '63636363636', 'approved');
+    insert into public.employee_memberships (company_id, profile_id, role)
+    values ('${companyId}', '${adminId}', 'owner');
     insert into public.company_members (company_id, profile_id)
-    values ('${companyId}', '${adminId}'), ('${companyId}', '${cleanerId}');
+    values ('${companyId}', '${cleanerId}');
     insert into public.clients (id, company_id, name)
     values ('${clientId}', '${companyId}', 'Generation Race Client');
     insert into public.sites (id, client_id, name, address, suburb)

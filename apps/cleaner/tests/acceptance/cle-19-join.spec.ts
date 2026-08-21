@@ -7,7 +7,7 @@ const activeCode = "CLEAN1";
 const supersededCode = "ZOLD01";
 const unknownCode = "NOPE12";
 const companyName = "Coastal Demo Cleaning";
-const adminEmail = "admin@clean-app.example.test";
+const noPoolMembershipEmail = "owner.harbour@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 function newCleanerEmail() {
@@ -78,8 +78,8 @@ test.describe("@CLE-19 cleaner app route guard", () => {
     await expect(page.getByRole("heading", { name: "Open jobs" })).toHaveCount(0);
   });
 
-  test("a company-admin account is refused without exposing the board", async ({ page }) => {
-    await signIn(page, adminEmail, demoPassword);
+  test("an account without a pool membership is refused without exposing the board", async ({ page }) => {
+    await signIn(page, noPoolMembershipEmail, demoPassword);
 
     await expect(page.locator(".form-error")).toContainText("for cleaners");
     await expect(page.getByRole("heading", { name: "Open jobs" })).toHaveCount(0);

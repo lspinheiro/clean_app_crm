@@ -17,7 +17,7 @@ import CleanerLayout from "./layout";
 beforeEach(() => {
   mocks.useCleaner.mockReturnValue({
     status: "allowed",
-    profile: { id: "cleaner-1", role: "cleaner", full_name: "Ana Souza", suburb: "Robina" },
+    profile: { id: "cleaner-1", full_name: "Ana Souza", suburb: "Robina" },
   });
   mocks.usePathname.mockReturnValue("/board");
 });

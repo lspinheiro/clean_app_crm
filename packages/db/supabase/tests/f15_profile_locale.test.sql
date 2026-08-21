@@ -27,7 +27,7 @@ select has_column(
   'public',
   'profiles',
   'preferred_locale',
-  'profiles can persist one preferred locale for both application roles'
+  'profiles can persist one preferred locale across application surfaces'
 );
 
 select is(

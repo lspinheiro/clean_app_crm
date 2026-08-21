@@ -302,9 +302,6 @@ insert into auth.users (
     '{"provider":"email","providers":["email"]}',
     '{"full_name":"CLE-49 Direct Cleaner"}', now(), now(), '', '', '', ''
   );
-update public.profiles
-set role = 'company_admin'
-where id = '49000000-0000-4000-8000-000000000001';
 insert into public.companies (id, name, abn, status)
 values (
   '49000000-0000-4000-8000-000000000010',
@@ -312,12 +309,14 @@ values (
   '49999999999',
   'approved'
 );
+insert into public.employee_memberships (company_id, profile_id, role)
+values (
+  '49000000-0000-4000-8000-000000000010',
+  '49000000-0000-4000-8000-000000000001',
+  'owner'
+);
 insert into public.company_members (company_id, profile_id)
 values
-  (
-    '49000000-0000-4000-8000-000000000010',
-    '49000000-0000-4000-8000-000000000001'
-  ),
   (
     '49000000-0000-4000-8000-000000000010',
     '49000000-0000-4000-8000-000000000002'
@@ -1263,9 +1262,10 @@ select lives_ok(
   'the lifecycle cleaner is assigned before role removal'
 );
 reset role;
-update public.profiles
-set role = 'company_admin'
-where id = '49000000-0000-4000-8000-000000000002';
+update public.company_members
+set status = 'removed'
+where company_id = '10000000-0000-4000-8000-000000000010'
+  and profile_id = '49000000-0000-4000-8000-000000000002';
 select results_eq(
   $$select
       (select status::text
@@ -1280,11 +1280,12 @@ select results_eq(
        where job_id = '49000000-0000-4000-8000-000000000509'
          and cleaner_id = '49000000-0000-4000-8000-000000000002')$$,
   $$values ('posted'::text, 0, 'not_selected'::text)$$,
-  'role removal reopens the slot and resolves the former cleaner application'
+  'pool removal reopens the slot and resolves the former cleaner application'
 );
-update public.profiles
-set role = 'cleaner'
-where id = '49000000-0000-4000-8000-000000000002';
+update public.company_members
+set status = 'active'
+where company_id = '10000000-0000-4000-8000-000000000010'
+  and profile_id = '49000000-0000-4000-8000-000000000002';
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '49000000-0000-4000-8000-000000000002', true);

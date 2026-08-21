@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@clean-app/db";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { z } from "zod";
 
 import { getSupabaseBrowserEnv } from "./env";
 
@@ -23,4 +25,29 @@ export async function createClient() {
       },
     },
   });
+}
+
+export function createAdminClient() {
+  const configuration = z.object({
+    secretKey: z.string().min(1),
+    url: z.url(),
+  }).safeParse({
+    secretKey: process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY,
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  });
+  if (!configuration.success) {
+    throw new Error("Supabase Admin is not configured.");
+  }
+
+  return createSupabaseClient<Database>(
+    configuration.data.url,
+    configuration.data.secretKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false,
+      },
+    },
+  );
 }

@@ -19,7 +19,12 @@ import CrmLayout from "./layout";
 describe("CRM layout accessibility", () => {
   it("puts the skip link before the site header and targets main content", async () => {
     mocks.requireCompanyAdmin.mockResolvedValue({
-      company: { name: "Coastal Demo Cleaning", logo_path: null },
+      company: { id: "company-1", name: "Coastal Demo Cleaning", logo_path: null },
+      membership: { company_id: "company-1", role: "owner" },
+      memberships: [
+        { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "owner" },
+      ],
+      profile: { full_name: "Taylor Admin" },
       supabase: {},
     });
     mocks.getCompanyLogoUrl.mockResolvedValue(null);

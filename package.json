@@ -17,7 +17,7 @@
     "test:e2e": "pnpm --workspace-concurrency=1 --filter \"./apps/*\" run test:e2e",
     "lint": "pnpm --filter \"./apps/*\" run lint",
     "typecheck": "pnpm --filter \"./apps/*\" run typecheck",
-    "build": "pnpm --filter \"./apps/*\" run build",
+    "build": "pnpm --reporter=append-only --workspace-concurrency=1 --filter \"./apps/*\" run build",
     "test:dev-setup": "node --test scripts/run-local-dev.test.mjs",
     "test:vocabulary": "node scripts/check-vocabulary.mjs",
     "check": "pnpm test:vocabulary && pnpm test:dev-setup && pnpm test && pnpm db:test && pnpm lint && pnpm typecheck && pnpm build"

@@ -1,28 +1,50 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(13);
 
-select is((select count(*)::integer from public.companies), 1, 'seed has exactly one company');
+select is((select count(*)::integer from public.companies), 2, 'seed has exactly two companies');
 select is(
   (select count(*)::integer from public.companies where status = 'approved' and abn ~ '^[0-9]{11}$'),
-  1,
-  'seeded company is approved with an 11-digit ABN'
+  2,
+  'seeded companies are approved with 11-digit ABNs'
 );
 select is(
-  (select count(*)::integer from public.profiles where role = 'company_admin'),
-  1,
-  'seed has exactly one company admin'
+  (select count(*)::integer from public.employee_memberships where role = 'owner' and status = 'active'),
+  2,
+  'seed has exactly one active owner for each company'
 );
 select cmp_ok(
-  (select count(*)::integer from public.company_members cm join public.profiles p on p.id = cm.profile_id where p.role = 'cleaner' and cm.status = 'active'),
+  (select count(*)::integer from public.company_members where status = 'active'),
   '>=',
-  3,
-  'seed has at least three active demo cleaners'
+  4,
+  'seed has at least four active demo pool memberships'
 );
 select is(
   (select count(*)::integer from auth.users where email like '%@clean-app.example.test'),
-  5,
+  7,
   'seed accounts are deterministic and explicitly local-only'
+);
+select results_eq(
+  $$select company.name, profile.email
+    from public.employee_memberships membership
+    join public.companies company on company.id = membership.company_id
+    join public.profiles profile on profile.id = membership.profile_id
+    where membership.role = 'owner' and membership.status = 'active'
+    order by company.name$$,
+  $$values
+    ('Coastal Demo Cleaning'::text, 'admin@clean-app.example.test'::text),
+    ('Harbour Demo Cleaning'::text, 'owner.harbour@clean-app.example.test'::text)$$,
+  'each demo company has its dedicated owner account'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.employee_memberships membership
+    join public.profiles profile on profile.id = membership.profile_id
+    where profile.email = 'cleaner.one@clean-app.example.test'
+  ),
+  0,
+  'Demo Cleaner One has no employee membership'
 );
 select ok(
   (

@@ -31,14 +31,14 @@ test("@CLE-14 creates, edits, toggles, and reloads a crew schedule", async ({ pa
   await createDialog.getByLabel("Estimated hours").fill("2.5");
   await createDialog.getByLabel("Cleaner pay per slot (AUD)").fill("120.50");
   await createDialog.getByLabel("Crew size").fill("2");
-  await createDialog.getByLabel("Slot 1").selectOption({ label: "Demo Cleaner One" });
+  await createDialog.getByLabel("Slot 1").selectOption({ label: "Demo Cleaner Three" });
   await createDialog.getByRole("button", { name: "Add schedule" }).click();
 
   const createdRow = recurring
     .getByRole("listitem")
     .filter({ hasText: "Every second Sat" })
     .last();
-  await expect(createdRow).toContainText("Demo Cleaner One + 1 open");
+  await expect(createdRow).toContainText("Demo Cleaner Three + 1 open");
   await expect(createdRow).toContainText("$120.50/slot");
   await createdRow.getByRole("button", { name: "Edit Every second Sat" }).click();
 

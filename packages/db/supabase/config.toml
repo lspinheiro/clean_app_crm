@@ -34,12 +34,19 @@ additional_redirect_urls = [
   "http://localhost:3000/pt-BR/auth/confirm",
   "http://127.0.0.1:3000/en-AU/auth/confirm",
   "http://127.0.0.1:3000/pt-BR/auth/confirm",
+  "http://127.0.0.1:3100/en-AU/auth/confirm",
+  "http://127.0.0.1:3100/pt-BR/auth/confirm",
   "http://127.0.0.1:3001",
   "http://localhost:3001",
 ]
 jwt_expiry = 3600
 # CL-1 registers cleaners from the invite link, so the cleaner app needs sign-up.
 enable_signup = true
+
+[auth.email]
+# Employee invitations have a fixed seven-day application lifetime. Auth invitation tokens use
+# the same ceiling; application RPCs remain authoritative for founder and employee expiry.
+otp_expiry = 604800
 
 [auth.email.template.invite]
 subject = "The Clean Crew company invitation / Convite da empresa"

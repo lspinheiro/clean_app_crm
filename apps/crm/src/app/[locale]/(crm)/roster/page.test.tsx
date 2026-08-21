@@ -240,10 +240,6 @@ describe("CLE-35 roster data integrity", () => {
       { count: "exact" },
     );
     expect(harness.query("company_members").eq).toHaveBeenCalledWith("status", "active");
-    expect(harness.query("company_members").eq).toHaveBeenCalledWith(
-      "profiles.role",
-      "cleaner",
-    );
     expect(harness.query("vacancies").select).toHaveBeenCalledWith(
       "job_id, site_id, site_name, scheduled_start, crew_slot, crew_size",
       { count: "exact" },

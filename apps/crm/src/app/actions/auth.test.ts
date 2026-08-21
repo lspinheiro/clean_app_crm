@@ -9,9 +9,12 @@ const mocks = vi.hoisted(() => ({
   eq: vi.fn(),
   from: vi.fn(),
   maybeSingle: vi.fn(),
+  order: vi.fn(),
+  limit: vi.fn(),
   rpc: vi.fn(),
   select: vi.fn(),
   signInWithPassword: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -33,13 +36,32 @@ describe("signInAction locale persistence", () => {
       set: mocks.cookieSet,
     });
     mocks.cookieGet.mockReturnValue({ value: "en-AU" });
-    mocks.maybeSingle.mockResolvedValue({
-      data: { id: "user-1", preferred_locale: "en-AU", role: "company_admin" },
-      error: null,
-    });
-    mocks.eq.mockReturnValue({ maybeSingle: mocks.maybeSingle });
-    mocks.select.mockReturnValue({ eq: mocks.eq });
-    mocks.from.mockReturnValue({ select: mocks.select });
+    mocks.maybeSingle
+      .mockResolvedValueOnce({
+        data: { id: "user-1", preferred_locale: "en-AU" },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          company_id: "company-1",
+          profile_id: "user-1",
+          role: "owner",
+          status: "active",
+        },
+        error: null,
+      });
+    const query = {
+      select: mocks.select,
+      eq: mocks.eq,
+      order: mocks.order,
+      limit: mocks.limit,
+      maybeSingle: mocks.maybeSingle,
+    };
+    mocks.eq.mockReturnValue(query);
+    mocks.order.mockReturnValue(query);
+    mocks.limit.mockReturnValue(query);
+    mocks.select.mockReturnValue(query);
+    mocks.from.mockReturnValue(query);
     mocks.signInWithPassword.mockResolvedValue({
       data: { user: { id: "user-1" } },
       error: null,
@@ -47,6 +69,7 @@ describe("signInAction locale persistence", () => {
     mocks.createClient.mockResolvedValue({
       auth: {
         signInWithPassword: mocks.signInWithPassword,
+        signOut: mocks.signOut,
       },
       from: mocks.from,
       rpc: mocks.rpc,
@@ -64,6 +87,7 @@ describe("signInAction locale persistence", () => {
     );
 
     expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.from).toHaveBeenCalledWith("employee_memberships");
     expect(mocks.cookieDelete).not.toHaveBeenCalled();
     expect(mocks.cookieSet).toHaveBeenCalledWith("NEXT_LOCALE", "en-AU", {
       maxAge: 60 * 60 * 24 * 365,
@@ -83,5 +107,57 @@ describe("signInAction locale persistence", () => {
       },
     });
     expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
+  it("keeps a membership-less account signed in and sends it to the no-access screen", async () => {
+    mocks.maybeSingle
+      .mockReset()
+      .mockResolvedValueOnce({
+        data: { id: "user-1", preferred_locale: "en-AU" },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+    mocks.signOut.mockResolvedValue({ error: null });
+    const formData = new FormData();
+    formData.set("email", "cleaner@example.com");
+    formData.set("password", "local-demo-only");
+
+    await expect(signInAction({ error: null, fieldErrors: {} }, formData)).rejects.toThrow(
+      "NEXT_REDIRECT:/en-AU/no-company-access",
+    );
+
+    expect(mocks.signOut).not.toHaveBeenCalled();
+  });
+
+  it("returns an existing account to one employee invitation after sign-in", async () => {
+    mocks.maybeSingle
+      .mockReset()
+      .mockResolvedValueOnce({
+        data: { id: "user-1", preferred_locale: "en-AU" },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+    const formData = new FormData();
+    formData.set("email", "cleaner@example.com");
+    formData.set("password", "local-demo-only");
+    formData.set(
+      "returnTo",
+      "/invite/accept?employeeInvitation=83000000-0000-4000-8000-000000000101",
+    );
+
+    await expect(signInAction({ error: null, fieldErrors: {} }, formData)).rejects.toThrow(
+      "NEXT_REDIRECT:/en-AU/invite/accept?employeeInvitation=83000000-0000-4000-8000-000000000101",
+    );
+  });
+
+  it("ignores an external return target after sign-in", async () => {
+    const formData = new FormData();
+    formData.set("email", "admin@example.com");
+    formData.set("password", "local-demo-only");
+    formData.set("returnTo", "https://attacker.example.test/collect-session");
+
+    await expect(signInAction({ error: null, fieldErrors: {} }, formData)).rejects.toThrow(
+      "NEXT_REDIRECT:/en-AU/roster",
+    );
   });
 });

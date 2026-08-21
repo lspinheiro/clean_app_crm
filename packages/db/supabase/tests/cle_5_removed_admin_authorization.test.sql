@@ -2,7 +2,15 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(13);
 
-update public.company_members
+insert into public.employee_memberships (company_id, profile_id, role)
+values (
+  '10000000-0000-4000-8000-000000000010',
+  '10000000-0000-4000-8000-000000000002',
+  'owner'
+)
+on conflict (company_id, profile_id) do update set role = excluded.role, status = 'active';
+
+update public.employee_memberships
 set status = 'removed'
 where company_id = '10000000-0000-4000-8000-000000000010'
   and profile_id = '10000000-0000-4000-8000-000000000001';

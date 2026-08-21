@@ -73,16 +73,14 @@ values (
 
 insert into public.companies (id, name, abn, status)
 values ('79000000-0000-4000-8000-000000000010', 'Other Tenant', '79000000001', 'approved');
-update public.profiles
-set role = 'company_admin'
-where id = '10000000-0000-4000-8000-000000000005';
-insert into public.company_members (company_id, profile_id, status)
+insert into public.employee_memberships (company_id, profile_id, role, status)
 values (
   '79000000-0000-4000-8000-000000000010',
   '10000000-0000-4000-8000-000000000005',
+  'owner',
   'active'
 )
-on conflict (company_id, profile_id) do update set status = 'active';
+on conflict (company_id, profile_id) do update set role = 'owner', status = 'active';
 
 -- Confirmed send and idempotency ------------------------------------------
 
@@ -130,12 +128,12 @@ select is(
   'a repeated confirmation does not create another batch'
 );
 reset role;
-select is((select count(*)::integer from auth.users), 5,
+select is((select count(*)::integer from auth.users), 7,
   'preparing a send list does not create an Auth user');
 select is(
   (select count(*)::integer from public.company_members
    where company_id = '10000000-0000-4000-8000-000000000010'),
-  5,
+  4,
   'preparing a send list does not create a company membership'
 );
 set local role authenticated;

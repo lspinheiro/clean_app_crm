@@ -18,14 +18,13 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
     expect(css).toContain("--color-danger: #e11900");
   });
 
-  it("keeps the sanctioned radii and the two Trust Blue shadow levels", async () => {
+  it("keeps the implemented radii and the two canonical Trust Blue shadow levels", async () => {
     const css = await readFile(globalsPath, "utf8");
     const contract = await readFile(contractPath, "utf8");
 
     expect(css).toMatch(/\.field input\s*\{[^}]*border-radius: 8px;/);
     expect(css).toMatch(/\.invite-card\s*\{[^}]*border-radius: 12px;/);
     expect(css).toMatch(/\.button\s*\{[^}]*border-radius: 999px;/);
-
     // The Trust Blue redesign replaced the single floating shadow with two levels. The CRM
     // moved at the time; this app did not, and the mismatch is what the contract assertion
     // below is for. Both values are quoted from DESIGN.md, which is canonical for the code,
@@ -36,6 +35,9 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
     );
     expect(css).not.toContain("--shadow-floating");
     expect(contract).toContain("0 1px 2px 0 rgb(0 0 0 / 0.05)");
+    expect(contract).toContain(
+      "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 /",
+    );
   });
 
   it("meets the 44px touch floor and the 48px input height", async () => {

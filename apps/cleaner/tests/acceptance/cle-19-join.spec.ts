@@ -7,7 +7,8 @@ const activeCode = "CLEAN1";
 const supersededCode = "ZOLD01";
 const unknownCode = "NOPE12";
 const companyName = "Coastal Demo Cleaning";
-const noPoolMembershipEmail = "owner.harbour@clean-app.example.test";
+const sameCompanyEmployeeEmail = "owner.harbour@clean-app.example.test";
+const noPoolMembershipEmail = "new.employee@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 function newCleanerEmail() {
@@ -45,6 +46,37 @@ test.describe("@CLE-19 joining a pool from the invite link", () => {
     await expect(page).toHaveURL(/\/board$/);
     await expect(page.getByRole("heading", { name: "Open jobs", level: 1 })).toBeVisible();
     await expect(page.getByText("Ana Silva · Southport")).toBeVisible();
+  });
+
+  test("an existing employee signs in and joins the same company's pool", async ({ page }) => {
+    await page.goto(`/join?code=${activeCode}`);
+    await page.getByRole("link", { name: "Sign in to join" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/login\\?code=${activeCode}$`));
+    await page.getByLabel("Email").fill(sameCompanyEmployeeEmail);
+    await page.getByLabel("Password").fill(demoPassword);
+    await page.getByRole("button", { name: "Sign in" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/join\\?code=${activeCode}$`));
+    await expect(page.getByText(sameCompanyEmployeeEmail)).toBeVisible();
+    await expect(page.getByLabel("Full name")).toHaveValue("Harbour Demo Owner");
+    await page.getByLabel("Phone").fill("0400 000 606");
+    await page.getByLabel("Suburb").fill("Robina");
+    await page.getByRole("button", { name: "Join the pool" }).click();
+
+    await expect(page).toHaveURL(/\/board$/);
+    await expect(page.getByRole("heading", { name: "Open jobs", level: 1 })).toBeVisible();
+  });
+
+  test("invalid existing-account credentials preserve the invitation", async ({ page }) => {
+    await page.goto(`/join?code=${activeCode}`);
+    await page.getByRole("link", { name: "Sign in to join" }).click();
+    await page.getByLabel("Email").fill(sameCompanyEmployeeEmail);
+    await page.getByLabel("Password").fill("not-the-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/login\\?code=${activeCode}$`));
+    await expect(page.locator(".form-error")).toContainText("incorrect");
   });
 
   test("explains a superseded link instead of failing", async ({ page }) => {

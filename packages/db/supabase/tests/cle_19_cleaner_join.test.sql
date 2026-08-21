@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(32);
 
 -- Shape and authorisation --------------------------------------------------
 
@@ -238,13 +238,30 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
-select throws_ok(
+select lives_ok(
   $$select public.join_company_pool('CLEAN1', 'Demo Company Admin', '0400 000 222', 'Southport')$$,
-  '42501',
-  'Cleaner access required',
-  'a company admin cannot join a cleaner pool'
+  'an employee can also join the cleaner pool for the same company'
 );
 reset role;
+select results_eq(
+  $$select
+      exists (
+        select 1
+        from public.employee_memberships
+        where company_id = '10000000-0000-4000-8000-000000000010'
+          and profile_id = '10000000-0000-4000-8000-000000000001'
+          and status = 'active'
+      ),
+      exists (
+        select 1
+        from public.company_members
+        where company_id = '10000000-0000-4000-8000-000000000010'
+          and profile_id = '10000000-0000-4000-8000-000000000001'
+          and status = 'active'
+      )$$,
+  $$values (true, true)$$,
+  'same-company employee and cleaner memberships coexist for one account'
+);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000005', true);

@@ -287,6 +287,8 @@ Changed RPCs:
 - `join_company_pool` locks the invite row `for update` (delivered), and now also
   rejects `limit_reached` (the row lock serialises two joins racing for the last
   place — concurrency harness required) and stamps `invite_id` on the new membership.
+  Employee and cleaner memberships are independent: an authenticated employee may join
+  the same company's pool, while a removed pool membership remains blocked from rejoining.
 
 ## Data model — cleaner invitation e-mail batches (S8, S30)
 

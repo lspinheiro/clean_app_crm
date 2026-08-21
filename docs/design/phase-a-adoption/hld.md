@@ -29,8 +29,9 @@ changes. Delivered:
 - Pool invite: one active 6-character code per company with rotate-in-place — the model
   PRD decision #8 rejected. No registration cap, no per-link attribution, no offer
   details on the link.
-- Cleaner join: email + password only through `join_company_pool`; no Google OAuth
-  (PRD decision #9 not yet built).
+- Cleaner join: a new account signs up with e-mail + password, while an existing account
+  signs in and returns to the invitation; both paths complete through `join_company_pool`.
+  No Google OAuth (PRD decision #9 not yet built).
 - Pay: a single `cleaner_pay_cents` amount per slot on sites, recurring assignments, and
   jobs — no pay basis (PRD decision #10 not yet built).
 - Notifications are rows in a `notifications` table only; web-push, `product_events`

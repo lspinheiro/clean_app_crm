@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
 
+import { normaliseInviteCode } from "@/features/join/invite";
 import { evaluateCleanerAccess } from "@/lib/auth/access";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
@@ -18,6 +19,7 @@ export function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const inviteCode = normaliseInviteCode(searchParams.get("code") ?? "");
   const notAuthorised = searchParams.get("error") === "not-authorised";
 
   async function signIn(formData: FormData) {
@@ -39,6 +41,11 @@ export function LoginScreen() {
     if (signInError || !data.user) {
       setError("Email or password is incorrect.");
       setPending(false);
+      return;
+    }
+
+    if (inviteCode) {
+      router.replace(`/join?code=${encodeURIComponent(inviteCode)}`);
       return;
     }
 
@@ -71,9 +78,13 @@ export function LoginScreen() {
     <>
       <div>
         <h1 className="screen-title">Sign in</h1>
-        <p className="screen-lead">Use the email and password you signed up with.</p>
+        <p className="screen-lead">
+          {inviteCode
+            ? "Use your existing account. We will return you to this invitation."
+            : "Use the email and password you signed up with."}
+        </p>
       </div>
-      {notAuthorised ? (
+      {notAuthorised && !inviteCode ? (
         <p className="form-error" role="alert">
           Sign in to see your jobs. This app is for cleaners.
         </p>

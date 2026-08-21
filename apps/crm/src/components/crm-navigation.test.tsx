@@ -15,7 +15,7 @@ const expectedLinks = [
   ["Roster", "/roster"],
   ["Jobs", "/jobs"],
   ["Clients", "/clients"],
-  ["Cleaners", "/cleaners"],
+  ["Staff", "/cleaners"],
   ["Money", "/money"],
 ] as const;
 
@@ -38,7 +38,7 @@ describe("CLE-5 CRM shell navigation", () => {
     ["Roster", "/roster"],
     ["Jobs", "/jobs/job-1"],
     ["Clients", "/clients/client-1"],
-    ["Cleaners", "/cleaners"],
+    ["Staff", "/cleaners"],
     ["Money", "/money"],
   ])("marks %s as current throughout its route section", (label, pathname) => {
     mockUsePathname.mockReturnValue(pathname);

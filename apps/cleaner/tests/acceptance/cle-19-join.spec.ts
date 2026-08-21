@@ -27,14 +27,14 @@ test.describe("@CLE-19 joining a company from the invite link", () => {
     await page.goto(`/join?code=${activeCode}`);
 
     await expect(page.getByText(companyName)).toBeVisible();
-    await expect(page.getByText(/\d+ cleaners? already works? with them\./)).toBeVisible();
+    await expect(page.getByText(/\d+ cleaners? (?:is|are) already on their staff\./)).toBeVisible();
 
     await page.getByLabel("Full name").fill("Ana Silva");
     await page.getByLabel("Email").fill(newCleanerEmail());
     await page.getByLabel("Password").fill(demoPassword);
     await page.getByLabel("Phone").fill("0400 000 111");
     await page.getByLabel("Suburb").fill("Southport");
-    await page.getByRole("button", { name: "Join the company" }).click();
+    await page.getByRole("button", { name: "Join the Cleaner staff" }).click();
 
     await expect(page).toHaveURL(/\/board$/);
     await expect(page.getByRole("heading", { name: "Open jobs", level: 1 })).toBeVisible();
@@ -48,7 +48,7 @@ test.describe("@CLE-19 joining a company from the invite link", () => {
     await expect(page.getByText("Ana Silva · Southport")).toBeVisible();
   });
 
-  test("an existing employee signs in and joins the same company's pool", async ({ page }) => {
+  test("an existing employee signs in and joins the same company's Cleaner staff", async ({ page }) => {
     await page.goto(`/join?code=${activeCode}`);
     await page.getByRole("link", { name: "Sign in to join" }).click();
 
@@ -62,7 +62,7 @@ test.describe("@CLE-19 joining a company from the invite link", () => {
     await expect(page.getByLabel("Full name")).toHaveValue("Harbour Demo Owner");
     await page.getByLabel("Phone").fill("0400 000 606");
     await page.getByLabel("Suburb").fill("Robina");
-    await page.getByRole("button", { name: "Join the pool" }).click();
+    await page.getByRole("button", { name: "Join the Cleaner staff" }).click();
 
     await expect(page).toHaveURL(/\/board$/);
     await expect(page.getByRole("heading", { name: "Open jobs", level: 1 })).toBeVisible();

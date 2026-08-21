@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Download, Mail, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, ChevronDown, Download, Mail, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { type ChangeEvent, useMemo, useState } from "react";
 import { z } from "zod";
@@ -105,6 +105,7 @@ export function CleanerEmailInvite({
     && !exceedsRecipientLimit
     && !submitting,
   );
+  const previouslyQueued = result ? result.accepted.length - result.newlyQueued : 0;
 
   function csvMessage(key: CleanerInviteEmailCsvMessageKey) {
     return t(`emailCsv.${key}`);
@@ -212,10 +213,11 @@ export function CleanerEmailInvite({
     <section aria-label={t("emailSectionTitle")} className="cleaners-email-invite">
       <div className="cleaners-email-invite__entry">
         <div>
-          <strong>{t("emailSectionTitle")}</strong>
+          <h3>{t("emailSectionTitle")}</h3>
           <p>{t("emailDescription")}</p>
         </div>
         <button
+          aria-controls="cleaner-email-invite-flow"
           aria-expanded={expanded}
           className="button button--secondary"
           disabled={!inviteId || !joinUrl}
@@ -223,7 +225,12 @@ export function CleanerEmailInvite({
           type="button"
         >
           <Mail aria-hidden="true" size={17} />
-          {t("emailInviteAction")}
+          {expanded ? t("emailHideAction") : t("emailInviteAction")}
+          <ChevronDown
+            aria-hidden="true"
+            className={expanded ? "cleaners-email-invite__chevron cleaners-email-invite__chevron--open" : "cleaners-email-invite__chevron"}
+            size={16}
+          />
         </button>
       </div>
 
@@ -231,6 +238,7 @@ export function CleanerEmailInvite({
         <form
           aria-label={t("emailRecipientsForm")}
           className="cleaners-email-invite__flow"
+          id="cleaner-email-invite-flow"
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
@@ -426,9 +434,19 @@ export function CleanerEmailInvite({
             <section aria-label={t("emailResults")} className="cleaners-email-invite__results">
               <div>
                 <CheckCircle2 aria-hidden="true" size={19} />
-                <strong>{t("emailAcceptedCount", { count: result.accepted.length })}</strong>
+                <strong>
+                  {result.reusedExisting
+                    ? t("emailNoNewSend")
+                    : t("emailQueuedNowCount", { count: result.newlyQueued })}
+                </strong>
+                {previouslyQueued > 0 ? (
+                  <span>{t("emailPreviouslyQueuedCount", { count: previouslyQueued })}</span>
+                ) : null}
                 <span>{t("emailFailedCount", { count: result.failed.length })}</span>
               </div>
+              <p className="cleaners-email-invite__provider-note">
+                {t("emailProviderDisclaimer")}
+              </p>
               {result.failed.length ? (
                 <>
                   <ul>

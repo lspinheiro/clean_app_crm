@@ -384,8 +384,15 @@ a {
   color: var(--color-text-secondary);
 }
 
+.button--secondary:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-container);
+  color: var(--color-primary);
+}
+
 .button--danger {
   border-color: var(--color-on-danger-container);
+  background: var(--color-surface-card);
   color: var(--color-on-danger-container);
 }
 
@@ -1964,6 +1971,67 @@ a {
   margin: 8px 0 0;
 }
 
+.cleaners-workspace {
+  display: grid;
+  gap: 18px;
+}
+
+.cleaners-invite-status {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 10px;
+  padding: 8px 10px 8px 16px;
+  background: var(--color-surface-card);
+}
+
+.cleaners-invite-status__state,
+.cleaners-invite-status__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cleaners-invite-status__state strong {
+  font-size: 13px;
+}
+
+.cleaners-invite-status__state code {
+  border: 1px solid var(--color-gray-200);
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: var(--color-gray-50);
+  color: var(--color-gray-700);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.cleaners-invite-status__dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--color-gray-400);
+}
+
+.cleaners-invite-status__dot--active {
+  background: var(--color-success);
+  box-shadow: 0 0 0 4px var(--color-success-container);
+}
+
+.cleaners-invite-status__actions .text-action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 10px;
+}
+
 .cleaners-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
@@ -1988,6 +2056,44 @@ a {
 .cleaners-card-heading h2,
 .cleaners-card-heading p {
   margin: 0;
+}
+
+.cleaners-message-preview {
+  margin-top: 22px;
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+  padding: 18px 20px;
+  background: var(--color-primary-container);
+}
+
+.cleaners-message-preview--empty {
+  border-color: var(--color-gray-200);
+  background: var(--color-gray-50);
+}
+
+.cleaners-message-preview__label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-gray-600);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cleaners-message-preview p {
+  margin: 0;
+  color: var(--color-text-main);
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.cleaners-share-hint {
+  margin: 16px 0 0;
+  color: var(--color-gray-600);
+  font-size: 12px;
 }
 
 .cleaners-card-heading h2 {
@@ -2016,6 +2122,27 @@ a {
   border: 1px solid var(--color-gray-200);
   border-radius: 10px;
   background: var(--color-gray-50);
+}
+
+.cleaners-message-preview + .invite-display {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 14px;
+}
+
+.cleaners-message-preview + .invite-display .invite-url-row {
+  border-right: 1px solid var(--color-gray-200);
+  border-bottom: 0;
+}
+
+.cleaners-message-preview + .invite-display .invite-code-block {
+  justify-items: start;
+  padding: 18px 20px;
+}
+
+.cleaners-message-preview + .invite-display .invite-code-block strong {
+  font-size: 18px;
+  letter-spacing: 0.12em;
 }
 
 .invite-url-row,
@@ -2103,6 +2230,49 @@ a {
   margin-top: 18px;
 }
 
+.cleaners-invite-details__replacement {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  border-top: 1px solid var(--color-gray-200);
+  padding-top: 16px;
+}
+
+.cleaners-invite-details__replacement p {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--color-gray-600);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cleaners-replace-dialog > div {
+  display: grid;
+  gap: 12px;
+  padding: 26px;
+}
+
+.cleaners-replace-dialog h2,
+.cleaners-replace-dialog p {
+  margin: 0;
+}
+
+.cleaners-replace-dialog h2 {
+  font-size: 22px;
+}
+
+.cleaners-replace-dialog p {
+  color: var(--color-gray-600);
+  line-height: 1.55;
+}
+
+.cleaners-replace-dialog .dialog-actions {
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
 .button-spinner {
   animation: button-spin 800ms linear infinite;
 }
@@ -2141,15 +2311,27 @@ a {
   gap: 16px;
 }
 
-.cleaners-email-invite__entry strong,
+.cleaners-email-invite__entry h3,
 .cleaners-email-invite__entry p {
   margin: 0;
+}
+
+.cleaners-email-invite__entry h3 {
+  font-size: 15px;
 }
 
 .cleaners-email-invite__entry p {
   margin-top: 3px;
   color: var(--color-gray-600);
   font-size: 13px;
+}
+
+.cleaners-email-invite__chevron {
+  transition: transform 150ms ease-out;
+}
+
+.cleaners-email-invite__chevron--open {
+  transform: rotate(180deg);
 }
 
 .cleaners-email-invite__flow {
@@ -2310,8 +2492,16 @@ a {
 
 .cleaners-email-invite__results > div {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.cleaners-email-invite__provider-note {
+  margin: 0;
+  color: var(--color-gray-600);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .cleaners-email-invite__results > div span {
@@ -2355,6 +2545,14 @@ a {
   color: var(--color-surface-card);
   font-size: 14px;
   font-weight: 700;
+}
+
+.member-initial--tone-1 {
+  background: #0f766e;
+}
+
+.member-initial--tone-2 {
+  background: #6d28d9;
 }
 
 .cleaners-member-list strong,
@@ -4057,8 +4255,34 @@ a {
     justify-content: flex-end;
   }
   .cleaners-invite-card, .cleaners-members-card { padding: 18px; }
+  .cleaners-invite-status {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 14px;
+  }
+  .cleaners-invite-status__state { flex-wrap: wrap; min-height: 36px; }
+  .cleaners-invite-status__actions { align-items: stretch; }
+  .cleaners-invite-status__actions .button,
+  .cleaners-invite-status__actions .text-action { flex: 1 1 0; justify-content: center; }
+  .cleaners-invite-status__actions .button { width: 100%; }
   .cleaners-invite-actions { align-items: stretch; flex-direction: column; }
   .cleaners-invite-actions .button { width: 100%; }
+  .cleaners-message-preview { padding: 16px; }
+  .cleaners-message-preview + .invite-display { grid-template-columns: 1fr; }
+  .cleaners-message-preview + .invite-display .invite-url-row {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+  .cleaners-invite-details__replacement,
+  .cleaners-email-invite__entry { align-items: stretch; flex-direction: column; }
+  .cleaners-invite-details__replacement .button,
+  .cleaners-email-invite__entry .button { width: 100%; }
+  .cleaners-email-invite__flow { padding: 14px; }
+  .cleaners-email-invite__file-row { align-items: stretch; flex-direction: column; }
+  .cleaners-email-invite__file-row .button,
+  .cleaners-email-invite__controls .form-control { width: 100%; }
+  .cleaners-replace-dialog .dialog-actions { align-items: stretch; flex-direction: column-reverse; }
+  .cleaners-replace-dialog .button { width: 100%; }
   .invite-code-block strong { letter-spacing: 0.14em; }
   .invite-url-value { align-items: start; }
   .jobs-page-header { align-items: flex-start; flex-direction: column; gap: 8px; }

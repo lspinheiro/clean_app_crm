@@ -11,7 +11,7 @@ describe("CLE-79 invitation email copy", () => {
   it("builds the approved en-AU one-time invitation", () => {
     const message = buildCleanerInviteEmail({ ...input, locale: "en-AU" });
 
-    expect(message.subject).toBe("Join Coastal <Cleaners>'s cleaners");
+    expect(message.subject).toBe("Join Coastal <Cleaners>'s Cleaner staff");
     expect(message.text).toContain(input.joinUrl);
     expect(message.text).toContain("If you were not expecting this invitation");
     expect(message.html).toContain("Coastal &lt;Cleaners&gt;");
@@ -22,7 +22,7 @@ describe("CLE-79 invitation email copy", () => {
     const message = buildCleanerInviteEmail({ ...input, locale: "pt-BR" });
 
     expect(message.subject).toBe(
-      "Entre para os profissionais da empresa Coastal <Cleaners>",
+      "Entre para a equipe de limpeza da empresa Coastal <Cleaners>",
     );
     expect(message.text).toContain(input.joinUrl);
     expect(message.text).toContain("Se você não esperava este convite");

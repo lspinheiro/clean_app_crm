@@ -4,18 +4,20 @@ Canonical vocabulary for The Clean Crew. When code, docs, issues, or conversatio
 with this file, either this file wins or this file gets fixed — never both meanings at
 once.
 
-## Cleaners
+## Cleaner staff
 
 The set of cleaners attached to one [company](#company) — the people it can offer work to.
-"Cleaners" is the collection, the CRM nav item, and the screen where a company admin manages
-it; a cleaner joins through a **cleaner invite** (an invite link) which creates a
-**cleaner membership**. The company-side screen listing vacancies and who is covering them is
-the **cleaner board**; on the cleaner app the same surface is simply the *board*.
+**Cleaner staff** is the collection, **Staff** is the CRM navigation label, and the Staff screen
+is where a company admin manages it. A cleaner joins through a **cleaner invitation** (an invite
+link), which creates a **cleaner membership**. The company-side screen listing vacancies and who
+is covering them is the **cleaner board**; on the cleaner app the same surface is simply the
+*board*.
 
-- **Not:** a "pool" — the word is retired as product vocabulary and appears in no UI label,
-  doc, or app-layer identifier. Say *cleaners* for the collection and *cleaner* as the
-  modifier (cleaner invite, cleaner membership, cleaner board); a single person is a
-  *cleaner*, never a "pool member" or "pool cleaner".
+- **Not:** a "pool" — the word is retired as product vocabulary and appears in no UI label.
+  Say *Cleaner staff* for the collection and *cleaner* as the modifier (cleaner invitation,
+  cleaner membership, cleaner board); a single person is a *cleaner*, never a "pool member" or
+  "pool cleaner". Internal identifiers may retain `pool` where renaming them would change a
+  database or API contract.
 - **Database note:** the schema still carries the legacy `pool_*` names —
   `cleaner_pool_memberships`, `join_company_pool`, `prepare_pool_invite_email_batch`,
   `prepare_pool_invite_email_retry`, `record_pool_invite_email_results`, and the

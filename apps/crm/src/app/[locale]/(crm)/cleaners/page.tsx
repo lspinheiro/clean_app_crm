@@ -67,7 +67,6 @@ export default async function CleanersPage() {
     <main className="page-shell cleaners-page-shell">
       <header className="page-header-row cleaners-page-header">
         <div>
-          <p className="eyebrow">{t("eyebrow")}</p>
           <h1 className="page-heading">{t("title")}</h1>
           <p className="page-description">{t("description")}</p>
         </div>

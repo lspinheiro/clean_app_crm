@@ -330,7 +330,7 @@ export function JoinScreen() {
               </div>
             ) : null}
             <button className="button" disabled={pending} type="submit">
-              {pending ? "Joining…" : "Join the pool"}
+              {pending ? "Joining…" : "Join the Cleaner staff"}
             </button>
             <p className="consent-caption">
               The company sees your name, phone, and suburb so they can offer you work. They do
@@ -373,7 +373,7 @@ export function JoinScreen() {
             </div>
           ) : null}
           <button className="button" disabled={pending} type="submit">
-            {pending ? "Joining…" : "Join the pool"}
+            {pending ? "Joining…" : "Join the Cleaner staff"}
           </button>
           <p className="consent-caption">
             The company sees your name, phone, and suburb so they can offer you work.

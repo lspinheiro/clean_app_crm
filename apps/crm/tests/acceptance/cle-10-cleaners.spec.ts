@@ -23,17 +23,18 @@ test("@CLE-10 displays, copies, and rotates the active cleaner invite", async ({
   await signIn(page);
   await page.goto("/en-AU/cleaners");
 
-  await expect(page.getByRole("heading", { name: "Cleaners", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cleaner staff", level: 1 })).toBeVisible();
   const code = page.getByTestId("invite-code");
   await expect(code).toHaveText(/^[A-Z0-9]{6}$/);
   const initialCode = (await code.textContent()) ?? "";
+  await page.getByRole("button", { name: "Invite details" }).click();
   const joinLink = page.getByRole("link", { name: "Cleaner signup link" });
   await expect(joinLink).toHaveAttribute(
     "href",
     `${cleanerAppUrl}/join?code=${initialCode}`,
   );
 
-  const members = page.getByRole("list", { name: "Active cleaners" });
+  const members = page.getByRole("list", { name: "Cleaner staff" });
   await expect(members.getByRole("listitem")).toHaveCount(3);
   await expect(members).toContainText("Demo Cleaner One");
   await expect(members).toContainText("Joined 2 Aug 2026");
@@ -44,7 +45,7 @@ test("@CLE-10 displays, copies, and rotates the active cleaner invite", async ({
   await expect(members).not.toContainText("Demo Company Admin");
   await expect(members).not.toContainText("Demo Removed Cleaner");
 
-  await page.getByRole("button", { name: "Copy cleaner signup link" }).click();
+  await page.getByRole("button", { name: "Copy link" }).click();
   await expect(page.getByRole("status")).toContainText("Cleaner signup link copied.");
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(
     `${cleanerAppUrl}/join?code=${initialCode}`,
@@ -54,14 +55,15 @@ test("@CLE-10 displays, copies, and rotates the active cleaner invite", async ({
   await expect(page.getByRole("status")).toContainText("Invite message copied.");
   const copiedMessage = await page.evaluate(() => navigator.clipboard.readText());
   expect(copiedMessage).toBe(
-    `Join Coastal Demo Cleaning's cleaners: ${cleanerAppUrl}/join?code=${initialCode}\nInvite code: ${initialCode}`,
+    `Join Coastal Demo Cleaning's Cleaner staff: ${cleanerAppUrl}/join?code=${initialCode}\nInvite code: ${initialCode}`,
   );
 
   await expect(
     page.getByRole("button", { name: "Share on WhatsApp" }),
   ).toBeEnabled();
 
-  await page.getByRole("button", { name: "Generate new code" }).click();
+  await page.getByRole("button", { name: "Replace invitation" }).click();
+  await page.getByRole("button", { name: "Confirm replacement" }).click();
   await expect(code).not.toHaveText(initialCode);
   await expect(code).toHaveText(/^[A-Z0-9]{6}$/);
   const rotatedCode = (await code.textContent()) ?? "";
@@ -73,7 +75,7 @@ test("@CLE-10 displays, copies, and rotates the active cleaner invite", async ({
   await expect(page.getByTestId("invite-code")).toHaveText(rotatedCode);
   await expect(
     page
-      .getByRole("list", { name: "Active cleaners" })
+      .getByRole("list", { name: "Cleaner staff" })
       .getByRole("listitem"),
   ).toHaveCount(3);
 });

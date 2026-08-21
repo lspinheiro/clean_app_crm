@@ -183,13 +183,13 @@ Component responsibilities:
   surface backed by this entity. A decline notifies the admin and ends the pending
   offer, so the projection makes the slot a vacancy on the board immediately; the admin
   can direct a new offer at any time, which takes it off the board again (decision 14).
-- Invite links (S8) are self-contained outreach records: many links per company, each
+- Cleaner staff invitation links (S8) are self-contained outreach records: many links per company, each
   carrying admin-authored offer details — a title/description and a pay shape (hourly
   rate or fixed amount, with its value) stated at creation — plus optional expiry,
   optional maximum registrations, and revocation. The pre-registration preview renders
   from the link itself; a link references no job record, and registration through it
   produces a cleaner membership only. Each registration attributes to the link that
-  admitted it, and the CRM cleaners screen shows per-link state (active / expired /
+  admitted it, and the CRM Staff screen shows per-link state (active / expired /
   revoked / limit reached) and registration count. The delivered one-active-code-with-rotation model
   (`rotate_company_invite`) gives way to this multi-link model.
 - Cleaner e-mail invitations (S8/S30) use one selected active invite. The browser accepts

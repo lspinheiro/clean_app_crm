@@ -70,7 +70,9 @@ export type CleanerInviteEmailActionResult =
       accepted: CleanerInviteEmailResultRecipient[];
       batchId: string;
       failed: CleanerInviteEmailResultRecipient[];
+      newlyQueued: number;
       ok: true;
+      reusedExisting: boolean;
     }
   | { error: string; ok: false };
 
@@ -138,6 +140,7 @@ function senderAddress(companyName: string, fromEmail: string) {
 function resultFromRows(
   batchId: string,
   rows: RecordedRecipient[],
+  delivery: { newlyQueued: number; reusedExisting: boolean },
 ): CleanerInviteEmailActionResult {
   const mapRow = (row: RecordedRecipient): CleanerInviteEmailResultRecipient => ({
     email: row.email,
@@ -148,7 +151,9 @@ function resultFromRows(
     accepted: rows.filter((row) => row.status === "accepted").map(mapRow),
     batchId,
     failed: rows.filter((row) => row.status === "failed").map(mapRow),
+    newlyQueued: delivery.newlyQueued,
     ok: true,
+    reusedExisting: delivery.reusedExisting,
   };
 }
 
@@ -181,7 +186,10 @@ async function deliverPreparedRecipients(
 
   const pending = preparedRows.filter((row) => row.status === "pending");
   if (pending.length === 0) {
-    return resultFromRows(first.batch_id, preparedRows);
+    return resultFromRows(first.batch_id, preparedRows, {
+      newlyQueued: 0,
+      reusedExisting: true,
+    });
   }
 
   let joinUrl: string;
@@ -218,7 +226,10 @@ async function deliverPreparedRecipients(
     if (error || !parsed.success) {
       return { error: userMessage("cleanerEmailRecordFailed"), ok: false };
     }
-    return resultFromRows(first.batch_id, parsed.data);
+    return resultFromRows(first.batch_id, parsed.data, {
+      newlyQueued: outcomes.filter((outcome) => outcome.status === "accepted").length,
+      reusedExisting: false,
+    });
   } catch {
     return { error: userMessage("cleanerEmailRecordFailed"), ok: false };
   }

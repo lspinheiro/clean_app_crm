@@ -101,7 +101,9 @@ describe("CLE-79 cleaner invitation email actions", () => {
       accepted: [{ email: "ana@example.com" }],
       batchId,
       failed: [],
+      newlyQueued: 1,
       ok: true,
+      reusedExisting: false,
     });
     expect(mocks.requireCompanyAdmin).toHaveBeenCalledOnce();
     expect(rpc).toHaveBeenNthCalledWith(1, "prepare_pool_invite_email_batch", {
@@ -188,7 +190,7 @@ describe("CLE-79 cleaner invitation email actions", () => {
         { email: "bruno@example.com", name: null },
       ],
     });
-    await sendCleanerInviteEmails({
+    const repeated = await sendCleanerInviteEmails({
       authorityConfirmed: true,
       inviteId,
       locale: "en-AU",
@@ -203,6 +205,11 @@ describe("CLE-79 cleaner invitation email actions", () => {
     expect(firstKey).toMatch(/^[0-9a-f-]{36}$/);
     expect(repeatedKey).toBe(firstKey);
     expect(mocks.sendResendEmailBatches).toHaveBeenCalledTimes(1);
+    expect(repeated).toMatchObject({
+      newlyQueued: 0,
+      ok: true,
+      reusedExisting: true,
+    });
   });
 
   it("quotes commas and escaped quotes in the sender display name", async () => {

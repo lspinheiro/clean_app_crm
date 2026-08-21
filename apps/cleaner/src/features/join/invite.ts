@@ -57,7 +57,7 @@ export function describeJoinFailure(message: string): string {
 }
 
 export function describeCleanerCount(cleanerCount: number): string {
-  if (cleanerCount <= 0) return "You would be their first cleaner.";
-  if (cleanerCount === 1) return "1 cleaner already works with them.";
-  return `${cleanerCount} cleaners already work with them.`;
+  if (cleanerCount <= 0) return "You would be their first Cleaner staff member.";
+  if (cleanerCount === 1) return "1 cleaner is already on their staff.";
+  return `${cleanerCount} cleaners are already on their staff.`;
 }

@@ -98,10 +98,10 @@ flowchart LR
   `email` and an optional `name`. Both paths produce one case-insensitive, deduplicated
   send list, not accounts or cleaner memberships. Each recipient still registers and joins
   through the invite link. The alpha accepts at most 500 unique recipients in one send.
-- **S8** — Create a cleaner invite link, ready to post into the company's WhatsApp group.
+- **S8** — Create a Cleaner staff invitation, ready to post into the company's WhatsApp group.
   The invitation carries the details of what the cleaner applies for — the work on offer
   and its pay shape (hourly rate or fixed amount), described so the link is a real offer,
-  not a bare signup URL. A cleaner who accepts the invitation joins the company's cleaners.
+  not a bare signup URL. A cleaner who accepts the invitation joins the company's Cleaner staff.
   When the admin creates a link, they can optionally set an expiry time and a maximum
   number of registrations; the admin can revoke a link at any time. The flow is: generate
   → send → watch who joins. There is no in-place regeneration — a revoked link is dead,
@@ -329,8 +329,8 @@ would send every cleaner a month of job notifications.
 
 ### 3. CL-1 join is link-first (2026-08-08)
 
-The pool invite is a real link into `apps/cleaner`: one-minute registration (name, phone,
-suburb), pool joined, PWA install prompt and push opt-in, board immediately visible. This
+The Cleaner staff invitation is a real link into `apps/cleaner`: one-minute registration (name,
+phone, suburb), staff joined, PWA install prompt and push opt-in, board immediately visible. This
 follows PRODUCT.md CL-1 and replaces the prototype's signup-plus-manual-code-entry join.
 The surface is the seed of F12's magic-link registration (MVP).
 

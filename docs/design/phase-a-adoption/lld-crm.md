@@ -222,7 +222,7 @@ sequenceDiagram
 *Nothing is written before confirm; a mid-batch failure is a per-row outcome, never an
 abort.*
 
-**Cleaner e-mail send list (S8/S30).** Enter addresses and add further rows, or choose an
+**Cleaner staff e-mail send list (S8/S30).** Enter addresses and add further rows, or choose an
 optional CSV → validate and deduplicate → choose locale → preview exact e-mail and
 recipient count → confirm authority →
 submit once → show accepted and failed recipients. Retry creates a new confirmed attempt

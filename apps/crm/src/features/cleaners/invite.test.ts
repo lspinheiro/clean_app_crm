@@ -12,7 +12,7 @@ import {
 describe("cleaner invite content", () => {
   it("builds a WhatsApp handoff with percent-encoded spaces in the raw URL", () => {
     const inviteMessage =
-      "Join Coastal Demo Cleaning's cleaners: https://cleaner.example.test/join?code=AB12CD\nInvite code: AB12CD";
+      "Join Coastal Demo Cleaning's Cleaner staff: https://cleaner.example.test/join?code=AB12CD\nInvite code: AB12CD";
 
     expect(buildWhatsAppShareUrl(inviteMessage)).toBe(
       `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`,
@@ -32,10 +32,10 @@ describe("cleaner invite content", () => {
         "http://127.0.0.1:3001/join?code=CLEAN1",
         "CLEAN1",
         ({ companyName, joinUrl, code }) =>
-          `Join ${companyName}'s cleaners: ${joinUrl}\nInvite code: ${code}`,
+          `Join ${companyName}'s Cleaner staff: ${joinUrl}\nInvite code: ${code}`,
       ),
     ).toBe(
-      "Join Coastal Demo Cleaning's cleaners: http://127.0.0.1:3001/join?code=CLEAN1\nInvite code: CLEAN1",
+      "Join Coastal Demo Cleaning's Cleaner staff: http://127.0.0.1:3001/join?code=CLEAN1\nInvite code: CLEAN1",
     );
   });
 

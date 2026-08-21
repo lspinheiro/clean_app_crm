@@ -190,8 +190,8 @@ Reading order for the build: F10 → F11 → F12 → F13 → F14 → F1, F4, F5,
 
 ### F11 — Cleaner board (P0) *(new in v0.2; adopted from the co-founders' prototype)*
 
-- Each company has its **own private set of cleaners**. Cleaners join via invite code or share
-  link. A cleaner can belong to more than one company.
+- Each company has its own private **Cleaner staff**. Individual cleaners join through a cleaner
+  invitation code or share link. A cleaner can belong to more than one company's staff.
 - Vacancies post to the cleaner board. Cleaners **apply with one tap**. The admin assigns from the
   applicants, or assigns directly and skips the board. Applicants see a "waiting" state and can
   withdraw.

@@ -95,8 +95,8 @@ describe("CLE-19 join failures", () => {
 
 describe("CLE-19 cleaner count wording", () => {
   it("counts cleaners in plain words", () => {
-    expect(describeCleanerCount(0)).toBe("You would be their first cleaner.");
-    expect(describeCleanerCount(1)).toBe("1 cleaner already works with them.");
-    expect(describeCleanerCount(7)).toBe("7 cleaners already work with them.");
+    expect(describeCleanerCount(0)).toBe("You would be their first Cleaner staff member.");
+    expect(describeCleanerCount(1)).toBe("1 cleaner is already on their staff.");
+    expect(describeCleanerCount(7)).toBe("7 cleaners are already on their staff.");
   });
 });

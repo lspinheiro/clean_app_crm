@@ -1,8 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  rotateCleanerInvite: vi.fn(),
+}));
 
 vi.mock("@/app/actions/cleaners", () => ({
-  rotateCleanerInvite: vi.fn(),
+  rotateCleanerInvite: mocks.rotateCleanerInvite,
 }));
 vi.mock("@/i18n/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
@@ -17,29 +21,40 @@ const baseProps = {
   members: [],
 };
 
+beforeEach(() => {
+  mocks.rotateCleanerInvite.mockReset();
+  HTMLDialogElement.prototype.showModal = vi.fn(function showModal(this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function close(this: HTMLDialogElement) {
+    this.removeAttribute("open");
+  });
+});
+
 afterEach(() => {
   delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
 });
 
-describe("CLE-78 WhatsApp cleaner invitation", () => {
+describe("Cleaner staff invitation workspace", () => {
   it("keeps WhatsApp sharing unavailable without an active invite", () => {
     render(<CleanersWorkspace {...baseProps} initialCode={null} />);
 
     expect(
       screen.getByRole("button", { name: "Share on WhatsApp" }),
     ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Create invitation" })).toBeEnabled();
   });
 
   it.each([
     {
       expectedMessage:
-        "Join Coastal Demo Cleaning's cleaners: https://cleaner.example.test/join?code=AB12CD\nInvite code: AB12CD",
+        "Join Coastal Demo Cleaning's Cleaner staff: https://cleaner.example.test/join?code=AB12CD\nInvite code: AB12CD",
       label: "Share on WhatsApp",
       locale: "en-AU",
     },
     {
       expectedMessage:
-        "Entre para os profissionais da empresa Coastal Demo Cleaning: https://cleaner.example.test/join?code=AB12CD\nCódigo de convite: AB12CD",
+        "Entre para a equipe de limpeza da empresa Coastal Demo Cleaning: https://cleaner.example.test/join?code=AB12CD\nCódigo de convite: AB12CD",
       label: "Compartilhar no WhatsApp",
       locale: "pt-BR",
     },
@@ -62,6 +77,30 @@ describe("CLE-78 WhatsApp cleaner invitation", () => {
     expect(target).toBe("_blank");
     expect(features).toBe("noopener,noreferrer");
   });
+
+  it("protects replacement behind invite details and a confirmation dialog", async () => {
+    mocks.rotateCleanerInvite.mockResolvedValueOnce({
+      code: "ZX98YU",
+      inviteId: "10000000-0000-4000-8000-000000000202",
+      ok: true,
+    });
+    render(<CleanersWorkspace {...baseProps} initialCode="AB12CD" />);
+
+    expect(screen.getByText("Invitation active")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Replace invitation" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Invite details" }));
+    fireEvent.click(screen.getByRole("button", { name: "Replace invitation" }));
+
+    expect(mocks.rotateCleanerInvite).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("dialog", { name: "Replace the active invitation?" }),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirm replacement" }));
+    await waitFor(() => expect(mocks.rotateCleanerInvite).toHaveBeenCalledOnce());
+    expect((await screen.findAllByText("ZX98YU")).length).toBeGreaterThan(0);
+  });
 });
 
 describe("CLE-79 bulk cleaner invitation by email", () => {
@@ -69,10 +108,10 @@ describe("CLE-79 bulk cleaner invitation by email", () => {
     render(<CleanersWorkspace {...baseProps} initialCode="AB12CD" />);
 
     expect(
-      screen.getByRole("button", { name: "Invite by email" }),
+      screen.getByRole("button", { name: "Send by email" }),
     ).toBeEnabled();
     expect(
-      screen.getByText("Enter email addresses directly, or upload a CSV for a longer list."),
+      screen.getByText("Send the same active invitation to one or more existing cleaners."),
     ).toBeInTheDocument();
   });
 
@@ -80,7 +119,7 @@ describe("CLE-79 bulk cleaner invitation by email", () => {
     render(<CleanersWorkspace {...baseProps} initialCode={null} />);
 
     expect(
-      screen.getByRole("button", { name: "Invite by email" }),
+      screen.getByRole("button", { name: "Send by email" }),
     ).toBeDisabled();
   });
 });

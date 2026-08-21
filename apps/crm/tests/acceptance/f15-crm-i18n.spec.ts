@@ -76,7 +76,7 @@ test.describe("@F15 bilingual CRM", () => {
       ["/pt-BR/jobs/new", "Criar serviço"],
       ["/pt-BR/clients", "Clientes e locais"],
       ["/pt-BR/clients/import", "Importar clientes e locais"],
-      ["/pt-BR/cleaners", "Profissionais"],
+      ["/pt-BR/cleaners", "Equipe de limpeza"],
       ["/pt-BR/money", "Financeiro"],
       ["/pt-BR/settings", "Configurações da empresa"],
     ] as const;

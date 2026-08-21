@@ -72,7 +72,7 @@ describe("CRM message catalogues", () => {
     const t = createTranslator({ locale: "pt-BR", messages: ptBr });
     expect(t("Jobs.count", { count: 0 })).toBe("Nenhum serviço");
     expect(t("Cleaners.memberCount", { count: 0 })).toBe(
-      "Nenhum profissional nesta empresa",
+      "Nenhum integrante ativo",
     );
   });
 });

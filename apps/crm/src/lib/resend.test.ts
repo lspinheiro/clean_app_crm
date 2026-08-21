@@ -6,7 +6,7 @@ function messages(count: number) {
   return Array.from({ length: count }, (_, index) => ({
     html: `<p>${index}</p>`,
     recipientId: `recipient-${index}`,
-    subject: "Join the pool",
+    subject: "Join the cleaners",
     text: `Message ${index}`,
     to: `cleaner-${index}@example.com`,
   }));
@@ -32,8 +32,8 @@ describe("CLE-79 Resend batch adapter", () => {
     expect(JSON.parse(fetcher.mock.calls[0][1].body)).toHaveLength(100);
     expect(JSON.parse(fetcher.mock.calls[1][1].body)).toHaveLength(1);
     expect(fetcher.mock.calls.map(([, init]) => init.headers["Idempotency-Key"])).toEqual([
-      "pool-invite/batch-id/attempt/0/chunk/0",
-      "pool-invite/batch-id/attempt/0/chunk/1",
+      "cleaner-invite/batch-id/attempt/0/chunk/0",
+      "cleaner-invite/batch-id/attempt/0/chunk/1",
     ]);
     expect(outcome.filter((item) => item.status === "accepted")).toHaveLength(101);
   });

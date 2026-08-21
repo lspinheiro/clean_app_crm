@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { BrandBubbles } from "../../components/brand-bubbles";
 import { JoinScreen } from "./join-screen";
 
-export const metadata: Metadata = { title: "Join a cleaner pool" };
+export const metadata: Metadata = { title: "Join a company" };
 
 export default function JoinPage() {
   return (

@@ -41,7 +41,7 @@ if (!url || !publishableKey || !secretKey) {
 console.log(`Using local Supabase at ${url}.`);
 
 // Acceptance specs assert against the documented seed, and they leave records behind: the
-// cleaner suite registers a real cleaner into the demo pool, the CRM suite creates clients
+// cleaner suite registers a real cleaner into the demo company's cleaners, the CRM suite creates clients
 // and rotates the invite. Reset first so every suite starts from the same fixture, whether
 // it runs alone or as part of the workspace sweep.
 console.log("Resetting the local database to the seeded fixture...");

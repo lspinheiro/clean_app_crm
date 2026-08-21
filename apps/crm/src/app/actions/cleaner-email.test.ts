@@ -13,9 +13,9 @@ vi.mock("@/lib/resend", () => ({
 }));
 
 import {
-  retryFailedPoolInviteEmails,
-  sendPoolInviteEmails,
-} from "./pool-email";
+  retryFailedCleanerInviteEmails,
+  sendCleanerInviteEmails,
+} from "./cleaner-email";
 
 const companyId = "10000000-0000-4000-8000-000000000010";
 const inviteId = "10000000-0000-4000-8000-000000000020";
@@ -39,7 +39,7 @@ function preparedRows(attemptNumber = 0) {
   ];
 }
 
-describe("CLE-79 pool invitation email actions", () => {
+describe("CLE-79 cleaner invitation email actions", () => {
   const rpc = vi.fn();
   const inviteUserByEmail = vi.fn();
 
@@ -87,7 +87,7 @@ describe("CLE-79 pool invitation email actions", () => {
   });
 
   it("re-authorises, normalises recipients, and never creates Auth users", async () => {
-    const result = await sendPoolInviteEmails({
+    const result = await sendCleanerInviteEmails({
       authorityConfirmed: true,
       inviteId,
       locale: "en-AU",
@@ -125,20 +125,20 @@ describe("CLE-79 pool invitation email actions", () => {
   });
 
   it("rejects malformed or unconfirmed input before authentication", async () => {
-    const result = await sendPoolInviteEmails({
+    const result = await sendCleanerInviteEmails({
       authorityConfirmed: false,
       inviteId,
       locale: "en-AU",
       recipients: [{ email: "not-an-email", name: null }],
     });
 
-    expect(result).toEqual({ ok: false, error: "user.poolEmailInvalidInput" });
+    expect(result).toEqual({ ok: false, error: "user.cleanerEmailInvalidInput" });
     expect(mocks.requireCompanyAdmin).not.toHaveBeenCalled();
     expect(rpc).not.toHaveBeenCalled();
   });
 
   it("rejects more than 500 recipients before authentication", async () => {
-    const result = await sendPoolInviteEmails({
+    const result = await sendCleanerInviteEmails({
       authorityConfirmed: true,
       inviteId,
       locale: "en-AU",
@@ -148,7 +148,7 @@ describe("CLE-79 pool invitation email actions", () => {
       })),
     });
 
-    expect(result).toEqual({ ok: false, error: "user.poolEmailInvalidInput" });
+    expect(result).toEqual({ ok: false, error: "user.cleanerEmailInvalidInput" });
     expect(mocks.requireCompanyAdmin).not.toHaveBeenCalled();
     expect(rpc).not.toHaveBeenCalled();
   });
@@ -179,7 +179,7 @@ describe("CLE-79 pool invitation email actions", () => {
         error: null,
       });
 
-    await sendPoolInviteEmails({
+    await sendCleanerInviteEmails({
       authorityConfirmed: true,
       inviteId,
       locale: "en-AU",
@@ -188,7 +188,7 @@ describe("CLE-79 pool invitation email actions", () => {
         { email: "bruno@example.com", name: null },
       ],
     });
-    await sendPoolInviteEmails({
+    await sendCleanerInviteEmails({
       authorityConfirmed: true,
       inviteId,
       locale: "en-AU",
@@ -215,7 +215,7 @@ describe("CLE-79 pool invitation email actions", () => {
       user: { email: "admin@example.com" },
     });
 
-    await sendPoolInviteEmails({
+    await sendCleanerInviteEmails({
       authorityConfirmed: true,
       inviteId,
       locale: "en-AU",
@@ -232,14 +232,14 @@ describe("CLE-79 pool invitation email actions", () => {
   it("returns a safe setup error when the Resend configuration is missing", async () => {
     delete process.env.RESEND_API_KEY;
 
-    const result = await sendPoolInviteEmails({
+    const result = await sendCleanerInviteEmails({
       authorityConfirmed: true,
       inviteId,
       locale: "en-AU",
       recipients: [{ email: "ana@example.com", name: null }],
     });
 
-    expect(result).toEqual({ ok: false, error: "user.poolEmailNotConfigured" });
+    expect(result).toEqual({ ok: false, error: "user.cleanerEmailNotConfigured" });
     expect(rpc).not.toHaveBeenCalled();
   });
 
@@ -247,13 +247,13 @@ describe("CLE-79 pool invitation email actions", () => {
     rpc.mockReset();
     rpc.mockRejectedValueOnce(new Error("database connection secret"));
 
-    await expect(sendPoolInviteEmails({
+    await expect(sendCleanerInviteEmails({
       authorityConfirmed: true,
       inviteId,
       locale: "en-AU",
       recipients: [{ email: "ana@example.com", name: null }],
     })).resolves.toEqual({
-      error: "user.poolEmailPrepareFailed",
+      error: "user.cleanerEmailPrepareFailed",
       ok: false,
     });
   });
@@ -283,7 +283,7 @@ describe("CLE-79 pool invitation email actions", () => {
       },
     ]);
 
-    const result = await retryFailedPoolInviteEmails({ batchId, retryKey });
+    const result = await retryFailedCleanerInviteEmails({ batchId, retryKey });
 
     expect(result).toMatchObject({ ok: true, failed: [] });
     expect(rpc).toHaveBeenNthCalledWith(1, "prepare_pool_invite_email_retry", {

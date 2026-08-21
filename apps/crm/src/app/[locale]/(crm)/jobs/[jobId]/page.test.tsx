@@ -107,7 +107,7 @@ const defaultResults: Record<string, QueryResult> = {
         profile_id: "10000000-0000-4000-8000-000000000007",
         profiles: {
           id: "10000000-0000-4000-8000-000000000007",
-          full_name: "Pool-only Cleaner",
+          full_name: "Membership-only Cleaner",
         },
       },
       {
@@ -225,9 +225,9 @@ describe("CLE-22 job detail route", () => {
     const slotTwoChoices = within(screen.getByLabelText("Cleaner for slot 2"))
       .getAllByRole("option")
       .map((option) => option.textContent);
-    expect(slotTwoChoices).toContain("Pool-only Cleaner");
+    expect(slotTwoChoices).toContain("Membership-only Cleaner");
     expect(slotTwoChoices).not.toContain("Demo Cleaner One");
-    expect(slotTwoChoices.filter((choice) => choice === "Pool-only Cleaner"))
+    expect(slotTwoChoices.filter((choice) => choice === "Membership-only Cleaner"))
       .toHaveLength(1);
 
     expect(harness.query("jobs").select).toHaveBeenCalledWith(

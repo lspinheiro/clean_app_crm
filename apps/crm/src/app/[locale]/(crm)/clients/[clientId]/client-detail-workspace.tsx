@@ -24,7 +24,7 @@ import {
 } from "@/app/actions/clients";
 import type {
   ClientWithSites,
-  PoolCleaner,
+  CompanyCleaner,
   PreferredCleaner,
   ServiceOption,
   SiteSummary,
@@ -70,14 +70,14 @@ function cleanersForIds(preferred: PreferredCleaner[], cleanerIds: string[]) {
 
 type ClientDetailWorkspaceProps = {
   client: ClientWithSites;
-  poolCleaners: PoolCleaner[];
+  cleaners: CompanyCleaner[];
   recurringAssignmentsBySite: RecurringAssignmentsBySite;
   services: ServiceOption[];
 };
 
 export function ClientDetailWorkspace({
   client,
-  poolCleaners,
+  cleaners,
   recurringAssignmentsBySite,
   services,
 }: ClientDetailWorkspaceProps) {
@@ -218,7 +218,7 @@ export function ClientDetailWorkspace({
 
   function addPreferredCleaner(site: SiteSummary, preferred: PreferredCleaner[]) {
     const cleanerId = selectedCleaners[site.id];
-    const cleaner = poolCleaners.find((candidate) => candidate.id === cleanerId);
+    const cleaner = cleaners.find((candidate) => candidate.id === cleanerId);
     if (!cleaner) return;
     void persistPreferredOrder(site, [
       ...preferred,
@@ -269,7 +269,7 @@ export function ClientDetailWorkspace({
       <section className="site-detail-list" aria-label={t("clientSites")}>
         {client.sites.map((site, index) => {
           const preferred = preferredBySite[site.id] ?? site.preferredCleaners;
-          const availableCleaners = poolCleaners.filter(
+          const availableCleaners = cleaners.filter(
             (cleaner) => !preferred.some((preference) => preference.id === cleaner.id),
           );
           const savingPreferences = savingPreferenceSiteId !== null;
@@ -392,7 +392,7 @@ export function ClientDetailWorkspace({
                       value={selectedCleaners[site.id] ?? ""}
                     >
                       <option value="">
-                        {availableCleaners.length ? t("chooseFromPool") : t("allAdded")}
+                        {availableCleaners.length ? t("chooseFromCleaners") : t("allAdded")}
                       </option>
                       {availableCleaners.map((cleaner) => (
                         <option key={cleaner.id} value={cleaner.id}>{cleaner.name}</option>
@@ -450,7 +450,7 @@ export function ClientDetailWorkspace({
                 clientId={client.id}
                 defaultDurationMinutes={site.defaultDurationMinutes}
                 defaultServiceId={site.defaultService?.id ?? null}
-                poolCleaners={poolCleaners}
+                cleaners={cleaners}
                 services={services}
                 siteId={site.id}
                 siteName={site.name}

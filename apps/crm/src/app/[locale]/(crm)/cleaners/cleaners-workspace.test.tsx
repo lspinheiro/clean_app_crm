@@ -1,14 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/app/actions/pool", () => ({
-  rotatePoolInvite: vi.fn(),
+vi.mock("@/app/actions/cleaners", () => ({
+  rotateCleanerInvite: vi.fn(),
 }));
 vi.mock("@/i18n/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 
-import { PoolWorkspace } from "./pool-workspace";
+import { CleanersWorkspace } from "./cleaners-workspace";
 
 const baseProps = {
   cleanerAppUrl: "https://cleaner.example.test",
@@ -21,9 +21,9 @@ afterEach(() => {
   delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
 });
 
-describe("CLE-78 WhatsApp pool invitation", () => {
+describe("CLE-78 WhatsApp cleaner invitation", () => {
   it("keeps WhatsApp sharing unavailable without an active invite", () => {
-    render(<PoolWorkspace {...baseProps} initialCode={null} />);
+    render(<CleanersWorkspace {...baseProps} initialCode={null} />);
 
     expect(
       screen.getByRole("button", { name: "Share on WhatsApp" }),
@@ -33,13 +33,13 @@ describe("CLE-78 WhatsApp pool invitation", () => {
   it.each([
     {
       expectedMessage:
-        "Join Coastal Demo Cleaning's cleaner pool: https://cleaner.example.test/join?code=AB12CD\nInvite code: AB12CD",
+        "Join Coastal Demo Cleaning's cleaners: https://cleaner.example.test/join?code=AB12CD\nInvite code: AB12CD",
       label: "Share on WhatsApp",
       locale: "en-AU",
     },
     {
       expectedMessage:
-        "Entre para o banco de profissionais da empresa Coastal Demo Cleaning: https://cleaner.example.test/join?code=AB12CD\nCódigo de convite: AB12CD",
+        "Entre para os profissionais da empresa Coastal Demo Cleaning: https://cleaner.example.test/join?code=AB12CD\nCódigo de convite: AB12CD",
       label: "Compartilhar no WhatsApp",
       locale: "pt-BR",
     },
@@ -50,7 +50,7 @@ describe("CLE-78 WhatsApp pool invitation", () => {
   }) => {
     (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__ = locale;
     const openWindow = vi.spyOn(window, "open").mockImplementation(() => null);
-    render(<PoolWorkspace {...baseProps} initialCode="AB12CD" />);
+    render(<CleanersWorkspace {...baseProps} initialCode="AB12CD" />);
 
     fireEvent.click(screen.getByRole("button", { name: label }));
 
@@ -64,9 +64,9 @@ describe("CLE-78 WhatsApp pool invitation", () => {
   });
 });
 
-describe("CLE-79 bulk pool invitation by email", () => {
+describe("CLE-79 bulk cleaner invitation by email", () => {
   it("offers manual and CSV email invitation inputs when an active invite exists", () => {
-    render(<PoolWorkspace {...baseProps} initialCode="AB12CD" />);
+    render(<CleanersWorkspace {...baseProps} initialCode="AB12CD" />);
 
     expect(
       screen.getByRole("button", { name: "Invite by email" }),
@@ -77,7 +77,7 @@ describe("CLE-79 bulk pool invitation by email", () => {
   });
 
   it("keeps email invitation unavailable without an active invite", () => {
-    render(<PoolWorkspace {...baseProps} initialCode={null} />);
+    render(<CleanersWorkspace {...baseProps} initialCode={null} />);
 
     expect(
       screen.getByRole("button", { name: "Invite by email" }),

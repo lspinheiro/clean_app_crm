@@ -1952,55 +1952,55 @@ a {
   font-size: 12px;
 }
 
-.pool-page-shell {
+.cleaners-page-shell {
   max-width: 1040px;
 }
 
-.pool-page-header {
+.cleaners-page-header {
   margin-bottom: 30px;
 }
 
-.pool-page-header .page-description {
+.cleaners-page-header .page-description {
   margin: 8px 0 0;
 }
 
-.pool-layout {
+.cleaners-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
   align-items: start;
   gap: 24px;
 }
 
-.pool-invite-card,
-.pool-members-card {
+.cleaners-invite-card,
+.cleaners-members-card {
   border: 1px solid var(--color-gray-200);
   border-radius: 12px;
   padding: 24px;
   background: var(--color-surface-card);
 }
 
-.pool-card-heading {
+.cleaners-card-heading {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
 
-.pool-card-heading h2,
-.pool-card-heading p {
+.cleaners-card-heading h2,
+.cleaners-card-heading p {
   margin: 0;
 }
 
-.pool-card-heading h2 {
+.cleaners-card-heading h2 {
   font-size: 18px;
 }
 
-.pool-card-heading p {
+.cleaners-card-heading p {
   margin-top: 3px;
   color: var(--color-gray-600);
   font-size: 13px;
 }
 
-.pool-card-icon {
+.cleaners-card-icon {
   display: grid;
   width: 40px;
   height: 40px;
@@ -2068,7 +2068,7 @@ a {
 }
 
 .invite-empty,
-.pool-members-empty {
+.cleaners-members-empty {
   margin-top: 22px;
   border: 1px dashed var(--color-gray-300);
   border-radius: 10px;
@@ -2078,25 +2078,25 @@ a {
 
 .invite-empty p,
 .invite-empty span,
-.pool-members-empty p,
-.pool-members-empty span {
+.cleaners-members-empty p,
+.cleaners-members-empty span {
   display: block;
   margin: 0;
 }
 
 .invite-empty p,
-.pool-members-empty p {
+.cleaners-members-empty p {
   font-weight: 700;
 }
 
 .invite-empty span,
-.pool-members-empty span {
+.cleaners-members-empty span {
   margin-top: 4px;
   color: var(--color-gray-600);
   font-size: 13px;
 }
 
-.pool-invite-actions {
+.cleaners-invite-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -2111,14 +2111,14 @@ a {
   to { transform: rotate(360deg); }
 }
 
-.pool-action-status {
+.cleaners-action-status {
   min-height: 20px;
   margin: 12px 0 0;
   color: var(--color-gray-600);
   font-size: 13px;
 }
 
-.pool-action-status--error {
+.cleaners-action-status--error {
   color: var(--color-danger);
 }
 
@@ -2128,31 +2128,31 @@ a {
   font-size: 12px;
 }
 
-.pool-email-invite {
+.cleaners-email-invite {
   margin-top: 20px;
   border-top: 1px solid var(--color-gray-200);
   padding-top: 20px;
 }
 
-.pool-email-invite__entry {
+.cleaners-email-invite__entry {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
 
-.pool-email-invite__entry strong,
-.pool-email-invite__entry p {
+.cleaners-email-invite__entry strong,
+.cleaners-email-invite__entry p {
   margin: 0;
 }
 
-.pool-email-invite__entry p {
+.cleaners-email-invite__entry p {
   margin-top: 3px;
   color: var(--color-gray-600);
   font-size: 13px;
 }
 
-.pool-email-invite__flow {
+.cleaners-email-invite__flow {
   display: grid;
   gap: 18px;
   margin-top: 18px;
@@ -2161,18 +2161,18 @@ a {
   background: var(--color-gray-50);
 }
 
-.pool-email-invite__controls {
+.cleaners-email-invite__controls {
   display: grid;
   gap: 8px;
 }
 
-.pool-email-invite__controls .field-label {
+.cleaners-email-invite__controls .field-label {
   color: var(--color-gray-700);
   font-size: 13px;
   font-weight: 700;
 }
 
-.pool-email-invite__controls .form-control {
+.cleaners-email-invite__controls .form-control {
   min-height: 44px;
   width: min(100%, 300px);
   border: 1px solid var(--color-gray-300);
@@ -2182,7 +2182,7 @@ a {
   color: var(--color-text-main);
 }
 
-.pool-email-invite__file-row {
+.cleaners-email-invite__file-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2192,17 +2192,17 @@ a {
   font-size: 13px;
 }
 
-.pool-email-invite__file-row .button {
+.cleaners-email-invite__file-row .button {
   cursor: pointer;
 }
 
-.pool-email-invite__file-row .text-link {
+.cleaners-email-invite__file-row .text-link {
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
 
-.pool-email-invite__counts {
+.cleaners-email-invite__counts {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
@@ -2210,67 +2210,67 @@ a {
   font-size: 13px;
 }
 
-.pool-email-invite__counts strong {
+.cleaners-email-invite__counts strong {
   color: var(--color-text-main);
 }
 
-.pool-email-invite__table-scroll {
+.cleaners-email-invite__table-scroll {
   overflow-x: auto;
   border: 1px solid var(--color-gray-200);
   border-radius: 8px;
   background: var(--color-surface-card);
 }
 
-.pool-email-invite__table {
+.cleaners-email-invite__table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
   text-align: left;
 }
 
-.pool-email-invite__table th,
-.pool-email-invite__table td {
+.cleaners-email-invite__table th,
+.cleaners-email-invite__table td {
   border-bottom: 1px solid var(--color-gray-200);
   padding: 9px 10px;
 }
 
-.pool-email-invite__table tbody tr:last-child td {
+.cleaners-email-invite__table tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.pool-email-invite__message {
+.cleaners-email-invite__message {
   border: 1px solid var(--color-gray-200);
   border-radius: 8px;
   padding: 14px;
   background: var(--color-surface-card);
 }
 
-.pool-email-invite__message h3 {
+.cleaners-email-invite__message h3 {
   margin: 0 0 10px;
   font-size: 14px;
 }
 
-.pool-email-invite__message dl,
-.pool-email-invite__message dl div,
-.pool-email-invite__message dd,
-.pool-email-invite__message pre {
+.cleaners-email-invite__message dl,
+.cleaners-email-invite__message dl div,
+.cleaners-email-invite__message dd,
+.cleaners-email-invite__message pre {
   margin: 0;
 }
 
-.pool-email-invite__message dl {
+.cleaners-email-invite__message dl {
   display: grid;
   gap: 10px;
 }
 
-.pool-email-invite__message dt {
+.cleaners-email-invite__message dt {
   color: var(--color-gray-600);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
-.pool-email-invite__message dd,
-.pool-email-invite__message pre {
+.cleaners-email-invite__message dd,
+.cleaners-email-invite__message pre {
   margin-top: 3px;
   overflow-wrap: anywhere;
   color: var(--color-text-main);
@@ -2278,7 +2278,7 @@ a {
   white-space: pre-wrap;
 }
 
-.pool-email-invite__authority {
+.cleaners-email-invite__authority {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
   align-items: start;
@@ -2287,19 +2287,19 @@ a {
   line-height: 1.45;
 }
 
-.pool-email-invite__authority input {
+.cleaners-email-invite__authority input {
   width: 18px;
   height: 18px;
   margin: 1px 0 0;
 }
 
-.pool-email-invite__error {
+.cleaners-email-invite__error {
   margin: 0;
   color: var(--color-danger);
   font-size: 13px;
 }
 
-.pool-email-invite__results {
+.cleaners-email-invite__results {
   display: grid;
   gap: 12px;
   border: 1px solid var(--color-gray-200);
@@ -2308,34 +2308,34 @@ a {
   background: var(--color-surface-card);
 }
 
-.pool-email-invite__results > div {
+.cleaners-email-invite__results > div {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.pool-email-invite__results > div span {
+.cleaners-email-invite__results > div span {
   color: var(--color-gray-600);
 }
 
-.pool-email-invite__results ul {
+.cleaners-email-invite__results ul {
   margin: 0;
   padding-left: 22px;
   color: var(--color-danger);
   font-size: 13px;
 }
 
-.pool-members-heading {
+.cleaners-members-heading {
   padding-bottom: 18px;
 }
 
-.pool-member-list {
+.cleaners-member-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.pool-member-list li {
+.cleaners-member-list li {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
   align-items: center;
@@ -2357,16 +2357,16 @@ a {
   font-weight: 700;
 }
 
-.pool-member-list strong,
-.pool-member-list li div > span {
+.cleaners-member-list strong,
+.cleaners-member-list li div > span {
   display: block;
 }
 
-.pool-member-list strong {
+.cleaners-member-list strong {
   font-size: 14px;
 }
 
-.pool-member-list li div > span {
+.cleaners-member-list li div > span {
   margin-top: 2px;
   color: var(--color-gray-600);
   font-size: 12px;
@@ -3955,7 +3955,7 @@ a {
   .privacy-caption { align-items: flex-start; }
   .preferred-add-row { grid-template-columns: 1fr; }
   .preferred-add-row .button { justify-self: start; }
-  .pool-layout { grid-template-columns: 1fr; }
+  .cleaners-layout { grid-template-columns: 1fr; }
   .job-list-link { grid-template-columns: 88px minmax(0, 1fr); }
   .job-pay { grid-column: 2; justify-items: start; }
   .money-totals dl > div + div { padding-left: 24px; }
@@ -4056,9 +4056,9 @@ a {
     grid-column: 1 / -1;
     justify-content: flex-end;
   }
-  .pool-invite-card, .pool-members-card { padding: 18px; }
-  .pool-invite-actions { align-items: stretch; flex-direction: column; }
-  .pool-invite-actions .button { width: 100%; }
+  .cleaners-invite-card, .cleaners-members-card { padding: 18px; }
+  .cleaners-invite-actions { align-items: stretch; flex-direction: column; }
+  .cleaners-invite-actions .button { width: 100%; }
   .invite-code-block strong { letter-spacing: 0.14em; }
   .invite-url-value { align-items: start; }
   .jobs-page-header { align-items: flex-start; flex-direction: column; gap: 8px; }

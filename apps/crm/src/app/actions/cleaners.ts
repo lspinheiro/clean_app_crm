@@ -8,7 +8,7 @@ export type RotateInviteResult =
   | { ok: true; code: string; inviteId: string }
   | { ok: false; error: string };
 
-export async function rotatePoolInvite(): Promise<RotateInviteResult> {
+export async function rotateCleanerInvite(): Promise<RotateInviteResult> {
   const { company, supabase } = await requireCompanyAdmin();
   const { data, error } = await supabase.rpc("rotate_company_invite", {
     target_company_id: company.id,
@@ -21,6 +21,6 @@ export async function rotatePoolInvite(): Promise<RotateInviteResult> {
     };
   }
 
-  revalidateLocalizedPath("/pool");
+  revalidateLocalizedPath("/cleaners");
   return { ok: true, code: data.code, inviteId: data.id };
 }

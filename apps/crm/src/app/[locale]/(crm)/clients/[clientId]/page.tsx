@@ -7,7 +7,7 @@ import { ClientDetailWorkspace } from "./client-detail-workspace";
 
 import type {
   ClientWithSites,
-  PoolCleaner,
+  CompanyCleaner,
   ServiceOption,
 } from "@/features/clients/types";
 import type { RecurringAssignmentsBySite } from "@/features/recurring-assignments/types";
@@ -116,7 +116,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
     id: service.id,
     name: getServiceLabel(service, serviceT),
   }));
-  const poolCleaners: PoolCleaner[] = profileRows.map((profile) => ({
+  const cleaners: CompanyCleaner[] = profileRows.map((profile) => ({
     id: profile.id,
     name: profile.full_name,
   }));
@@ -145,7 +145,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
             .map((named) => ({
               id: named.cleaner_id,
               name:
-                poolCleaners.find((cleaner) => cleaner.id === named.cleaner_id)?.name ??
+                cleaners.find((cleaner) => cleaner.id === named.cleaner_id)?.name ??
                 common("unknownCleaner"),
               slotNumber: named.slot_number,
             })),
@@ -174,7 +174,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
         .map((preference) => ({
           id: preference.cleaner_id,
           name:
-            poolCleaners.find((cleaner) => cleaner.id === preference.cleaner_id)?.name ??
+            cleaners.find((cleaner) => cleaner.id === preference.cleaner_id)?.name ??
             common("unknownCleaner"),
           rank: preference.rank,
         })),
@@ -185,7 +185,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
     <main className="page-shell client-detail-shell">
       <ClientDetailWorkspace
         client={client}
-        poolCleaners={poolCleaners}
+        cleaners={cleaners}
         recurringAssignmentsBySite={recurringAssignmentsBySite}
         services={services}
       />

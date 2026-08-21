@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   describeInviteProblem,
   describeJoinFailure,
-  describePoolSize,
+  describeCleanerCount,
   isInviteState,
   normaliseInviteCode,
 } from "./invite";
@@ -27,7 +27,7 @@ describe("CLE-19 plain-English invite problems", () => {
       describeInviteProblem({
         state: "expired",
         companyName: "Coastal Demo Cleaning",
-        poolSize: 3,
+        cleanerCount: 3,
       }),
     ).toBe("This invite link from Coastal Demo Cleaning has expired. Ask them for a new link.");
   });
@@ -37,7 +37,7 @@ describe("CLE-19 plain-English invite problems", () => {
       describeInviteProblem({
         state: "revoked",
         companyName: "Coastal Demo Cleaning",
-        poolSize: 3,
+        cleanerCount: 3,
       }),
     ).toBe(
       "This invite link from Coastal Demo Cleaning is no longer in use. Ask them for a new link.",
@@ -46,13 +46,13 @@ describe("CLE-19 plain-English invite problems", () => {
 
   it("does not name a company it could not find", () => {
     expect(
-      describeInviteProblem({ state: "unknown", companyName: null, poolSize: 0 }),
+      describeInviteProblem({ state: "unknown", companyName: null, cleanerCount: 0 }),
     ).toBe("We do not know this invite link. Check the link, or ask the company to send it again.");
   });
 
   it("falls back to a company-free sentence when the name is missing", () => {
     expect(
-      describeInviteProblem({ state: "expired", companyName: null, poolSize: 0 }),
+      describeInviteProblem({ state: "expired", companyName: null, cleanerCount: 0 }),
     ).toBe("This invite link has expired. Ask the company for a new link.");
   });
 
@@ -61,7 +61,7 @@ describe("CLE-19 plain-English invite problems", () => {
       describeInviteProblem({
         state: "active",
         companyName: "Coastal Demo Cleaning",
-        poolSize: 3,
+        cleanerCount: 3,
       }),
     ).toBe("");
   });
@@ -82,21 +82,21 @@ describe("CLE-19 join failures", () => {
       "This app is for cleaners. Sign in with your cleaner account.",
     );
     expect(describeJoinFailure("This company removed you from their pool")).toBe(
-      "This company removed you from their pool. Ask them to add you again.",
+      "This company removed you. Ask them to add you again.",
     );
   });
 
   it("never shows a raw database message", () => {
     expect(describeJoinFailure('duplicate key value violates unique constraint "x"')).toBe(
-      "We could not add you to the pool. Please try again.",
+      "We could not add you to this company. Please try again.",
     );
   });
 });
 
-describe("CLE-19 pool size wording", () => {
+describe("CLE-19 cleaner count wording", () => {
   it("counts cleaners in plain words", () => {
-    expect(describePoolSize(0)).toBe("You would be their first cleaner.");
-    expect(describePoolSize(1)).toBe("1 cleaner already works with them.");
-    expect(describePoolSize(7)).toBe("7 cleaners already work with them.");
+    expect(describeCleanerCount(0)).toBe("You would be their first cleaner.");
+    expect(describeCleanerCount(1)).toBe("1 cleaner already works with them.");
+    expect(describeCleanerCount(7)).toBe("7 cleaners already work with them.");
   });
 });

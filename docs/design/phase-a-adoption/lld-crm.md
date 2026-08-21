@@ -5,11 +5,11 @@
 The company-admin app of the [Phase A HLD](hld.md), against the db contract in
 [lld-db.md](lld-db.md). Stories: S1–S8 (the public first-admin acceptance path plus
 delivered screens gaining pay basis and the
-new pool), S22 (job detail + offers), S23 (pay basis picker), S24 (money), S25
+new cleaners screen), S22 (job detail + offers), S23 (pay basis picker), S24 (money), S25
 (cancel — delivered), S28 (send/revoke offers), S30 (bulk import), S31 (jobs list —
 delivered). Delivered internals (route layout, server-action pattern, zod convention,
 `requireCompanyAdmin`) are the authority for anything this file does not change. S30
-also covers the cleaner e-mail send list on the Pool route.
+also covers the cleaner e-mail send list on the Cleaners route.
 F15 adds the complete CRM presentation in `en-AU` and `pt-BR`; cleaner-app screens are
 outside this implementation slice.
 
@@ -22,9 +22,9 @@ pay-basis parameters on the job/rule RPCs, and the changed `assign_job_slot` err
 pattern: zod `safeParse` → `requireCompanyAdmin` → `supabase.rpc` → verbatim error
 mapping → `revalidatePath` → discriminated result.
 
-The Pool e-mail flow adds `prepare_pool_invite_email_batch` and
-`record_pool_invite_email_results`. `sendPoolInviteEmails` and
-`retryFailedPoolInviteEmails` call these RPCs around the server-only Resend Batch API.
+The cleaner e-mail flow adds `prepare_pool_invite_email_batch` and
+`record_pool_invite_email_results`. `sendCleanerInviteEmails` and
+`retryFailedCleanerInviteEmails` call these RPCs around the server-only Resend Batch API.
 Both actions call `requireCompanyAdmin` before they resolve the selected active invite.
 The request contains `en-AU` or `pt-BR`, the normalised recipients, and the accepted
 authority statement. The server derives a stable confirmation key from the invite,
@@ -53,7 +53,7 @@ delivered pattern is unchanged, plain boxes are delivered modules gaining behavi
 ```mermaid
 flowchart LR
     subgraph routes["app/(crm) routes"]
-        RPOOL["pool"]
+        RCLEANERS["cleaners"]
         RJOB["jobs/[jobId]"]
         RROSTER["roster"]
         RMONEY["money"]
@@ -66,12 +66,12 @@ flowchart LR
     end
     FCLI["scripts/invite-first-admin.mjs"]
     subgraph actions["app/actions (server)"]
-        APOOL["pool.ts<br/>(reworked)"]
+        ACLEANERS["cleaners.ts<br/>(reworked)"]
         AOFF["offers.ts (new)"]
         AMONEY["money.ts (new)"]
         AIMP["import.ts (new)"]
         ANOTIF["notifications.ts (new)"]
-        AEMAIL["pool-email.ts (new)"]
+        AEMAIL["cleaner-email.ts (new)"]
         AADMIN["first-admin.ts<br/>(accept)"]
     end
     subgraph rpcs["packages/db RPCs"]
@@ -85,11 +85,11 @@ flowchart LR
     FCLI -->|"secret key"| SAUTH["Supabase Auth Admin"]
     FCLI --> R6
     SAUTH -->|"invite token hash"| RCONF --> RACCEPT --> AADMIN --> R6
-    RPOOL --> APOOL --> R1
+    RCLEANERS --> ACLEANERS --> R1
     RJOB --> AOFF --> R2
     RMONEY --> AMONEY --> R3
     RIMP --> AIMP --> R4
-    RPOOL --> AEMAIL --> R5
+    RCLEANERS --> AEMAIL --> R5
     AEMAIL -->|"batches <= 100"| RESEND["Resend Batch API"]
     RBELL --> ANOTIF -->|read + mark read| NDB[("notifications<br/>(RLS reads)")]
     RROSTER -->|company-scoped reads<br/>+ offers join| VDB[("tables + views")]
@@ -98,14 +98,14 @@ flowchart LR
 *Reads keep the delivered pattern (company-scoped selects under RLS, the roster gaining
 the pending-offers join); every mutation stays a server action calling one RPC.*
 
-- **Pool (`(crm)/pool`, `actions/pool.ts`)** — reworked: a link list (state chip,
+- **Cleaners (`(crm)/cleaners`, `actions/cleaners.ts`)** — reworked: a link list (state chip,
   registration count, age, revoke button) and a creation form. The form leads with the
   offer-details path (title, description, pay basis + value) and offers "bare link" as
   the secondary path (LLD-db decision 3); optional expiry and registration cap.
   `rotate` action is deleted with its RPC. Link URL format is unchanged
   (`<CLEANER_APP_URL>/join?code=…`).
-- **Cleaner e-mail send list (`(crm)/pool`, `actions/pool-email.ts`,
-  `features/pool/email-csv.ts`, `lib/resend.ts`)** — the admin can enter one or more
+- **Cleaner e-mail send list (`(crm)/cleaners`, `actions/cleaner-email.ts`,
+  `features/cleaners/email-csv.ts`, `lib/resend.ts`)** — the admin can enter one or more
   e-mail addresses directly, adding or removing form rows, and can optionally upload a
   UTF-8 CSV with the exact headers `email,name` for a longer list. The browser accepts an
   empty CSV `name`, reports address errors, and deduplicates the combined send list
@@ -129,7 +129,7 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   identifier. The `/onboarding` route stays inside the CRM guard and is the stable CLE-47
   handoff; until CLE-47 lands, it redirects to the roster.
 - **Job detail (`(crm)/jobs/[jobId]`)** — gains the directed route: an "offer to…"
-  picker over active pool members not already assigned, applied, or offered; pending
+  picker over the company's active cleaners not already assigned, applied, or offered; pending
   offers listed with age and a revoke action; the assign path shows the new invariant
   error verbatim. New `actions/offers.ts`.
 - **Recurring assignments (site detail)** — per named cleaner, the offer/consent state

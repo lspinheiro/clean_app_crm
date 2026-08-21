@@ -9,7 +9,7 @@
     "clients": "Clients",
     "clientDetail": "Client details",
     "import": "Import clients and sites",
-    "pool": "Cleaner pool",
+    "cleaners": "Cleaners",
     "money": "Money",
     "settings": "Company settings",
     "firstAdminInvitation": "Accept company invitation"
@@ -47,7 +47,7 @@
     "roster": "Roster",
     "jobs": "Jobs",
     "clients": "Clients",
-    "pool": "Pool",
+    "cleaners": "Cleaners",
     "money": "Money",
     "settings": "Company settings",
     "accountMenu": "Account menu",
@@ -97,8 +97,8 @@
     "inviteCleaner": "Invite a cleaner to add a row to this week.",
     "addSite": "Add a client site to create a roster row.",
     "nothingThisWeek": "Nothing scheduled this week yet. Recurring jobs are generated 4 weeks ahead.",
-    "offerToPool": "Offer to pool",
-    "poolLater": "Available after the cleaner job board launches.",
+    "offerToCleaners": "Offer to cleaners",
+    "cleanersLater": "Available after the cleaner job board launches.",
     "unavailableCleaner": "Unavailable cleaner",
     "unfilledSlots": "Unfilled slots"
   },
@@ -114,7 +114,7 @@
   "Auth": {
     "title": "Sign in",
     "headline": "Your cleaning week, on record.",
-    "intro": "Clients, sites, the pool and every upcoming job in one operational workspace.",
+    "intro": "Clients, sites, your cleaners and every upcoming job in one operational workspace.",
     "location": "Gold Coast · Australia/Brisbane",
     "accountHint": "Use your company admin account.",
     "alphaNote": "Company accounts are self-serve for the founding team during alpha.",
@@ -288,7 +288,7 @@
     ,"draftHint": "Drafts stay private. Posting creates one vacancy per open crew slot."
     ,"saveDraft": "Save draft"
     ,"saving": "Saving…"
-    ,"post": "Post to pool"
+    ,"post": "Post to cleaners"
     ,"posting": "Posting…"
     ,"saveFailed": "The job could not be saved. Please try again."
     ,"applicationApplied": "Applied"
@@ -300,7 +300,7 @@
     ,"slotOpen": "Open"
     ,"slotClosed": "Closed"
     ,"previouslyAssigned": "Previously assigned to {cleanerName}"
-    ,"chooseApplicant": "Choose an applicant or pool cleaner"
+    ,"chooseApplicant": "Choose an applicant or cleaner"
     ,"noActiveAssignment": "No active assignment"
     ,"detailEyebrow": "Job detail"
     ,"cancelJob": "Cancel job"
@@ -323,15 +323,15 @@
     ,"cleanerForSlot": "Cleaner for slot {slot}"
     ,"chooseCleaner": "Choose a cleaner"
     ,"applicantsGroup": "Applicants"
-    ,"poolMembersGroup": "Pool members"
+    ,"cleanersGroup": "Cleaners"
     ,"assignSelected": "Assign {cleanerName} to slot {slot}"
     ,"assignSlot": "Assign cleaner to slot {slot}"
     ,"assigning": "Assigning…"
     ,"assign": "Assign"
-    ,"noPoolCandidates": "No active pool cleaners are available to assign."
+    ,"noCleanerCandidates": "No active cleaners are available to assign."
     ,"assignmentNotConfirmed": "The assignment could not be confirmed. Review the refreshed crew slots before trying again."
     ,"cancellationNotConfirmed": "The cancellation could not be confirmed. Review the refreshed job before trying again."
-    ,"poolResponse": "Pool response"
+    ,"cleanerResponse": "Cleaner response"
     ,"applicants": "Applicants"
     ,"applicantsDescription": "Site preferences set the order; status text records the outcome."
     ,"jobApplicants": "Job applicants"
@@ -407,8 +407,8 @@
     "remove": "Remove {cleanerName}",
     "noPreferred": "No preferred cleaners recorded.",
     "preferredCleaner": "Preferred cleaner",
-    "chooseFromPool": "Choose from cleaner pool",
-    "allAdded": "All pool cleaners added",
+    "chooseFromCleaners": "Choose from cleaners",
+    "allAdded": "All cleaners added",
     "addPreferred": "Add preferred cleaner to {siteName}",
     "add": "Add",
     "savingOrder": "Saving preferred cleaner order…",
@@ -560,11 +560,11 @@
     "siteAlreadyExists": "{siteName} already exists for {clientName}.",
     "siteAlreadyInFile": "{siteName} for {clientName} is already in this file."
   },
-  "Pool": {
+  "Cleaners": {
     "eyebrow": "Private workforce",
-    "title": "Cleaner pool",
+    "title": "Cleaners",
     "description": "Share one controlled invite and keep your active cleaners visible in the CRM.",
-    "inviteTitle": "Cleaner pool invite",
+    "inviteTitle": "Cleaner invite",
     "inviteDescription": "Post this message in your company's WhatsApp group.",
     "signupLink": "Cleaner signup link",
     "copySignupLink": "Copy cleaner signup link",
@@ -576,13 +576,13 @@
     "shareOnWhatsApp": "Share on WhatsApp",
     "generating": "Generating…",
     "generateCode": "Generate new code",
-    "rotationNote": "Generating a new code revokes the previous code. Existing pool members are unchanged.",
+    "rotationNote": "Generating a new code revokes the previous code. Existing cleaners are unchanged.",
     "activeCleaners": "Active cleaners",
-    "memberCount": "{count, plural, one {# cleaner in this pool} other {# cleaners in this pool}}",
-    "members": "Active cleaner pool members",
+    "memberCount": "{count, plural, one {# cleaner in this company} other {# cleaners in this company}}",
+    "members": "Active cleaners",
     "joined": "Joined {date}",
     "noMembers": "No active cleaners yet.",
-    "shareToBuild": "Share the invite message to start building the company pool.",
+    "shareToBuild": "Share the invite message to start building your team of cleaners.",
     "copyingSignup": "Copying cleaner signup link…",
     "copyingInvite": "Copying invite message…",
     "signupCopied": "Cleaner signup link copied.",
@@ -593,7 +593,7 @@
     "reloadingInvite": "{error} Reloading the current invite…",
     "newCodeGenerated": "New invite code generated. The previous code is no longer active.",
     "activeCodeNotConfirmed": "The active code could not be confirmed. Reloading the current invite…",
-    "inviteMessage": "Join {companyName}'s cleaner pool: {joinUrl}\nInvite code: {code}",
+    "inviteMessage": "Join {companyName}'s cleaners: {joinUrl}\nInvite code: {code}",
     "emailSectionTitle": "Invite existing cleaners by email",
     "emailDescription": "Enter email addresses directly, or upload a CSV for a longer list.",
     "emailInviteAction": "Invite by email",
@@ -712,7 +712,7 @@
     "validStartTime": "Choose a valid start time.",
     "validRecurringAssignment": "Choose a valid recurring assignment.",
     "validAssignment": "Choose a valid assignment before trying again.",
-    "activePoolCleaner": "Choose cleaners from the active pool.",
+    "activeCleaner": "Choose active cleaners.",
     "validDuration": "Enter a valid duration.",
     "durationPositive": "Enter a duration greater than zero.",
     "durationMinute": "Enter a duration of at least one minute.",
@@ -746,10 +746,10 @@
     "jobCancelChanged": "The job could not be cancelled. Review the refreshed job and try again.",
     "cancellationUnconfirmed": "The cancellation could not be confirmed. Review the refreshed job before trying again.",
     "inviteRotateFailed": "A new invite code could not be generated. Please try again.",
-    "poolEmailInvalidInput": "Check the cleaner email list and confirm that these existing workers expect the invitation.",
-    "poolEmailNotConfigured": "Email invitations are not configured. Ask an administrator to set the Resend API key, sender address, cleaner app URL, and admin email.",
-    "poolEmailPrepareFailed": "The email invitation batch could not be prepared. Check that the selected invite is still active and try again.",
-    "poolEmailRecordFailed": "The provider response could not be confirmed. Retry this batch before starting another send.",
+    "cleanerEmailInvalidInput": "Check the cleaner email list and confirm that these existing workers expect the invitation.",
+    "cleanerEmailNotConfigured": "Email invitations are not configured. Ask an administrator to set the Resend API key, sender address, cleaner app URL, and admin email.",
+    "cleanerEmailPrepareFailed": "The email invitation batch could not be prepared. Check that the selected invite is still active and try again.",
+    "cleanerEmailRecordFailed": "The provider response could not be confirmed. Retry this batch before starting another send.",
     "logoType": "Choose a PNG, JPEG, or WebP image.",
     "logoCompressFailed": "We could not compress that logo below 400 KB.",
     "logoUploadType": "Choose a compressed WebP logo under 400 KB.",

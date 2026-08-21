@@ -61,7 +61,7 @@ async function openMyJobs(page: Page, email: string) {
 
 test.describe("@CLE-24 the address is gated on assignment", () => {
   test("stays hidden across the whole cleaner app before she is assigned", async ({ page }) => {
-    // Demo Cleaner Three is an active pool member with no assignment at all, so she is the
+    // Demo Cleaner Three is an active cleaner with no assignment at all, so she is the
     // exact case the gate exists for. Asserted app-wide rather than screen-wide: a future
     // screen that leaks the address must fail this test too.
     await signIn(page, unassignedEmail);

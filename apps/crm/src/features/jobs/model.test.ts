@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { buildJobSlots, sortJobApplicants, sortPoolCandidates } from "./model";
-import type { JobApplicant, JobAssignmentRecord, JobPoolCandidate } from "./types";
+import { buildJobSlots, sortJobApplicants, sortCleanerCandidates } from "./model";
+import type { JobApplicant, JobAssignmentRecord, JobCleanerCandidate } from "./types";
 
 describe("CLE-22 job detail model", () => {
   it("orders applicants by exact site preference, then application time", () => {
@@ -44,11 +44,11 @@ describe("CLE-22 job detail model", () => {
     ]);
   });
 
-  it("orders direct pool candidates by preference then name", () => {
-    const candidates: JobPoolCandidate[] = [
+  it("orders direct cleaner candidates by preference then name", () => {
+    const candidates: JobCleanerCandidate[] = [
       {
         cleanerId: "40000000-0000-4000-8000-000000000004",
-        cleanerName: "Zoe Pool",
+        cleanerName: "Zoe Cleaner",
         preferredRank: null,
       },
       {
@@ -63,16 +63,16 @@ describe("CLE-22 job detail model", () => {
       },
       {
         cleanerId: "40000000-0000-4000-8000-000000000003",
-        cleanerName: "Ana Pool",
+        cleanerName: "Ana Cleaner",
         preferredRank: null,
       },
     ];
 
-    expect(sortPoolCandidates(candidates).map((item) => item.cleanerName)).toEqual([
+    expect(sortCleanerCandidates(candidates).map((item) => item.cleanerName)).toEqual([
       "Ari Preferred",
       "Bea Preferred",
-      "Ana Pool",
-      "Zoe Pool",
+      "Ana Cleaner",
+      "Zoe Cleaner",
     ]);
   });
 

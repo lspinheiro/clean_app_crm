@@ -61,7 +61,7 @@ describe("CLE-9 preferred-cleaner reconciliation", () => {
     render(
       <ClientDetailWorkspace
         client={client}
-        poolCleaners={[
+        cleaners={[
           { id: "cleaner-a", name: "Cleaner A" },
           { id: "cleaner-b", name: "Cleaner B" },
         ]}
@@ -96,7 +96,7 @@ describe("CLE-9 preferred-cleaner reconciliation", () => {
     render(
       <ClientDetailWorkspace
         client={client}
-        poolCleaners={[]}
+        cleaners={[]}
         recurringAssignmentsBySite={{ [siteId]: [] }}
         services={[{ id: "service-1", name: "Standard clean" }]}
       />,

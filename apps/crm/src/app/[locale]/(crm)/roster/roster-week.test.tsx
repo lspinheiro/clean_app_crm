@@ -62,7 +62,7 @@ describe("RosterWeek", () => {
     expect(screen.getByTestId("roster-footer-gap-count")).toHaveTextContent(
       "1 unfilled slot this week",
     );
-    expect(screen.getByRole("button", { name: "Offer to pool" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Offer to cleaners" })).toBeDisabled();
     expect(screen.getByText("Available after the cleaner job board launches.")).toBeVisible();
     expect(screen.getByRole("link", { name: "Previous week" })).toHaveAttribute(
       "href",

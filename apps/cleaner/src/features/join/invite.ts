@@ -3,7 +3,7 @@ export type InviteState = "active" | "expired" | "revoked" | "unknown";
 export type InvitePreview = {
   state: InviteState;
   companyName: string | null;
-  poolSize: number;
+  cleanerCount: number;
 };
 
 const inviteStates: readonly string[] = ["active", "expired", "revoked", "unknown"];
@@ -46,17 +46,18 @@ const joinFailures: ReadonlyMap<string, string> = new Map([
   ["Invite code has expired", "This invite link has expired. Ask the company for a new link."],
   ["Cleaner access required", "This app is for cleaners. Sign in with your cleaner account."],
   [
+    // Key is the RPC's own message, verbatim; only the sentence we show is ours.
     "This company removed you from their pool",
-    "This company removed you from their pool. Ask them to add you again.",
+    "This company removed you. Ask them to add you again.",
   ],
 ]);
 
 export function describeJoinFailure(message: string): string {
-  return joinFailures.get(message) ?? "We could not add you to the pool. Please try again.";
+  return joinFailures.get(message) ?? "We could not add you to this company. Please try again.";
 }
 
-export function describePoolSize(poolSize: number): string {
-  if (poolSize <= 0) return "You would be their first cleaner.";
-  if (poolSize === 1) return "1 cleaner already works with them.";
-  return `${poolSize} cleaners already work with them.`;
+export function describeCleanerCount(cleanerCount: number): string {
+  if (cleanerCount <= 0) return "You would be their first cleaner.";
+  if (cleanerCount === 1) return "1 cleaner already works with them.";
+  return `${cleanerCount} cleaners already work with them.`;
 }

@@ -6,21 +6,21 @@ import { type ChangeEvent, useMemo, useState } from "react";
 import { z } from "zod";
 
 import {
-  retryFailedPoolInviteEmails,
-  sendPoolInviteEmails,
-  type PoolInviteEmailActionResult,
-} from "@/app/actions/pool-email";
+  retryFailedCleanerInviteEmails,
+  sendCleanerInviteEmails,
+  type CleanerInviteEmailActionResult,
+} from "@/app/actions/cleaner-email";
 import {
-  POOL_INVITE_EMAIL_RECIPIENT_LIMIT,
-  parsePoolInviteEmailCsv,
-  type PoolInviteEmailCsvMessageKey,
-  type PoolInviteEmailCsvPreview,
-} from "@/features/pool/email-csv";
-import { buildPoolInviteEmail } from "@/features/pool/email";
+  CLEANER_INVITE_EMAIL_RECIPIENT_LIMIT,
+  parseCleanerInviteEmailCsv,
+  type CleanerInviteEmailCsvMessageKey,
+  type CleanerInviteEmailCsvPreview,
+} from "@/features/cleaners/email-csv";
+import { buildCleanerInviteEmail } from "@/features/cleaners/email";
 import type { AppLocale } from "@/i18n/config";
 import { localiseUserMessage } from "@/i18n/user-message";
 
-type PoolEmailInviteProps = {
+type CleanerEmailInviteProps = {
   companyName: string;
   inviteId: string | null;
   joinUrl: string | null;
@@ -35,32 +35,32 @@ type ManualRecipientIssue = "duplicate" | "invalid" | null;
 
 const manualEmailSchema = z.email().max(320);
 
-function emptyPreview(): PoolInviteEmailCsvPreview {
+function emptyPreview(): CleanerInviteEmailCsvPreview {
   return { fileError: null, recipients: [], rows: [] };
 }
 
-export function PoolEmailInvite({
+export function CleanerEmailInvite({
   companyName,
   inviteId,
   joinUrl,
-}: PoolEmailInviteProps) {
+}: CleanerEmailInviteProps) {
   const currentLocale = useLocale() as AppLocale;
-  const t = useTranslations("Pool");
+  const t = useTranslations("Cleaners");
   const [expanded, setExpanded] = useState(false);
   const [selectedLocale, setSelectedLocale] = useState<AppLocale>(currentLocale);
   const [manualRecipients, setManualRecipients] = useState<ManualRecipientInput[]>([
     { email: "", id: 1 },
   ]);
-  const [preview, setPreview] = useState<PoolInviteEmailCsvPreview>(emptyPreview);
+  const [preview, setPreview] = useState<CleanerInviteEmailCsvPreview>(emptyPreview);
   const [fileName, setFileName] = useState("");
   const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<Extract<PoolInviteEmailActionResult, { ok: true }> | null>(null);
+  const [result, setResult] = useState<Extract<CleanerInviteEmailActionResult, { ok: true }> | null>(null);
   const [error, setError] = useState("");
 
   const emailPreview = useMemo(
     () => joinUrl
-      ? buildPoolInviteEmail({ companyName, joinUrl, locale: selectedLocale })
+      ? buildCleanerInviteEmail({ companyName, joinUrl, locale: selectedLocale })
       : null,
     [companyName, joinUrl, selectedLocale],
   );
@@ -94,7 +94,7 @@ export function PoolEmailInvite({
   const csvInvalidCount = preview.rows.filter((row) => row.status === "invalid").length;
   const duplicateCount = preview.rows.filter((row) => row.status === "duplicate").length;
   const hasManualIssues = manualRecipientRows.some((recipient) => recipient.issue !== null);
-  const exceedsRecipientLimit = recipients.length > POOL_INVITE_EMAIL_RECIPIENT_LIMIT;
+  const exceedsRecipientLimit = recipients.length > CLEANER_INVITE_EMAIL_RECIPIENT_LIMIT;
   const canSend = Boolean(
     inviteId
     && joinUrl
@@ -106,7 +106,7 @@ export function PoolEmailInvite({
     && !submitting,
   );
 
-  function csvMessage(key: PoolInviteEmailCsvMessageKey) {
+  function csvMessage(key: CleanerInviteEmailCsvMessageKey) {
     return t(`emailCsv.${key}`);
   }
 
@@ -126,7 +126,7 @@ export function PoolEmailInvite({
       const source = new TextDecoder("utf-8", { fatal: true }).decode(
         await file.arrayBuffer(),
       );
-      setPreview(parsePoolInviteEmailCsv(source, csvMessage));
+      setPreview(parseCleanerInviteEmailCsv(source, csvMessage));
     } catch {
       setPreview({
         fileError: t("emailFileReadFailed"),
@@ -166,7 +166,7 @@ export function PoolEmailInvite({
     setError("");
   }
 
-  function showActionError(actionResult: Extract<PoolInviteEmailActionResult, { ok: false }>) {
+  function showActionError(actionResult: Extract<CleanerInviteEmailActionResult, { ok: false }>) {
     setError(localiseUserMessage(actionResult.error, currentLocale) ?? t("emailSendFailed"));
   }
 
@@ -175,7 +175,7 @@ export function PoolEmailInvite({
     setSubmitting(true);
     setError("");
     try {
-      const actionResult = await sendPoolInviteEmails({
+      const actionResult = await sendCleanerInviteEmails({
         authorityConfirmed,
         inviteId,
         locale: selectedLocale,
@@ -195,7 +195,7 @@ export function PoolEmailInvite({
     setSubmitting(true);
     setError("");
     try {
-      const actionResult = await retryFailedPoolInviteEmails({
+      const actionResult = await retryFailedCleanerInviteEmails({
         batchId: result.batchId,
         retryKey: crypto.randomUUID(),
       });
@@ -209,8 +209,8 @@ export function PoolEmailInvite({
   }
 
   return (
-    <section aria-label={t("emailSectionTitle")} className="pool-email-invite">
-      <div className="pool-email-invite__entry">
+    <section aria-label={t("emailSectionTitle")} className="cleaners-email-invite">
+      <div className="cleaners-email-invite__entry">
         <div>
           <strong>{t("emailSectionTitle")}</strong>
           <p>{t("emailDescription")}</p>
@@ -230,21 +230,21 @@ export function PoolEmailInvite({
       {expanded ? (
         <form
           aria-label={t("emailRecipientsForm")}
-          className="pool-email-invite__flow"
+          className="cleaners-email-invite__flow"
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
             void sendInvitations();
           }}
         >
-          <div className="pool-email-invite__controls">
+          <div className="cleaners-email-invite__controls">
             <div>
               <p className="field-label">{t("emailRecipientsForm")}</p>
               <p className="field-hint">{t("emailManualDescription")}</p>
             </div>
             {manualRecipientRows.map((recipient, index) => {
-              const errorId = `pool-email-manual-${recipient.id}-error`;
-              const inputId = `pool-email-manual-${recipient.id}`;
+              const errorId = `cleaners-email-manual-${recipient.id}-error`;
+              const inputId = `cleaners-email-manual-${recipient.id}`;
               const issue = recipient.issue === "invalid"
                 ? t("emailCsv.validEmail")
                 : recipient.issue === "duplicate"
@@ -255,7 +255,7 @@ export function PoolEmailInvite({
                   <label htmlFor={inputId}>
                     {t("emailManualAddress", { index: index + 1 })}
                   </label>
-                  <div className="pool-email-invite__file-row">
+                  <div className="cleaners-email-invite__file-row">
                     <input
                       aria-describedby={issue ? errorId : undefined}
                       aria-invalid={Boolean(issue)}
@@ -294,7 +294,7 @@ export function PoolEmailInvite({
               disabled={
                 submitting
                 || manualRecipients.length + preview.recipients.length
-                  >= POOL_INVITE_EMAIL_RECIPIENT_LIMIT
+                  >= CLEANER_INVITE_EMAIL_RECIPIENT_LIMIT
               }
               onClick={addManualRecipient}
               type="button"
@@ -304,11 +304,11 @@ export function PoolEmailInvite({
             </button>
 
             <p className="field-hint">{t("emailCsvAlternative")}</p>
-            <label className="field-label" htmlFor="pool-email-csv">
+            <label className="field-label" htmlFor="cleaners-email-csv">
               {t("emailCsvFile")}
             </label>
-            <div className="pool-email-invite__file-row">
-              <label className="button button--secondary" htmlFor="pool-email-csv">
+            <div className="cleaners-email-invite__file-row">
+              <label className="button button--secondary" htmlFor="cleaners-email-csv">
                 <Upload aria-hidden="true" size={17} />
                 {t("emailChooseCsv")}
               </label>
@@ -316,7 +316,7 @@ export function PoolEmailInvite({
                 accept=".csv,text/csv"
                 className="visually-hidden"
                 disabled={submitting}
-                id="pool-email-csv"
+                id="cleaners-email-csv"
                 onChange={(event) => void chooseFile(event)}
                 type="file"
               />
@@ -331,13 +331,13 @@ export function PoolEmailInvite({
               </a>
             </div>
 
-            <label className="field-label" htmlFor="pool-email-locale">
+            <label className="field-label" htmlFor="cleaners-email-locale">
               {t("emailLocale")}
             </label>
             <select
               className="form-control"
               disabled={submitting}
-              id="pool-email-locale"
+              id="cleaners-email-locale"
               onChange={(event) => setSelectedLocale(event.target.value as AppLocale)}
               value={selectedLocale}
             >
@@ -347,17 +347,17 @@ export function PoolEmailInvite({
           </div>
 
           {preview.fileError ? (
-            <p className="pool-email-invite__error" role="alert">{preview.fileError}</p>
+            <p className="cleaners-email-invite__error" role="alert">{preview.fileError}</p>
           ) : null}
 
           {exceedsRecipientLimit ? (
-            <p className="pool-email-invite__error" role="alert">
+            <p className="cleaners-email-invite__error" role="alert">
               {t("emailRecipientLimit")}
             </p>
           ) : null}
 
           {recipients.length || preview.rows.length ? (
-            <div className="pool-email-invite__counts" aria-live="polite">
+            <div className="cleaners-email-invite__counts" aria-live="polite">
               <strong>{t("emailRecipientCount", { count: recipients.length })}</strong>
                 {duplicateCount ? <span>{t("emailDuplicateCount", { count: duplicateCount })}</span> : null}
               {csvInvalidCount ? <span>{t("emailInvalidCount", { count: csvInvalidCount })}</span> : null}
@@ -365,8 +365,8 @@ export function PoolEmailInvite({
           ) : null}
 
           {preview.rows.length ? (
-              <div className="pool-email-invite__table-scroll">
-                <table aria-label={t("emailCsvPreview")} className="pool-email-invite__table">
+              <div className="cleaners-email-invite__table-scroll">
+                <table aria-label={t("emailCsvPreview")} className="cleaners-email-invite__table">
                   <thead>
                     <tr>
                       <th scope="col">{t("emailRow")}</th>
@@ -390,7 +390,7 @@ export function PoolEmailInvite({
           ) : null}
 
           {recipients.length && emailPreview ? (
-            <section aria-label={t("emailMessagePreview")} className="pool-email-invite__message">
+            <section aria-label={t("emailMessagePreview")} className="cleaners-email-invite__message">
               <h3>{t("emailMessagePreview")}</h3>
               <dl>
                 <div><dt>{t("emailSubject")}</dt><dd>{emailPreview.subject}</dd></div>
@@ -400,7 +400,7 @@ export function PoolEmailInvite({
           ) : null}
 
           {recipients.length ? (
-            <label className="pool-email-invite__authority">
+            <label className="cleaners-email-invite__authority">
               <input
                 checked={authorityConfirmed}
                 disabled={submitting}
@@ -420,10 +420,10 @@ export function PoolEmailInvite({
                 : t("emailSend")}
           </button>
 
-          {error ? <p className="pool-email-invite__error" role="alert">{error}</p> : null}
+          {error ? <p className="cleaners-email-invite__error" role="alert">{error}</p> : null}
 
           {result ? (
-            <section aria-label={t("emailResults")} className="pool-email-invite__results">
+            <section aria-label={t("emailResults")} className="cleaners-email-invite__results">
               <div>
                 <CheckCircle2 aria-hidden="true" size={19} />
                 <strong>{t("emailAcceptedCount", { count: result.accepted.length })}</strong>

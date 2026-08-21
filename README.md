@@ -12,8 +12,8 @@ Gold Coast, QLD, Australia · UI in English · currency AUD · timezone `Austral
    assignments, one-off jobs, and a week-ahead roster here. Once the schedule lives in the
    product, every outbound action derives from it: a roster gap, an uncovered job instance, or a
    dropout produces a fully specified **vacancy** (site, time, duration, rate, preferred-cleaner
-   order), and pool offers, push notifications, and recruitment posts are consumers of vacancies.
-2. **Post positions, fill them fast.** Vacancies go to the company's private cleaner pool for
+   order), and cleaner offers, push notifications, and recruitment posts are consumers of vacancies.
+2. **Post positions, fill them fast.** Vacancies go to the company's private set of cleaners for
    one-tap application, to a preference-ordered urgent-backfill cascade on dropouts, and (later)
    to the company's WhatsApp groups via share links with magic-link registration.
 3. **Stay free at the core.** Scheduling, dispatch, and recruitment are permanently free; the data
@@ -40,7 +40,7 @@ The alpha backlog, end to end:
    ordered preferred cleaners).
 2. Recurring assignments that generate job instances, with crew size ≥ 1.
 3. Roster week view per cleaner/site with unfilled slots surfaced as vacancies.
-4. Dropout handling: mark dropped → urgent re-post to the pool board + push blast.
+4. Dropout handling: mark dropped → urgent re-post to the cleaner board + push blast.
 5. "Available today" toggle on cleaner profiles, shown on applicant lists.
 6. First-job marker and completion-outcome capture (including no-show).
 
@@ -186,7 +186,7 @@ specified in
 `docs/design/phase-a-adoption.md` (with decisions in `docs/decisions/` and vocabulary in
 `docs/glossary.md`) — a fresh monorepo-owned Supabase project (`packages/db`), `apps/crm`
 (clients/sites, recurring assignments, roster, minimal dispatch) and a minimal `apps/cleaner`
-(parity port of the prototype's cleaner loop with link-first pool join). Design exploration
+(parity port of the prototype's cleaner loop with link-first company join). Design exploration
 preceded build: root `DESIGN.md` supplies the shared tokens and the approved Stitch screens are
 reference material for implementation. The deterministic design-detect workflow remains disabled
 until the M1 record surfaces are complete (see `AGENTS.md` § Design quality).

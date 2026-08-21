@@ -104,7 +104,7 @@ describe("CLE-23 new job form", () => {
     await user.type(screen.getByLabelText("Cleaner pay per slot (AUD)"), "175.50");
     await user.type(screen.getByLabelText("Client charge (AUD, admin only)"), "480");
     await user.type(screen.getByLabelText("Internal notes (admin only)"), "Kitchen detail");
-    await user.click(screen.getByRole("button", { name: "Post to pool" }));
+    await user.click(screen.getByRole("button", { name: "Post to cleaners" }));
 
     await waitFor(() => expect(mocks.createOneOffJob).toHaveBeenCalledOnce());
     const submitted = Object.fromEntries(

@@ -515,8 +515,11 @@ reset request.jwt.claim.role;
 
 -- CLE-24 my-jobs fixtures. The job above is `completed`, which `cleaner_my_jobs` filters,
 -- so without these two nothing at all would appear on the cleaner's my-jobs screen.
--- Scheduled relative to now so the acceptance suite does not drift with the calendar the
--- way CLE-20's did before CLE-20's follow-up fix.
+-- Scheduled relative to today so the acceptance suite does not drift with the calendar the
+-- way CLE-20's did before CLE-20's follow-up fix. The time of day is pinned to midday
+-- Brisbane rather than left floating at `now()`: a floating clock time drifts into the
+-- recurring roster windows above (Monday 08:00-10:00, Tuesday 17:30-19:00) and the seed
+-- then fails on `job_assignments_no_cleaner_overlap`.
 insert into public.jobs (
   id,
   site_id,
@@ -533,7 +536,10 @@ insert into public.jobs (
     '10000000-0000-4000-8000-000000000802',
     '10000000-0000-4000-8000-000000000401',
     '30000000-0000-4000-8000-000000000002',
-    now() + interval '1 day',
+    timezone(
+      'Australia/Brisbane',
+      (timezone('Australia/Brisbane', now())::date + 1)::timestamp + interval '12 hours'
+    ),
     120,
     12000,
     21000,
@@ -546,7 +552,10 @@ insert into public.jobs (
     '10000000-0000-4000-8000-000000000804',
     '10000000-0000-4000-8000-000000000404',
     '30000000-0000-4000-8000-000000000002',
-    now() + interval '3 days',
+    timezone(
+      'Australia/Brisbane',
+      (timezone('Australia/Brisbane', now())::date + 3)::timestamp + interval '12 hours'
+    ),
     60,
     6000,
     11000,
@@ -558,7 +567,10 @@ insert into public.jobs (
     '10000000-0000-4000-8000-000000000803',
     '10000000-0000-4000-8000-000000000401',
     '30000000-0000-4000-8000-000000000002',
-    now() + interval '2 days',
+    timezone(
+      'Australia/Brisbane',
+      (timezone('Australia/Brisbane', now())::date + 2)::timestamp + interval '12 hours'
+    ),
     90,
     9000,
     16000,

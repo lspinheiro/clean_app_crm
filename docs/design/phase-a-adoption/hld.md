@@ -1,4 +1,4 @@
-# Phase A — company onboarding and pool adoption (alpha) — HLD
+# Phase A — company onboarding and cleaner adoption (alpha) — HLD
 
 ## Overview
 
@@ -26,7 +26,7 @@ changes. Delivered:
 - Jobs, crew slots, applications (`applied`/`assigned`/`not_selected`/`withdrawn`), the
   `vacancies` view, and the cleaner views (`cleaner_job_board`, `cleaner_my_jobs`) with
   the audited address RPC.
-- Pool invite: one active 6-character code per company with rotate-in-place — the model
+- Cleaner invite: one active 6-character code per company with rotate-in-place — the model
   PRD decision #8 rejected. No registration cap, no per-link attribution, no offer
   details on the link.
 - Cleaner join: a new account signs up with e-mail + password, while an existing account
@@ -37,7 +37,7 @@ changes. Delivered:
 - Notifications are rows in a `notifications` table only; web-push, `product_events`
   (S26), and bulk CSV import (S30) are absent.
 - Identity is the superseded global-role model: `profiles.role` is the single
-  authority, `company_members` holds both the admin link and pool memberships, and one
+  authority, `company_members` holds both the admin link and cleaner memberships, and one
   company has exactly one admin. PRD decisions #16–#20 (2026-08-19) replace this with
   the membership model below.
 
@@ -86,7 +86,7 @@ Component responsibilities:
   views, and the generation job. Seeded by adaptation of the prototype's migrations, then
   evolved freely ([ADR 0001](../../decisions/0001-alpha-database-fresh-supabase-project.md)).
 - **`apps/crm`** — the company-admin dashboard (Next.js, SSR): roster, clients/sites,
-  recurring assignments, pool, company settings (employees list, S34), minimal
+  recurring assignments, cleaners, company settings (employees list, S34), minimal
   dispatch, and the bulk CSV import (S30). Every screen operates in one active company
   (S33): the layout resolves it from the session account's employee memberships, shows
   the switcher only when the account holds two or more, persists the last-active
@@ -96,7 +96,7 @@ Component responsibilities:
   (S30): the browser parses and validates the file against the published column
   format, shows a preview with per-row errors, and submits confirmed rows through the
   same server actions and RPCs as one-by-one entry. Reads are company-scoped;
-  state-changing mutations go through RPCs. The Pool route also accepts directly entered
+  state-changing mutations go through RPCs. The Cleaners route also accepts directly entered
   cleaner e-mail addresses or parses an optional cleaner CSV in the browser, previews the
   one-time invitation, and submits a confirmed send list
   to a server-only Resend adapter. The adapter never exposes its API key to the browser.
@@ -144,7 +144,7 @@ Component responsibilities:
   and its first active owner employee membership, and consumes the invitation. Failed,
   expired, revoked, used, or mismatched invitations create no company or membership.
 - Authority derives from memberships only (HLD decision 19). An account holds employee
-  memberships (role `owner` or `staff`) and pool memberships; no global account role
+  memberships (role `owner` or `staff`) and cleaner memberships; no global account role
   exists. RLS policies and the cleaner views ask "does this account hold an active
   membership of the required kind in this company", never "what is this profile".
   A platform-internal admin marker exists outside the product model.
@@ -188,9 +188,9 @@ Component responsibilities:
   rate or fixed amount, with its value) stated at creation — plus optional expiry,
   optional maximum registrations, and revocation. The pre-registration preview renders
   from the link itself; a link references no job record, and registration through it
-  produces pool membership only. Each registration attributes to the link that admitted
-  it, and the CRM pool screen shows per-link state (active / expired / revoked / limit
-  reached) and registration count. The delivered one-active-code-with-rotation model
+  produces a cleaner membership only. Each registration attributes to the link that
+  admitted it, and the CRM cleaners screen shows per-link state (active / expired /
+  revoked / limit reached) and registration count. The delivered one-active-code-with-rotation model
   (`rotate_company_invite`) gives way to this multi-link model.
 - Cleaner e-mail invitations (S8/S30) use one selected active invite. The browser accepts
   one or more directly entered e-mail addresses or an optional CSV with `email` plus
@@ -200,14 +200,14 @@ Component responsibilities:
   RPCs, and calls Resend in chunks of at most 100, with at most 500 unique recipients in
   one confirmed alpha send. The provider result updates each recipient to accepted or
   failed. An explicit retry selects failed recipients only. No step creates a Supabase
-  Auth user or a pool membership.
+  Auth user or a cleaner membership.
 - Pay flows as a (basis, value) pair: fixed amount per slot, or hourly rate. Site
   defaults seed the pair; recurring assignments carry it; generated jobs inherit it;
   one-off jobs prefill it from the site default. Every surface shows pay as the admin
   stated it. No surface computes a total. For an hourly job, the admin states the
   settled amount at mark-paid; that amount is what `ledger_entries` records.
-- Only manually posted jobs trigger pool push notifications (PRD decision log #2);
-  generated instances and auto-assignments are silent in this cycle.
+- Only manually posted jobs trigger push notifications to the company's cleaners (PRD
+  decision log #2); generated instances and auto-assignments are silent in this cycle.
 - Instrumentation events land in `product_events` at each funnel step (PRD S26).
 
 The critical path across components — a directed series offer:
@@ -239,7 +239,7 @@ admin is a separate internal marker; `last_active_company` for S33),
 `employee_memberships` (company + profile + role `owner`/`staff` + status; a partial
 unique index guarantees at least one owner via the guard RPCs),
 `employee_invitations` (invited e-mail, chosen role, 7-day expiry, state:
-pending/accepted/expired/revoked), `company_members` (pool memberships only — the
+pending/accepted/expired/revoked), `company_members` (cleaner memberships only — the
 cleaner side; each membership attributes to its admitting invite),
 `company_invites` (multi-link: admin-authored offer details, pay shape, optional expiry
 and registration cap, revocation), `clients`, `sites` (address, access notes, defaults,
@@ -263,8 +263,8 @@ state only), and the vacancy view.
 | S5 (recurring assignments) | `apps/crm`, `packages/db` `recurring_assignments` + named-cleaner side table |
 | S6 (generated instances: consent-gated assignment, offered, posted vacancies) | generation job (pg_cron + on-edit, reads series consent), `offers`, vacancy view |
 | S7 (roster week view) | `apps/crm` roster, vacancy view |
-| S8 (pool invite link with offer details, limits, revocation, and confirmed delivery) | `apps/crm` pool, server-only Resend adapter, `packages/db` `company_invites` + company-scoped e-mail batch state |
-| S9–S12 (link-first join, auto pool join, PWA + push opt-in, board) | `apps/cleaner` join + board, cleaner views, RPCs |
+| S8 (cleaner invite link with offer details, limits, revocation, and confirmed delivery) | `apps/crm` cleaners, server-only Resend adapter, `packages/db` `company_invites` + company-scoped e-mail batch state |
+| S9–S12 (link-first join, automatic cleaner membership, PWA + push opt-in, board) | `apps/cleaner` join + board, cleaner views, RPCs |
 | S27 (cleaner sign-in: Google OAuth / email + password) | Supabase Auth (Google provider + email/password, PKCE callback route in `apps/cleaner`) |
 | S28–S29 (directed offers with accept/decline) | `offers` entity + offer RPCs, `apps/crm` job detail + recurring assignment, `apps/cleaner` offers surface, generation job (consent-gated), notifications |
 | S30 (bulk CSV for company data; direct entry or CSV for cleaner send lists) | `apps/crm` client-side validation + preview; existing write RPCs for company data; Resend adapter and batch RPCs for cleaner invitations |
@@ -276,7 +276,7 @@ state only), and the vacancy view.
 | S17–S18 (my jobs, gated address, status taps) | `apps/cleaner`, cleaner views, assignment-gated boundary |
 | S19, S24 (money views, mark-paid) | `apps/cleaner` money, `apps/crm` money, `ledger_entries`, mark-paid RPC (amount stated for hourly jobs) |
 | S20 (push delivery) | web-push infrastructure, push abstraction module |
-| S21 (profile with pools) | `apps/cleaner`, cleaner views |
+| S21 (profile with joined companies) | `apps/cleaner`, cleaner views |
 | S22–S23, S25 (job detail + per-slot assign, one-off creation, cancel) | `apps/crm` jobs, `create_one_off_job`/`assign_job_slot`/`cancel_job` RPCs |
 | S26 (instrumentation) | `product_events` writes from both apps and RPCs |
 

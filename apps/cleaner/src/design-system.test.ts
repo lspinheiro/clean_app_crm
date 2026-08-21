@@ -49,7 +49,7 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
   });
 
   it("keeps caption greys on the AA-safe token", async () => {
-    for (const selector of [".field-hint", ".consent-caption", ".invite-card__pool"]) {
+    for (const selector of [".field-hint", ".consent-caption", ".invite-card__cleaners"]) {
       const css = await readFile(globalsPath, "utf8");
       const escaped = selector.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
       expect(css).toMatch(new RegExp(`${escaped}\\s*\\{[^}]*color: var\\(--color-gray-600\\);`));

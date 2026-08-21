@@ -4,7 +4,7 @@
 
 The cleaner PWA of the [Phase A HLD](hld.md), against the db contract in
 [lld-db.md](lld-db.md). Stories: S9 (register: Google OAuth or email + password,
-webview steering, dead-link states), S10 (pool join — delivered), S11 (PWA install +
+webview steering, dead-link states), S10 (cleaner join — delivered), S11 (PWA install +
 push opt-in), S12/S16 (board — delivered view, apply/withdraw wiring and ordering
 new), S17 (my jobs + gated address), S18 (status taps), S19 (money), S20 (push
 receipt), S21 (profile), S27 (return sign-in), S29 (offers surface). Delivered
@@ -64,7 +64,7 @@ by notification type (offers → `/offers`, otherwise `/jobs` or `/board`).*
 
 - **Join (`app/join`)** — renders the link content from the extended
   `cleaner_invite_preview` (title, description, pay shape) with the bare-link
-  fallback (company name + pool size); new `limit_reached` dead state joins
+  fallback (company name + `pool_size`); new `limit_reached` dead state joins
   revoked/expired. The delivered e-mail path offers two explicit modes: create an
   account, or sign in to an existing account and return to the same invite. A signed-in
   account sees its identity and only the cleaner profile fields required to join; this
@@ -100,7 +100,7 @@ by notification type (offers → `/offers`, otherwise `/jobs` or `/board`).*
   (S17 gating — never cached beyond the session).
 - **Money (`(cleaner)/money`)** — over `cleaner_money`: "to receive" (unpaid) and
   "received" (paid); hourly unpaid rows show the rate.
-- **Profile (`(cleaner)/profile`)** — name, phone, suburb, joined pools; push
+- **Profile (`(cleaner)/profile`)** — name, phone, suburb, joined companies; push
   subscription toggle.
 - **PWA (`lib/push.ts`, service worker, manifest)** — app-shell caching (ADR 0004),
   `beforeinstallprompt`-driven install prompt and push opt-in offered after the first
@@ -138,7 +138,7 @@ sequenceDiagram
         SYS->>SB: signInWithOAuth(google) → /callback?code=X
         SYS->>SYS: join screen: phone + suburb<br/>(name prefilled from Google)
         SYS->>DB: join(code, phone, suburb)
-        DB-->>SYS: pool joined → board
+        DB-->>SYS: membership created → board
     end
 ```
 

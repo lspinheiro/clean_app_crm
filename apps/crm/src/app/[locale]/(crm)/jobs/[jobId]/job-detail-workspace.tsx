@@ -15,7 +15,7 @@ import {
 import type {
   JobApplicationStatus,
   JobDetail,
-  JobPoolCandidate,
+  JobCleanerCandidate,
   JobSlot,
 } from "@/features/jobs/types";
 import type { AppLocale } from "@/i18n/config";
@@ -57,7 +57,7 @@ type Translator = (
   values?: Record<string, string | number>,
 ) => string;
 
-function candidateLabel(candidate: JobPoolCandidate, t: Translator) {
+function candidateLabel(candidate: JobCleanerCandidate, t: Translator) {
   return candidate.preferredRank === null
     ? candidate.cleanerName
     : t("preferredCandidate", {
@@ -161,12 +161,12 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
         .filter((applicant) => applicant.status === "withdrawn")
         .map((applicant) => applicant.cleanerId),
     );
-    return job.poolCandidates.filter(
+    return job.cleanerCandidates.filter(
       (candidate) =>
         !appliedIds.has(candidate.cleanerId) &&
         !withdrawnIds.has(candidate.cleanerId),
     );
-  }, [job.applicants, job.poolCandidates]);
+  }, [job.applicants, job.cleanerCandidates]);
   const allCandidates = [...appliedCandidates, ...directCandidates];
   const candidatesById = new Map(
     allCandidates.map((candidate) => [candidate.cleanerId, candidate]),
@@ -390,7 +390,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
                         </optgroup>
                       ) : null}
                       {directCandidates.length ? (
-                        <optgroup label={t("poolMembersGroup")}>
+                        <optgroup label={t("cleanersGroup")}>
                           {directCandidates.map((candidate) => (
                             <option key={candidate.cleanerId} value={candidate.cleanerId}>
                               {candidateLabel(candidate, t)}
@@ -417,7 +417,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
                   </form>
                 ) : showAssignment ? (
                   <p className="job-slot-empty">
-                    {t("noPoolCandidates")}
+                    {t("noCleanerCandidates")}
                   </p>
                 ) : null}
                 {slotError?.slotKey === slotKey && showAssignment ? (
@@ -433,7 +433,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
 
       <section aria-labelledby="job-applicants-heading" className="job-detail-section">
         <div className="job-detail-section__heading">
-          <p className="record-kicker">{t("poolResponse")}</p>
+          <p className="record-kicker">{t("cleanerResponse")}</p>
           <h2 id="job-applicants-heading">{t("applicants")}</h2>
           <p>{t("applicantsDescription")}</p>
         </div>

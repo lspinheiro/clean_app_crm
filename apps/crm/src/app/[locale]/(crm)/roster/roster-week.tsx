@@ -261,9 +261,9 @@ export function RosterWeek({
             </p>
             <div className="roster-offer-control">
               <button className="button button--secondary" type="button" disabled>
-                {t("offerToPool")}
+                {t("offerToCleaners")}
               </button>
-              <span>{t("poolLater")}</span>
+              <span>{t("cleanersLater")}</span>
             </div>
           </div>
         </footer>

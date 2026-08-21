@@ -10,7 +10,7 @@ import { expect, test, type Page } from "@playwright/test";
 //   Palm Grove Practice crew of 1, no named cleaner   → fully open, no crew line
 //   Southport Office    crew of 1, one named cleaner  → fully assigned, never on the board
 //
-// removed.cleaner has a historical pool membership but belongs to no active pool, so her
+// removed.cleaner has a historical cleaner membership but belongs to no active company, so her
 // board is the empty state.
 const cleanerEmail = "cleaner.two@clean-app.example.test";
 const removedMembershipEmail = "removed.cleaner@clean-app.example.test";
@@ -37,7 +37,7 @@ function boardCards(page: Page) {
 }
 
 test.describe("@CLE-20 the board of open vacancies", () => {
-  test("lists open vacancies from the pools she belongs to", async ({ page }) => {
+  test("lists open vacancies from the companies she belongs to", async ({ page }) => {
     await signIn(page, cleanerEmail);
 
     const cards = boardCards(page);

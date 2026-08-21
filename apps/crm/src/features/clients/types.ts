@@ -22,7 +22,7 @@ export type PreferredCleaner = {
   rank: number;
 };
 
-export type PoolCleaner = {
+export type CompanyCleaner = {
   id: string;
   name: string;
 };

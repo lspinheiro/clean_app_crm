@@ -51,7 +51,7 @@ function renderSurface() {
       clientId={clientId}
       defaultDurationMinutes={120}
       defaultServiceId={serviceId}
-      poolCleaners={[
+      cleaners={[
         { id: cleanerId, name: "Cleaner A" },
         { id: "10000000-0000-4000-8000-000000000003", name: "Cleaner B" },
       ]}

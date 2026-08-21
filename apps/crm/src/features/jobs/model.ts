@@ -1,7 +1,7 @@
 import type {
   JobApplicant,
   JobAssignmentRecord,
-  JobPoolCandidate,
+  JobCleanerCandidate,
   JobSlot,
   JobStatus,
 } from "./types";
@@ -18,7 +18,7 @@ export function sortJobApplicants(applicants: JobApplicant[]) {
   });
 }
 
-export function sortPoolCandidates(candidates: JobPoolCandidate[]) {
+export function sortCleanerCandidates(candidates: JobCleanerCandidate[]) {
   return [...candidates].sort((left, right) => {
     const rankDifference =
       (left.preferredRank ?? Number.MAX_SAFE_INTEGER) -

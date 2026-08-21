@@ -78,7 +78,7 @@ const job: JobDetail = {
       preferredRank: null,
     },
   ],
-  poolCandidates: [
+  cleanerCandidates: [
     {
       cleanerId: "10000000-0000-4000-8000-000000000006",
       cleanerName: "Preferred First",
@@ -96,7 +96,7 @@ const job: JobDetail = {
     },
     {
       cleanerId: "10000000-0000-4000-8000-000000000007",
-      cleanerName: "Direct Pool Cleaner",
+      cleanerName: "Direct Cleaner",
       preferredRank: null,
     },
   ],
@@ -180,7 +180,7 @@ describe("CLE-22 job detail workspace", () => {
       "Preferred First — preferred #1",
       "Preferred Second — preferred #2",
       "Unranked Applicant",
-      "Direct Pool Cleaner",
+      "Direct Cleaner",
     ]);
   });
 
@@ -218,7 +218,7 @@ describe("CLE-22 job detail workspace", () => {
               state: "open",
               previousAssignment: {
                 cleanerId: "10000000-0000-4000-8000-000000000008",
-                cleanerName: "Removed Pool Cleaner",
+                cleanerName: "Removed Cleaner",
                 source: "manual",
                 assignedAt: "2026-08-10T08:00:00Z",
                 releasedAt: "2026-08-10T09:00:00Z",
@@ -231,7 +231,7 @@ describe("CLE-22 job detail workspace", () => {
 
     const reopenedSlot = screen.getByRole("article", { name: "Crew slot 2" });
     expect(within(reopenedSlot).getByText("Open")).toBeInTheDocument();
-    expect(within(reopenedSlot).getByText("Previously assigned to Removed Pool Cleaner"))
+    expect(within(reopenedSlot).getByText("Previously assigned to Removed Cleaner"))
       .toBeInTheDocument();
 
     await user.selectOptions(
@@ -240,7 +240,7 @@ describe("CLE-22 job detail workspace", () => {
     );
     await user.click(
       within(reopenedSlot).getByRole("button", {
-        name: "Assign Direct Pool Cleaner to slot 2",
+        name: "Assign Direct Cleaner to slot 2",
       }),
     );
 
@@ -262,7 +262,7 @@ describe("CLE-22 job detail workspace", () => {
     );
     expect(
       screen.getByRole("button", {
-        name: "Assign Direct Pool Cleaner to slot 2",
+        name: "Assign Direct Cleaner to slot 2",
       }),
     ).toBeEnabled();
 
@@ -278,7 +278,7 @@ describe("CLE-22 job detail workspace", () => {
               state: "assigned",
               assignment: {
                 cleanerId: "10000000-0000-4000-8000-000000000007",
-                cleanerName: "Direct Pool Cleaner",
+                cleanerName: "Direct Cleaner",
                 source: "manual",
                 assignedAt: "2026-08-11T10:00:00Z",
               },
@@ -299,7 +299,7 @@ describe("CLE-22 job detail workspace", () => {
               state: "open",
               previousAssignment: {
                 cleanerId: "10000000-0000-4000-8000-000000000007",
-                cleanerName: "Direct Pool Cleaner",
+                cleanerName: "Direct Cleaner",
                 source: "manual",
                 assignedAt: "2026-08-11T10:00:00Z",
                 releasedAt: "2026-08-11T11:00:00Z",
@@ -328,7 +328,7 @@ describe("CLE-22 job detail workspace", () => {
       screen.getByLabelText("Cleaner for slot 2"),
       "10000000-0000-4000-8000-000000000007",
     );
-    await user.click(screen.getByRole("button", { name: "Assign Direct Pool Cleaner to slot 2" }));
+    await user.click(screen.getByRole("button", { name: "Assign Direct Cleaner to slot 2" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("This job changed");
     expect(mocks.refresh).toHaveBeenCalledOnce();
@@ -345,7 +345,7 @@ describe("CLE-22 job detail workspace", () => {
                   state: "assigned",
                   assignment: {
                     cleanerId: "10000000-0000-4000-8000-000000000007",
-                    cleanerName: "Direct Pool Cleaner",
+                    cleanerName: "Direct Cleaner",
                     source: "manual",
                     assignedAt: "2026-08-11T10:00:00Z",
                   },
@@ -358,19 +358,19 @@ describe("CLE-22 job detail workspace", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("keeps direct assignment available without applicants and explains an empty pool", () => {
+  it("keeps direct assignment available without applicants and explains an empty cleaner list", () => {
     const { rerender } = render(
       <JobDetailWorkspace job={{ ...job, applicants: [] }} />,
     );
     expect(screen.getByText("No applications yet.")).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Direct Pool Cleaner" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Direct Cleaner" })).toBeInTheDocument();
 
     rerender(
       <JobDetailWorkspace
-        job={{ ...job, applicants: [], poolCandidates: [] }}
+        job={{ ...job, applicants: [], cleanerCandidates: [] }}
       />,
     );
-    expect(screen.getByText("No active pool cleaners are available to assign.")).toBeInTheDocument();
+    expect(screen.getByText("No active cleaners are available to assign.")).toBeInTheDocument();
     expect(screen.queryByLabelText("Cleaner for slot 2")).not.toBeInTheDocument();
   });
 

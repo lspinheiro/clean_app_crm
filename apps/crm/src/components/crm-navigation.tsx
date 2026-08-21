@@ -9,7 +9,7 @@ const destinations = [
   ["roster", "/roster"],
   ["jobs", "/jobs"],
   ["clients", "/clients"],
-  ["pool", "/pool"],
+  ["cleaners", "/cleaners"],
   ["money", "/money"],
 ] as const;
 

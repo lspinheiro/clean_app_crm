@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { parsePoolInviteEmailCsv } from "./email-csv";
+import { parseCleanerInviteEmailCsv } from "./email-csv";
 
 describe("CLE-79 cleaner email CSV", () => {
   it("accepts email with an optional name and deduplicates case-insensitively", () => {
-    const result = parsePoolInviteEmailCsv(
+    const result = parseCleanerInviteEmailCsv(
       "email,name\n Ana@example.com ,Ana Silva\nana@EXAMPLE.com,Duplicate\nbruno@example.com,\n",
     );
 
@@ -21,7 +21,7 @@ describe("CLE-79 cleaner email CSV", () => {
   });
 
   it("reports invalid addresses by row without discarding valid recipients", () => {
-    const result = parsePoolInviteEmailCsv(
+    const result = parseCleanerInviteEmailCsv(
       "email,name\nnot-an-email,Bad\nvalid@example.com,Valid\n,Missing\n",
     );
 
@@ -36,7 +36,7 @@ describe("CLE-79 cleaner email CSV", () => {
   });
 
   it("reports an overlong name on its row before confirmation", () => {
-    const result = parsePoolInviteEmailCsv(
+    const result = parseCleanerInviteEmailCsv(
       `email,name\nana@example.com,${"A".repeat(201)}\nbruno@example.com,Bruno\n`,
     );
 
@@ -55,7 +55,7 @@ describe("CLE-79 cleaner email CSV", () => {
       { length: 501 },
       (_, index) => `cleaner-${index}@example.com,Cleaner ${index}`,
     );
-    const result = parsePoolInviteEmailCsv(`email,name\n${rows.join("\n")}\n`);
+    const result = parseCleanerInviteEmailCsv(`email,name\n${rows.join("\n")}\n`);
 
     expect(result.recipients).toHaveLength(500);
     expect(result.rows[500]).toMatchObject({
@@ -70,6 +70,6 @@ describe("CLE-79 cleaner email CSV", () => {
     ["name,email\nAna,ana@example.com\n", "Use the exact headers: email,name."],
     ["email,name\n", "Add at least one recipient."],
   ])("rejects an invalid file shape", (csv, expectedError) => {
-    expect(parsePoolInviteEmailCsv(csv).fileError).toBe(expectedError);
+    expect(parseCleanerInviteEmailCsv(csv).fileError).toBe(expectedError);
   });
 });

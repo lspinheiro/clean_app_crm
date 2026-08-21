@@ -4,12 +4,12 @@ import { createHash } from "node:crypto";
 
 import { z } from "zod";
 
-import { buildPoolInviteEmail } from "@/features/pool/email";
+import { buildCleanerInviteEmail } from "@/features/cleaners/email";
 import {
-  POOL_INVITE_EMAIL_RECIPIENT_LIMIT,
-  type PoolInviteEmailRecipient,
-} from "@/features/pool/email-csv";
-import { buildCleanerJoinUrl } from "@/features/pool/invite";
+  CLEANER_INVITE_EMAIL_RECIPIENT_LIMIT,
+  type CleanerInviteEmailRecipient,
+} from "@/features/cleaners/email-csv";
+import { buildCleanerJoinUrl } from "@/features/cleaners/invite";
 import { userMessage } from "@/i18n/user-message";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 import {
@@ -26,7 +26,7 @@ const sendInputSchema = z.object({
   authorityConfirmed: z.literal(true),
   inviteId: z.uuid(),
   locale: z.enum(["en-AU", "pt-BR"]),
-  recipients: z.array(recipientSchema).min(1).max(POOL_INVITE_EMAIL_RECIPIENT_LIMIT),
+  recipients: z.array(recipientSchema).min(1).max(CLEANER_INVITE_EMAIL_RECIPIENT_LIMIT),
 });
 
 const retryInputSchema = z.object({
@@ -59,17 +59,17 @@ const recordedRecipientSchema = z.object({
 type PreparedRecipient = z.infer<typeof preparedRecipientSchema>;
 type RecordedRecipient = z.infer<typeof recordedRecipientSchema>;
 
-export type PoolInviteEmailResultRecipient = {
+export type CleanerInviteEmailResultRecipient = {
   email: string;
   failureReason: string | null;
   name: string | null;
 };
 
-export type PoolInviteEmailActionResult =
+export type CleanerInviteEmailActionResult =
   | {
-      accepted: PoolInviteEmailResultRecipient[];
+      accepted: CleanerInviteEmailResultRecipient[];
       batchId: string;
-      failed: PoolInviteEmailResultRecipient[];
+      failed: CleanerInviteEmailResultRecipient[];
       ok: true;
     }
   | { error: string; ok: false };
@@ -81,7 +81,7 @@ type EmailConfiguration = {
   replyTo: string;
 };
 
-function uniqueRecipients(recipients: PoolInviteEmailRecipient[]) {
+function uniqueRecipients(recipients: CleanerInviteEmailRecipient[]) {
   const seen = new Set<string>();
   return recipients.flatMap((recipient) => {
     const email = recipient.email.toLocaleLowerCase("en-AU");
@@ -109,7 +109,7 @@ function loadConfiguration(userEmail: string | undefined): EmailConfiguration | 
 function confirmationKey(
   inviteId: string,
   locale: "en-AU" | "pt-BR",
-  recipients: PoolInviteEmailRecipient[],
+  recipients: CleanerInviteEmailRecipient[],
 ) {
   const digest = createHash("sha256")
     .update(JSON.stringify({
@@ -138,8 +138,8 @@ function senderAddress(companyName: string, fromEmail: string) {
 function resultFromRows(
   batchId: string,
   rows: RecordedRecipient[],
-): PoolInviteEmailActionResult {
-  const mapRow = (row: RecordedRecipient): PoolInviteEmailResultRecipient => ({
+): CleanerInviteEmailActionResult {
+  const mapRow = (row: RecordedRecipient): CleanerInviteEmailResultRecipient => ({
     email: row.email,
     failureReason: row.failure_reason,
     name: row.name,
@@ -175,9 +175,9 @@ async function deliverPreparedRecipients(
   companyName: string,
   configuration: EmailConfiguration,
   supabase: Awaited<ReturnType<typeof requireCompanyAdmin>>["supabase"],
-): Promise<PoolInviteEmailActionResult> {
+): Promise<CleanerInviteEmailActionResult> {
   const first = preparedRows[0];
-  if (!first) return { error: userMessage("poolEmailPrepareFailed"), ok: false };
+  if (!first) return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
 
   const pending = preparedRows.filter((row) => row.status === "pending");
   if (pending.length === 0) {
@@ -188,9 +188,9 @@ async function deliverPreparedRecipients(
   try {
     joinUrl = buildCleanerJoinUrl(configuration.cleanerAppUrl, first.invite_code);
   } catch {
-    return { error: userMessage("poolEmailNotConfigured"), ok: false };
+    return { error: userMessage("cleanerEmailNotConfigured"), ok: false };
   }
-  const message = buildPoolInviteEmail({
+  const message = buildCleanerInviteEmail({
     companyName,
     joinUrl,
     locale: first.locale,
@@ -216,24 +216,24 @@ async function deliverPreparedRecipients(
     });
     const parsed = z.array(recordedRecipientSchema).safeParse(data);
     if (error || !parsed.success) {
-      return { error: userMessage("poolEmailRecordFailed"), ok: false };
+      return { error: userMessage("cleanerEmailRecordFailed"), ok: false };
     }
     return resultFromRows(first.batch_id, parsed.data);
   } catch {
-    return { error: userMessage("poolEmailRecordFailed"), ok: false };
+    return { error: userMessage("cleanerEmailRecordFailed"), ok: false };
   }
 }
 
-export async function sendPoolInviteEmails(input: unknown): Promise<PoolInviteEmailActionResult> {
+export async function sendCleanerInviteEmails(input: unknown): Promise<CleanerInviteEmailActionResult> {
   const parsed = sendInputSchema.safeParse(input);
   if (!parsed.success) {
-    return { error: userMessage("poolEmailInvalidInput"), ok: false };
+    return { error: userMessage("cleanerEmailInvalidInput"), ok: false };
   }
 
   const { company, supabase, user } = await requireCompanyAdmin();
   const configuration = loadConfiguration(user.email);
   if (!configuration) {
-    return { error: userMessage("poolEmailNotConfigured"), ok: false };
+    return { error: userMessage("cleanerEmailNotConfigured"), ok: false };
   }
   const recipients = uniqueRecipients(parsed.data.recipients);
   const derivedConfirmationKey = confirmationKey(
@@ -253,27 +253,27 @@ export async function sendPoolInviteEmails(input: unknown): Promise<PoolInviteEm
     });
     const prepared = z.array(preparedRecipientSchema).safeParse(data);
     if (error || !prepared.success) {
-      return { error: userMessage("poolEmailPrepareFailed"), ok: false };
+      return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
     }
     preparedRows = prepared.data;
   } catch {
-    return { error: userMessage("poolEmailPrepareFailed"), ok: false };
+    return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
   }
   return deliverPreparedRecipients(preparedRows, company.name, configuration, supabase);
 }
 
-export async function retryFailedPoolInviteEmails(
+export async function retryFailedCleanerInviteEmails(
   input: unknown,
-): Promise<PoolInviteEmailActionResult> {
+): Promise<CleanerInviteEmailActionResult> {
   const parsed = retryInputSchema.safeParse(input);
   if (!parsed.success) {
-    return { error: userMessage("poolEmailInvalidInput"), ok: false };
+    return { error: userMessage("cleanerEmailInvalidInput"), ok: false };
   }
 
   const { company, supabase, user } = await requireCompanyAdmin();
   const configuration = loadConfiguration(user.email);
   if (!configuration) {
-    return { error: userMessage("poolEmailNotConfigured"), ok: false };
+    return { error: userMessage("cleanerEmailNotConfigured"), ok: false };
   }
   let preparedRows: PreparedRecipient[];
   try {
@@ -283,11 +283,11 @@ export async function retryFailedPoolInviteEmails(
     });
     const prepared = z.array(preparedRecipientSchema).safeParse(data);
     if (error || !prepared.success) {
-      return { error: userMessage("poolEmailPrepareFailed"), ok: false };
+      return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
     }
     preparedRows = prepared.data;
   } catch {
-    return { error: userMessage("poolEmailPrepareFailed"), ok: false };
+    return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
   }
   return deliverPreparedRecipients(preparedRows, company.name, configuration, supabase);
 }

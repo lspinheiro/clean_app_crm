@@ -8,7 +8,7 @@ const supersededCode = "ZOLD01";
 const unknownCode = "NOPE12";
 const companyName = "Coastal Demo Cleaning";
 const sameCompanyEmployeeEmail = "owner.harbour@clean-app.example.test";
-const noPoolMembershipEmail = "new.employee@clean-app.example.test";
+const noCleanerMembershipEmail = "new.employee@clean-app.example.test";
 const demoPassword = "local-demo-only";
 
 function newCleanerEmail() {
@@ -22,7 +22,7 @@ async function signIn(page: Page, email: string, password: string) {
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
-test.describe("@CLE-19 joining a pool from the invite link", () => {
+test.describe("@CLE-19 joining a company from the invite link", () => {
   test("registers a cleaner and lands on the board", async ({ page }) => {
     await page.goto(`/join?code=${activeCode}`);
 
@@ -34,13 +34,13 @@ test.describe("@CLE-19 joining a pool from the invite link", () => {
     await page.getByLabel("Password").fill(demoPassword);
     await page.getByLabel("Phone").fill("0400 000 111");
     await page.getByLabel("Suburb").fill("Southport");
-    await page.getByRole("button", { name: "Join the pool" }).click();
+    await page.getByRole("button", { name: "Join the company" }).click();
 
     await expect(page).toHaveURL(/\/board$/);
     await expect(page.getByRole("heading", { name: "Open jobs", level: 1 })).toBeVisible();
 
     // Reloading proves the name and suburb were written to the profile, not just rendered
-    // once from the submitted form. The pool membership itself is asserted in pgTAP
+    // once from the submitted form. The cleaner membership itself is asserted in pgTAP
     // (cle_19_cleaner_join.test.sql), since the board reads no company tables until CLE-20.
     await page.reload();
     await expect(page).toHaveURL(/\/board$/);
@@ -110,8 +110,8 @@ test.describe("@CLE-19 cleaner app route guard", () => {
     await expect(page.getByRole("heading", { name: "Open jobs" })).toHaveCount(0);
   });
 
-  test("an account without a pool membership is refused without exposing the board", async ({ page }) => {
-    await signIn(page, noPoolMembershipEmail, demoPassword);
+  test("an account without a cleaner membership is refused without exposing the board", async ({ page }) => {
+    await signIn(page, noCleanerMembershipEmail, demoPassword);
 
     await expect(page.locator(".form-error")).toContainText("for cleaners");
     await expect(page.getByRole("heading", { name: "Open jobs" })).toHaveCount(0);

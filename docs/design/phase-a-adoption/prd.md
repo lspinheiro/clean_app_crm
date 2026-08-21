@@ -1,4 +1,4 @@
-# Phase A — company onboarding and pool adoption (alpha) — PRD
+# Phase A — company onboarding and cleaner adoption (alpha) — PRD
 
 ## 1. Project specifics
 
@@ -10,7 +10,7 @@
   prototype parity (capability re-housed into the monorepo apps, not redesigned).
   OP-1 (concierge onboarding) was removed from the alpha on 2026-08-15 — CA-1 is
   self-serve (decision log #12)
-- **Features:** F10 (clients, sites, recurring assignments, roster), F11 (pool, board,
+- **Features:** F10 (clients, sites, recurring assignments, roster), F11 (cleaners, board,
   dispatch — parity port), F1 (company record with ABN), F4/F5 (consent and availability
   explicitly deferred — see What we're not doing)
 - **Project:** https://linear.app/cleanerapp/project/phase-a-company-onboarding-and-pool-adoption-fa89a1783aad
@@ -23,7 +23,7 @@
 ## 2. Goals and business objectives
 
 A real cleaning company can be put into the app in one sitting: company details, clients
-and their sites, the recurring schedule, and its existing cleaners in the pool. The next
+and their sites, the recurring schedule, and its existing cleaners. The next
 morning, the roster shows the company's actual week — assigned regulars, and gaps as
 vacancies — and cleaners see and take open work. This is the decisive adoption moment of
 PRODUCT.md §3.2 Phase A. The cycle delivers it entirely on the monorepo apps: the deployed
@@ -96,12 +96,12 @@ flowchart LR
   recurring assignments. A cleaner e-mail send list can be entered directly, one address
   at a time with controls to add further recipients, or supplied by a CSV containing
   `email` and an optional `name`. Both paths produce one case-insensitive, deduplicated
-  send list, not accounts or pool memberships. Each recipient still registers and joins
+  send list, not accounts or cleaner memberships. Each recipient still registers and joins
   through the invite link. The alpha accepts at most 500 unique recipients in one send.
-- **S8** — Create a pool invite link, ready to post into the company's WhatsApp group.
+- **S8** — Create a cleaner invite link, ready to post into the company's WhatsApp group.
   The invitation carries the details of what the cleaner applies for — the work on offer
   and its pay shape (hourly rate or fixed amount), described so the link is a real offer,
-  not a bare signup URL. A cleaner who accepts the invitation joins the pool.
+  not a bare signup URL. A cleaner who accepts the invitation joins the company's cleaners.
   When the admin creates a link, they can optionally set an expiry time and a maximum
   number of registrations; the admin can revoke a link at any time. The flow is: generate
   → send → watch who joins. There is no in-place regeneration — a revoked link is dead,
@@ -114,11 +114,11 @@ flowchart LR
   The admin must confirm that the recipients are existing workers who expect the
   invitation.
 
-### CL-1 · Join the pool (Ana) — designed end-to-end
+### CL-1 · Join a company (Ana) — designed end-to-end
 
 ```mermaid
 flowchart LR
-    A[Tap the invite link] --> B[One-minute registration] --> C[Pool joined\nautomatically] --> D[PWA install prompt\n+ push opt-in] --> E[See open jobs\non the board]
+    A[Tap the invite link] --> B[One-minute registration] --> C[Cleaner membership\ncreated automatically] --> D[PWA install prompt\n+ push opt-in] --> E[See open jobs\non the board]
 ```
 
 From the WhatsApp invite link to open jobs in under two minutes, all inside
@@ -130,7 +130,7 @@ From the WhatsApp invite link to open jobs in under two minutes, all inside
   blocks OAuth) and steers OAuth users to the system browser; email + password is the
   path that always works in the webview. A link that is expired, revoked, or at its
   registration limit shows an "invite no longer active" state instead of the form.
-- **S10** — The pool membership is created automatically at registration.
+- **S10** — The cleaner membership is created automatically at registration.
 - **S11** — PWA install prompt and push opt-in. Both are skippable: a cleaner who
   declines still reaches the board — "the PWA is an upgrade, not a gate" (PRODUCT.md
   §3.7).
@@ -145,7 +145,7 @@ log #12 removed from the alpha. The bulk-import idea survives as S30 under CA-1.
 
 The prototype's cleaner loop, re-housed at capability parity with visual fidelity.
 
-- **S16** — Board of open vacancies across joined pools with one-tap apply, withdraw, and
+- **S16** — Board of open vacancies across every joined company with one-tap apply, withdraw, and
   a visible waiting state. A vacancy card shows the pay as posted — a fixed lump sum per
   slot or an hourly rate — and the description may indicate days/hours; some offers are
   deliberately flexible. The board never computes an amount the admin did not state. The
@@ -156,11 +156,11 @@ The prototype's cleaner loop, re-housed at capability parity with visual fidelit
 - **S18** — Job status taps: on the way / in progress / done.
 - **S19** — Money view: to receive / received.
 - **S20** — Push opt-in and web-push delivery. Alpha push events, assembled from the
-  settled decisions: a manually posted vacancy notifies the pool (never generated
+  settled decisions: a manually posted vacancy notifies the company's cleaners (never generated
   instances — decision #2); a directed offer notifies its cleaner (S28); an accepted
   application notifies the assigned cleaner (PRODUCT.md CA-3); mark-paid notifies the
   cleaner (PRODUCT.md CL-4, "push on settlement").
-- **S21** — Profile with joined pools.
+- **S21** — Profile with joined companies.
 
 ### Parity port · `apps/crm` dispatch (serves CA-2…CA-5 and CL-4 at prototype parity)
 
@@ -202,7 +202,7 @@ the first owner, and one account can belong to more than one company.
   single-membership account is scoped automatically and never sees a picker. An account
   with no employee membership sees a "no company access" screen that tells the person
   to ask an owner for an invitation and links to the cleaner app. The cleaner app has
-  no switcher — the board already aggregates all joined pools.
+  no switcher — the board already aggregates every joined company.
 
 - **S34** — Company settings shows the employees list: each employee membership with
   name, e-mail, role, and joined date. An owner can change any employee's role and
@@ -218,8 +218,8 @@ the first owner, and one account can belong to more than one company.
 An admin who gives work to a specific cleaner sends an offer; acceptance is the
 confirmation that the cleaner saw the work and confirmed availability.
 
-- **S28** — The admin offers a job or a recurring assignment to a specific cleaner from
-  the pool. The offer notifies that cleaner only, and the slot does not appear on the
+- **S28** — The admin offers a job or a recurring assignment to one of the company's
+  cleaners. The offer notifies that cleaner only, and the slot does not appear on the
   board while the offer is pending — the admin chose the directed route.
 - **S29** — The cleaner accepts or declines the offer. Acceptance completes the
   assignment the admin chose. For a recurring assignment, one acceptance grants standing
@@ -232,22 +232,22 @@ confirmation that the cleaner saw the work and confirmed availability.
 ### Instrumentation
 
 - **S26** — `product_events` records: company onboarded, client/site created, recurring
-  assignment created, jobs generated, pool joined, application, assignment, completion.
+  assignment created, jobs generated, cleaner joined, application, assignment, completion.
 
 ### Success metrics
 
 Instrumentation makes two PRODUCT.md metrics computable from day one, as design input
 rather than a gate (product decision 2026-08-10):
 
-- §6.1 activation: ≥ 1 client + ≥ 1 recurring assignment + ≥ 3 pool members within 14
+- §6.1 activation: ≥ 1 client + ≥ 1 recurring assignment + ≥ 3 cleaners within 14
   days.
 - Schedule depth: jobs from recurring assignments ÷ completed jobs.
 
 ### Acceptance for the cycle
 
 The three designed journeys pass their stages above, and every §3.4 "kept at prototype
-parity" capability demonstrably works across the two monorepo apps: auth and roles, pools
-and invites, job creation, post/assign, one-tap apply, address gating, job-done, pay
+parity" capability demonstrably works across the two monorepo apps: auth and roles, cleaner
+memberships and invites, job creation, post/assign, one-tap apply, address gating, job-done, pay
 ledger recording, push. F15 also applies at alpha: first-party interface copy is complete
 in `en-AU` and `pt-BR`, an explicit language choice persists per profile, and names or
 notes entered by users are never translated. The CRM lands first; the profile contract is
@@ -278,7 +278,7 @@ Approved Stitch references:
 |---|---|---|
 | Co-founder alignment (PRODUCT.md Appendix B q1): the alpha does not depend on their code or deployment, but the adaptation of the prototype's schema and UI patterns into this repo belongs in the IP/roles conversation. Have it before the cohort (their employers) onboards. | Leonardo | Open |
 | Does any alpha company need daily-frequency recurring assignments? Weekly/fortnightly covers the known cohort. | Leonardo | Extend on evidence (feeds Appendix B q3 sizing) |
-| What does cleaner e-mail entry or CSV import produce, given cleaners must register themselves (credential + consent)? | Leonardo | Resolved 2026-08-18: both produce one send list. Direct entry accepts multiple addresses; CSV accepts `email` and optional `name`. Neither creates an account or pool membership. |
+| What does cleaner e-mail entry or CSV import produce, given cleaners must register themselves (credential + consent)? | Leonardo | Resolved 2026-08-18: both produce one send list. Direct entry accepts multiple addresses; CSV accepts `email` and optional `name`. Neither creates an account or cleaner membership. |
 | Facebook login for cleaners: enable when the cohort shows demand (decision log #9 defers it) | Leonardo | Open |
 | Sync of PRODUCT.md revisions (v0.4) with decisions 0002 and 2026-08-10 | Leonardo | Resolved 2026-08-12: `docs/PRODUCT.md` is canonical in this repo; §3.2/§3.4 reworded per decision 0002; exit criteria replaced by qualitative partner validation |
 

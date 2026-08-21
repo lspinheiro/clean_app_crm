@@ -9,7 +9,7 @@
     "clients": "Clientes",
     "clientDetail": "Detalhes do cliente",
     "import": "Importar clientes e locais",
-    "pool": "Banco de profissionais",
+    "cleaners": "Profissionais",
     "money": "Financeiro",
     "settings": "Configurações da empresa",
     "firstAdminInvitation": "Aceitar convite da empresa"
@@ -47,7 +47,7 @@
     "roster": "Escala",
     "jobs": "Serviços",
     "clients": "Clientes",
-    "pool": "Banco",
+    "cleaners": "Profissionais",
     "money": "Financeiro",
     "settings": "Configurações da empresa",
     "accountMenu": "Menu da conta",
@@ -97,8 +97,8 @@
     "inviteCleaner": "Convide um profissional para adicionar uma linha à escala desta semana.",
     "addSite": "Adicione um local de cliente para criar uma linha na escala.",
     "nothingThisWeek": "Ainda não há nada programado nesta semana. Os serviços recorrentes são gerados com 4 semanas de antecedência.",
-    "offerToPool": "Oferecer ao banco de profissionais",
-    "poolLater": "Disponível após o lançamento do mural de serviços para profissionais.",
+    "offerToCleaners": "Oferecer aos profissionais",
+    "cleanersLater": "Disponível após o lançamento do mural de serviços para profissionais.",
     "unavailableCleaner": "Profissional indisponível",
     "unfilledSlots": "Posições em aberto"
   },
@@ -114,7 +114,7 @@
   "Auth": {
     "title": "Entrar",
     "headline": "Sua semana de limpeza, organizada.",
-    "intro": "Clientes, locais, o banco de profissionais e todos os próximos serviços em um só espaço operacional.",
+    "intro": "Clientes, locais, os profissionais e todos os próximos serviços em um só espaço operacional.",
     "location": "Gold Coast · Australia/Brisbane",
     "accountHint": "Use sua conta de administrador da empresa.",
     "alphaNote": "As contas das empresas são criadas pela própria equipe fundadora durante o alfa.",
@@ -288,7 +288,7 @@
     ,"draftHint": "Rascunhos permanecem privados. A publicação cria uma vaga para cada posição aberta na equipe."
     ,"saveDraft": "Salvar rascunho"
     ,"saving": "Salvando…"
-    ,"post": "Publicar no banco de profissionais"
+    ,"post": "Publicar para os profissionais"
     ,"posting": "Publicando…"
     ,"saveFailed": "Não foi possível salvar o serviço. Tente novamente."
     ,"applicationApplied": "Candidatou-se"
@@ -300,7 +300,7 @@
     ,"slotOpen": "Aberta"
     ,"slotClosed": "Fechada"
     ,"previouslyAssigned": "Anteriormente preenchida por {cleanerName}"
-    ,"chooseApplicant": "Escolha um candidato ou profissional do banco"
+    ,"chooseApplicant": "Escolha um candidato ou profissional"
     ,"noActiveAssignment": "Sem alocação ativa"
     ,"detailEyebrow": "Detalhes do serviço"
     ,"cancelJob": "Cancelar serviço"
@@ -323,15 +323,15 @@
     ,"cleanerForSlot": "Profissional para a posição {slot}"
     ,"chooseCleaner": "Selecione um profissional"
     ,"applicantsGroup": "Candidatos"
-    ,"poolMembersGroup": "Profissionais do banco"
+    ,"cleanersGroup": "Profissionais"
     ,"assignSelected": "Alocar {cleanerName} na posição {slot}"
     ,"assignSlot": "Alocar profissional na posição {slot}"
     ,"assigning": "Alocando…"
     ,"assign": "Alocar"
-    ,"noPoolCandidates": "Nenhum profissional ativo do banco está disponível para alocação."
+    ,"noCleanerCandidates": "Nenhum profissional ativo está disponível para alocação."
     ,"assignmentNotConfirmed": "Não foi possível confirmar a alocação. Revise as posições atualizadas da equipe antes de tentar novamente."
     ,"cancellationNotConfirmed": "Não foi possível confirmar o cancelamento. Revise o serviço atualizado antes de tentar novamente."
-    ,"poolResponse": "Resposta do banco de profissionais"
+    ,"cleanerResponse": "Resposta dos profissionais"
     ,"applicants": "Candidatos"
     ,"applicantsDescription": "As preferências do local definem a ordem; o status registra o resultado."
     ,"jobApplicants": "Candidatos ao serviço"
@@ -407,8 +407,8 @@
     "remove": "Remover {cleanerName}",
     "noPreferred": "Nenhum profissional preferencial registrado.",
     "preferredCleaner": "Profissional preferencial",
-    "chooseFromPool": "Selecione no banco de profissionais",
-    "allAdded": "Todos os profissionais do banco foram adicionados",
+    "chooseFromCleaners": "Selecione entre os profissionais",
+    "allAdded": "Todos os profissionais foram adicionados",
     "addPreferred": "Adicionar profissional preferencial a {siteName}",
     "add": "Adicionar",
     "savingOrder": "Salvando a ordem dos profissionais preferenciais…",
@@ -560,11 +560,11 @@
     "siteAlreadyExists": "{siteName} já existe para {clientName}.",
     "siteAlreadyInFile": "{siteName}, de {clientName}, já aparece neste arquivo."
   },
-  "Pool": {
-    "eyebrow": "Banco privado",
-    "title": "Banco de profissionais",
+  "Cleaners": {
+    "eyebrow": "Equipe privada",
+    "title": "Profissionais",
     "description": "Compartilhe um convite controlado e mantenha os profissionais ativos visíveis no CRM.",
-    "inviteTitle": "Convite para o banco de profissionais",
+    "inviteTitle": "Convite para profissionais",
     "inviteDescription": "Publique esta mensagem no grupo de WhatsApp da sua empresa.",
     "signupLink": "Link de cadastro do profissional",
     "copySignupLink": "Copiar link de cadastro do profissional",
@@ -576,13 +576,13 @@
     "shareOnWhatsApp": "Compartilhar no WhatsApp",
     "generating": "Gerando…",
     "generateCode": "Gerar novo código",
-    "rotationNote": "Gerar um novo código revoga o código anterior. A participação dos profissionais que já estão no banco permanece a mesma.",
+    "rotationNote": "Gerar um novo código revoga o código anterior. A participação dos profissionais atuais permanece a mesma.",
     "activeCleaners": "Profissionais ativos",
-    "memberCount": "{count, plural, =0 {Nenhum profissional neste banco} one {# profissional neste banco} other {# profissionais neste banco}}",
-    "members": "Profissionais ativos do banco",
+    "memberCount": "{count, plural, =0 {Nenhum profissional nesta empresa} one {# profissional nesta empresa} other {# profissionais nesta empresa}}",
+    "members": "Profissionais ativos",
     "joined": "Entrou em {date}",
     "noMembers": "Nenhum profissional ativo ainda.",
-    "shareToBuild": "Compartilhe a mensagem de convite para começar a formar o banco de profissionais da empresa.",
+    "shareToBuild": "Compartilhe a mensagem de convite para começar a formar a equipe de profissionais da empresa.",
     "copyingSignup": "Copiando o link de cadastro do profissional…",
     "copyingInvite": "Copiando a mensagem de convite…",
     "signupCopied": "Link de cadastro do profissional copiado.",
@@ -593,7 +593,7 @@
     "reloadingInvite": "{error} Recarregando o convite atual…",
     "newCodeGenerated": "Novo código de convite gerado. O código anterior não está mais ativo.",
     "activeCodeNotConfirmed": "Não foi possível confirmar o código ativo. Recarregando o convite atual…",
-    "inviteMessage": "Entre para o banco de profissionais da empresa {companyName}: {joinUrl}\nCódigo de convite: {code}",
+    "inviteMessage": "Entre para os profissionais da empresa {companyName}: {joinUrl}\nCódigo de convite: {code}",
     "emailSectionTitle": "Convidar profissionais atuais por e-mail",
     "emailDescription": "Digite os endereços de e-mail ou envie um CSV para uma lista maior.",
     "emailInviteAction": "Convidar por e-mail",
@@ -712,7 +712,7 @@
     "validStartTime": "Selecione um horário de início válido.",
     "validRecurringAssignment": "Selecione uma programação recorrente válida.",
     "validAssignment": "Selecione uma alocação válida antes de tentar novamente.",
-    "activePoolCleaner": "Selecione profissionais do banco ativo.",
+    "activeCleaner": "Selecione profissionais ativos.",
     "validDuration": "Insira uma duração válida.",
     "durationPositive": "Insira uma duração maior que zero.",
     "durationMinute": "Insira uma duração de pelo menos um minuto.",
@@ -746,10 +746,10 @@
     "jobCancelChanged": "Não foi possível cancelar o serviço. Revise o serviço atualizado e tente novamente.",
     "cancellationUnconfirmed": "Não foi possível confirmar o cancelamento. Revise o serviço atualizado antes de tentar novamente.",
     "inviteRotateFailed": "Não foi possível gerar um novo código de convite. Tente novamente.",
-    "poolEmailInvalidInput": "Verifique a lista de e-mails e confirme que esses profissionais atuais esperam receber o convite.",
-    "poolEmailNotConfigured": "Os convites por e-mail não estão configurados. Peça a um administrador para definir a chave da API Resend, o endereço do remetente, a URL do aplicativo e o e-mail do administrador.",
-    "poolEmailPrepareFailed": "Não foi possível preparar o lote de convites por e-mail. Verifique se o convite selecionado ainda está ativo e tente novamente.",
-    "poolEmailRecordFailed": "Não foi possível confirmar a resposta do provedor. Tente novamente este lote antes de iniciar outro envio.",
+    "cleanerEmailInvalidInput": "Verifique a lista de e-mails e confirme que esses profissionais atuais esperam receber o convite.",
+    "cleanerEmailNotConfigured": "Os convites por e-mail não estão configurados. Peça a um administrador para definir a chave da API Resend, o endereço do remetente, a URL do aplicativo e o e-mail do administrador.",
+    "cleanerEmailPrepareFailed": "Não foi possível preparar o lote de convites por e-mail. Verifique se o convite selecionado ainda está ativo e tente novamente.",
+    "cleanerEmailRecordFailed": "Não foi possível confirmar a resposta do provedor. Tente novamente este lote antes de iniciar outro envio.",
     "logoType": "Selecione uma imagem PNG, JPEG ou WebP.",
     "logoCompressFailed": "Não foi possível compactar esse logotipo para menos de 400 KB.",
     "logoUploadType": "Selecione um logotipo WebP compactado com menos de 400 KB.",

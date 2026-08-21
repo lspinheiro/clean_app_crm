@@ -10,7 +10,7 @@ import {
   type RecurringMutationResult,
 } from "@/app/actions/recurring-assignments";
 import type {
-  PoolCleaner,
+  CompanyCleaner,
   ServiceOption,
 } from "@/features/clients/types";
 import {
@@ -30,7 +30,7 @@ type SiteRecurringAssignmentsProps = {
   clientId: string;
   defaultDurationMinutes: number | null;
   defaultServiceId: string | null;
-  poolCleaners: PoolCleaner[];
+  cleaners: CompanyCleaner[];
   services: ServiceOption[];
   siteId: string;
   siteName: string;
@@ -76,7 +76,7 @@ export function SiteRecurringAssignments({
   clientId,
   defaultDurationMinutes,
   defaultServiceId,
-  poolCleaners,
+  cleaners,
   services,
   siteId,
   siteName,
@@ -414,7 +414,7 @@ export function SiteRecurringAssignments({
                     value={cleanerId}
                   >
                     <option value="">{t("leaveOpen")}</option>
-                    {poolCleaners.map((cleaner) => (
+                    {cleaners.map((cleaner) => (
                       <option
                         disabled={selectedCleaners.some(
                           (selected, selectedIndex) =>

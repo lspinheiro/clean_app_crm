@@ -1,4 +1,4 @@
-# Phase A — company onboarding and pool adoption (alpha) — LLD
+# Phase A — company onboarding and cleaner adoption (alpha) — LLD
 
 ## Scope
 
@@ -27,7 +27,7 @@ in plain boxes, new components bold. Details per component in the part files.
 ```mermaid
 flowchart LR
     subgraph crm["apps/crm"]
-        POOL["pool: multi-link<br/>workspace"]
+        CLEANERS["cleaners: multi-link<br/>workspace"]
         JOBD["job detail<br/>+ offer route"]
         MONEY["money +<br/>hourly mark-paid"]
         BELL["notification<br/>bell"]
@@ -53,7 +53,7 @@ flowchart LR
         SW["service worker<br/>+ push opt-in"]
     end
     JOBD & FORMS --> OFR
-    POOL --> INV
+    CLEANERS --> INV
     JOIN --> INV
     MONEY --> LED
     CMONEY --> VIEWS
@@ -84,7 +84,7 @@ stories it serves and where the filling design lives.
 | Service catalogue (S3) | `service_catalogue`, platform-owned, 4 seeded rows | None — aligned |
 | Recurring assignments + generation (S5, S6) | `recurring_assignments` (+ named-cleaner side table), reconcile/generate RPCs, pg_cron 00:05 Brisbane, idempotent per (rule, service date) | Generation auto-assigns named cleaners with no consent check; must become consent-gated (HLD decision 9); pay basis missing |
 | Roster, jobs list, job detail (S7, S31, S22) | CRM roster week view, jobs list, job detail with applicant assign | Roster/board must show the **offered** projection once offers exist |
-| Pool invite (S8) | One active code per company; `rotate_company_invite`; no cap, no attribution, no offer details | Replace with multi-link model: details + pay shape, optional expiry/cap, revoke, per-link attribution (HLD decision 11) |
+| Cleaner invite (S8) | One active code per company; `rotate_company_invite`; no cap, no attribution, no offer details | Replace with multi-link model: details + pay shape, optional expiry/cap, revoke, per-link attribution (HLD decision 11) |
 | Cleaner join + credential (S9, S10, S27) | `join_company_pool` (email + password only), invite preview RPC, PKCE client | Add Google OAuth + callback route, webview steering, dead-link states for cap/expiry |
 | Board (S12, S16) | `cleaner_job_board` view + board screen; `apply_to_job` / `withdraw_application` RPCs exist with **no app call site** | Wire apply/withdraw into the board UI; exclude offered slots; order soonest-first, drop past-start |
 | Directed offers (S28, S29) | Absent | New `offers` entity, RPCs, consent mark, CRM offer actions, cleaner offers surface (HLD decisions 9, 10, 14) |
@@ -94,7 +94,7 @@ stories it serves and where the filling design lives.
 | Push (S11, S20) | `notifications` table (3 types), in-database only | Web-push: subscriptions, VAPID, dispatch, PWA opt-in; new notification types (offer, mark-paid) |
 | PWA install prompt (S11) | Absent | Install prompt + skippable opt-in in `apps/cleaner` |
 | Bulk CSV import (S30) | Absent | CRM client-side parse + preview over existing write RPCs (HLD decision 13) |
-| Cleaner profile (S21) | Absent | Profile screen with joined pools |
+| Cleaner profile (S21) | Absent | Profile screen with joined companies |
 | Instrumentation (S26) | Absent | `product_events` table + writes from both apps and RPCs |
 | Job cancel notification (S25) | `cancel_job` emits `job_cancelled` notifications | Delivered in-database; joins push delivery when push lands |
 

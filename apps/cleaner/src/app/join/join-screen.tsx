@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   describeInviteProblem,
   describeJoinFailure,
-  describePoolSize,
+  describeCleanerCount,
   isInviteState,
   normaliseInviteCode,
   type InvitePreview,
@@ -16,7 +16,7 @@ import { cleanerDetailsSchema, registrationSchema } from "@/features/join/schema
 import { isMissingSessionError, isStaleSessionError } from "@/lib/auth/session-error";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-const unknownInvite: InvitePreview = { state: "unknown", companyName: null, poolSize: 0 };
+const unknownInvite: InvitePreview = { state: "unknown", companyName: null, cleanerCount: 0 };
 
 type Screen =
   | { status: "loading" }
@@ -69,7 +69,7 @@ export function JoinScreen() {
       return {
         state: row.state,
         companyName: row.company_name ?? null,
-        poolSize: row.pool_size,
+        cleanerCount: row.pool_size,
       };
     }
 
@@ -248,14 +248,15 @@ export function JoinScreen() {
   return (
     <>
       <div>
-        <h1 className="screen-title">Join the cleaner pool</h1>
+        <h1 className="screen-title">Join this company</h1>
         <p className="screen-lead">It takes about a minute. Then you can see their open jobs.</p>
       </div>
       <div className="invite-card">
         <span className="invite-card__company">{screen.invite.companyName}</span>
-        <span className="invite-card__pool">{describePoolSize(screen.invite.poolSize)}</span>
+        <span className="invite-card__cleaners">
+          {describeCleanerCount(screen.invite.cleanerCount)}
+        </span>
       </div>
-
       {account.status === "loading" ? (
         <p className="screen-lead" role="status">
           Checking your account…

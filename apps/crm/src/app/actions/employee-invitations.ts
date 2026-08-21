@@ -9,7 +9,7 @@ import {
   newEmployeeAccountSchema,
 } from "@/features/employee-invitations/schema";
 import type { EmployeeInvitationActionResult } from "@/features/employee-invitations/state";
-import { normaliseCleanerAppUrl } from "@/features/pool/invite";
+import { normaliseCleanerAppUrl } from "@/features/cleaners/invite";
 import {
   localeCookieMaxAgeSeconds,
   localeCookieName,

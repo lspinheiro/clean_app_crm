@@ -26,7 +26,7 @@ distribution, if evidence demands it, wraps the web app (decision 0004).
   company (~12 cleaners). Runs the business from his phone between site visits; WhatsApp
   power user; roster lives in his head and a spreadsheet; sceptical of software. A tool
   must be faster than what he does today or he stops using it.
-- **Ana — pool cleaner.** International student on a part-time visa, cleans for 2–3
+- **Ana — cleaner.** International student on a part-time visa, cleans for 2–3
   companies, phone-only, English is her second language. Fears unpaid work and wasted
   travel; installs nothing that does not visibly lead to work.
 - **Priya — newcomer candidate.** Recently arrived, searching WhatsApp/Facebook job
@@ -37,7 +37,7 @@ distribution, if evidence demands it, wraps the web app (decision 0004).
 ## Product Purpose
 
 Free system of record for commercial cleaning operations: clients, sites, recurring
-assignments, rosters — and the pool/dispatch loop that keeps the schedule staffed. Success
+assignments, rosters — and the cleaner/dispatch loop that keeps the schedule staffed. Success
 (north star): completed jobs run through the platform per week. Current stage: internal
 alpha — two partner companies from the founding team's network running real weeks in-app.
 **The alpha is validated by the partner companies' experience**: qualitative feedback
@@ -47,7 +47,7 @@ decision 2026-08-10; applied in `docs/PRODUCT.md` v0.4 §3.4).
 ## Positioning
 
 "Become the system of record for cleaning jobs." Once the schedule lives in the product,
-every outbound action (pool offer, push, WhatsApp post, recruitment notice) derives from a
+every outbound action (cleaner offer, push, WhatsApp post, recruitment notice) derives from a
 vacancy the schedule already fully specifies — competitors bolt messaging onto a job
 board; here distribution is a consumer of the schedule. The core is permanently free;
 monetisation is a later paid tier of admin automation on top, so the free product never
@@ -59,7 +59,7 @@ Gold Coast QLD commercial cleaning SMEs. Today the work runs on WhatsApp groups,
 job groups, spreadsheets, and end-of-day phone-arounds; job flow often arrives via
 property managers (Breezeway). Admins operate one-handed on phones between site visits;
 cleaners are phone-only, often multilingual, juggling study timetables across multiple
-employers' pools. Dropout hours before a deadline job is the sharpest loss event —
+employers. Dropout hours before a deadline job is the sharpest loss event —
 backfill speed is the hero moment. UI in English; currency AUD; timezone
 `Australia/Brisbane`.
 

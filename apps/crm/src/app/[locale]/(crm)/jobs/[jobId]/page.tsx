@@ -5,12 +5,12 @@ import { z } from "zod";
 
 import { JobDetailWorkspace } from "./job-detail-workspace";
 
-import { buildJobSlots, sortJobApplicants, sortPoolCandidates } from "@/features/jobs/model";
+import { buildJobSlots, sortJobApplicants, sortCleanerCandidates } from "@/features/jobs/model";
 import type {
   JobApplicant,
   JobAssignmentRecord,
   JobDetail,
-  JobPoolCandidate,
+  JobCleanerCandidate,
 } from "@/features/jobs/types";
 import { getServiceLabel } from "@/i18n/service-label";
 import { requireCompanyAdmin } from "@/lib/auth/session";
@@ -102,7 +102,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       preferredRank: preferredRanks.get(application.cleaner_id) ?? null,
     })),
   );
-  const poolCandidates: JobPoolCandidate[] = sortPoolCandidates(
+  const cleanerCandidates: JobCleanerCandidate[] = sortCleanerCandidates(
     membershipRows
       .filter((membership) => !activeCleanerIds.has(membership.profile_id))
       .map((membership) => ({
@@ -135,7 +135,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       status: jobRow.status,
     }),
     applicants,
-    poolCandidates,
+    cleanerCandidates,
   };
 
   return (

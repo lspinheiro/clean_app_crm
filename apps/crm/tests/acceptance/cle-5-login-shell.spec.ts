@@ -16,7 +16,7 @@ test.describe("@CLE-5 company-admin sign-in and shell", () => {
     await signIn(page, adminEmail, demoPassword);
 
     await expect(page).toHaveURL(/\/en-AU\/roster$/);
-    for (const label of ["Roster", "Jobs", "Clients", "Pool", "Money"]) {
+    for (const label of ["Roster", "Jobs", "Clients", "Cleaners", "Money"]) {
       await expect(page.getByRole("navigation").getByRole("link", { name: label })).toHaveCount(1);
     }
   });

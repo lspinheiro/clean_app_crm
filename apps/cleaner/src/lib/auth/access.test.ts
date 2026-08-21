@@ -30,7 +30,7 @@ describe("CLE-81 membership-based cleaner access", () => {
     ).toEqual({ kind: "denied", reason: "missing_profile" });
   });
 
-  it("refuses an account without a pool membership", () => {
+  it("refuses an account without a cleaner membership", () => {
     expect(
       evaluateCleanerAccess({
         userId: "user-1",
@@ -40,7 +40,7 @@ describe("CLE-81 membership-based cleaner access", () => {
     ).toEqual({ kind: "denied", reason: "missing_membership" });
   });
 
-  it("admits a removed pool membership so the cleaner keeps the empty-board experience", () => {
+  it("admits a removed cleaner membership so the cleaner keeps the empty-board experience", () => {
     expect(
       evaluateCleanerAccess({
         userId: "user-1",
@@ -61,7 +61,7 @@ describe("CLE-81 membership-based cleaner access", () => {
     ).toEqual({ kind: "denied", reason: "missing_membership" });
   });
 
-  it("admits an active pool member, whatever the token metadata claims", () => {
+  it("admits an active cleaner, whatever the token metadata claims", () => {
     expect(
       evaluateCleanerAccess({
         userId: "user-1",

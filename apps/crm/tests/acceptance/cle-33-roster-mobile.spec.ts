@@ -27,7 +27,7 @@ test("@CLE-33 mobile grid shows a usable day window with snap and sticky headers
   await signIn(page);
   await page.goto(`/en-AU/roster?week=${weekStart}&view=site`);
 
-  for (const label of ["Jobs", "Pool"]) {
+  for (const label of ["Jobs", "Cleaners"]) {
     const target = page.getByRole("link", { name: label, exact: true });
     const box = await target.boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(44);

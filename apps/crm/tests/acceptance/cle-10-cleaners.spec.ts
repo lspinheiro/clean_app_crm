@@ -13,7 +13,7 @@ async function signIn(page: import("@playwright/test").Page) {
   await expect(page).toHaveURL(/\/en-AU\/roster$/);
 }
 
-test("@CLE-10 displays, copies, and rotates the active pool invite", async ({
+test("@CLE-10 displays, copies, and rotates the active cleaner invite", async ({
   context,
   page,
 }) => {
@@ -21,9 +21,9 @@ test("@CLE-10 displays, copies, and rotates the active pool invite", async ({
     origin: crmOrigin,
   });
   await signIn(page);
-  await page.goto("/en-AU/pool");
+  await page.goto("/en-AU/cleaners");
 
-  await expect(page.getByRole("heading", { name: "Cleaner pool", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cleaners", level: 1 })).toBeVisible();
   const code = page.getByTestId("invite-code");
   await expect(code).toHaveText(/^[A-Z0-9]{6}$/);
   const initialCode = (await code.textContent()) ?? "";
@@ -33,7 +33,7 @@ test("@CLE-10 displays, copies, and rotates the active pool invite", async ({
     `${cleanerAppUrl}/join?code=${initialCode}`,
   );
 
-  const members = page.getByRole("list", { name: "Active cleaner pool members" });
+  const members = page.getByRole("list", { name: "Active cleaners" });
   await expect(members.getByRole("listitem")).toHaveCount(3);
   await expect(members).toContainText("Demo Cleaner One");
   await expect(members).toContainText("Joined 2 Aug 2026");
@@ -54,7 +54,7 @@ test("@CLE-10 displays, copies, and rotates the active pool invite", async ({
   await expect(page.getByRole("status")).toContainText("Invite message copied.");
   const copiedMessage = await page.evaluate(() => navigator.clipboard.readText());
   expect(copiedMessage).toBe(
-    `Join Coastal Demo Cleaning's cleaner pool: ${cleanerAppUrl}/join?code=${initialCode}\nInvite code: ${initialCode}`,
+    `Join Coastal Demo Cleaning's cleaners: ${cleanerAppUrl}/join?code=${initialCode}\nInvite code: ${initialCode}`,
   );
 
   await expect(
@@ -73,7 +73,7 @@ test("@CLE-10 displays, copies, and rotates the active pool invite", async ({
   await expect(page.getByTestId("invite-code")).toHaveText(rotatedCode);
   await expect(
     page
-      .getByRole("list", { name: "Active cleaner pool members" })
+      .getByRole("list", { name: "Active cleaners" })
       .getByRole("listitem"),
   ).toHaveCount(3);
 });

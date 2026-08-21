@@ -130,7 +130,7 @@ word-for-word translation of the English catalogue.
   primary actions, bottom sheets for detail, thumb-reach first. Screens must survive
   interruption — state is always recoverable.
 - **CRM (desktop-first web, 1280px design width, responsive to tablet/mobile)**: sticky
-  top nav bar — logo, Roster · Jobs · Clients · Pool · Money, with the current section
+  top nav bar — logo, Roster · Jobs · Clients · Cleaners · Money, with the current section
   marked. Route-specific primary actions appear only once their workflow ships. No dead
   action placeholders. Content max-width 1200px. Dense data (roster week grid, client
   tables) uses label-style headers, body-size cells, generous row height (44px+). The

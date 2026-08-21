@@ -112,7 +112,7 @@ export async function sendResendEmailBatches({
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "Idempotency-Key": `pool-invite/${batchId}/attempt/${attemptNumber}/chunk/${chunkIndex}`,
+        "Idempotency-Key": `cleaner-invite/${batchId}/attempt/${attemptNumber}/chunk/${chunkIndex}`,
       },
       method: "POST",
     } satisfies RequestInit;

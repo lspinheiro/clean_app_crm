@@ -28,7 +28,7 @@ const audAmount = z
 
 const cleanerId = z.union([
   z.literal(""),
-  z.string().uuid(userMessage("activePoolCleaner")),
+  z.string().uuid(userMessage("activeCleaner")),
 ]);
 
 export const recurringAssignmentSchema = z

@@ -1,29 +1,29 @@
 import { z } from "zod";
 
-export type PoolInviteEmailRecipient = {
+export type CleanerInviteEmailRecipient = {
   email: string;
   name: string | null;
 };
 
-export type PoolInviteEmailCsvRow = PoolInviteEmailRecipient & {
+export type CleanerInviteEmailCsvRow = CleanerInviteEmailRecipient & {
   reason: string | null;
   rowNumber: number;
   status: "ready" | "duplicate" | "invalid";
 };
 
-export type PoolInviteEmailCsvPreview = {
+export type CleanerInviteEmailCsvPreview = {
   fileError: string | null;
-  recipients: PoolInviteEmailRecipient[];
-  rows: PoolInviteEmailCsvRow[];
+  recipients: CleanerInviteEmailRecipient[];
+  rows: CleanerInviteEmailCsvRow[];
 };
 
 const headers = ["email", "name"] as const;
 const emailSchema = z.email().max(320);
 const nameSchema = z.string().max(200);
 
-export const POOL_INVITE_EMAIL_RECIPIENT_LIMIT = 500;
+export const CLEANER_INVITE_EMAIL_RECIPIENT_LIMIT = 500;
 
-export type PoolInviteEmailCsvMessageKey =
+export type CleanerInviteEmailCsvMessageKey =
   | "addRecipient"
   | "duplicateEmail"
   | "exactHeaders"
@@ -33,15 +33,15 @@ export type PoolInviteEmailCsvMessageKey =
   | "unclosedQuote"
   | "validEmail";
 
-export type PoolInviteEmailCsvTranslator = (
-  key: PoolInviteEmailCsvMessageKey,
+export type CleanerInviteEmailCsvTranslator = (
+  key: CleanerInviteEmailCsvMessageKey,
 ) => string;
 
 type ParsedRow = { cells: string[]; rowNumber: number };
 
 function message(
-  translate: PoolInviteEmailCsvTranslator | undefined,
-  key: PoolInviteEmailCsvMessageKey,
+  translate: CleanerInviteEmailCsvTranslator | undefined,
+  key: CleanerInviteEmailCsvMessageKey,
 ) {
   if (translate) return translate(key);
   switch (key) {
@@ -58,7 +58,7 @@ function message(
 
 function parseCsv(
   source: string,
-  translate?: PoolInviteEmailCsvTranslator,
+  translate?: CleanerInviteEmailCsvTranslator,
 ): { error: string | null; rows: ParsedRow[] } {
   const rows: ParsedRow[] = [];
   let row: string[] = [];
@@ -118,10 +118,10 @@ function hasExpectedHeaders(cells: string[] | undefined) {
   );
 }
 
-export function parsePoolInviteEmailCsv(
+export function parseCleanerInviteEmailCsv(
   source: string,
-  translate?: PoolInviteEmailCsvTranslator,
-): PoolInviteEmailCsvPreview {
+  translate?: CleanerInviteEmailCsvTranslator,
+): CleanerInviteEmailCsvPreview {
   const parsed = parseCsv(source, translate);
   if (parsed.error) return { fileError: parsed.error, recipients: [], rows: [] };
   if (!hasExpectedHeaders(parsed.rows[0]?.cells)) {
@@ -132,8 +132,8 @@ export function parsePoolInviteEmailCsv(
     };
   }
 
-  const recipients: PoolInviteEmailRecipient[] = [];
-  const rows: PoolInviteEmailCsvRow[] = [];
+  const recipients: CleanerInviteEmailRecipient[] = [];
+  const rows: CleanerInviteEmailCsvRow[] = [];
   const seen = new Set<string>();
 
   for (const { cells, rowNumber } of parsed.rows.slice(1)) {
@@ -186,7 +186,7 @@ export function parsePoolInviteEmailCsv(
     }
 
     seen.add(email);
-    if (recipients.length >= POOL_INVITE_EMAIL_RECIPIENT_LIMIT) {
+    if (recipients.length >= CLEANER_INVITE_EMAIL_RECIPIENT_LIMIT) {
       rows.push({
         email,
         name,

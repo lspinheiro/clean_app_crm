@@ -128,7 +128,7 @@ stateDiagram-v2
     [*] --> draft : create_one_off_job
     [*] --> posted : generation (no consent yet /<br/>unnamed slots)
     [*] --> assigned : generation (consented series)
-    draft --> posted : post_job (pool push)
+    draft --> posted : post_job (push to cleaners)
     posted --> assigned : slots filled (assign,<br/>accept_offer)
     assigned --> on_the_way
     on_the_way --> in_progress

@@ -1,4 +1,4 @@
-export type PoolMember = {
+export type CleanerMember = {
   id: string;
   joinedAt: string;
   name: string;

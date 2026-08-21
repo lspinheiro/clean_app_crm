@@ -4,37 +4,37 @@ import { Check, Copy, Link2, MessageCircle, RefreshCw, UserRound } from "lucide-
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { rotatePoolInvite } from "@/app/actions/pool";
+import { rotateCleanerInvite } from "@/app/actions/cleaners";
 import {
   buildCleanerJoinUrl,
   buildInviteMessage,
   buildWhatsAppShareUrl,
   formatJoinedDate,
-} from "@/features/pool/invite";
-import type { PoolMember } from "@/features/pool/types";
+} from "@/features/cleaners/invite";
+import type { CleanerMember } from "@/features/cleaners/types";
 import type { AppLocale } from "@/i18n/config";
 import { useRouter } from "@/i18n/navigation";
 import { localiseUserMessage } from "@/i18n/user-message";
 
-import { PoolEmailInvite } from "./pool-email-invite";
+import { CleanerEmailInvite } from "./cleaner-email-invite";
 
-type PoolWorkspaceProps = {
+type CleanersWorkspaceProps = {
   cleanerAppUrl: string;
   companyName: string;
   initialCode: string | null;
   initialInviteId: string | null;
-  members: PoolMember[];
+  members: CleanerMember[];
 };
 
-export function PoolWorkspace({
+export function CleanersWorkspace({
   cleanerAppUrl,
   companyName,
   initialCode,
   initialInviteId,
   members,
-}: PoolWorkspaceProps) {
+}: CleanersWorkspaceProps) {
   const locale = useLocale() as AppLocale;
-  const t = useTranslations("Pool");
+  const t = useTranslations("Cleaners");
   const router = useRouter();
   const [activeCode, setActiveCode] = useState(initialCode);
   const [activeInviteId, setActiveInviteId] = useState(initialInviteId);
@@ -75,7 +75,7 @@ export function PoolWorkspace({
     setHasError(false);
     setStatus(t("generatingCode"));
     try {
-      const result = await rotatePoolInvite();
+      const result = await rotateCleanerInvite();
       if (!result.ok) {
         setHasError(true);
         setStatus(
@@ -104,12 +104,12 @@ export function PoolWorkspace({
   }
 
   return (
-    <div className="pool-layout">
-      <section className="pool-invite-card" aria-labelledby="pool-invite-heading">
-        <header className="pool-card-heading">
-          <span aria-hidden="true" className="pool-card-icon"><Link2 size={20} /></span>
+    <div className="cleaners-layout">
+      <section className="cleaners-invite-card" aria-labelledby="cleaners-invite-heading">
+        <header className="cleaners-card-heading">
+          <span aria-hidden="true" className="cleaners-card-icon"><Link2 size={20} /></span>
           <div>
-            <h2 id="pool-invite-heading">{t("inviteTitle")}</h2>
+            <h2 id="cleaners-invite-heading">{t("inviteTitle")}</h2>
             <p>{t("inviteDescription")}</p>
           </div>
         </header>
@@ -151,7 +151,7 @@ export function PoolWorkspace({
           </div>
         )}
 
-        <div className="pool-invite-actions">
+        <div className="cleaners-invite-actions">
           <button
             className="button"
             disabled={!inviteMessage || copying !== null || rotating}
@@ -192,7 +192,7 @@ export function PoolWorkspace({
         </div>
         <p
           aria-live="polite"
-          className={`pool-action-status${hasError ? " pool-action-status--error" : ""}`}
+          className={`cleaners-action-status${hasError ? " cleaners-action-status--error" : ""}`}
           role="status"
         >
           {status}
@@ -200,24 +200,24 @@ export function PoolWorkspace({
         <p className="invite-rotation-note">
           {t("rotationNote")}
         </p>
-        <PoolEmailInvite
+        <CleanerEmailInvite
           companyName={companyName}
           inviteId={activeInviteId}
           joinUrl={joinUrl}
         />
       </section>
 
-      <section className="pool-members-card" aria-labelledby="pool-members-heading">
-        <header className="pool-card-heading pool-members-heading">
-          <span aria-hidden="true" className="pool-card-icon"><UserRound size={20} /></span>
+      <section className="cleaners-members-card" aria-labelledby="cleaners-members-heading">
+        <header className="cleaners-card-heading cleaners-members-heading">
+          <span aria-hidden="true" className="cleaners-card-icon"><UserRound size={20} /></span>
           <div>
-            <h2 id="pool-members-heading">{t("activeCleaners")}</h2>
+            <h2 id="cleaners-members-heading">{t("activeCleaners")}</h2>
             <p>{t("memberCount", { count: members.length })}</p>
           </div>
         </header>
 
         {members.length ? (
-          <ul aria-label={t("members")} className="pool-member-list">
+          <ul aria-label={t("members")} className="cleaners-member-list">
             {members.map((member) => (
               <li key={member.id}>
                 <span aria-hidden="true" className="member-initial">
@@ -235,7 +235,7 @@ export function PoolWorkspace({
             ))}
           </ul>
         ) : (
-          <div className="pool-members-empty">
+          <div className="cleaners-members-empty">
             <p>{t("noMembers")}</p>
             <span>{t("shareToBuild")}</span>
           </div>

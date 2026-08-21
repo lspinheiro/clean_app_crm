@@ -27,7 +27,7 @@ export type JobApplicant = {
   preferredRank: number | null;
 };
 
-export type JobPoolCandidate = {
+export type JobCleanerCandidate = {
   cleanerId: string;
   cleanerName: string;
   preferredRank: number | null;
@@ -90,5 +90,5 @@ export type JobDetail = {
   };
   slots: JobSlot[];
   applicants: JobApplicant[];
-  poolCandidates: JobPoolCandidate[];
+  cleanerCandidates: JobCleanerCandidate[];
 };

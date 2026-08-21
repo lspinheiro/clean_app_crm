@@ -3,16 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  retryFailedPoolInviteEmails: vi.fn(),
-  sendPoolInviteEmails: vi.fn(),
+  retryFailedCleanerInviteEmails: vi.fn(),
+  sendCleanerInviteEmails: vi.fn(),
 }));
 
-vi.mock("@/app/actions/pool-email", () => ({
-  retryFailedPoolInviteEmails: mocks.retryFailedPoolInviteEmails,
-  sendPoolInviteEmails: mocks.sendPoolInviteEmails,
+vi.mock("@/app/actions/cleaner-email", () => ({
+  retryFailedCleanerInviteEmails: mocks.retryFailedCleanerInviteEmails,
+  sendCleanerInviteEmails: mocks.sendCleanerInviteEmails,
 }));
 
-import { PoolEmailInvite } from "./pool-email-invite";
+import { CleanerEmailInvite } from "./cleaner-email-invite";
 
 const props = {
   companyName: "Coastal Demo Cleaning",
@@ -23,7 +23,7 @@ const retryKey = "10000000-0000-4000-8000-000000000302";
 
 async function openAndUpload(csv: string) {
   const user = userEvent.setup();
-  render(<PoolEmailInvite {...props} />);
+  render(<CleanerEmailInvite {...props} />);
   await user.click(screen.getByRole("button", { name: "Invite by email" }));
   await user.upload(
     screen.getByLabelText("Cleaner email CSV file"),
@@ -32,11 +32,11 @@ async function openAndUpload(csv: string) {
   return user;
 }
 
-describe("CLE-79 pool email invitation UI", () => {
+describe("CLE-79 cleaner email invitation UI", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    mocks.retryFailedPoolInviteEmails.mockReset();
-    mocks.sendPoolInviteEmails.mockReset();
+    mocks.retryFailedCleanerInviteEmails.mockReset();
+    mocks.sendCleanerInviteEmails.mockReset();
     vi.spyOn(globalThis.crypto, "randomUUID")
       .mockReturnValueOnce(retryKey);
   });
@@ -54,15 +54,15 @@ describe("CLE-79 pool email invitation UI", () => {
     expect(within(table).getAllByRole("row")).toHaveLength(4);
     expect(screen.getByText("2 unique recipients")).toBeInTheDocument();
     expect(screen.getByText("1 duplicate skipped")).toBeInTheDocument();
-    expect(screen.getByText("Join Coastal Demo Cleaning's cleaner pool")).toBeInTheDocument();
+    expect(screen.getByText("Join Coastal Demo Cleaning's cleaners")).toBeInTheDocument();
     const sendButton = screen.getByRole("button", { name: "Send 2 invitations" });
     expect(sendButton).toBeDisabled();
-    expect(mocks.sendPoolInviteEmails).not.toHaveBeenCalled();
+    expect(mocks.sendCleanerInviteEmails).not.toHaveBeenCalled();
 
     await user.selectOptions(screen.getByLabelText("Invitation language"), "pt-BR");
     expect(
       screen.getByText(
-        "Entre para o banco de profissionais da empresa Coastal Demo Cleaning",
+        "Entre para os profissionais da empresa Coastal Demo Cleaning",
       ),
     ).toBeInTheDocument();
     await user.click(
@@ -74,7 +74,7 @@ describe("CLE-79 pool email invitation UI", () => {
   });
 
   it("sends multiple manually entered email addresses without requiring a CSV", async () => {
-    mocks.sendPoolInviteEmails.mockResolvedValueOnce({
+    mocks.sendCleanerInviteEmails.mockResolvedValueOnce({
       accepted: [
         { email: "ana@example.com", failureReason: null, name: null },
         { email: "bruno@example.com", failureReason: null, name: null },
@@ -84,7 +84,7 @@ describe("CLE-79 pool email invitation UI", () => {
       ok: true,
     });
     const user = userEvent.setup();
-    render(<PoolEmailInvite {...props} />);
+    render(<CleanerEmailInvite {...props} />);
 
     await user.click(screen.getByRole("button", { name: "Invite by email" }));
 
@@ -101,7 +101,7 @@ describe("CLE-79 pool email invitation UI", () => {
     await user.click(within(form).getByRole("button", { name: "Send 2 invitations" }));
 
     await waitFor(() => {
-      expect(mocks.sendPoolInviteEmails).toHaveBeenCalledWith({
+      expect(mocks.sendCleanerInviteEmails).toHaveBeenCalledWith({
         authorityConfirmed: true,
         inviteId: props.inviteId,
         locale: "en-AU",
@@ -115,7 +115,7 @@ describe("CLE-79 pool email invitation UI", () => {
 
   it("blocks invalid and duplicate manually entered addresses", async () => {
     const user = userEvent.setup();
-    render(<PoolEmailInvite {...props} />);
+    render(<CleanerEmailInvite {...props} />);
     await user.click(screen.getByRole("button", { name: "Invite by email" }));
 
     const form = screen.getByRole("form", { name: "Email recipients" });
@@ -131,13 +131,13 @@ describe("CLE-79 pool email invitation UI", () => {
       within(form).getByText("This email address has already been added."),
     ).toBeInTheDocument();
     expect(within(form).getByRole("button", { name: "Send 1 invitation" })).toBeDisabled();
-    expect(mocks.sendPoolInviteEmails).not.toHaveBeenCalled();
+    expect(mocks.sendCleanerInviteEmails).not.toHaveBeenCalled();
   });
 
   it("renders the manual recipient form in Portuguese", async () => {
     (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__ = "pt-BR";
     const user = userEvent.setup();
-    render(<PoolEmailInvite {...props} />);
+    render(<CleanerEmailInvite {...props} />);
 
     await user.click(screen.getByRole("button", { name: "Convidar por e-mail" }));
 
@@ -148,13 +148,13 @@ describe("CLE-79 pool email invitation UI", () => {
   });
 
   it("shows partial outcomes and retries only the failed batch recipients", async () => {
-    mocks.sendPoolInviteEmails.mockResolvedValueOnce({
+    mocks.sendCleanerInviteEmails.mockResolvedValueOnce({
       accepted: [{ email: "ana@example.com", failureReason: null, name: "Ana" }],
       batchId: "10000000-0000-4000-8000-000000000401",
       failed: [{ email: "bruno@example.com", failureReason: "provider_rejected", name: "Bruno" }],
       ok: true,
     });
-    mocks.retryFailedPoolInviteEmails.mockResolvedValueOnce({
+    mocks.retryFailedCleanerInviteEmails.mockResolvedValueOnce({
       accepted: [
         { email: "ana@example.com", failureReason: null, name: "Ana" },
         { email: "bruno@example.com", failureReason: null, name: "Bruno" },
@@ -177,7 +177,7 @@ describe("CLE-79 pool email invitation UI", () => {
     expect(within(results).getByText("1 accepted")).toBeInTheDocument();
     expect(within(results).getByText("1 failed")).toBeInTheDocument();
     expect(within(results).getByText("bruno@example.com")).toBeInTheDocument();
-    expect(mocks.sendPoolInviteEmails).toHaveBeenCalledWith({
+    expect(mocks.sendCleanerInviteEmails).toHaveBeenCalledWith({
       authorityConfirmed: true,
       inviteId: props.inviteId,
       locale: "en-AU",
@@ -189,7 +189,7 @@ describe("CLE-79 pool email invitation UI", () => {
 
     await user.click(within(results).getByRole("button", { name: "Retry failed only" }));
     await waitFor(() => {
-      expect(mocks.retryFailedPoolInviteEmails).toHaveBeenCalledWith({
+      expect(mocks.retryFailedCleanerInviteEmails).toHaveBeenCalledWith({
         batchId: "10000000-0000-4000-8000-000000000401",
         retryKey,
       });

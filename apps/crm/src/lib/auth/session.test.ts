@@ -301,7 +301,7 @@ describe("company-admin session context", () => {
   it("routes an authenticated account with no active employee membership to no access", async () => {
     const profileQuery = queryReturning({
       id: "user-1",
-      full_name: "Pool-only Account",
+      full_name: "Cleaner-only Account",
       last_active_company: null,
     });
     const membershipQuery = queryReturning(null);

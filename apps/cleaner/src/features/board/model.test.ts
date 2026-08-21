@@ -79,13 +79,13 @@ describe("CLE-20 board vacancies", () => {
     expect(vacancies[0]).toMatchObject({ crewSize: 2, openSlots: 1 });
   });
 
-  it("keeps every pool's work, not just the first company's", () => {
+  it("keeps every company's work, not just the first company's", () => {
     const vacancies = toVacancies([
       row({ job_id: "job-a", company_name: "Coastal Demo Cleaning" }),
       row({ job_id: "job-b", company_name: "Broadbeach Bond Co" }),
     ]);
 
-    // Ordering is the next test's job; this one only cares that neither pool is dropped.
+    // Ordering is the next test's job; this one only cares that neither company is dropped.
     expect(vacancies).toHaveLength(2);
     expect(vacancies.map((vacancy) => vacancy.companyName).sort()).toEqual([
       "Broadbeach Bond Co",

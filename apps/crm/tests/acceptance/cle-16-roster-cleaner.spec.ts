@@ -96,6 +96,6 @@ test("@CLE-16 renders the generated week by cleaner with exact vacancy evidence"
   });
   expect(scrollLeft).toBeGreaterThan(0);
   await expect(mobileGrid.getByRole("columnheader", { name: /^Sun / })).toBeInViewport();
-  await expect(page.getByRole("button", { name: "Offer to pool" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Offer to cleaners" })).toBeDisabled();
   await expect(page.getByText("Available after the cleaner job board launches.")).toBeVisible();
 });

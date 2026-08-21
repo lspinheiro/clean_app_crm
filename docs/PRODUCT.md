@@ -11,7 +11,7 @@ prospective co-founders (developer + PM), collaboration not yet formalised (Appe
 3 August 2026, and the prototype review (Appendix A). Headline changes:
 
 - The scheduling/CRM core moves from the future paid tier into the free v1 base.
-- The pool/dispatch loop from the co-founders' prototype becomes the platform base.
+- The cleaner/dispatch loop from the co-founders' prototype becomes the platform base.
 - A WhatsApp share-link bridge precedes the group automation agent. The agent moves to P1; the
   accepted risk is unchanged.
 - Urgent backfill becomes a first-class flow.
@@ -74,7 +74,7 @@ reliability are the industry's dominant operational constraints. In the AHLA May
 of hotels reported staffing shortages. In a 2025 survey of 554 hosts and property managers,
 nearly 40% struggled to find dependable local cleaners (Appendix A). The workforce is transient
 by structure: it is largely international students who move on to better jobs. Candidate
-acquisition is therefore a permanent need, and any pool decays quickly.
+acquisition is therefore a permanent need, and any set of cleaners decays quickly.
 
 Primary discovery sources: the discovery interview with Thiago and the founder voice notes of
 3 August 2026 (Appendix A). Key signals:
@@ -93,11 +93,12 @@ Primary discovery sources: the discovery interview with Thiago and the founder v
 
 **Become the system of record for cleaning jobs.** v1 is a **free operations-and-recruitment
 platform**. It combines a scheduling/CRM core (clients, sites, recurring assignments, rosters)
-with the pool, dispatch, and recruitment funnel that keep the schedule staffed. The two engines
-share one backbone: the schedule. Once clients, recurring assignments, and preferred cleaners
-live in the product, the platform can derive every outbound action from them. A roster gap, an
+with the cleaner board, dispatch, and recruitment funnel that keep the schedule staffed. The two
+engines share one backbone: the schedule. Once clients, recurring assignments, and preferred
+cleaners live in the product, the platform can derive every outbound action from them. A roster
+gap, an
 uncovered job instance, or a dropout each produce a fully specified **vacancy** (site, time,
-duration, rate, preferred-cleaner order). Pool offers, push notifications, WhatsApp posts, and
+duration, rate, preferred-cleaner order). Cleaner offers, push notifications, WhatsApp posts, and
 recruitment notices consume vacancies; they are not separate workflows. Job registration and
 scheduling come first. Notifications and recruitment notices then follow with little extra work.
 
@@ -106,7 +107,7 @@ v1 therefore has two jobs:
 1. Deliver standalone value on operations and recruitment at zero cost to the company. This
    drives retention and word-of-mouth in a small regional market.
 2. Accumulate the assets the paid tier needs: company accounts, clients and schedules, the
-   candidate pool, job and pay records, and communication history. This data makes AI automation
+   candidate database, job and pay records, and communication history. This data makes AI automation
    possible and measurable.
 
 **Monetisation: paid AI-assisted automation tier.** The paid tier automates the admin work that
@@ -122,10 +123,10 @@ evidence.
 can monetise the demand side. It can recommend member cleaning companies to high-value end
 clients (hotels, construction firms, property managers) for a per-lead or success fee — the
 intermediary role identified as valuable in discovery (Appendix A). The differentiator is
-evidence. Platform data (vetted-pool size, vetting-tier mix, fill rates, structured reviews) lets
-the platform pitch a company with verifiable credentials that no generic lead-generation service
-can match. The pitch positions members as *compliance-verified suppliers* in a market where
-underpricing and non-compliance are systemic. v1 keeps this path open with two hooks: candidate
+evidence. Platform data (vetted-cleaner numbers, vetting-tier mix, fill rates, structured
+reviews) lets the platform pitch a company with verifiable credentials that no generic
+lead-generation service can match. The pitch positions members as *compliance-verified
+suppliers* in a market where underpricing and non-compliance are systemic. v1 keeps this path open with two hooks: candidate
 consent wording at registration covers matches with end clients of the platform (APP 6 secondary
 use); and company-level aggregates (fill rate, vetting-tier mix) are derivable from the
 `Placement`/`Review` entities.
@@ -147,7 +148,7 @@ throughout (§5.4).
 | User | Description | v1 role |
 |---|---|---|
 | **Company admin** (primary) | Owner/supervisor at an SME commercial cleaning company (1–50 cleaners), Gold Coast | Manages clients and rosters, posts vacancies, reviews candidates, assigns and backfills, records outcomes |
-| **Cleaner / candidate** (primary) | Cleaner who seeks or does work; reached via WhatsApp/Facebook job groups; often multilingual, mobile-only | Registers via share link or WhatsApp bot, completes vetting, joins company pools, takes jobs from the board, confirms completion |
+| **Cleaner / candidate** (primary) | Cleaner who seeks or does work; reached via WhatsApp/Facebook job groups; often multilingual, mobile-only | Registers via share link or WhatsApp bot, completes vetting, joins companies as a cleaner, takes jobs from the board, confirms completion |
 | **Platform operator** (internal) | Us | Oversees agent behaviour, vetting ops, group distribution |
 
 ### 1.4 Explicitly out of scope for v1 (future paid tier)
@@ -187,18 +188,18 @@ Reading order for the build: F10 → F11 → F12 → F13 → F14 → F1, F4, F5,
   pay, optional client charge). Recruitment jobs: draft → published → shortlisting → trialling →
   filled/closed. Operational jobs: scheduled → offered → assigned → in progress → completed.
 
-### F11 — Pool and dispatch board (P0) *(new in v0.2; adopted from the co-founders' prototype)*
+### F11 — Cleaner board (P0) *(new in v0.2; adopted from the co-founders' prototype)*
 
-- Each company has a **private cleaner pool**. Cleaners join via invite code or share link. A
-  cleaner can belong to multiple pools.
-- Vacancies post to the pool board. Cleaners **apply with one tap**. The admin assigns from the
+- Each company has its **own private set of cleaners**. Cleaners join via invite code or share
+  link. A cleaner can belong to more than one company.
+- Vacancies post to the cleaner board. Cleaners **apply with one tap**. The admin assigns from the
   applicants, or assigns directly and skips the board. Applicants see a "waiting" state and can
   withdraw.
 - Board vacancies carry their **service type**. The board lists first the jobs that match the
   cleaner's job-type preferences (F5) and availability *(v0.4)*.
-- **Cleaner weekly agenda** *(v0.4)*: assignments from every joined pool assemble automatically
-  into a single week view. The cleaner's schedule builds itself from accepted jobs. Each entry
-  opens the job card.
+- **Cleaner weekly agenda** *(v0.4)*: assignments from every company she has joined assemble
+  automatically into a single week view. The cleaner's schedule builds itself from accepted
+  jobs. Each entry opens the job card.
 - The platform reveals site address and access notes to the assigned cleaner only.
 - The cleaner marks a **job done**. Completion feeds the pay ledger, reviews (F6), and metrics
   (§6).
@@ -213,12 +214,12 @@ Reading order for the build: F10 → F11 → F12 → F13 → F14 → F1, F4, F5,
   The admin shares it into their existing WhatsApp/Facebook groups in one tap from their own
   phone. The platform does not automate WhatsApp itself; ToS exposure is zero at this stage.
 - A candidate who taps the link registers in under a minute (name, phone, suburb). The candidate
-  lands in that company's pool with the job open. The platform defers full screening/vetting and
+  joins that company's cleaners with the job open. The platform defers full screening/vetting and
   prompts for it afterwards (F3/F4).
 - The admin sees link performance (taps, registrations, applications) per share.
 - Requirement: registration consent (all paths — F12 and F3) covers matches between the candidate
   and work opportunities, *including with end clients of the platform*. This keeps the future
-  leads expansion (§1.2) APP-6-compliant without new consent from the pool.
+  leads expansion (§1.2) APP-6-compliant without new consent from cleaners.
 
 ### F13 — Urgent backfill (P0) *(new in v0.2)*
 
@@ -227,8 +228,8 @@ Reading order for the build: F10 → F11 → F12 → F13 → F14 → F1, F4, F5,
 - The platform runs an **offer cascade**: push offers ordered by client preference, then rating,
   then confirmed availability. The first cleaner to accept wins. The admin confirms the
   assignment. Autonomy: offers at Level 3; assignment confirmation at Level 2.
-- If the pool exhausts without an acceptance, the admin gets a one-tap re-share pack for their
-  groups (F12), and the vacancy opens to recruitment.
+- If the cascade exhausts the company's cleaners without an acceptance, the admin gets a
+  one-tap re-share pack for their groups (F12), and the vacancy opens to recruitment.
 - The platform instruments time-to-backfill from day one (§6.2). This flow is the product's
   showcase moment and the standard demo.
 
@@ -258,7 +259,7 @@ Reading order for the build: F10 → F11 → F12 → F13 → F14 → F1, F4, F5,
 
 - Every first-party surface shipped in a release is complete in Australian English (`en-AU`)
   and Brazilian Portuguese (`pt-BR`). For alpha this applies to both `apps/crm` and
-  `apps/cleaner`, including authentication, navigation, onboarding and pool joining, rosters,
+  `apps/cleaner`, including authentication, navigation, onboarding and joining a company, rosters,
   jobs, forms, validation, errors, status labels, loading and empty states, invites, and
   system-generated in-app and push notifications.
 - Before sign-in, the product selects between the two supported languages from the device
@@ -345,12 +346,12 @@ The conversational bot deepens screening in the fast follow.)*
   It requires explicit consent, minimum retention, and no free-text company annotations about
   criminal history. The platform never charges candidates any fee (QLD private-employment-agent
   rules).
-- Company-side trust: a company account requires an ABN before it can operate a pool. This
-  prevents arbitrary accounts that collect worker data.
+- Company-side trust: a company account requires an ABN before it can recruit or manage
+  cleaners. This prevents arbitrary accounts that collect worker data.
 
 ### F5 — Candidate database, search, and availability (P0)
 
-- As a company admin, I can search the pool by suburb/radius, availability window, vetting tier,
+- As a company admin, I can search my cleaners by suburb/radius, availability window, vetting tier,
   experience, language, and job-type preference *(preference facet v0.4)*.
 - **Availability capture** (v0.2): cleaners maintain a weekly availability grid plus an
   "available today" toggle. Availability appears in candidate lists, the roster (F10), and the
@@ -435,7 +436,7 @@ Journeys in §3.2 reference these personas by name.
   in his head and a spreadsheet. He has never used a CRM and is sceptical of software
   subscriptions. He expects tools to be faster than what he does today; if they are not, he stops
   using them. Modelled on our design partner.
-- **Ana — the pool cleaner.** 26, an international student on a part-time work visa. She cleans
+- **Ana — the cleaner.** 26, an international student on a part-time work visa. She cleans
   for 2–3 companies. She is phone-only, and English is her second language. She juggles a study
   timetable, values predictable pay, and fears unpaid work and wasted travel. She installs
   nothing that does not visibly lead to work.
@@ -477,8 +478,8 @@ He can start with a small sample of jobs and cleaners.
 (2) he creates the account (company + ABN), then clients and sites with addresses, access notes,
 default service/duration/rate, and preferred cleaners; (3) he enters recurring assignments from
 his spreadsheet — one by one, or through a bulk CSV import with a clear column format;
-(4) workforce invite: he posts the pool link into his existing WhatsApp group; (5) first look:
-the next morning the roster shows his actual week.
+(4) workforce invite: he posts the cleaner invite link into his existing WhatsApp group;
+(5) first look: the next morning the roster shows his actual week.
 *Touchpoints:* web dashboard, his WhatsApp group (invite link).
 *Emotions & pain points:* he is sceptical ("I already have a system that sort of works") and he
 resists data entry. The decisive moment is when he sees his real week in the roster; a small
@@ -486,9 +487,9 @@ first sample and bulk import keep the entry short. If setup demands long manual 
 out.
 *Features:* F1, F10, F11.
 
-**CL-1 · Join a company's pool** — Alpha —
+**CL-1 · Join a company** — Alpha —
 *Persona:* Ana.
-*What she can do:* join her employer's pool from a link in the group chat and start to see work,
+*What she can do:* join her employer's cleaners from a link in the group chat and start to see work,
 in under two minutes.
 *Stages:* (1) the invite link appears in the company WhatsApp group; (2) one-minute signup (name,
 phone, suburb); (3) PWA install prompt and push opt-in; (4) the board shows open jobs
@@ -508,7 +509,7 @@ have nobody — without a manual rebuild each evening.
 *Stages:* (1) recurring assignments generate the week's job instances automatically; (2) he adds
 one-off jobs (client, service, time, crew size) faster than he could type them into the group;
 (3) roster review: the roster highlights gaps as vacancies; (4) for each vacancy he chooses a
-fill route — the pool board (CA-3), direct assignment (CA-4), or, from MVP, a share to groups
+fill route — the cleaner board (CA-3), direct assignment (CA-4), or, from MVP, a share to groups
 (CA-7).
 *Touchpoints:* roster and new-job screens (web dashboard or phone).
 *Emotions & pain points:* this replaces the end-of-day round of phone calls ("who is and who
@@ -520,7 +521,7 @@ tagline: "faster than typing it in the group". If it is slower, he reverts.
 *Persona:* Ana.
 *What she can do:* see every assignment from every company she works for in one weekly agenda
 that the app builds for her. She no longer reconstructs her week from three chats.
-*Stages:* (1) accepted jobs from all her pools land in her agenda automatically; (2) the week
+*Stages:* (1) accepted jobs from all her companies land in her agenda automatically; (2) the week
 view shows day, time, suburb, and company per entry; (3) gaps sit visibly next to her
 availability (CL-5); (4) a tap on an entry opens the job card (CL-3).
 *Touchpoints:* PWA agenda view, push.
@@ -531,16 +532,16 @@ conversation). If the agenda is stale or incomplete, she reverts to chat history
 
 #### Phase C — Staff the work (vacancy → assigned)
 
-**CA-3 · Fill a vacancy from the pool** — Alpha —
+**CA-3 · Fill a vacancy from his cleaners** — Alpha —
 *Persona:* Thiago.
-*What he can do:* post a vacancy to his own pool and pick from cleaners who actually want the
+*What he can do:* post a vacancy to his own cleaners and pick from those who actually want the
 job, instead of one-by-one messages.
 *Stages:* (1) he posts the vacancy to the board; (2) applications arrive with one tap from
 cleaners — preferred cleaners for that client are listed first, with availability shown; (3) he
 assigns per crew slot; (4) the platform notifies the cleaner, and the roster gap closes.
 *Touchpoints:* dashboard, push notifications.
 *Emotions & pain points:* control without a broadcast to strangers. The failure feeling is
-silence — an empty or unresponsive pool. The recruitment journeys (CA-7, CL-7) exist to fix
+silence — no cleaner available or responding. The recruitment journeys (CA-7, CL-7) exist to fix
 that. From MVP, vetting badges and ranking (F4/F6) reduce the "who is this person?" hesitation.
 *Features:* F10, F11, F5; F6 from MVP.
 
@@ -559,7 +560,7 @@ continuity — the reason clients stay — is honoured.
 
 **CL-2 · Find work on the board** — Alpha —
 *Persona:* Ana.
-*What she can do:* see every open job from every pool she belongs to, and apply with one tap,
+*What she can do:* see every open job from every company she belongs to, and apply with one tap,
 instead of a race to reply first in three group chats.
 *Stages:* (1) a push or a board glance shows a job (time, suburb, service, pay) — jobs that match
 her preferences and availability are listed first (v0.4); (2) one-tap "I'll take it"; (3) a
@@ -582,7 +583,7 @@ re-confirms it automatically at match time instead of trusting it.
 her. Re-confirmation therefore happens only when a real job is at stake.
 *Features:* F5, F13.
 
-#### Phase D — Grow and trust the pool (recruitment & vetting)
+#### Phase D — Grow and trust the cleaners (recruitment & vetting)
 
 **CA-7 · Recruit through his own groups** — MVP —
 *Persona:* Thiago.
@@ -590,7 +591,7 @@ her. Re-confirmation therefore happens only when a real job is at stake.
 channel — and the platform never touches WhatsApp itself.
 *Stages:* (1) a vacancy generates a share pack: group-ready text plus a magic link; (2) he shares
 it to chosen groups from his own phone in one tap; (3) candidates tap through and register
-straight into his pool (CL-7); (4) he watches taps → registrations → applications instead of a
+straight into his cleaners (CL-7); (4) he watches taps → registrations → applications instead of a
 scroll through 40 unthreaded replies.
 *Touchpoints:* his WhatsApp/Facebook groups (his identity, his phone), dashboard funnel view.
 *Emotions & pain points:* he protects his reputation in those groups — the post looks exactly
@@ -600,11 +601,11 @@ threads and start arriving as structured applicants.
 
 **CL-7 · Register from a group post** — MVP —
 *Persona:* Priya.
-*What she can do:* go from a job post in a group to applicant status in that company's pool in
+*What she can do:* go from a job post in a group to applicant status with that company in
 about a minute, at any hour.
 *Stages:* (1) she sees the vacancy post; (2) she taps the magic link; (3) one-minute
-registration — the minimum first ask; (4) she lands in the pool with the job open, and applies;
-(5) the app then prompts her to add availability and start vetting (CL-8).
+registration — the minimum first ask; (4) she joins the company's cleaners with the job open,
+and applies; (5) the app then prompts her to add availability and start vetting (CL-8).
 *Touchpoints:* WhatsApp/Facebook group, mobile web → PWA, push.
 *Emotions & pain points:* urgency (she needs work this week) plus low trust in long forms. So the
 first ask is minimal, and the reward — a real job, an application sent — is immediate. This
@@ -697,9 +698,9 @@ the margin.
 *Stages:* (1) the cleaner taps "can't attend" on the job (F14) — or the message arrives on
 WhatsApp as the unstructured fallback; (2) he marks the cleaner dropped (one tap from the
 event), and the slot becomes an urgent vacancy; (3) alpha: an urgent re-post to the board plus a
-push blast to available pool members; MVP: an automatic offer cascade ordered by client
+push blast to available cleaners; MVP: an automatic offer cascade ordered by client
 preference, then rating, then confirmed availability — the first cleaner to accept wins, and he
-confirms (Level 2/3); (4) if the pool exhausts, a one-tap share pack re-opens recruitment
+confirms (Level 2/3); (4) if no cleaner accepts, a one-tap share pack re-opens recruitment
 (CA-7); (5) the platform records time-to-backfill.
 *Touchpoints:* dashboard, push; WhatsApp groups as fallback.
 *Emotions & pain points:* this is the money-loss moment from discovery (a $500 two-cleaner job
@@ -856,7 +857,7 @@ that journey's stage. A feature is "done" when every journey it touches works en
 | F8 — Trials & placement | CA-8, CA-9, CA-12 |
 | F9 — Operator console | OP-2, OP-3, OP-4, CL-8, CL-9 |
 | F10 — Scheduling & client CRM core | CA-1, CA-2, CA-3, CA-4, CA-5, CA-6, CA-9, CL-3 |
-| F11 — Pool & dispatch board | CA-1, CA-3, CA-4, CA-5, CA-6, CL-1, CL-2, CL-3, CL-4, CL-6, CL-7, CL-12 |
+| F11 — Cleaner board | CA-1, CA-3, CA-4, CA-5, CA-6, CL-1, CL-2, CL-3, CL-4, CL-6, CL-7, CL-12 |
 | F12 — WhatsApp share-link bridge | CA-7, CL-7, CA-6 (fallback), OP-3 |
 | F13 — Urgent backfill | CA-6, CL-6, CL-5, CL-11 |
 | F14 — Job chat & field events | CL-11, CA-13, CA-6 (can't-attend trigger), OP-3 |
@@ -881,22 +882,23 @@ entirely on the monorepo apps; the prototype is reference material, never runtim
 2. Recurring assignments that generate job instances, with crew size ≥ 1 (F10).
 3. The roster week view per cleaner/site, with unfilled slots as vacancies (F10).
 4. The dropout flow: the cleaner-side "can't attend" event (F14) → mark dropped → urgent
-   re-post to the board + a push blast to the pool (F13 minimal).
+   re-post to the board + a push blast to the company's cleaners (F13 minimal).
 5. The "available today" toggle and job-type preferences on the cleaner profile, shown on
    applicant lists and used to order the board (F5/F11 minimal).
 6. The first-job marker and completion outcome capture, including no-show (F8 minimal).
 7. Structured field events on the job (the F14 events layer, v0.4): report issue and
    lost & found with photo; the admin extra charge, which updates the ledger entry and notifies
    the cleaner. The free-text thread stays MVP.
-8. The cleaner weekly agenda: assignments across joined pools in one week view (F11, v0.4).
+8. The cleaner weekly agenda: assignments across the companies she has joined in one week view
+   (F11, v0.4).
 9. Complete `en-AU` and `pt-BR` support across both alpha apps, including the pre-auth language
    choice, persisted preference, validation and error states, invites, and in-app and push
    notifications (F15).
 
 **Kept at prototype parity.** These capabilities are re-housed in the monorepo apps with visual
-fidelity preserved — not shared code: auth and roles, pools and invite codes, job creation and
-the post/assign/draft flow, one-tap apply, address gating, job-done, the pay ledger, PWA push.
-
+fidelity preserved — not shared code: auth and roles, cleaner memberships and invite codes, job
+creation and the post/assign/draft flow, one-tap apply, address gating, job-done, the pay
+ledger, PWA push.
 **Explicitly absent from the alpha:** public signup, share links, vetting, structured reviews,
 shortlisting, free-text messaging (structured F14 field events only — the per-job thread arrives
 at MVP), all AI features, all WhatsApp features. No operator journeys and no operator console
@@ -921,7 +923,7 @@ journey
       Recurring assignments fill the roster: 5: Platform
       Review week, spot gaps: 5: Admin
     section Staff
-      Post gap vacancies to pool board: 5: Admin
+      Post gap vacancies to cleaner board: 5: Admin
       Applicants roll in, preferred first: 5: Cleaner
       Assign per crew slot: 5: Admin
     section Run
@@ -939,26 +941,26 @@ journey
 ```mermaid
 flowchart LR
     A[Sees vacancy in WhatsApp/FB group\nshared by admin F12 or agent F2 P1] --> B[Taps magic link]
-    B --> C[1-minute registration\njoins company pool]
+    B --> C[1-minute registration\njoins the company]
     C --> D[Board: one-tap apply\navailability captured]
     D --> E[Vetting prompts: ID + work rights\nthen references, police check P1]
     E --> F[Assigned: address & access revealed\npush reminders]
     F --> G[Job done -> pay recorded\nstructured review]
-    G --> H[Preferred-cleaner status\nmore offers, more pools]
+    G --> H[Preferred-cleaner status\nmore offers, more companies]
     C -. P1 increment .-> X[WhatsApp screening bot F3\nconversational intake]
 ```
 
 ### 3.6 Key screens (low-fi wireframe notes)
 
 Wireframes will be produced before the build. The prototype supplies working versions of the
-board, job detail, pool, and money screens. The roster and job-detail extensions below are alpha
+board, job detail, cleaners, and money screens. The roster and job-detail extensions below are alpha
 scope; the job pipeline and post-approval sheet are MVP/P1. The notes below record intent.
 
 **Roster (company dashboard, default screen)** *(new in v0.2)*
 
 ```
 +----------------------------------------------------------------------+
-| [Logo]  Roster  Jobs  Clients  Pool  Money            [+ New job]    |
+| [Logo]  Roster  Jobs  Clients  Cleaners  Money        [+ New job]    |
 +----------------------------------------------------------------------+
 | Week of 3 Aug      Mon      Tue      Wed      Thu      Fri           |
 |----------------------------------------------------------------------|
@@ -966,7 +968,7 @@ scope; the job pipeline and post-approval sheet are MVP/P1. The notes below reco
 | James Wilson (STR) | Ana    |  ---   | Juliana|  ---   | Ana         |
 | Olivia Davis       |  GAP(!)| Ana    |  ---   |  ---   |  ---        |
 |----------------------------------------------------------------------|
-| 2 unfilled slots this week  → [Offer to pool] [Share to groups]      |
+| 2 unfilled slots this week  → [Offer to cleaners] [Share to groups]  |
 +----------------------------------------------------------------------+
 ```
 
@@ -976,11 +978,11 @@ hired, with candidate cards that show vetting badges, distance, and availability
 **Job detail (from prototype)**: client, address, access notes; cleaner pay / client charge /
 margin; applicant list with badges and pair history; assign per crew slot; cancel; job thread
 with field events and audited extra charges (v0.4).
-
-**Cleaner board (PWA, from prototype)**: open vacancies from joined pools, preference-matched
-first; one-tap "I'll take it"; weekly agenda across pools (v0.4); my jobs with address, access
-notes, maps link, job thread with event buttons (v0.4), "job done"; money (to receive /
-received); profile with pools, availability grid, job-type preferences, vetting badges, PWA
+ **Cleaner board (PWA, from prototype)**: open vacancies from every company she has joined,
+preference-matched first; one-tap "I'll take it"; weekly agenda across companies (v0.4); my jobs
+with address, access notes, maps link, job thread with event buttons (v0.4), "job done"; money
+(to receive /
+received); profile with companies, availability grid, job-type preferences, vetting badges, PWA
 install prompt.
 
 **Candidate profile (company view):** header (name, suburb, distance, vetting-tier badges,
@@ -1031,7 +1033,7 @@ picker and a per-group toggle — the Level-2 approval surface for F2 (P1).
   a store app is a retention surface only. *(2026-08-16)* Admins often run their business from
   their phones, so the dashboard's responsiveness is a requirement, not a preference. A
   mobile-focused CRM surface is on the roadmap beyond Phase A. It centres on the fundamentals:
-  messages with the roster and pool (F7/F14), the view and confirmation of schedules, and the
+  messages with the roster and cleaners (F7/F14), the view and confirmation of schedules, and the
   primary notification surface for the admin.
 - **Internationalisation boundary**: `en-AU` and `pt-BR` are supported across both monorepo apps
   from alpha (F15). The selected language is an explicit user preference, with a device-derived
@@ -1041,9 +1043,10 @@ picker and a per-group toggle — the Level-2 approval surface for F2 (P1).
   explicit operating rules, not inferred from the display language. User-authored operational
   content is not automatically translated in alpha.
 - **API + core services**: a single backend (modular monolith) with Postgres. Core entities:
-  `Company`, `Client`, `Site`, `Job`, `RecurringAssignment`, `Vacancy`, `Pool`, `PoolMembership`,
-  `Candidate`, `Conversation`, `VettingCheck`, `Reference`, `Trial`, `Placement`, `PayRecord`,
-  `Review`, `AgentAction` (audit). Reviews are queryable per client–cleaner pair. Preferred-cleaner
+  `Company`, `Client`, `Site`, `Job`, `RecurringAssignment`, `Vacancy`, `Cleaners`,
+  `CleanerMembership`, `Candidate`, `Conversation`, `VettingCheck`, `Reference`, `Trial`,
+  `Placement`, `PayRecord`, `Review`, `AgentAction` (audit). Reviews are queryable per
+  client–cleaner pair. Preferred-cleaner
   order lives on the client/site relationship. `Job` carries crew size. The entity lifecycle is
   designed for the paid automation tier: jobs, schedules, comms history, and pay records are
   shared assets.
@@ -1082,9 +1085,10 @@ picker and a per-group toggle — the Level-2 approval surface for F2 (P1).
   expiry or withdrawal.
 - **PII rules**: encryption in transit and at rest. ID documents live in restricted object
   storage with short-lived signed URLs. Access is role-based: company admins see full profiles
-  only for their pipeline's and pool's candidates; pool search shows limited profiles until the
-  candidate consents to share with that company. **Client addresses and access notes** are
-  PII/security-sensitive: the platform reveals them only to the assigned cleaner, only for the
+  only for candidates in their pipeline and their own cleaners; candidate search shows limited
+  profiles until the candidate consents to share with that company. **Client addresses and
+  access notes** are PII/security-sensitive: the platform reveals them only to the assigned
+  cleaner, only for the
   assignment window, and it logs each access.
 - **No fees to workers, ever** (QLD private employment agent code of conduct). This is enforced
   at the product level: no candidate-side payment surface exists.
@@ -1148,8 +1152,8 @@ misunderstanding.
   accelerant, not a prerequisite.
 - Group admins tolerate vacancy posts shared by members. The posts look like today's manual
   posts because the admin sends them.
-- Availability re-confirmation at match time is sufficient to keep the pool useful despite
-  decay.
+- Availability re-confirmation at match time is sufficient to keep the company's cleaners useful
+  despite decay.
 - The free tier generates enough engagement data (schedules, jobs, pay records, comms) that the
   automation upsell follows from real use, not from a cold sales approach, and that
   savings-based pricing has a factual base.
@@ -1165,7 +1169,7 @@ misunderstanding.
 | Worker-classification / regulatory drift (labour-hire licensing QLD; digital-platform "employee-like worker" reforms) | High | v1 remains an introduction/coordination platform: the platform engages no workers, takes no commission on hours, and mediates no pay (the ledger records money; it never moves money). **v0.2 widens the legal-review scope**: confirm that dispatch + pay ledger for companies' own workers does not constitute labour-hire "arranging" under the QLD Act. Any future placement-fee, pay-mediation, or supply feature triggers legal review first (§1.2 gate). |
 | Defamation/blacklist exposure from cleaner reviews | Medium | Structured-only reviews, a dispute flow, and moderation (F6). No free-text public ratings in v1. |
 | Vetting liability (wrong or stale check results) | Medium | Checks run via an accredited provider. The platform shows status + date, never its own judgements ("safe"); disclaimers; expiry records. |
-| Cold start / thin pool | High | **Largely mitigated in v0.2**: private pools are useful with the company's existing workforce on day one; share links recruit from existing groups; seed via Thiago's and the co-founders' companies; Gold Coast only until liquidity. |
+| Cold start / too few cleaners | High | **Largely mitigated in v0.2**: a company's private cleaners are useful with the company's existing workforce on day one; share links recruit from existing groups; seed via Thiago's and the co-founders' companies; Gold Coast only until liquidity. |
 | MVP scope creep (the scheduling core is a bigger build than dispatch-only) | Medium | F10 is the deliberate trade (see the prototype review, Appendix A). Contain it: ship the roster read-model first (recurring assignments + gaps) and defer drag-and-drop refinements; validate the recurring share with design partners before the build deepens (Appendix B). |
 | Co-founder alignment (two visions; roles and ownership unresolved) | Medium | An explicit alignment discussion before the build (prototype review, Appendix A). Decisions 0001/0002 remove the shared-codebase question, but the prototype's adapted schema/UI patterns belong in the IP conversation. Formalise roles/equity/IP before significant joint work. |
 | Free-tier cost burn (LLM + infra + checks) | Medium | Police checks at cost pass-through. The LLM cost budget per funnel stage is monitored (§6 guardrails). Model-tier down-shift for routine turns. The P0 build is deliberately light on LLM usage (agents concentrate in P1). |
@@ -1196,7 +1200,7 @@ misunderstanding.
 ### 5.4 Freemium boundary (forward constraint)
 
 Everything in §2 stays free permanently: the operations core (clients, rosters, recurring
-assignments, pool, dispatch, pay ledger) **and** the recruitment funnel (share links, vetting
+assignments, cleaners, dispatch, pay ledger) **and** the recruitment funnel (share links, vetting
 badges, shortlists, reviews). "Free to run your cleaning operation and hire" is the market
 promise. A retraction would damage trust in a small community, and the free core is what
 captures the data the paid tier needs. The paid tier is built from *new automation surfaces on
@@ -1219,7 +1223,7 @@ direct measure of the system-of-record thesis. Placements (trial → hired) beco
 | Metric | Target (month 3 post-launch) |
 |---|---|
 | Registered companies (Gold Coast) | ≥ 25 |
-| Activation: companies with ≥1 client + ≥1 recurring assignment + ≥3 pool members in first 14 days | ≥ 60% |
+| Activation: companies with ≥1 client + ≥1 recurring assignment + ≥3 cleaners in first 14 days | ≥ 60% |
 | Candidate registrations | ≥ 500 |
 | Share-link funnel: tap → completed registration | ≥ 40% |
 | % of new cleaners who arrive via share links (compared with direct invite) | ≥ 30% (measures the bridge) |
@@ -1244,7 +1248,7 @@ direct measure of the system-of-record thesis. Placements (trial → hired) beco
 | % of completed jobs with client charge recorded (margin data) | ≥ 40% |
 | % of completed jobs with a structured review | ≥ 60% |
 | % of active cleaners at ID-verified tier or above | ≥ 50% |
-| Candidate pool freshness (availability confirmed ≤14 days) | ≥ 60% of active pool |
+| Candidate freshness (availability confirmed ≤14 days) | ≥ 60% of active candidates |
 | Company NPS / qualitative check-ins | ≥ 30 / monthly interviews logged |
 | Review disputes upheld against companies | < 10% of reviews (else the review design is broken) |
 
@@ -1288,7 +1292,7 @@ here, not linked.
   preferences, invoicing and pay-mediation ideas (future-tier candidates), a competitor sighted
   (Op10 marketing in Gold Coast cleaner groups).
 - Co-founders' prototype — [clean-app-gamma-inky.vercel.app](https://clean-app-gamma-inky.vercel.app)
-  (two-sided pool/dispatch PWA).
+  (two-sided cleaner/dispatch PWA).
 - Prototype and strategy review, 3 August 2026 — prototype walkthrough and assessment, MVP
   definition, north-star metric, and the go-to-market that underlies the v0.2 revision.
 

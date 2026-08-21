@@ -457,12 +457,14 @@ boundary) are added only when a cohort company asks for one.
 
 Refines #16. A user account can hold an employee membership (role owner or staff,
 created by an owner's invitation) and a pool membership (cleaner in a company's pool,
-created through an invite link) at the same time — including across different
-companies. The supervisor who also cleans holds one login. The two kinds stay separate
+created through an invite link) at the same time — within the same company or across
+different companies. The supervisor who also cleans holds one login. The two kinds stay separate
 concepts: they have different creators, different lifecycles, and different privacy
 consequences. Considered option: one membership object with a third role `cleaner` —
 rejected because pool joining (link attribution, registration caps) and employee
 management would share a table that every RLS policy must then disambiguate row by row.
+An existing account signs in from the cleaner invitation, returns to the same invite,
+completes any missing cleaner profile fields, and joins without creating another Auth identity.
 
 ### 18. Employee invitation: owner-sent, e-mail-verified, minimal (2026-08-19)
 

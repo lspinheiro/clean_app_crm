@@ -8,10 +8,8 @@ function countDigits(value: string) {
   return (value.match(/\d/g) ?? []).length;
 }
 
-export const registrationSchema = z.object({
+export const cleanerDetailsSchema = z.object({
   fullName: requiredText("Enter your full name."),
-  email: z.email("Enter a valid email address."),
-  password: z.string().min(8, "Use a password with at least 8 characters."),
   // People write phone numbers with spaces, brackets, and country codes. Count digits
   // instead of imposing a format they would have to fight.
   phone: requiredText("Enter your phone number.").refine(
@@ -19,6 +17,11 @@ export const registrationSchema = z.object({
     "Enter a phone number with at least 8 digits.",
   ),
   suburb: requiredText("Enter the suburb you work from."),
+});
+
+export const registrationSchema = cleanerDetailsSchema.extend({
+  email: z.email("Enter a valid email address."),
+  password: z.string().min(8, "Use a password with at least 8 characters."),
 });
 
 export type Registration = z.infer<typeof registrationSchema>;

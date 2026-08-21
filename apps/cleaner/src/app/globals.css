@@ -144,6 +144,85 @@ a {
   gap: 20px;
 }
 
+.auth-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.auth-choice p {
+  margin: 0;
+  color: var(--color-gray-600);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-gray-600);
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  height: 1px;
+  flex: 1;
+  background: var(--color-gray-200);
+  content: "";
+}
+
+.auth-account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  background: var(--color-gray-50);
+}
+
+.auth-account__identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.auth-account__identity span {
+  color: var(--color-gray-600);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.auth-account__identity strong {
+  overflow-wrap: anywhere;
+}
+
+.text-action {
+  min-height: 44px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-gray-700);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.text-action:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -218,6 +297,21 @@ a {
   background: var(--color-status-danger-tint);
   color: var(--color-status-danger-text);
   font-size: 15px;
+}
+
+.form-error p {
+  margin: 0;
+}
+
+.form-error__action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin-top: 4px;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .invite-problem {

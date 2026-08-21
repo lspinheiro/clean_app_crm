@@ -65,15 +65,21 @@ by notification type (offers → `/offers`, otherwise `/jobs` or `/board`).*
 - **Join (`app/join`)** — renders the link content from the extended
   `cleaner_invite_preview` (title, description, pay shape) with the bare-link
   fallback (company name + `pool_size`); new `limit_reached` dead state joins
-  revoked/expired. Credential block: "Continue with Google" plus the delivered
-  email + password form. New `lib/webview.ts` detects an in-app browser
+  revoked/expired. The delivered e-mail path offers two explicit modes: create an
+  account, or sign in to an existing account and return to the same invite. A signed-in
+  account sees its identity and only the cleaner profile fields required to join; this
+  applies to employee accounts, including an employee joining the same company's pool.
+  The later credential block adds "Continue with Google" beside those paths. New
+  `lib/webview.ts` detects an in-app browser
   (user-agent heuristic); inside one, the Google button becomes "open in your
   browser" guidance and email + password stays primary. The invite code always
   travels in the URL, so the system-browser hop and the OAuth redirect both land on
   `/join?code=…` with context intact.
-- **Login (`(auth)/login`)** — gains "Continue with Google" beside the delivered
-  email + password form (S27: return sign-in with the same credential), and the
-  standard email-based password reset.
+- **Login (`(auth)/login`)** — accepts the pending invite code and returns to
+  `/join?code=…` immediately after password authentication, before the normal board
+  membership gate. It later gains "Continue with Google" beside the delivered e-mail +
+  password form (S27: return sign-in with the same credential), and the standard
+  e-mail-based password reset.
 - **OAuth callback (`app/(auth)/callback`)** — client component; the PKCE exchange
   is handled by the singleton (`detectSessionInUrl`), then it routes back to the
   pending join (code from the redirect URL) or to the board. After a first Google
@@ -106,9 +112,10 @@ by notification type (offers → `/offers`, otherwise `/jobs` or `/board`).*
 ## Interaction sequences
 
 **Webview join (S9).** WhatsApp opens `/join?code=X` in the in-app browser → preview
-renders the offer → Ana picks email + password (primary there) → registers → phone +
-suburb → `join_company_pool` → board. Had she wanted Google: guidance opens the same
-URL in the system browser; the flow restarts there with the code intact.
+renders the offer. A new user creates an account; an existing user signs in and returns
+to the same code. Both paths collect any missing name, phone, and suburb before
+`join_company_pool` → board. Had she wanted Google: guidance opens the same URL in the
+system browser; the flow restarts there with the code intact.
 
 ```mermaid
 sequenceDiagram
@@ -117,10 +124,15 @@ sequenceDiagram
     participant SB as Supabase Auth
     participant DB as join_company_pool
     Note over W: /join?code=X — webview detected
-    alt email + password (always works in place)
+    alt new account
         W->>SB: signUp(email, password)
         W->>DB: join(code, name, phone, suburb)
-        DB-->>W: membership created → board
+        DB-->>W: pool joined → board
+    else existing account
+        W->>SB: signInWithPassword(email, password)
+        SB-->>W: /join?code=X
+        W->>DB: join(code, name, phone, suburb)
+        DB-->>W: pool joined → board
     else Google (blocked in the webview)
         W-->>SYS: "open in your browser" — same URL, code intact
         SYS->>SB: signInWithOAuth(google) → /callback?code=X

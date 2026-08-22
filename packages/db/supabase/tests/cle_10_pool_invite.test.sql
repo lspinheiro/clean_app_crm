@@ -58,7 +58,7 @@ select is(
 
 delete from public.company_invites;
 insert into public.company_invites (company_id, code)
-values ('10000000-0000-4000-8000-000000000010', 'ZTEST1');
+values ('10000000-0000-4000-8000-000000000010', 'ZTEST1FIXTURE001');
 
 select is(
   (
@@ -74,8 +74,8 @@ select results_eq(
   $$select code from public.company_invites
     where company_id = '10000000-0000-4000-8000-000000000010'
       and revoked_at is null$$,
-  $$values ('ZTEST1'::text)$$,
-  'the deterministic fixture exposes its active six-character code'
+  $$values ('ZTEST1FIXTURE001'::text)$$,
+  'the deterministic fixture exposes its active sixteen-character code'
 );
 select is(
   (
@@ -157,19 +157,19 @@ select is(
 );
 select ok(
   (
-    select code <> 'ZTEST1' and code ~ '^[A-Z0-9]{6}$'
+    select code <> 'ZTEST1FIXTURE001' and code ~ '^[A-Z0-9]{16}$'
     from public.company_invites
     where company_id = '10000000-0000-4000-8000-000000000010'
       and revoked_at is null
   ),
-  'first rotation produces a distinct six-character code'
+  'first rotation produces a distinct sixteen-character code'
 );
 select is(
   (
     select count(*)::integer
     from public.company_invites
     where company_id = '10000000-0000-4000-8000-000000000010'
-      and code = 'ZTEST1'
+      and code = 'ZTEST1FIXTURE001'
       and revoked_at is not null
   ),
   1,
@@ -207,7 +207,7 @@ select is(
 );
 select ok(
   (
-    select invite.code <> first_rotation.code and invite.code ~ '^[A-Z0-9]{6}$'
+    select invite.code <> first_rotation.code and invite.code ~ '^[A-Z0-9]{16}$'
     from public.company_invites invite
     cross join cle_10_invite_state first_rotation
     where invite.company_id = '10000000-0000-4000-8000-000000000010'

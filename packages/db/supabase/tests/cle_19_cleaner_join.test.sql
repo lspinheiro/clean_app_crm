@@ -72,7 +72,7 @@ insert into public.company_invites (id, company_id, code, revoked_at)
 values (
   '30000000-0000-4000-8000-000000000201',
   '10000000-0000-4000-8000-000000000010',
-  'ZREVOK',
+  'ZREVOKEDFIXTURE1',
   '2026-08-01T00:00:00+10'
 );
 
@@ -82,7 +82,7 @@ insert into public.company_invites (id, company_id, code, expires_at)
 values (
   '30000000-0000-4000-8000-000000000202',
   '30000000-0000-4000-8000-000000000010',
-  'ZEXPIR',
+  'ZEXPIREDFIXTURE1',
   '2026-08-01T00:00:00+10'
 );
 
@@ -94,7 +94,7 @@ insert into public.company_invites (id, company_id, code)
 values (
   '30000000-0000-4000-8000-000000000203',
   '30000000-0000-4000-8000-000000000020',
-  'ZPOOL1'
+  'ZPOOL1FIXTURE001'
 );
 insert into public.company_members (company_id, profile_id, status)
 values
@@ -120,32 +120,32 @@ insert into auth.users (
 set local role anon;
 select set_config('request.jwt.claim.role', 'anon', true);
 select is(
-  (select state from public.cleaner_invite_preview('CLEAN1')),
+  (select state from public.cleaner_invite_preview('CLEAN1DEMOJOIN99')),
   'active',
   'a live invite code reports an active state'
 );
 select is(
-  (select company_name from public.cleaner_invite_preview('CLEAN1')),
+  (select company_name from public.cleaner_invite_preview('CLEAN1DEMOJOIN99')),
   'Coastal Demo Cleaning',
   'a live invite names the company that sent it'
 );
 select is(
-  (select pool_size from public.cleaner_invite_preview('ZPOOL1')),
+  (select pool_size from public.cleaner_invite_preview('ZPOOL1FIXTURE001')),
   2,
   'the pool size counts every active pool membership, including an employee of another company'
 );
 select is(
-  (select state from public.cleaner_invite_preview('NOPE12')),
+  (select state from public.cleaner_invite_preview('NOPE12FIXTURE001')),
   'unknown',
   'an unrecognised code is reported as unknown'
 );
 select is(
-  (select state from public.cleaner_invite_preview('ZREVOK')),
+  (select state from public.cleaner_invite_preview('ZREVOKEDFIXTURE1')),
   'revoked',
   'a rotated-away code is reported as revoked'
 );
 select is(
-  (select state from public.cleaner_invite_preview('ZEXPIR')),
+  (select state from public.cleaner_invite_preview('ZEXPIREDFIXTURE1')),
   'expired',
   'a code past its expiry is reported as expired'
 );
@@ -158,7 +158,7 @@ select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000001
 select set_config('request.jwt.claim.role', 'authenticated', true);
 
 select lives_ok(
-  $$select public.join_company_pool('CLEAN1', 'Ana Silva', '0400 000 111', 'Southport')$$,
+  $$select public.join_company_pool('CLEAN1DEMOJOIN99', 'Ana Silva', '0400 000 111', 'Southport')$$,
   'a signed-in cleaner joins the pool from a live invite code'
 );
 reset role;
@@ -185,7 +185,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select lives_ok(
-  $$select public.join_company_pool('CLEAN1', 'Ana Silva', '0400 000 111', 'Southport')$$,
+  $$select public.join_company_pool('CLEAN1DEMOJOIN99', 'Ana Silva', '0400 000 111', 'Southport')$$,
   'reopening the same invite link does not fail'
 );
 reset role;
@@ -204,31 +204,31 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select throws_ok(
-  $$select public.join_company_pool('NOPE12', 'Ana Silva', '0400 000 111', 'Southport')$$,
+  $$select public.join_company_pool('NOPE12FIXTURE001', 'Ana Silva', '0400 000 111', 'Southport')$$,
   '22023',
   'Invite code not found',
   'an unrecognised code cannot join a pool'
 );
 select throws_ok(
-  $$select public.join_company_pool('ZREVOK', 'Ana Silva', '0400 000 111', 'Southport')$$,
+  $$select public.join_company_pool('ZREVOKEDFIXTURE1', 'Ana Silva', '0400 000 111', 'Southport')$$,
   '22023',
   'Invite code is no longer active',
   'a rotated-away code cannot join a pool'
 );
 select throws_ok(
-  $$select public.join_company_pool('ZEXPIR', 'Ana Silva', '0400 000 111', 'Southport')$$,
+  $$select public.join_company_pool('ZEXPIREDFIXTURE1', 'Ana Silva', '0400 000 111', 'Southport')$$,
   '22023',
   'Invite code has expired',
   'an expired code cannot join a pool'
 );
 select throws_ok(
-  $$select public.join_company_pool('CLEAN1', '   ', '0400 000 111', 'Southport')$$,
+  $$select public.join_company_pool('CLEAN1DEMOJOIN99', '   ', '0400 000 111', 'Southport')$$,
   '22023',
   'Full name, phone, and suburb are required',
   'registration refuses a blank name'
 );
 select throws_ok(
-  $$select public.join_company_pool('CLEAN1', 'Ana Silva', '0400 000 111', '  ')$$,
+  $$select public.join_company_pool('CLEAN1DEMOJOIN99', 'Ana Silva', '0400 000 111', '  ')$$,
   '22023',
   'Full name, phone, and suburb are required',
   'registration refuses a blank suburb'
@@ -239,7 +239,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select lives_ok(
-  $$select public.join_company_pool('CLEAN1', 'Demo Company Admin', '0400 000 222', 'Southport')$$,
+  $$select public.join_company_pool('CLEAN1DEMOJOIN99', 'Demo Company Admin', '0400 000 222', 'Southport')$$,
   'an employee can also join the cleaner pool for the same company'
 );
 reset role;
@@ -267,7 +267,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000005', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select throws_ok(
-  $$select public.join_company_pool('CLEAN1', 'Demo Removed Cleaner', '0400 000 333', 'Southport')$$,
+  $$select public.join_company_pool('CLEAN1DEMOJOIN99', 'Demo Removed Cleaner', '0400 000 333', 'Southport')$$,
   '42501',
   'This company removed you from their pool',
   'a removed cleaner cannot rejoin herself through the invite link'
@@ -287,7 +287,7 @@ select is(
 set local role anon;
 select set_config('request.jwt.claim.role', 'anon', true);
 select throws_ok(
-  $$select public.join_company_pool('CLEAN1', 'Ana Silva', '0400 000 111', 'Southport')$$,
+  $$select public.join_company_pool('CLEAN1DEMOJOIN99', 'Ana Silva', '0400 000 111', 'Southport')$$,
   '42501',
   'permission denied for function join_company_pool',
   'an anonymous caller is refused at the grant boundary'

@@ -17,7 +17,7 @@ describe("CLE-19 invite code handling", () => {
   });
 
   it("upper-cases and trims a code pasted from a chat message", () => {
-    expect(normaliseInviteCode("  clean1 ")).toBe("CLEAN1");
+    expect(normaliseInviteCode("  clean1demojoin99 ")).toBe("CLEAN1DEMOJOIN99");
   });
 });
 

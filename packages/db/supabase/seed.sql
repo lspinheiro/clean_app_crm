@@ -204,7 +204,7 @@ insert into public.company_invites (id, company_id, code)
 values (
   '10000000-0000-4000-8000-000000000201',
   '10000000-0000-4000-8000-000000000010',
-  'CLEAN1'
+  'CLEAN1DEMOJOIN99'
 )
 on conflict (id) do nothing;
 

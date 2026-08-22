@@ -211,3 +211,44 @@ describe("CLE-71 CSV contract", () => {
     ]);
   });
 });
+
+describe("failed-row export neutralises spreadsheet formulas", () => {
+  it("prefixes cells whose first non-whitespace character opens a formula", () => {
+    const csv = serialiseImportRows("clients", [
+      ["=cmd|' /c calc'!A1", "+1300000000", "-2+3", "@SUM(A1)"],
+    ]);
+
+    expect(csv).toBe(
+      "name,contact_name,phone,notes\r\n" +
+        "'=cmd|' /c calc'!A1,'+1300000000,'-2+3,'@SUM(A1)\r\n",
+    );
+  });
+
+  it("neutralises formulas hidden behind leading whitespace and control characters", () => {
+    const csv = serialiseImportRows("clients", [
+      [" =HYPERLINK(\"http://x\")", "\t+1", "\r-1", "\n@A1"],
+    ]);
+
+    expect(csv).toBe(
+      "name,contact_name,phone,notes\r\n" +
+        "\"' =HYPERLINK(\"\"http://x\"\")\",'\t+1,\"'\r-1\",\"'\n@A1\"\r\n",
+    );
+  });
+
+  it("leaves ordinary cells, separators, and quotes untouched", () => {
+    const csv = serialiseImportRows("clients", [
+      ["Oceanview Property Group", "Dana, Ops", 'He said "hi"', "line1\nline2"],
+    ]);
+
+    expect(csv).toBe(
+      "name,contact_name,phone,notes\r\n" +
+        'Oceanview Property Group,"Dana, Ops","He said ""hi""","line1\nline2"\r\n',
+    );
+  });
+
+  it("does not prefix the header row", () => {
+    expect(serialiseImportRows("sites", [])).toBe(
+      "client_name,name,address,suburb,access_notes\r\n",
+    );
+  });
+});

@@ -452,9 +452,22 @@ export function parseSiteImportCsv(
   return { fileError: null, rows };
 }
 
+// Imported cells are attacker-controlled and are handed straight back as a
+// downloadable file, so a spreadsheet is a second interpretation boundary on top
+// of CSV syntax. Anything that would open a formula gets an apostrophe so the
+// cell is read as literal text (CWE-1236).
+function neutraliseFormula(value: string) {
+  const firstVisible = value.replace(/^[\s\u0000-\u001f]+/, "").charAt(0);
+  if (firstVisible === "=" || firstVisible === "+" || firstVisible === "-" || firstVisible === "@") {
+    return "'" + value;
+  }
+  return value;
+}
+
 function escapeCsv(value: string) {
-  if (!/[",\r\n]/.test(value)) return value;
-  return '"' + value.replaceAll('"', '""') + '"';
+  const safeValue = neutraliseFormula(value);
+  if (!/[",\r\n]/.test(safeValue)) return safeValue;
+  return '"' + safeValue.replaceAll('"', '""') + '"';
 }
 
 function assertNever(value: never): never {

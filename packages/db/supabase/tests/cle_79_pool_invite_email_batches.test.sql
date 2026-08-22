@@ -68,7 +68,7 @@ insert into public.company_invites (id, company_id, code)
 values (
   '79000000-0000-4000-8000-000000000001',
   '10000000-0000-4000-8000-000000000010',
-  'MAIL79'
+  'MAIL79FIXTURE001'
 );
 
 insert into public.companies (id, name, abn, status)

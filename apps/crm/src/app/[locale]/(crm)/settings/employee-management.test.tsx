@@ -140,7 +140,7 @@ describe("CLE-84 employee management controls", () => {
 
   it("names the consequence before removing access", async () => {
     const user = userEvent.setup();
-    render(
+    const { rerender } = render(
       <EmployeeManagement
         currentProfileId="10000000-0000-4000-8000-000000000008"
         employees={employees}
@@ -162,8 +162,15 @@ describe("CLE-84 employee management controls", () => {
     await waitFor(() => expect(mocks.removeEmployeeAction).toHaveBeenCalledWith({
       membershipId: "10000000-0000-4000-8000-000000000096",
     }));
-    expect(await within(staff).findByRole("status")).toHaveTextContent(
+    rerender(
+      <EmployeeManagement
+        currentProfileId="10000000-0000-4000-8000-000000000008"
+        employees={employees.slice(0, 1)}
+      />,
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent(
       "CLE-84 Staff’s company access was removed.",
     );
+    expect(screen.queryByRole("group", { name: "CLE-84 Staff" })).not.toBeInTheDocument();
   });
 });

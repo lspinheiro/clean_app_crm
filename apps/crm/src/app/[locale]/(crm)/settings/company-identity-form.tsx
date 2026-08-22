@@ -39,12 +39,6 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
   const [busy, setBusy] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(logoUrl);
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
   function handleLogoSelection(file: File | undefined) {
     setSaved(false);
     setFieldErrors((current) => ({ ...current, logo: undefined }));
@@ -63,6 +57,19 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
     setDirty(true);
     setPreviewUrl(URL.createObjectURL(file));
   }
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  useEffect(() => {
+    const preHydrationFile = fileInputRef.current?.files?.[0];
+    if (!preHydrationFile) return;
+    setDirty(true);
+    setPreviewUrl(URL.createObjectURL(preHydrationFile));
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

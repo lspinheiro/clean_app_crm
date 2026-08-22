@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 select set_config('storage.allow_delete_query', 'true', true);
-select plan(56);
+select plan(62);
 
 -- Keep the contract test isolated from logo candidates created during local UI
 -- verification. These changes live inside the test transaction and roll back.
@@ -102,6 +102,22 @@ select ok(
     'EXECUTE'
   ),
   'anonymous users cannot reserve logo uploads'
+);
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.release_company_logo_upload(uuid,text)',
+    'EXECUTE'
+  ),
+  'authenticated owners can release an unused upload reservation'
+);
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.release_company_logo_upload(uuid,text)',
+    'EXECUTE'
+  ),
+  'anonymous callers cannot release logo upload reservations'
 );
 
 insert into auth.users (
@@ -533,6 +549,42 @@ select is(
   ),
   0,
   'the authorised cleanup removes the unreferenced logo object'
+);
+select lives_ok(
+  $$insert into storage.objects (bucket_id, name, owner_id, metadata)
+    values (
+      'company-logos',
+      '10000000-0000-4000-8000-000000000010/logo-ffffffff-ffff-4fff-8fff-ffffffffffff.webp',
+      auth.uid()::text,
+      '{"mimetype":"image/webp"}'::jsonb
+    )$$,
+  'company admin can upload the later reserved candidate'
+);
+select ok(
+  public.release_company_logo_upload(
+    '10000000-0000-4000-8000-000000000010',
+    '10000000-0000-4000-8000-000000000010/logo-ffffffff-ffff-4fff-8fff-ffffffffffff.webp'
+  ),
+  'company admin can release the exact failed candidate reservation'
+);
+reset role;
+select is(
+  (
+    select count(*)::integer
+    from public.company_logo_upload_reservations
+    where company_id = '10000000-0000-4000-8000-000000000010'
+  ),
+  0,
+  'releasing the failed candidate removes its reservation'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select lives_ok(
+  $$delete from storage.objects
+    where bucket_id = 'company-logos'
+      and name = '10000000-0000-4000-8000-000000000010/logo-ffffffff-ffff-4fff-8fff-ffffffffffff.webp'$$,
+  'company admin can delete the released unreferenced candidate'
 );
 reset role;
 

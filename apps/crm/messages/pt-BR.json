@@ -194,6 +194,7 @@
     "unavailableDescription": "O link é inválido, expirou, foi revogado, já foi usado ou não corresponde a esta conta. Peça ajuda à equipe fundadora.",
     "backToLogin": "Voltar para entrar",
     "formUnavailable": "Este convite não está mais disponível. Peça ajuda à equipe fundadora.",
+    "duplicateAbn": "Este ABN já pertence a uma empresa. Escolha outro ABN.",
     "passwordRejected": "Não foi possível salvar a senha. Escolha outra senha e tente novamente."
   },
   "EmployeeInvitationAcceptance": {
@@ -836,6 +837,7 @@
     "logoCompressFailed": "Não foi possível compactar esse logotipo para menos de 400 KB.",
     "logoUploadType": "Selecione um logotipo WebP compactado com menos de 400 KB.",
     "companySaveUnconfirmed": "Não foi possível confirmar o salvamento. Recarregue a página antes de tentar novamente para verificar os dados e o logotipo da empresa.",
+    "companyAbnInUse": "Este ABN já pertence a outra empresa.",
     "logoPrepareFailed": "Não foi possível preparar o envio do logotipo. Os dados da empresa não foram alterados.",
     "staleLogoCleanupFailed": "Não foi possível remover um logotipo pendente anterior. Os dados da empresa não foram alterados.",
     "logoUploadFailed": "Não foi possível enviar o logotipo. Os dados da empresa não foram alterados.",

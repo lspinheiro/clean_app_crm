@@ -45,6 +45,7 @@ export function EmployeeManagement({
     Object.fromEntries(employees.map((employee) => [employee.membershipId, employee.role])),
   );
   const [results, setResults] = useState<Record<string, Result | undefined>>({});
+  const [removalResult, setRemovalResult] = useState<string | null>(null);
   const ownerCount = employees.filter((employee) => employee.role === "owner").length;
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     day: "numeric",
@@ -97,6 +98,7 @@ export function EmployeeManagement({
   async function remove(employee: EmployeeListItem) {
     setBusy(employee.membershipId, "remove");
     setResult(employee.membershipId, undefined);
+    setRemovalResult(null);
     const nextResult = await removeEmployeeAction({
       membershipId: employee.membershipId,
     });
@@ -108,10 +110,7 @@ export function EmployeeManagement({
       });
       return;
     }
-    setResult(employee.membershipId, {
-      kind: "success",
-      message: t("removed", { name: employee.fullName }),
-    });
+    setRemovalResult(t("removed", { name: employee.fullName }));
     router.refresh();
   }
 
@@ -251,6 +250,11 @@ export function EmployeeManagement({
             );
           })}
         </div>
+        {removalResult ? (
+          <p className="save-status employee-management__card-result" role="status">
+            {removalResult}
+          </p>
+        ) : null}
       </section>
 
       <dialog

@@ -217,6 +217,16 @@ a company row exists. Anonymous callers have no execute grant. A pool membership
 satisfy the employee precondition, so the no-company-access surface cannot bootstrap CRM
 authority through this capability.
 
+The same uniqueness boundary extends two existing workflows through narrow helper RPCs.
+`first_admin_company_abn_available(company_abn text) returns boolean` is executable only by
+an authenticated caller with a current pending first-admin invitation (plus
+`service_role`); it lets the server action reject an existing ABN before changing the
+invitee's Auth password, while the acceptance RPC's `23505` remains the race-safe final
+guard. `release_company_logo_upload(target_company_id uuid, target_object_name text)
+returns boolean` is Owner-only and deletes only the caller's exact unused reservation so a
+definitively failed identity update can remove its uploaded candidate. An indeterminate RPC
+response does not release the candidate because the company update may have committed.
+
 ## Data model — offers (S28, S29)
 
 New table `offers`:

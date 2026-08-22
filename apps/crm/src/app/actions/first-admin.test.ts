@@ -48,6 +48,7 @@ describe("acceptFirstAdminAction", () => {
         ],
         error: null,
       })
+      .mockResolvedValueOnce({ data: true, error: null })
       .mockResolvedValueOnce({ data: "company-1", error: null });
     mocks.updateUser.mockResolvedValue({ data: { user: { id: "user-1" } }, error: null });
     mocks.createClient.mockResolvedValue({
@@ -81,7 +82,10 @@ describe("acceptFirstAdminAction", () => {
 
     expect(mocks.rpc).toHaveBeenNthCalledWith(1, "get_first_admin_invitation_context");
     expect(mocks.updateUser).toHaveBeenCalledWith({ password: "safe-local-password" });
-    expect(mocks.rpc).toHaveBeenNthCalledWith(2, "accept_first_admin_invitation", {
+    expect(mocks.rpc).toHaveBeenNthCalledWith(2, "first_admin_company_abn_available", {
+      company_abn: "53004085616",
+    });
+    expect(mocks.rpc).toHaveBeenNthCalledWith(3, "accept_first_admin_invitation", {
       company_abn: "53004085616",
       company_name: "New Coast Cleaning",
       contact_phone: "0412 345 678",
@@ -129,7 +133,27 @@ describe("acceptFirstAdminAction", () => {
       formError: null,
     });
 
-    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects an existing ABN before changing the password", async () => {
+    mocks.rpc
+      .mockReset()
+      .mockResolvedValueOnce({
+        data: [{ invitation_status: "pending" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: false, error: null });
+
+    await expect(
+      acceptFirstAdminAction(initialFirstAdminState, validFormData()),
+    ).resolves.toMatchObject({
+      fieldErrors: { abn: "This ABN already belongs to a company. Choose another ABN." },
+      formError: null,
+    });
+
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledTimes(2);
   });
 
   it("does not expose an RPC error or redirect when atomic acceptance fails", async () => {
@@ -146,12 +170,37 @@ describe("acceptFirstAdminAction", () => {
         ],
         error: null,
       })
+      .mockResolvedValueOnce({ data: true, error: null })
       .mockResolvedValueOnce({ data: null, error: { message: "raw database detail" } });
 
     await expect(
       acceptFirstAdminAction(initialFirstAdminState, validFormData()),
     ).resolves.toMatchObject({ formError: expect.any(String) });
 
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
+  });
+
+  it("reports an acceptance-time duplicate ABN race inline", async () => {
+    mocks.rpc
+      .mockReset()
+      .mockResolvedValueOnce({
+        data: [{ invitation_status: "pending" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: true, error: null })
+      .mockResolvedValueOnce({
+        data: null,
+        error: { code: "23505", message: "duplicate key value violates unique constraint" },
+      });
+
+    await expect(
+      acceptFirstAdminAction(initialFirstAdminState, validFormData()),
+    ).resolves.toMatchObject({
+      fieldErrors: { abn: "This ABN already belongs to a company. Choose another ABN." },
+      formError: null,
+    });
+
+    expect(mocks.updateUser).toHaveBeenCalledOnce();
     expect(mocks.cookieSet).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,41 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(42);
+select plan(49);
+
+select has_function(
+  'public',
+  'first_admin_company_abn_available',
+  array['text'],
+  'first-admin ABN preflight is exposed through one narrow RPC'
+);
+
+select function_privs_are(
+  'public',
+  'first_admin_company_abn_available',
+  array['text'],
+  'authenticated',
+  array['EXECUTE'],
+  'authenticated pending invitees can preflight an ABN'
+);
+
+select function_privs_are(
+  'public',
+  'first_admin_company_abn_available',
+  array['text'],
+  'service_role',
+  array['EXECUTE'],
+  'trusted server processes retain explicit preflight access'
+);
+
+select function_privs_are(
+  'public',
+  'first_admin_company_abn_available',
+  array['text'],
+  'anon',
+  array[]::text[],
+  'anonymous callers cannot probe company ABNs'
+);
 
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -115,6 +149,18 @@ select results_eq(
   'the acceptance context derives the caller e-mail and pending locale'
 );
 
+select is(
+  public.first_admin_company_abn_available('51 824 753 556'),
+  false,
+  'a pending invitee sees an existing canonical ABN as unavailable'
+);
+
+select is(
+  public.first_admin_company_abn_available('53 222 999 111'),
+  true,
+  'a pending invitee can continue with an unused canonical ABN'
+);
+
 create temporary table accepted_company on commit drop as
 select public.accept_first_admin_invitation(
   '  First Admin ',
@@ -182,6 +228,12 @@ select throws_ok(
   '28000',
   'Invitation is no longer available',
   'a consumed invitation cannot be replayed'
+);
+select throws_ok(
+  $$select public.first_admin_company_abn_available('53004085616')$$,
+  '28000',
+  'Invitation is no longer available',
+  'a caller without a pending invitation cannot probe company ABNs'
 );
 reset role;
 

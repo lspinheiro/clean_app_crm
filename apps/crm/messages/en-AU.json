@@ -194,6 +194,7 @@
     "unavailableDescription": "The link is invalid, expired, revoked, already used, or does not match this account. Ask the founding team for help.",
     "backToLogin": "Back to sign in",
     "formUnavailable": "This invitation is no longer available. Ask the founding team for help.",
+    "duplicateAbn": "This ABN already belongs to a company. Choose another ABN.",
     "passwordRejected": "The password could not be saved. Choose another password and try again."
   },
   "EmployeeInvitationAcceptance": {
@@ -836,6 +837,7 @@
     "logoCompressFailed": "We could not compress that logo below 400 KB.",
     "logoUploadType": "Choose a compressed WebP logo under 400 KB.",
     "companySaveUnconfirmed": "The save could not be confirmed. Reload before trying again to reconcile your company details and logo.",
+    "companyAbnInUse": "This ABN already belongs to another company.",
     "logoPrepareFailed": "The logo upload could not be prepared. Your company details were not changed.",
     "staleLogoCleanupFailed": "A previous pending logo could not be cleared. Your company details were not changed.",
     "logoUploadFailed": "The logo could not be uploaded. Your company details were not changed.",

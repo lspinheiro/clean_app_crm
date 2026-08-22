@@ -150,6 +150,9 @@ test.describe("@CLE-84 owner employee management", () => {
     });
     await staffRemoveDialog.getByRole("button", { name: "Remove access" }).click();
     await expect(employees.getByText("CLE-84 Staff", { exact: true })).toHaveCount(0);
+    await expect(employees.getByRole("status")).toHaveText(
+      "CLE-84 Staff’s company access was removed.",
+    );
 
     const selfRow = employees.getByRole("group", { name: "CLE-84 Owner One" });
     await selfRow.getByRole("button", {

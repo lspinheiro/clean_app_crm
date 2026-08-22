@@ -74,6 +74,17 @@ export async function acceptFirstAdminAction(
     return { fieldErrors: {}, formError: t("formUnavailable") };
   }
 
+  const { data: abnAvailable, error: abnAvailabilityError } = await supabase.rpc(
+    "first_admin_company_abn_available",
+    { company_abn: parsed.data.abn },
+  );
+  if (abnAvailabilityError) {
+    return { fieldErrors: {}, formError: t("formUnavailable") };
+  }
+  if (!abnAvailable) {
+    return { fieldErrors: { abn: t("duplicateAbn") }, formError: null };
+  }
+
   const { error: passwordError } = await supabase.auth.updateUser({
     password: parsed.data.password,
   });
@@ -94,6 +105,9 @@ export async function acceptFirstAdminAction(
       target_locale: parsed.data.locale,
     },
   );
+  if (acceptanceError?.code === "23505") {
+    return { fieldErrors: { abn: t("duplicateAbn") }, formError: null };
+  }
   if (acceptanceError) {
     return { fieldErrors: {}, formError: t("formUnavailable") };
   }

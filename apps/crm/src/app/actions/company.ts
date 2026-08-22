@@ -141,7 +141,7 @@ export async function updateCompanyIdentity(
     }
   }
 
-  let updateError: { message: string } | null;
+  let updateError: { code?: string; message: string } | null;
   try {
     const result = await supabase.rpc("update_company_identity", {
       target_company_id: company.id,
@@ -154,6 +154,36 @@ export async function updateCompanyIdentity(
     return indeterminateSaveResult();
   }
   if (updateError) {
+    if (candidateLogoPath) {
+      try {
+        const { error: releaseError } = await supabase.rpc(
+          "release_company_logo_upload",
+          {
+            target_company_id: company.id,
+            target_object_name: candidateLogoPath,
+          },
+        );
+        if (releaseError) {
+          console.error("Failed company logo reservation cleanup.");
+        } else {
+          const { error: candidateCleanupError } = await logoBucket.remove([
+            candidateLogoPath,
+          ]);
+          if (candidateCleanupError) {
+            console.error("Failed company logo candidate cleanup.");
+          }
+        }
+      } catch {
+        console.error("Failed company logo candidate cleanup.");
+      }
+    }
+    if (updateError.code === "23505") {
+      return {
+        ok: false,
+        fieldErrors: { abn: userMessage("companyAbnInUse") },
+        formError: null,
+      };
+    }
     return indeterminateSaveResult();
   }
 

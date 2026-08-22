@@ -17,7 +17,7 @@ import { CleanerEmailInvite } from "./cleaner-email-invite";
 const props = {
   companyName: "Coastal Demo Cleaning",
   inviteId: "10000000-0000-4000-8000-000000000201",
-  joinUrl: "https://cleaner.example.test/join?code=AB12CD",
+  joinUrl: "https://cleaner.example.test/join?code=AB12CD34EF56GH78",
 };
 const retryKey = "10000000-0000-4000-8000-000000000302";
 
@@ -258,7 +258,7 @@ describe("CLE-79 cleaner email invitation UI", () => {
       <CleanerEmailInvite
         {...props}
         inviteId="10000000-0000-4000-8000-000000000202"
-        joinUrl="https://cleaner.example.test/join?code=ZX98YU"
+        joinUrl="https://cleaner.example.test/join?code=ZX98YU76TS54RQ32"
         key="10000000-0000-4000-8000-000000000202"
       />,
     );

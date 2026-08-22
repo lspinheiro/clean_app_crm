@@ -29,7 +29,7 @@ function preparedRows(attemptNumber = 0) {
       batch_id: batchId,
       email: "ana@example.com",
       failure_reason: null,
-      invite_code: "AB12CD",
+      invite_code: "AB12CD34EF56GH78",
       locale: "en-AU",
       name: "Ana",
       provider_message_id: null,

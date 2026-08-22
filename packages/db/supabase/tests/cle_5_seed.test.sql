@@ -48,7 +48,7 @@ select is(
 );
 select ok(
   (
-    select count(*) = 1 and bool_and(code ~ '^[A-Z0-9]{6}$')
+    select count(*) = 1 and bool_and(code ~ '^[A-Z0-9]{16}$')
     from public.company_invites
     where company_id = '10000000-0000-4000-8000-000000000010'
       and revoked_at is null

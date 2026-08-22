@@ -55,7 +55,8 @@ export const oneOffJobSchema = z
     crewSize: z.coerce
       .number<number>()
       .int(userMessage("crewWhole"))
-      .min(1, userMessage("crewMin")),
+      .min(1, userMessage("crewMin"))
+      .max(20, userMessage("crewMax20")),
     notes: z
       .string()
       .trim()

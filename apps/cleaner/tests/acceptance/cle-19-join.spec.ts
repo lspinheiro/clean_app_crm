@@ -1,9 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// Runs against the seeded local database (`pnpm db:reset`). CLEAN1 is the demo company's
+// Runs against the seeded local database (`pnpm db:reset`). CLEAN1DEMOJOIN99 is the demo company's
 // active invite; ZOLD01 is a superseded one kept in the seed so the error state is testable
 // without rotating the live code out from under the other suites.
-const activeCode = "CLEAN1";
+const activeCode = "CLEAN1DEMOJOIN99";
 const supersededCode = "ZOLD01";
 const unknownCode = "NOPE12";
 const companyName = "Coastal Demo Cleaning";
@@ -83,7 +83,8 @@ test.describe("@CLE-19 joining a company from the invite link", () => {
     await page.goto(`/join?code=${supersededCode}`);
 
     await expect(page.locator(".invite-problem")).toContainText("no longer in use");
-    await expect(page.locator(".invite-problem")).toContainText(companyName);
+    // A dead code must not answer "which company was this?" for whoever holds it.
+    await expect(page.locator(".invite-problem")).not.toContainText(companyName);
     await expect(page.getByLabel("Full name")).toHaveCount(0);
   });
 

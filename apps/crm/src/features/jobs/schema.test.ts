@@ -54,6 +54,8 @@ describe("CLE-23 one-off job validation", () => {
     ["cleanerPayAud", "0"],
     ["clientChargeAud", "-1"],
     ["crewSize", "0"],
+    ["crewSize", "21"],
+    ["crewSize", "2000000"],
   ])("rejects an invalid %s before authentication", (field, value) => {
     const parsed = oneOffJobSchema.safeParse({ ...validInput, [field]: value });
 
@@ -61,6 +63,12 @@ describe("CLE-23 one-off job validation", () => {
     if (!parsed.success) {
       expect(parsed.error.issues.some((issue) => issue.path[0] === field)).toBe(true);
     }
+  });
+
+  it("accepts the largest crew the roster supports", () => {
+    const parsed = oneOffJobSchema.safeParse({ ...validInput, crewSize: "20" });
+
+    expect(parsed.success).toBe(true);
   });
 
   it("guides a missing client before validating its disabled site field", () => {

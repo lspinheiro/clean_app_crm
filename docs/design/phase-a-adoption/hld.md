@@ -26,7 +26,7 @@ changes. Delivered:
 - Jobs, crew slots, applications (`applied`/`assigned`/`not_selected`/`withdrawn`), the
   `vacancies` view, and the cleaner views (`cleaner_job_board`, `cleaner_my_jobs`) with
   the audited address RPC.
-- Cleaner invite: one active 6-character code per company with rotate-in-place — the model
+- Cleaner invite: one active 16-character code per company with rotate-in-place — the model
   PRD decision #8 rejected. No registration cap, no per-link attribution, no offer
   details on the link.
 - Cleaner join: a new account signs up with e-mail + password, while an existing account

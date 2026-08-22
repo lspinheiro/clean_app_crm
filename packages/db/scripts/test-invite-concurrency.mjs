@@ -80,7 +80,7 @@ try {
     insert into public.employee_memberships (company_id, profile_id, role)
     values ('${companyId}', '${adminId}', 'owner');
     insert into public.company_invites (company_id, code)
-    values ('${companyId}', 'RACE01');
+    values ('${companyId}', 'RACE01FIXTURE001');
     commit;
   `);
 
@@ -99,7 +99,7 @@ try {
     runSqlConcurrently(rotationSql),
   ]);
   const codes = outputs.flatMap((output) =>
-    output.split("\n").map((line) => line.trim()).filter((line) => /^[A-Z0-9]{6}$/.test(line)),
+    output.split("\n").map((line) => line.trim()).filter((line) => /^[A-Z0-9]{16}$/.test(line)),
   );
   if (codes.length !== 2 || new Set(codes).size !== 2) {
     throw new Error("Concurrent rotations did not return two distinct invite codes.");

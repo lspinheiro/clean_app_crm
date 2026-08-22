@@ -1,9 +1,9 @@
-const inviteCodePattern = /^[A-Z0-9]{6}$/;
+const inviteCodePattern = /^[A-Z0-9]{16}$/;
 const joinedDateFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function assertInviteCode(code: string) {
   if (!inviteCodePattern.test(code)) {
-    throw new Error("Invite code must contain six uppercase letters or numbers.");
+    throw new Error("Invite code must contain sixteen uppercase letters or numbers.");
   }
 }
 

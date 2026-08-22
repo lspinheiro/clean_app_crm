@@ -25,7 +25,7 @@ test("@CLE-10 displays, copies, and rotates the active cleaner invite", async ({
 
   await expect(page.getByRole("heading", { name: "Cleaner staff", level: 1 })).toBeVisible();
   const code = page.getByTestId("invite-code");
-  await expect(code).toHaveText(/^[A-Z0-9]{6}$/);
+  await expect(code).toHaveText(/^[A-Z0-9]{16}$/);
   const initialCode = (await code.textContent()) ?? "";
   await page.getByRole("button", { name: "Invite details" }).click();
   const joinLink = page.getByRole("link", { name: "Cleaner signup link" });
@@ -65,7 +65,7 @@ test("@CLE-10 displays, copies, and rotates the active cleaner invite", async ({
   await page.getByRole("button", { name: "Replace invitation" }).click();
   await page.getByRole("button", { name: "Confirm replacement" }).click();
   await expect(code).not.toHaveText(initialCode);
-  await expect(code).toHaveText(/^[A-Z0-9]{6}$/);
+  await expect(code).toHaveText(/^[A-Z0-9]{16}$/);
   const rotatedCode = (await code.textContent()) ?? "";
   await expect(joinLink).toHaveAttribute(
     "href",

@@ -12,7 +12,7 @@ import {
 describe("cleaner invite content", () => {
   it("builds a WhatsApp handoff with percent-encoded spaces in the raw URL", () => {
     const inviteMessage =
-      "Join Coastal Demo Cleaning's Cleaner staff: https://cleaner.example.test/join?code=AB12CD\nInvite code: AB12CD";
+      "Join Coastal Demo Cleaning's Cleaner staff: https://cleaner.example.test/join?code=AB12CD34EF56GH78\nInvite code: AB12CD34EF56GH78";
 
     expect(buildWhatsAppShareUrl(inviteMessage)).toBe(
       `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`,
@@ -20,8 +20,8 @@ describe("cleaner invite content", () => {
   });
 
   it("builds the configured cleaner signup URL with the active code", () => {
-    expect(buildCleanerJoinUrl("https://cleaner.example.test/base", "AB12CD")).toBe(
-      "https://cleaner.example.test/join?code=AB12CD",
+    expect(buildCleanerJoinUrl("https://cleaner.example.test/base", "AB12CD34EF56GH78")).toBe(
+      "https://cleaner.example.test/join?code=AB12CD34EF56GH78",
     );
   });
 
@@ -29,13 +29,13 @@ describe("cleaner invite content", () => {
     expect(
       buildInviteMessage(
         "Coastal Demo Cleaning",
-        "http://127.0.0.1:3001/join?code=CLEAN1",
-        "CLEAN1",
+        "http://127.0.0.1:3001/join?code=CLEAN1DEMOJOIN99",
+        "CLEAN1DEMOJOIN99",
         ({ companyName, joinUrl, code }) =>
           `Join ${companyName}'s Cleaner staff: ${joinUrl}\nInvite code: ${code}`,
       ),
     ).toBe(
-      "Join Coastal Demo Cleaning's Cleaner staff: http://127.0.0.1:3001/join?code=CLEAN1\nInvite code: CLEAN1",
+      "Join Coastal Demo Cleaning's Cleaner staff: http://127.0.0.1:3001/join?code=CLEAN1DEMOJOIN99\nInvite code: CLEAN1DEMOJOIN99",
     );
   });
 
@@ -48,14 +48,20 @@ describe("cleaner invite content", () => {
     ) => string;
 
     expect(
-      formatter("Coastal", "https://cleaner.test/join", "CLEAN1", (values) =>
+      formatter("Coastal", "https://cleaner.test/join", "CLEAN1DEMOJOIN99", (values) =>
         `catalogue:${values.companyName}:${values.code}`),
-    ).toBe("catalogue:Coastal:CLEAN1");
+    ).toBe("catalogue:Coastal:CLEAN1DEMOJOIN99");
   });
 
   it("rejects malformed codes at the display boundary", () => {
     expect(() => buildCleanerJoinUrl("https://cleaner.example.test", "short")).toThrow(
-      "Invite code must contain six uppercase letters or numbers.",
+      "Invite code must contain sixteen uppercase letters or numbers.",
+    );
+  });
+
+  it("rejects a legacy six-character code at the display boundary", () => {
+    expect(() => buildCleanerJoinUrl("https://cleaner.example.test", "CLEAN1")).toThrow(
+      "Invite code must contain sixteen uppercase letters or numbers.",
     );
   });
 

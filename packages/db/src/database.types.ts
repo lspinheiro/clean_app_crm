@@ -1568,6 +1568,10 @@ export type Database = {
         Args: { target_recurring_assignment_id: string }
         Returns: undefined
       }
+      create_company: {
+        Args: { company_abn: string; company_name: string }
+        Returns: string
+      }
       create_client: {
         Args: {
           client_contact_name?: string

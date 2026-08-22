@@ -25,7 +25,7 @@ test.describe("@CLE-6 company identity settings", () => {
     await signIn(page);
     await page.goto("/en-AU/settings");
     await page.getByLabel("ABN").fill("123");
-    await page.getByRole("button", { name: "Save changes" }).click();
+    await page.getByRole("button", { name: "Save business identity" }).click();
 
     await expect(page.getByText("Enter exactly 11 digits.")).toBeVisible();
   });
@@ -35,17 +35,19 @@ test.describe("@CLE-6 company identity settings", () => {
     await page.goto("/en-AU/settings");
     await page.getByLabel("Company name").fill("Coastal Demo Services");
     await page.getByLabel("ABN").fill("12345678901");
-    await page.getByRole("button", { name: "Save changes" }).click();
+    await page.getByRole("button", { name: "Save business identity" }).click();
 
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     await page.reload();
     await expect(page.getByLabel("Company name")).toHaveValue("Coastal Demo Services");
     await expect(page.getByLabel("ABN")).toHaveValue("12345678901");
-    await expect(page.getByRole("link", { name: "Coastal Demo Services — The Clean Crew" })).toBeVisible();
+    await expect(page.getByRole("button", {
+      name: "Current company: Coastal Demo Services",
+    })).toBeVisible();
 
     await page.getByLabel("Company name").fill("Coastal Demo Cleaning");
     await page.getByLabel("ABN").fill("51824753556");
-    await page.getByRole("button", { name: "Save changes" }).click();
+    await page.getByRole("button", { name: "Save business identity" }).click();
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
   });
 
@@ -69,12 +71,16 @@ test.describe("@CLE-6 company identity settings", () => {
       return canvas.toDataURL("image/png").split(",")[1];
     });
 
-    await page.getByLabel("Upload logo").setInputFiles({
+    // Confirm the client boundary is hydrated before dispatching the file input's
+    // single change event. Text entry naturally retries across hydration; an upload does not.
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page.keyboard.press("Escape");
+    await page.locator("#company-logo").setInputFiles({
       name: "coastal-demo.png",
       mimeType: "image/png",
       buffer: Buffer.from(encodedLogo, "base64"),
     });
-    await page.getByRole("button", { name: "Save changes" }).click();
+    await page.getByRole("button", { name: "Save business identity" }).click();
 
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     await page.reload();

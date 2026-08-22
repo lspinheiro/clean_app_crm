@@ -119,7 +119,7 @@ create temporary table accepted_company on commit drop as
 select public.accept_first_admin_invitation(
   '  First Admin ',
   '  New Coast Cleaning ',
-  '53 004 085 616',
+  '53 222 999 111',
   '  0412 345 678 ',
   'en-AU'
 ) as company_id;
@@ -150,7 +150,7 @@ select results_eq(
   $$select name, abn, status::text
     from public.companies
     where id = (select company_id from accepted_company)$$,
-  $$values ('New Coast Cleaning'::text, '53004085616'::text, 'approved'::text)$$,
+  $$values ('New Coast Cleaning'::text, '53222999111'::text, 'approved'::text)$$,
   'acceptance creates one approved company with canonical identity'
 );
 select results_eq(

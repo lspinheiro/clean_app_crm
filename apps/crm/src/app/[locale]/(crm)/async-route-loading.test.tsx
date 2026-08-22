@@ -3,8 +3,13 @@ import type { ComponentType } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { AppLocale } from "@/i18n/config";
+import {
+  RouteLoadingSkeleton,
+  type RouteLoadingVariant,
+} from "@/components/route-loading-skeleton";
 
 import CleanersLoading from "./cleaners/loading";
+import NewCompanyLoading from "./companies/new/loading";
 import ClientDetailLoading from "./clients/[clientId]/loading";
 import ClientImportLoading from "./clients/import/loading";
 import ClientsLoading from "./clients/loading";
@@ -17,6 +22,7 @@ import SettingsLoading from "./settings/loading";
 
 const loadingBoundaries: Record<string, ComponentType> = {
   "./cleaners/loading.tsx": CleanersLoading,
+  "./companies/new/loading.tsx": NewCompanyLoading,
   "./clients/[clientId]/loading.tsx": ClientDetailLoading,
   "./clients/import/loading.tsx": ClientImportLoading,
   "./clients/loading.tsx": ClientsLoading,
@@ -29,6 +35,14 @@ const loadingBoundaries: Record<string, ComponentType> = {
 };
 
 const routeContracts = [
+  {
+    path: "./companies/new/loading.tsx",
+    labels: { "en-AU": "Loading company creation", "pt-BR": "Carregando criação de empresa" },
+    geometry: [
+      [".company-creation-loading__field", 2],
+      [".company-creation-loading__owner", 1],
+    ],
+  },
   {
     path: "./clients/loading.tsx",
     labels: { "en-AU": "Loading clients", "pt-BR": "Carregando clientes" },
@@ -104,6 +118,21 @@ function setLocale(locale: AppLocale) {
 afterEach(() => setLocale("en-AU"));
 
 describe("async CRM route loading boundaries", () => {
+  it("reserves the company-creation form geometry", () => {
+    const { container } = render(
+      <RouteLoadingSkeleton
+        variant={"companyCreation" as RouteLoadingVariant}
+      />,
+    );
+
+    expect(
+      container.querySelectorAll(".company-creation-loading__field"),
+    ).toHaveLength(2);
+    expect(
+      container.querySelector(".company-creation-loading__owner"),
+    ).toBeInTheDocument();
+  });
+
   it("reserves both client-detail metadata lines", () => {
     const { container: clientDetail } = render(<ClientDetailLoading />);
     expect(

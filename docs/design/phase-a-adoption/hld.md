@@ -89,10 +89,14 @@ Component responsibilities:
   recurring assignments, cleaners, company settings (employees list, S34), minimal
   dispatch, and the bulk CSV import (S30). Every screen operates in one active company
   (S33): the layout resolves it from the session account's employee memberships, shows
-  the switcher only when the account holds two or more, persists the last-active
-  company on the profile, and routes membership-less accounts to the no-access screen.
-  Route guards derive authority from the active employee membership's role — owner
-  gates employees and company settings; staff reaches everything else. Bulk CSV import
+  the active company in a persistent header switcher for one or many memberships,
+  persists the last-active company on the profile, and routes membership-less accounts
+  to the no-access screen. The switcher owns the authenticated S35 company-creation entry
+  point; the personal account menu remains account-scoped.
+  Route guards derive authority from the active employee membership's role. Every active
+  employee reaches Settings for self-only preferences and read-only Business Identity;
+  owner capability checks expose company identity editing, employee records, and invitations.
+  Owner-only server actions remain the mutation boundary. Bulk CSV import
   (S30): the browser parses and validates the file against the published column
   format, shows a preview with per-row errors, and submits confirmed rows through the
   same server actions and RPCs as one-by-one entry. Reads are company-scoped;
@@ -143,6 +147,13 @@ Component responsibilities:
   matches it to the verified Auth e-mail, and atomically creates the approved company
   and its first active owner employee membership, and consumes the invitation. Failed,
   expired, revoked, used, or mismatched invitations create no company or membership.
+- An existing CRM employee can create another company through the persistent header
+  switcher. The server action validates the company name and ABN, then one authenticated
+  security-definer RPC verifies that the caller already has an active employee membership,
+  rejects an existing ABN, and atomically creates the approved company, its first Owner
+  membership, and the caller's last-active-company preference. Staff authority in the
+  previous company does not limit this account-level capability. Failed calls create no
+  partial tenant, and no-company or pool-only accounts cannot call it successfully.
 - Authority derives from memberships only (HLD decision 19). An account holds employee
   memberships (role `owner` or `staff`) and cleaner memberships; no global account role
   exists. RLS policies and the cleaner views ask "does this account hold an active
@@ -486,16 +497,28 @@ the delivered policies, cleaner views, and the bootstrap/join RPCs that set
 Delivers PRD decision #18. `employee_invitations` + an acceptance RPC follow the
 first-admin pattern: pending record first, Supabase Auth invite (or plain sign-in for
 an existing account), public route verifies the session e-mail, atomic acceptance
-creates the membership. The founder command remains the only source of a company's
-first owner and now creates it as an `owner` employee membership. Pool membership
-stays a separate table with its own lifecycle (`company_members`, link-attributed) —
-PRD decision #17's two kinds are two tables.
+creates the membership. As amended by decision 22, a first Owner comes from either the
+founder bootstrap or the authenticated S35 company-creation RPC; employee invitations
+never create a first Owner. Pool membership stays a separate table with its
+own lifecycle (`company_members`, link-attributed) — PRD decision #17's two kinds are two
+tables.
 
 ### 21. The active company is session state persisted on the profile (2026-08-19)
 
-Delivers PRD decision #19 / S33. `profiles.last_active_company` stores the last
-choice; the CRM layout resolves the active company from it, falls back to the single
-membership, and never shows a picker to single-membership accounts. Company scoping in
+Delivers PRD decision #19 / S33, as amended by PRD decision #21.
+`profiles.last_active_company` stores the last choice; the CRM layout resolves the active
+company from it and falls back to the first active membership. Company scoping in
 queries always uses the resolved active company. RLS remains the enforcement layer —
 the active-company value is a convenience, not an authority: a request scoped to a
 company where the caller holds no active employee membership returns nothing.
+
+### 22. Additional company creation is an account-level atomic bootstrap (2026-08-21)
+
+Delivers PRD decision #21 / S35. An authenticated account that already holds any active
+employee membership may create another company from the CRM workspace switcher. The
+security-definer RPC derives the caller from `auth.uid()`, creates the company and its
+first `owner` membership, and updates `profiles.last_active_company` in one transaction.
+The source company's membership and role are unchanged; no request field can choose the
+new owner. An ABN remains globally unique. Accounts without an active employee membership
+still enter through the founder-invitation S1 boundary, so S35 does not become public
+company signup.

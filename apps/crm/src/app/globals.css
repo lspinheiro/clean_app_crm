@@ -60,6 +60,8 @@
   --new-job-section-columns: minmax(180px, 0.65fr) minmax(0, 1.6fr);
   --job-detail-section-columns: 210px minmax(0, 1fr);
   --money-totals-columns: repeat(2, minmax(0, 1fr));
+  --money-table-header-height: 46px;
+  --money-table-row-min-height: 68px;
   --cleaners-layout-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
   --settings-identity-columns: minmax(0, 1fr) 132px;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -2976,7 +2978,7 @@ a {
 }
 
 .money-table th {
-  height: 46px;
+  height: var(--money-table-header-height);
   padding: 0 18px;
   color: var(--color-gray-600);
   font-size: 11px;
@@ -2987,7 +2989,7 @@ a {
 }
 
 .money-table td {
-  min-height: 68px;
+  min-height: var(--money-table-row-min-height);
   border-top: 1px solid var(--color-gray-200);
   padding: 14px 18px;
   color: var(--color-gray-700);
@@ -4161,6 +4163,10 @@ a {
   grid-template-columns: var(--import-template-columns);
 }
 
+.import-loading__picker-heading {
+  grid-row: span 2;
+}
+
 .import-loading__template {
   display: grid;
   gap: 12px;
@@ -4214,9 +4220,12 @@ a {
   table-layout: fixed;
 }
 
-.money-loading__table th,
+.money-loading__table th {
+  height: var(--money-table-header-height);
+}
+
 .money-loading__table td {
-  height: 58px;
+  height: var(--money-table-row-min-height);
 }
 
 .cleaners-loading__layout {
@@ -4427,6 +4436,7 @@ a {
   }
   .import-picker { gap: 24px; }
   .import-picker .import-section-heading { grid-row: auto; }
+  .import-loading__picker-heading { grid-row: auto; }
   .import-preview__heading,
   .import-results__heading { align-items: stretch; flex-direction: column; }
   .import-preview__heading .button,
@@ -4444,7 +4454,6 @@ a {
   .preferred-add-row { grid-template-columns: 1fr; }
   .preferred-add-row .button { justify-self: start; }
   .cleaners-layout { grid-template-columns: 1fr; }
-  .job-list-link { grid-template-columns: 88px minmax(0, 1fr); }
   .job-pay { grid-column: 2; justify-items: start; }
   .money-totals dl > div + div { padding-left: 24px; }
   .new-job-section { grid-template-columns: 1fr; gap: 20px; }
@@ -4600,7 +4609,7 @@ a {
   .job-applicant-list li { align-items: flex-start; }
   .job-cancel-dialog .dialog-actions { align-items: stretch; flex-direction: column-reverse; }
   .job-cancel-dialog .button { width: 100%; }
-  .job-list-link { grid-template-columns: 1fr; gap: 10px; padding: 18px 16px; }
+  .job-list-link { gap: 10px; padding: 18px 16px; }
   .job-date, .job-pay { grid-column: auto; }
   .job-pay { justify-items: start; }
   .money-totals dl { grid-template-columns: 1fr; }

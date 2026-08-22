@@ -104,6 +104,32 @@ function setLocale(locale: AppLocale) {
 afterEach(() => setLocale("en-AU"));
 
 describe("async CRM route loading boundaries", () => {
+  it("reserves both client-detail metadata lines", () => {
+    const { container: clientDetail } = render(<ClientDetailLoading />);
+    expect(
+      clientDetail.querySelectorAll(".client-detail-header .route-loading__description"),
+    ).toHaveLength(2);
+  });
+
+  it("preserves the import picker's heading row span", () => {
+    const { container: clientImport } = render(<ClientImportLoading />);
+    expect(
+      clientImport.querySelector(".import-picker > .import-loading__picker-heading"),
+    ).toBeInTheDocument();
+  });
+
+  it("pins every jobs pay skeleton to the responsive pay column", () => {
+    const { container: jobs } = render(<JobsLoading />);
+    expect(jobs.querySelectorAll(".jobs-loading__row .job-pay")).toHaveLength(4);
+  });
+
+  it("does not reserve a settings description that never renders", () => {
+    const { container: settings } = render(<SettingsLoading />);
+    expect(
+      settings.querySelector(".page-header-row .route-loading__description"),
+    ).not.toBeInTheDocument();
+  });
+
   it.each(routeContracts)("provides an accessible, inert boundary for $path", ({ path, labels }) => {
     const Loading = loadingBoundaries[path];
     expect(Loading, `${path} must export a loading boundary`).toBeDefined();

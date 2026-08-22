@@ -143,6 +143,8 @@ describe("Trust Blue contract", () => {
       "new-job-section-columns": "minmax(180px, 0.65fr) minmax(0, 1.6fr)",
       "job-detail-section-columns": "210px minmax(0, 1fr)",
       "money-totals-columns": "repeat(2, minmax(0, 1fr))",
+      "money-table-header-height": "46px",
+      "money-table-row-min-height": "68px",
       "cleaners-layout-columns": "minmax(0, 1.35fr) minmax(300px, 0.85fr)",
       "settings-identity-columns": "minmax(0, 1fr) 132px",
     };
@@ -156,6 +158,38 @@ describe("Trust Blue contract", () => {
     expect(css).toMatch(/\.route-skeleton\s*\{[^}]*var\(--color-surface-alt\)/);
     expect(css).toMatch(
       /\.route-skeleton::after\s*\{[\s\S]*?var\(--color-surface-border\)[\s\S]*?animation:\s*route-shimmer/,
+    );
+  });
+
+  it("keeps the import picker heading in the loaded row span at each breakpoint", () => {
+    expect(css).toMatch(
+      /\.import-loading__picker-heading\s*\{[^}]*grid-row:\s*span 2;/,
+    );
+    const tabletRules = css.slice(
+      css.indexOf("@media (max-width: 880px)"),
+      css.indexOf("@media (max-width: 560px)"),
+    );
+    expect(tabletRules).toMatch(
+      /\.import-loading__picker-heading\s*\{[^}]*grid-row:\s*auto;/,
+    );
+  });
+
+  it("lets the responsive job-column token drive loaded and loading rows", () => {
+    const tabletRules = css.slice(
+      css.indexOf("@media (max-width: 880px)"),
+      css.indexOf("@media (max-width: 560px)"),
+    );
+    const mobileRules = css.slice(
+      css.indexOf("@media (max-width: 560px)"),
+      css.indexOf("@media (prefers-reduced-motion: reduce)"),
+    );
+    expect(tabletRules).toContain("--job-list-columns: 88px minmax(0, 1fr);");
+    expect(mobileRules).toContain("--job-list-columns: 1fr;");
+    expect(tabletRules).not.toMatch(
+      /\.job-list-link\s*\{[^}]*grid-template-columns:/,
+    );
+    expect(mobileRules).not.toMatch(
+      /\.job-list-link\s*\{[^}]*grid-template-columns:/,
     );
   });
 

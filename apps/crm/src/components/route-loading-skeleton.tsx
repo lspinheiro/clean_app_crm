@@ -34,10 +34,12 @@ function Skeleton({ className = "" }: { className?: string }) {
 function HeaderSkeleton({
   action = false,
   className,
+  descriptionLines = 1,
   eyebrow = false,
 }: {
   action?: boolean;
   className: string;
+  descriptionLines?: number;
   eyebrow?: boolean;
 }) {
   return (
@@ -45,7 +47,9 @@ function HeaderSkeleton({
       <div className="route-loading__header-copy">
         {eyebrow ? <Skeleton className="route-loading__eyebrow" /> : null}
         <Skeleton className="route-loading__heading" />
-        <Skeleton className="route-loading__description" />
+        {Array.from({ length: descriptionLines }, (_, index) => (
+          <Skeleton className="route-loading__description" key={index} />
+        ))}
       </div>
       {action ? <Skeleton className="route-loading__action" /> : null}
     </header>
@@ -94,7 +98,7 @@ function ClientDetailGeometry() {
   return (
     <>
       <div className="breadcrumb"><Skeleton className="route-loading__breadcrumb" /></div>
-      <HeaderSkeleton action className="client-detail-header" eyebrow />
+      <HeaderSkeleton action className="client-detail-header" descriptionLines={2} eyebrow />
       <section className="site-detail-list">
         {Array.from({ length: 2 }, (_, cardIndex) => (
           <section
@@ -155,7 +159,7 @@ function ClientImportGeometry() {
           </div>
         </section>
         <section className="import-picker">
-          <Skeleton className="route-loading__section-heading" />
+          <Skeleton className="route-loading__section-heading import-loading__picker-heading" />
           {Array.from({ length: 2 }, (_, index) => (
             <div className="import-loading__picker-column" key={index}>
               <Skeleton className="route-loading__copy route-loading__copy--short" />
@@ -181,7 +185,7 @@ function JobsGeometry() {
                 <Skeleton className="route-loading__title" />
                 <Skeleton className="route-loading__copy" />
               </div>
-              <div className="route-loading__stack">
+              <div className="route-loading__stack job-pay">
                 <Skeleton className="route-loading__copy route-loading__copy--short" />
                 <Skeleton className="route-loading__title" />
               </div>
@@ -324,7 +328,7 @@ function CleanersGeometry() {
 function SettingsGeometry() {
   return (
     <>
-      <HeaderSkeleton className="page-header-row" eyebrow />
+      <HeaderSkeleton className="page-header-row" descriptionLines={0} eyebrow />
       <div className="settings-form">
         <section className="settings-card settings-loading__card">
           <Skeleton className="route-loading__section-heading" />

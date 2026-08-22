@@ -33,6 +33,17 @@
     "unknownSite": "Local desconhecido",
     "workspaceReady": "Este espaço está pronto."
   },
+  "Loading": {
+    "clients": "Carregando clientes",
+    "clientDetail": "Carregando cadastro do cliente",
+    "clientImport": "Carregando importação de clientes",
+    "jobs": "Carregando trabalhos",
+    "newJob": "Carregando novo trabalho",
+    "jobDetail": "Carregando detalhes do trabalho",
+    "money": "Carregando registros financeiros",
+    "cleaners": "Carregando equipe de limpeza",
+    "settings": "Carregando configurações"
+  },
   "ErrorPages": {
     "notFoundTitle": "Página não encontrada",
     "notFoundDescription": "A página solicitada não existe ou não está mais disponível.",

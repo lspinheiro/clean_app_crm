@@ -865,6 +865,41 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          profile_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          profile_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_assignment_cleaners: {
         Row: {
           cleaner_id: string
@@ -1661,6 +1696,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_push_subscription: {
+        Args: { target_endpoint: string }
+        Returns: undefined
+      }
       generate_recurring_jobs: { Args: never; Returns: number }
       generate_recurring_jobs_at: {
         Args: { as_of: string; target_recurring_assignment_id?: string }
@@ -1849,6 +1888,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      save_push_subscription: {
+        Args: { auth: string; endpoint: string; p256dh: string }
+        Returns: undefined
       }
       set_active_company: {
         Args: { target_company_id: string }

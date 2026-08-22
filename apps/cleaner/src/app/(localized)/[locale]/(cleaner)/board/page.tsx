@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BrandBubbles } from "@/components/brand-bubbles";
+import { PushOptInPrompt } from "@/components/push-opt-in-prompt";
 import {
   applyErrorKey,
   type BoardErrorKey,
@@ -186,6 +187,8 @@ export default function BoardPage() {
             : profile.full_name}
         </p>
       </header>
+
+      <PushOptInPrompt />
 
       {/* Sits outside the list on purpose: it carries the reasons whose card has gone, and
           it has to survive the re-read failing and replacing the list wholesale. */}

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Database } from "@clean-app/db";
 
 const mocks = vi.hoisted(() => ({
   cookieSet: vi.fn(),
@@ -31,6 +32,8 @@ import {
 
 const companyId = "10000000-0000-4000-8000-000000000010";
 const invitationId = "83000000-0000-4000-8000-000000000101";
+type EmployeeInvitationContext =
+  Database["public"]["Functions"]["get_employee_invitation_context"]["Returns"][number];
 
 function invitationForm(email = "new.employee@example.test") {
   const formData = new FormData();
@@ -41,6 +44,12 @@ function invitationForm(email = "new.employee@example.test") {
 }
 
 describe("CLE-83 employee invitation actions", () => {
+  it("keeps the generated invitation profile locale nullable", () => {
+    const profileLocale: EmployeeInvitationContext["profile_locale"] = null;
+
+    expect(profileLocale).toBeNull();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.NEXT_PUBLIC_CRM_APP_URL = "https://crm.example.test/path";

@@ -27,6 +27,14 @@
     "board": "Open jobs",
     "myJobs": "My jobs"
   },
+  "PushOptIn": {
+    "title": "Get job updates",
+    "body": "Turn on notifications so companies can tell you when a job is posted, assigned, or cancelled.",
+    "accept": "Turn on notifications",
+    "pending": "Turning on…",
+    "skip": "Not now",
+    "error": "We could not turn on notifications. You can try again."
+  },
   "Auth": {
     "title": "Sign in",
     "inviteLead": "Use your existing account. We will return you to this invitation.",

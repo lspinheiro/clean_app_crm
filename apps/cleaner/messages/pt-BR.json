@@ -27,6 +27,14 @@
     "board": "Serviços disponíveis",
     "myJobs": "Meus serviços"
   },
+  "PushOptIn": {
+    "title": "Receba atualizações dos serviços",
+    "body": "Ative as notificações para saber quando uma empresa publicar, atribuir ou cancelar um serviço.",
+    "accept": "Ativar notificações",
+    "pending": "Ativando…",
+    "skip": "Agora não",
+    "error": "Não foi possível ativar as notificações. Você pode tentar novamente."
+  },
   "Auth": {
     "title": "Entrar",
     "inviteLead": "Use sua conta existente. Depois, você voltará para este convite.",

@@ -30,6 +30,7 @@ import {
   type AppLocale,
 } from "@/i18n/config";
 import { isMissingSessionError, isStaleSessionError } from "@/lib/auth/session-error";
+import { markPushPromptAfterJoin } from "@/lib/push";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 const unknownInvite: InvitePreview = { state: "unknown", companyName: null, cleanerCount: 0 };
@@ -182,6 +183,7 @@ export function JoinScreen() {
       return;
     }
 
+    markPushPromptAfterJoin();
     const explicitLocale = localeFromCookieString(document.cookie);
     const targetLocale = explicitLocale ?? (isAppLocale(savedLocale) ? savedLocale : locale);
     // The join is already committed. A transient preference failure must not strand the

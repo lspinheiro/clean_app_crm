@@ -67,6 +67,28 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
   it("honours reduced motion", async () => {
     const css = await readFile(globalsPath, "utf8");
 
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\*, \*::before, \*::after\s*\{[^}]*animation-duration:\s*0\.01ms !important;[^}]*animation-iteration-count:\s*1 !important;[^}]*transition-duration:\s*0\.01ms !important;/,
+    );
+  });
+
+  it("uses the canonical motion tokens for finite transitions", async () => {
+    const css = await readFile(globalsPath, "utf8");
+    const contract = await readFile(contractPath, "utf8");
+
+    expect(contract).toContain("`--duration-fast` `150ms`");
+    expect(contract).toContain("`--duration-standard` `250ms`");
+    expect(css).toMatch(/@theme\s*\{[^}]*--ease-standard:\s*cubic-bezier\(0\.2, 0, 0, 1\);/);
+    expect(css).toMatch(/@theme\s*\{[^}]*--ease-exit:\s*cubic-bezier\(0\.4, 0, 1, 1\);/);
+    expect(css).toMatch(/:root\s*\{[^}]*--duration-fast:\s*150ms;/);
+    expect(css).toMatch(/:root\s*\{[^}]*--duration-standard:\s*250ms;/);
+
+    const transitions = css.match(/transition:\s*[^;]+;/g) ?? [];
+    expect(transitions.length).toBeGreaterThan(0);
+    for (const transition of transitions) {
+      expect(transition).toContain("var(--duration-fast)");
+      expect(transition).toContain("var(--ease-standard)");
+      expect(transition).not.toMatch(/\b150ms\b/);
+    }
   });
 });

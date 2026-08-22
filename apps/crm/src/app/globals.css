@@ -40,12 +40,18 @@
   --color-gray-900: #0f172a;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-label: var(--font-public-sans), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }
 
 :root {
   color-scheme: light;
   --shell-max: 1200px;
   --header-height: 76px;
+  --duration-fast: 150ms;
+  --duration-standard: 250ms;
+  --roster-grid-min-width: 960px;
+  --roster-label-column-width: 188px;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
 }
@@ -165,7 +171,7 @@ a {
   color: var(--color-gray-600);
   font-weight: 500;
   white-space: nowrap;
-  transition: color 150ms ease-out;
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 
 .primary-navigation a:hover {
@@ -362,7 +368,9 @@ a {
   color: var(--color-surface-card);
   cursor: pointer;
   font-weight: 700;
-  transition: transform 150ms ease-out, background 150ms ease-out;
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
 }
 
 .button:hover {
@@ -1802,7 +1810,7 @@ a {
 }
 
 .details-chevron {
-  transition: transform 150ms ease-out;
+  transition: transform var(--duration-fast) var(--ease-standard);
 }
 
 .site-detail-card[open] .details-chevron {
@@ -2327,7 +2335,7 @@ a {
 }
 
 .cleaners-email-invite__chevron {
-  transition: transform 150ms ease-out;
+  transition: transform var(--duration-fast) var(--ease-standard);
 }
 
 .cleaners-email-invite__chevron--open {
@@ -2703,7 +2711,7 @@ a {
   height: 18px;
   border-radius: 999px;
   background: var(--color-gray-300);
-  transition: background 150ms ease-out;
+  transition: background-color var(--duration-fast) var(--ease-standard);
 }
 
 .status-switch > span::after {
@@ -2716,7 +2724,7 @@ a {
   background: var(--color-surface-card);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
   content: "";
-  transition: transform 150ms ease-out;
+  transition: transform var(--duration-fast) var(--ease-standard);
 }
 
 .status-switch[aria-checked="true"] > span {
@@ -3484,7 +3492,7 @@ a {
   gap: 24px;
   min-height: 116px;
   padding: 20px 24px;
-  transition: background 150ms ease-out;
+  transition: background-color var(--duration-fast) var(--ease-standard);
 }
 
 .job-list-link:hover {
@@ -3742,7 +3750,7 @@ a {
 
 .roster-grid {
   width: 100%;
-  min-width: 960px;
+  min-width: var(--roster-grid-min-width);
   border-spacing: 0;
   table-layout: fixed;
   text-align: left;
@@ -3794,7 +3802,7 @@ a {
   position: sticky;
   left: 0;
   z-index: 2;
-  width: 188px;
+  width: var(--roster-label-column-width);
   border-right: 1px solid var(--color-gray-200);
 }
 
@@ -4050,16 +4058,16 @@ a {
 .roster-loading__grid {
   display: grid;
   overflow: hidden;
-  border: 1px solid var(--color-gray-300);
+  border: 1px solid var(--color-surface-border);
   border-radius: 12px;
   background: var(--color-surface-card);
 }
 
 .roster-loading__row {
   display: grid;
-  min-width: 960px;
+  min-width: var(--roster-grid-min-width);
   min-height: 78px;
-  grid-template-columns: 188px repeat(7, minmax(0, 1fr));
+  grid-template-columns: var(--roster-label-column-width) repeat(7, minmax(0, 1fr));
 }
 
 .roster-loading__row--header {
@@ -4069,8 +4077,8 @@ a {
 .roster-loading__row span {
   display: block;
   min-width: 0;
-  border-right: 1px solid var(--color-gray-200);
-  border-bottom: 1px solid var(--color-gray-200);
+  border-right: 1px solid var(--color-surface-border);
+  border-bottom: 1px solid var(--color-surface-border);
 }
 
 .roster-loading__row span:last-child {
@@ -4082,13 +4090,13 @@ a {
 }
 
 .roster-loading__row .roster-skeleton {
-  background: var(--color-gray-100);
+  background: var(--color-surface-alt);
 }
 
 .roster-skeleton {
   position: relative;
   overflow: hidden;
-  background: var(--color-gray-100);
+  background: var(--color-surface-alt);
 }
 
 .roster-skeleton::after {
@@ -4097,7 +4105,7 @@ a {
   background: linear-gradient(
     100deg,
     transparent 20%,
-    rgb(255 255 255 / 0.9) 50%,
+    var(--color-surface-border) 50%,
     transparent 80%
   );
   content: "";
@@ -4110,6 +4118,11 @@ a {
 }
 
 @media (max-width: 880px) {
+  :root {
+    --roster-grid-min-width: 840px;
+    --roster-label-column-width: 128px;
+  }
+
   .auth-page { grid-template-columns: 1fr; }
   .auth-intro { min-height: auto; padding: 32px 24px 40px; }
   .auth-intro h1 { margin: 48px 0 16px; font-size: 42px; }
@@ -4318,18 +4331,18 @@ a {
   .roster-page-shell { padding-bottom: 184px; }
   .roster-week-controls { gap: 6px; }
   .roster-week-title { min-width: 138px; font-size: 16px; }
-  .roster-grid { min-width: 840px; }
+  .roster-grid { min-width: var(--roster-grid-min-width); }
   .roster-loading__row {
-    min-width: 840px;
-    grid-template-columns: 128px repeat(7, minmax(0, 1fr));
+    min-width: var(--roster-grid-min-width);
+    grid-template-columns: var(--roster-label-column-width) repeat(7, minmax(0, 1fr));
   }
   .roster-grid thead th:first-child,
-  .roster-grid tbody th { width: 128px; }
+  .roster-grid tbody th { width: var(--roster-label-column-width); }
   .roster-grid-region {
     max-height: calc(100dvh - 300px);
     overflow-y: auto;
     scroll-snap-type: x proximity;
-    scroll-padding-inline-start: 128px;
+    scroll-padding-inline-start: var(--roster-label-column-width);
   }
   .roster-grid thead th {
     position: sticky;
@@ -4369,6 +4382,16 @@ a {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .bubble-cluster span,
+  .button-spinner,
+  .roster-skeleton::after {
+    animation: none !important;
+  }
+
+  .button:active {
+    transform: none;
   }
 }
 

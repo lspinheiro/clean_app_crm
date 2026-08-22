@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CrmHeader } from "./crm-header";
@@ -22,7 +22,6 @@ describe("CrmHeader", () => {
       <CrmHeader
         companyId="company-1"
         companyName="Coastal Demo Cleaning"
-        employeeRole="owner"
         logoUrl={null}
         memberships={[
           { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "owner" },
@@ -34,13 +33,11 @@ describe("CrmHeader", () => {
     expect(screen.queryByText("+ New job")).not.toBeInTheDocument();
   });
 
-  it("marks company settings as current on settings routes", () => {
-    mockUsePathname.mockReturnValue("/settings/identity");
+  it("keeps product identity and current company as separate header controls", () => {
     render(
       <CrmHeader
         companyId="company-1"
         companyName="Coastal Demo Cleaning"
-        employeeRole="owner"
         logoUrl={null}
         memberships={[
           { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "owner" },
@@ -49,18 +46,43 @@ describe("CrmHeader", () => {
       />,
     );
 
-    expect(screen.getByRole("link", { name: "Company settings" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    expect(screen.getByRole("link", { name: "The Clean Crew home" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Current company: Coastal Demo Cleaning" }),
+    ).toBeInTheDocument();
   });
 
-  it("does not offer owner settings to staff", () => {
+  it("offers owner settings inside the account menu and marks it current", () => {
+    mockUsePathname.mockReturnValue("/settings/identity");
     render(
       <CrmHeader
         companyId="company-1"
         companyName="Coastal Demo Cleaning"
-        employeeRole="staff"
+        logoUrl={null}
+        memberships={[
+          { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "owner" },
+        ]}
+        profileName="Taylor Admin"
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Account menu" });
+    fireEvent.click(trigger);
+    const accountMenu = trigger.closest("details");
+
+    expect(within(accountMenu as HTMLElement).getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getAllByRole("link", { name: "Settings" })).toHaveLength(1);
+    expect(screen.queryByLabelText("Company settings")).not.toBeInTheDocument();
+  });
+
+  it("offers personal settings to staff", () => {
+    render(
+      <CrmHeader
+        companyId="company-1"
+        companyName="Coastal Demo Cleaning"
         logoUrl={null}
         memberships={[
           { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "staff" },
@@ -69,15 +91,77 @@ describe("CrmHeader", () => {
       />,
     );
 
-    expect(screen.queryByRole("link", { name: "Company settings" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
+    expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
   });
 
-  it("offers company switching only when the account has multiple memberships", () => {
-    const { rerender } = render(
+  it("closes the account menu on outside press or Escape", () => {
+    render(
       <CrmHeader
         companyId="company-1"
         companyName="Coastal Demo Cleaning"
-        employeeRole="owner"
+        logoUrl={null}
+        memberships={[
+          { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "owner" },
+        ]}
+        profileName="Taylor Admin"
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Account menu" });
+    const menu = trigger.closest("details");
+    fireEvent.click(trigger);
+    expect(menu).toHaveAttribute("open");
+
+    fireEvent.pointerDown(document.body);
+
+    expect(menu).not.toHaveAttribute("open");
+
+    fireEvent.click(trigger);
+    expect(menu).toHaveAttribute("open");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(menu).not.toHaveAttribute("open");
+    expect(trigger).toHaveFocus();
+  });
+
+  it("always exposes company context and creation outside the personal account menu", () => {
+    render(
+      <CrmHeader
+        companyId="company-1"
+        companyName="Coastal Demo Cleaning"
+        logoUrl={null}
+        memberships={[
+          { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "owner" },
+        ]}
+        profileName="Taylor Admin"
+      />,
+    );
+
+    const companyTrigger = screen.getByRole("button", {
+      name: "Current company: Coastal Demo Cleaning",
+    });
+    fireEvent.click(companyTrigger);
+    expect(screen.getByRole("link", { name: "Create new company" })).toBeInTheDocument();
+    expect(screen.queryByText("All companies")).not.toBeInTheDocument();
+
+    fireEvent.pointerDown(document.body);
+    const accountTrigger = screen.getByRole("button", { name: "Account menu" });
+    fireEvent.click(accountTrigger);
+    const accountMenu = accountTrigger.closest("details");
+    expect(accountMenu).not.toBeNull();
+    expect(within(accountMenu as HTMLElement).queryByRole("group", { name: "Switch company" }))
+      .not.toBeInTheDocument();
+    expect(within(accountMenu as HTMLElement).queryByRole("link", { name: "Create new company" }))
+      .not.toBeInTheDocument();
+  });
+
+  it("lists every active membership and its role in the company selector", () => {
+    render(
+      <CrmHeader
+        companyId="company-1"
+        companyName="Coastal Demo Cleaning"
         logoUrl={null}
         memberships={[
           { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "owner" },
@@ -87,25 +171,16 @@ describe("CrmHeader", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Account menu" })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Switch company" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Switch to Harbour Demo Cleaning" }))
+    fireEvent.click(screen.getByRole("button", {
+      name: "Current company: Coastal Demo Cleaning",
+    }));
+    const companyGroup = screen.getByRole("group", { name: "Your companies" });
+    expect(within(companyGroup).getByText("Coastal Demo Cleaning", { exact: true }))
       .toBeInTheDocument();
-
-    rerender(
-      <CrmHeader
-        companyId="company-1"
-        companyName="Coastal Demo Cleaning"
-        employeeRole="owner"
-        logoUrl={null}
-        memberships={[
-          { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "owner" },
-        ]}
-        profileName="Taylor Admin"
-      />,
-    );
-
-    expect(screen.queryByRole("group", { name: "Switch company" })).not.toBeInTheDocument();
+    expect(within(companyGroup).getByText("Harbour Demo Cleaning", { exact: true }))
+      .toBeInTheDocument();
+    expect(within(companyGroup).getByText("Owner", { exact: true })).toBeInTheDocument();
+    expect(within(companyGroup).getByText("Staff", { exact: true })).toBeInTheDocument();
   });
 
 });

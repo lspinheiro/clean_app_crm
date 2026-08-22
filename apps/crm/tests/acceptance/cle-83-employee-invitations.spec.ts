@@ -10,8 +10,11 @@ async function signIn(page: import("@playwright/test").Page, email: string) {
 }
 
 async function signOut(page: import("@playwright/test").Page) {
-  await page.getByRole("button", { name: "Account menu" }).click();
-  await page.getByRole("button", { name: "Sign out" }).click();
+  const signOutButton = page.getByRole("button", { name: "Sign out" });
+  if (!(await signOutButton.isVisible())) {
+    await page.getByRole("button", { name: "Account menu" }).click();
+  }
+  await signOutButton.click();
 }
 
 test.describe("@CLE-83 owner employee invitations", () => {
@@ -19,11 +22,12 @@ test.describe("@CLE-83 owner employee invitations", () => {
     page,
   }) => {
     await signIn(page, "admin@clean-app.example.test");
-    await page.getByRole("link", { name: "Company settings" }).click();
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page.getByRole("link", { name: "Settings" }).click();
 
     const invitations = page.getByRole("region", { name: "Invite an employee" });
     await expect(invitations).toBeVisible();
-    await expect(invitations.getByRole("combobox", { name: "Role", exact: true }))
+    await expect(invitations.getByRole("combobox", { name: "Company access", exact: true }))
       .toHaveValue("staff");
     await expect(invitations.getByRole("option", { name: "Owner" })).toHaveCount(1);
     for (const state of ["Pending", "Accepted", "Expired", "Revoked"]) {
@@ -33,23 +37,31 @@ test.describe("@CLE-83 owner employee invitations", () => {
     await expect(page.getByText(/bulk/i)).toHaveCount(0);
   });
 
-  test("staff has neither the settings affordance nor direct route access in its active company", async ({
+  test("staff can manage personal settings and view company identity without admin controls", async ({
     page,
   }) => {
     await signIn(page, "owner.harbour@clean-app.example.test");
     await expect(page).toHaveURL(/\/en-AU\/roster$/);
-    await page.getByRole("button", { name: "Account menu" }).click();
-    const switchToCoastal = page.getByRole("button", { name: "Switch to Coastal Demo Cleaning" });
-    if (await switchToCoastal.count()) {
+    const currentCompany = page.getByRole("button", { name: /^Current company:/ });
+    await expect(currentCompany).toBeVisible();
+    if ((await currentCompany.getAttribute("aria-label"))?.includes("Harbour Demo Cleaning")) {
+      await currentCompany.click();
+      const switchToCoastal = page.getByRole("button", {
+        name: "Switch to Coastal Demo Cleaning",
+      });
       await switchToCoastal.click();
-      await expect(page.getByRole("link", { name: "Company settings" })).toHaveCount(0);
-    } else {
-      await page.getByRole("button", { name: "Account menu" }).click();
     }
 
-    await expect(page.getByRole("link", { name: "Company settings" })).toHaveCount(0);
-    await page.goto("/en-AU/settings");
-    await expect(page).toHaveURL(/\/en-AU\/login\?error=not-authorised$/);
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page.getByRole("link", { name: "Settings" }).click();
+    await expect(page).toHaveURL(/\/en-AU\/settings$/);
+    await expect(page.getByRole("heading", { name: "Your account" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Language" })).toBeVisible();
+    const identity = page.getByRole("region", { name: "Business identity" });
+    await expect(identity.getByText("Coastal Demo Cleaning")).toBeVisible();
+    await expect(identity.getByText("Only owners can edit company details.")).toBeVisible();
+    await expect(identity.getByRole("textbox")).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Company access" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Invite an employee" })).toHaveCount(0);
   });
 
@@ -95,7 +107,8 @@ test.describe("@CLE-83 owner employee invitations", () => {
     await page.getByRole("button", { name: "Accept invitation" }).click();
 
     await expect(page).toHaveURL(/\/en-AU\/roster$/);
-    await expect(page.getByRole("link", { name: "Company settings" })).toBeVisible();
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
     await signOut(page);
     await page.getByLabel("Email").fill("new.employee@clean-app.example.test");
     await page.getByLabel("Password").fill("new-local-password");

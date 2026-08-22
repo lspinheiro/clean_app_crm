@@ -9,6 +9,7 @@ export type RouteLoadingVariant =
   | "jobDetail"
   | "money"
   | "cleaners"
+  | "companyCreation"
   | "settings";
 
 type RouteLoadingSkeletonProps = {
@@ -24,6 +25,7 @@ const shellClasses: Record<RouteLoadingVariant, string> = {
   jobDetail: "job-detail-page-shell",
   money: "money-page-shell",
   cleaners: "cleaners-page-shell",
+  companyCreation: "company-creation-page",
   settings: "settings-shell",
 };
 
@@ -325,6 +327,37 @@ function CleanersGeometry() {
   );
 }
 
+function CompanyCreationGeometry() {
+  return (
+    <>
+      <Skeleton className="route-loading__back" />
+      <HeaderSkeleton className="company-creation-header" />
+      <div className="company-creation-form">
+        <div className="company-creation-form__fields">
+          {Array.from({ length: 2 }, (_, index) => (
+            <div className="route-loading__field company-creation-loading__field" key={index}>
+              <Skeleton className="route-loading__copy route-loading__copy--short" />
+              <Skeleton className="route-loading__input" />
+            </div>
+          ))}
+        </div>
+        <section className="company-creation-owner company-creation-loading__owner">
+          <Skeleton className="route-loading__circle" />
+          <div className="route-loading__stack">
+            <Skeleton className="route-loading__title" />
+            <Skeleton className="route-loading__copy" />
+          </div>
+        </section>
+        <Skeleton className="route-loading__copy" />
+        <div className="company-creation-form__actions">
+          <Skeleton className="route-loading__action" />
+          <Skeleton className="route-loading__action" />
+        </div>
+      </div>
+    </>
+  );
+}
+
 function SettingsGeometry() {
   return (
     <>
@@ -377,6 +410,7 @@ function Geometry({ variant }: { variant: RouteLoadingVariant }) {
     case "jobDetail": return <JobDetailGeometry />;
     case "money": return <MoneyGeometry />;
     case "cleaners": return <CleanersGeometry />;
+    case "companyCreation": return <CompanyCreationGeometry />;
     case "settings": return <SettingsGeometry />;
   }
 }

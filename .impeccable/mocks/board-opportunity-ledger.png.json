@@ -1,0 +1,15 @@
+{
+  "name": "Opportunity ledger",
+  "viewport": "390x844",
+  "approved": true,
+  "seedKey": "the-clean-crew-trust-blue-v1",
+  "directionContract": {
+    "thesis": "A work-opportunity ledger that refuses the generic marketplace card stack.",
+    "ownWorld": "Trust Blue calm utility with slate text, quiet surfaces, docket rows, and blue reserved for action, active place, and live status.",
+    "story": "A cleaner sees applied work first, knows it is not an assignment, compares open jobs by time, duration, and pay, then applies once.",
+    "firstViewport": "Compact brand header, cleaner identity, edge-to-edge applied band, open count, metric-first work docket, and labelled icon navigation.",
+    "form": "Opportunity ledger, structure 3 of the approved board comparison, seed the-clean-crew-trust-blue-v1.",
+    "finish": "unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md"
+  },
+  "prompt": "A high-fidelity mobile PWA composition probe for The Clean Crew board using the established Trust Blue system. Composition: branded header; slim full-width applied-status band; visible Open jobs count; dense work-docket cards pairing date, time, duration and pay before company/site/service details and Apply for job; fixed labelled bottom navigation. Only real demo facts, no invented features or private job details."
+}

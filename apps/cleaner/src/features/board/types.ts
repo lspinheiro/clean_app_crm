@@ -8,6 +8,7 @@ export type BoardRow = {
   site_name: string;
   suburb: string;
   service_name: string;
+  service_slug: string | null;
   scheduled_start: string;
   duration_minutes: number;
   cleaner_pay_cents: number;
@@ -24,6 +25,7 @@ export type Vacancy = {
   siteName: string;
   suburb: string;
   serviceName: string;
+  serviceSlug: string | null;
   scheduledStart: string;
   durationMinutes: number;
   cleanerPayCents: number;

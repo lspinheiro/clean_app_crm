@@ -67,6 +67,12 @@ describe("CLE-21 apply errors read as plain English", () => {
   it("copes with an error that carries no message at all", () => {
     expect(describeApplyError(null)).toBe("We could not send your application. Try again.");
   });
+
+  it("maps the same database contract to Brazilian Portuguese", () => {
+    expect(describeApplyError({ message: "Job has no open slots" }, "pt-BR")).toBe(
+      "Este serviço acabou de ser preenchido.",
+    );
+  });
 });
 
 describe("CLE-21 withdraw errors read as plain English", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { registrationSchema } from "./schema";
+import { createRegistrationSchema, registrationSchema } from "./schema";
 
 const valid = {
   fullName: "Ana Silva",
@@ -66,5 +66,16 @@ describe("CLE-19 registration form", () => {
 
   it("asks for a suburb", () => {
     expect(firstError({ ...valid, suburb: " " })).toBe("Enter the suburb you work from.");
+  });
+
+  it("returns Brazilian Portuguese validation copy at the same trust boundary", () => {
+    const result = createRegistrationSchema("pt-BR").safeParse({
+      ...valid,
+      email: "not-an-email",
+    });
+
+    expect(result.success ? null : result.error.issues[0]?.message).toBe(
+      "Digite um endereço de e-mail válido.",
+    );
   });
 });

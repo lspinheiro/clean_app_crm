@@ -1273,6 +1273,7 @@ export type Database = {
           scheduled_start: string | null
           service_id: string | null
           service_name: string | null
+          service_slug: string | null
           site_name: string | null
           suburb: string | null
         }
@@ -1327,6 +1328,7 @@ export type Database = {
           scheduled_start: string | null
           service_id: string | null
           service_name: string | null
+          service_slug: string | null
           site_name: string | null
           slot_number: number | null
           status: Database["public"]["Enums"]["job_status"] | null

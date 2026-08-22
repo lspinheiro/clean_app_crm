@@ -21,6 +21,7 @@ export type MyJobRow = {
   site_name: string;
   suburb: string;
   service_name: string;
+  service_slug: string | null;
   status: JobStatus;
   scheduled_start: string;
   duration_minutes: number;
@@ -36,6 +37,7 @@ export type MyJob = {
   siteName: string;
   suburb: string;
   serviceName: string;
+  serviceSlug: string | null;
   status: JobStatus;
   scheduledStart: string;
   durationMinutes: number;

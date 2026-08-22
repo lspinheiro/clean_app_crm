@@ -33,6 +33,17 @@
     "unknownSite": "Unknown site",
     "workspaceReady": "This workspace is ready."
   },
+  "Loading": {
+    "clients": "Loading clients",
+    "clientDetail": "Loading client record",
+    "clientImport": "Loading client import",
+    "jobs": "Loading jobs",
+    "newJob": "Loading new job",
+    "jobDetail": "Loading job details",
+    "money": "Loading money records",
+    "cleaners": "Loading cleaners",
+    "settings": "Loading settings"
+  },
   "ErrorPages": {
     "notFoundTitle": "Page not found",
     "notFoundDescription": "The page you requested does not exist or is no longer available.",

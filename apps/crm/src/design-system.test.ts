@@ -133,10 +133,39 @@ describe("Trust Blue contract", () => {
     );
   });
 
+  it("shares stable macro-geometry between every async route and its skeleton", () => {
+    const geometryTokens: Record<string, string> = {
+      "clients-site-row-columns": "36px minmax(0, 1fr)",
+      "client-detail-summary-min-height": "76px",
+      "import-template-columns": "repeat(2, minmax(0, 1fr))",
+      "job-list-columns": "116px minmax(0, 1fr) minmax(120px, auto)",
+      "job-list-row-min-height": "116px",
+      "new-job-section-columns": "minmax(180px, 0.65fr) minmax(0, 1.6fr)",
+      "job-detail-section-columns": "210px minmax(0, 1fr)",
+      "money-totals-columns": "repeat(2, minmax(0, 1fr))",
+      "cleaners-layout-columns": "minmax(0, 1.35fr) minmax(300px, 0.85fr)",
+      "settings-identity-columns": "minmax(0, 1fr) 132px",
+    };
+
+    for (const [name, value] of Object.entries(geometryTokens)) {
+      expect(css).toContain(`--${name}: ${value};`);
+      expect(occurrences(css, `var(--${name})`), name).toBeGreaterThanOrEqual(2);
+    }
+
+    expect(css).toMatch(/\.money-loading__table\s*\{[^}]*table-layout:\s*fixed;/);
+    expect(css).toMatch(/\.route-skeleton\s*\{[^}]*var\(--color-surface-alt\)/);
+    expect(css).toMatch(
+      /\.route-skeleton::after\s*\{[\s\S]*?var\(--color-surface-border\)[\s\S]*?animation:\s*route-shimmer/,
+    );
+  });
+
   it("makes motion effectively static for reduced-motion users", () => {
     expect(designContract).toContain("elements and pseudo-elements");
     expect(css).toMatch(
       /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\*, \*::before, \*::after\s*\{[^}]*animation-duration:\s*0\.01ms !important;[^}]*animation-iteration-count:\s*1 !important;[^}]*transition-duration:\s*0\.01ms !important;/,
+    );
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.route-skeleton::after[\s\S]*?animation:\s*none !important;/,
     );
   });
 

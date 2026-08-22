@@ -52,6 +52,16 @@
   --duration-standard: 250ms;
   --roster-grid-min-width: 960px;
   --roster-label-column-width: 188px;
+  --clients-site-row-columns: 36px minmax(0, 1fr);
+  --client-detail-summary-min-height: 76px;
+  --import-template-columns: repeat(2, minmax(0, 1fr));
+  --job-list-columns: 116px minmax(0, 1fr) minmax(120px, auto);
+  --job-list-row-min-height: 116px;
+  --new-job-section-columns: minmax(180px, 0.65fr) minmax(0, 1.6fr);
+  --job-detail-section-columns: 210px minmax(0, 1fr);
+  --money-totals-columns: repeat(2, minmax(0, 1fr));
+  --cleaners-layout-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
+  --settings-identity-columns: minmax(0, 1fr) 132px;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
 }
@@ -1009,7 +1019,7 @@ a {
 
 .identity-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 132px;
+  grid-template-columns: var(--settings-identity-columns);
   gap: 32px;
   align-items: start;
 }
@@ -1192,7 +1202,7 @@ a {
 
 .site-row {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: var(--clients-site-row-columns);
   align-items: center;
   gap: 12px;
   border-top: 1px solid var(--color-gray-200);
@@ -1332,7 +1342,7 @@ a {
 
 .import-template-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: var(--import-template-columns);
   border-block: 1px solid var(--color-gray-200);
 }
 
@@ -1780,7 +1790,7 @@ a {
 
 .site-detail-card summary {
   display: flex;
-  min-height: 76px;
+  min-height: var(--client-detail-summary-min-height);
   align-items: center;
   justify-content: space-between;
   gap: 20px;
@@ -2042,7 +2052,7 @@ a {
 
 .cleaners-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
+  grid-template-columns: var(--cleaners-layout-columns);
   align-items: start;
   gap: 24px;
 }
@@ -2877,7 +2887,7 @@ a {
 
 .money-totals dl {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: var(--money-totals-columns);
   margin: 0;
 }
 
@@ -3102,7 +3112,7 @@ a {
 
 .new-job-section {
   display: grid;
-  grid-template-columns: minmax(180px, 0.65fr) minmax(0, 1.6fr);
+  grid-template-columns: var(--new-job-section-columns);
   gap: 40px;
   padding: 32px 0;
 }
@@ -3225,7 +3235,7 @@ a {
 
 .job-detail-section {
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
+  grid-template-columns: var(--job-detail-section-columns);
   gap: 40px;
   border-top: 1px solid var(--color-gray-300);
   padding: 32px 0;
@@ -3482,15 +3492,15 @@ a {
 }
 
 .job-list-item {
-  min-height: 116px;
+  min-height: var(--job-list-row-min-height);
 }
 
 .job-list-link {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr) minmax(120px, auto);
+  grid-template-columns: var(--job-list-columns);
   align-items: center;
   gap: 24px;
-  min-height: 116px;
+  min-height: var(--job-list-row-min-height);
   padding: 20px 24px;
   transition: background-color var(--duration-fast) var(--ease-standard);
 }
@@ -4003,6 +4013,267 @@ a {
   cursor: not-allowed;
 }
 
+.route-loading__content {
+  display: contents;
+}
+
+.route-skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--color-surface-alt);
+}
+
+.route-skeleton::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    var(--color-surface-border) 50%,
+    transparent 80%
+  );
+  content: "";
+  animation: route-shimmer 1.4s ease-in-out infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes route-shimmer {
+  to { transform: translateX(100%); }
+}
+
+.route-loading__header-copy {
+  display: grid;
+  min-width: min(100%, 520px);
+  justify-items: start;
+}
+
+.route-loading__eyebrow {
+  width: 120px;
+  height: 16px;
+}
+
+.route-loading__heading {
+  width: min(210px, 72vw);
+  height: 42px;
+  margin-top: 6px;
+}
+
+.route-loading__description {
+  width: min(100%, 520px);
+  height: 20px;
+  margin-top: 10px;
+}
+
+.route-loading__action {
+  width: 132px;
+  height: 44px;
+}
+
+.route-loading__title {
+  width: min(180px, 100%);
+  height: 22px;
+}
+
+.route-loading__copy {
+  width: min(260px, 100%);
+  height: 16px;
+}
+
+.route-loading__copy--short {
+  width: min(96px, 100%);
+}
+
+.route-loading__stack,
+.route-loading__field {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.route-loading__circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.route-loading__chevron {
+  width: 20px;
+  height: 20px;
+}
+
+.route-loading__breadcrumb {
+  width: 180px;
+  height: 16px;
+}
+
+.route-loading__back {
+  width: 120px;
+  height: 44px;
+  margin-bottom: 20px;
+}
+
+.route-loading__section-heading {
+  width: min(260px, 100%);
+  height: 24px;
+}
+
+.route-loading__input {
+  width: 100%;
+  height: 50px;
+}
+
+.clients-loading__search {
+  width: min(100%, 520px);
+  height: 48px;
+}
+
+.clients-loading__site-row {
+  grid-template-columns: var(--clients-site-row-columns);
+}
+
+.client-detail-loading__site-summary {
+  display: flex;
+  min-height: var(--client-detail-summary-min-height);
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 22px;
+}
+
+.client-detail-loading__panel {
+  width: 100%;
+  height: 112px;
+}
+
+.client-detail-loading__facts {
+  align-items: stretch;
+}
+
+.client-detail-loading__fact {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+}
+
+.import-loading__template-grid {
+  grid-template-columns: var(--import-template-columns);
+}
+
+.import-loading__template {
+  display: grid;
+  gap: 12px;
+}
+
+.import-loading__contract-row {
+  width: 100%;
+  height: 44px;
+}
+
+.import-loading__picker-column {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.import-loading__field {
+  width: 100%;
+  height: 50px;
+}
+
+.jobs-loading__row {
+  min-height: var(--job-list-row-min-height);
+  grid-template-columns: var(--job-list-columns);
+}
+
+.new-job-loading__section {
+  grid-template-columns: var(--new-job-section-columns);
+}
+
+.job-detail-loading__section {
+  grid-template-columns: var(--job-detail-section-columns);
+}
+
+.job-detail-loading__fact {
+  display: grid;
+  gap: 9px;
+}
+
+.money-loading__totals {
+  grid-template-columns: var(--money-totals-columns);
+}
+
+.money-loading__amount {
+  width: min(180px, 100%);
+  height: 42px;
+  margin-top: 10px;
+}
+
+.money-loading__table {
+  table-layout: fixed;
+}
+
+.money-loading__table th,
+.money-loading__table td {
+  height: 58px;
+}
+
+.cleaners-loading__layout {
+  grid-template-columns: var(--cleaners-layout-columns);
+}
+
+.cleaners-loading__card {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.cleaners-loading__preview {
+  width: 100%;
+  height: 148px;
+}
+
+.cleaners-loading__member-row {
+  width: 100%;
+  height: 58px;
+}
+
+.settings-loading__card {
+  display: grid;
+  gap: 20px;
+}
+
+.settings-loading__identity-grid {
+  grid-template-columns: var(--settings-identity-columns);
+}
+
+.settings-loading__identity-fields {
+  width: 100%;
+  height: 154px;
+}
+
+.settings-loading__logo {
+  width: 96px;
+  height: 96px;
+  justify-self: center;
+  border-radius: 50%;
+}
+
+.settings-loading__row {
+  min-height: 68px;
+}
+
+.settings-loading__invitation-form {
+  width: 100%;
+  height: 50px;
+}
+
+.settings-loading__language {
+  width: min(320px, 100%);
+  height: 50px;
+}
+
 .roster-loading__header {
   margin-bottom: 28px;
 }
@@ -4121,6 +4392,12 @@ a {
   :root {
     --roster-grid-min-width: 840px;
     --roster-label-column-width: 128px;
+    --import-template-columns: 1fr;
+    --job-list-columns: 88px minmax(0, 1fr);
+    --new-job-section-columns: 1fr;
+    --job-detail-section-columns: 1fr;
+    --cleaners-layout-columns: 1fr;
+    --settings-identity-columns: 1fr;
   }
 
   .auth-page { grid-template-columns: 1fr; }
@@ -4185,6 +4462,11 @@ a {
 }
 
 @media (max-width: 560px) {
+  :root {
+    --job-list-columns: 1fr;
+    --money-totals-columns: 1fr;
+  }
+
   .employee-management__heading { align-items: flex-start; flex-direction: column; }
   .employee-management__row { grid-template-columns: 1fr; gap: 12px; }
   .employee-management__role { align-items: stretch; }
@@ -4386,7 +4668,8 @@ a {
 
   .bubble-cluster span,
   .button-spinner,
-  .roster-skeleton::after {
+  .roster-skeleton::after,
+  .route-skeleton::after {
     animation: none !important;
   }
 

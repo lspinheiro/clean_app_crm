@@ -7,7 +7,7 @@ import { expect, test, type Page } from "@playwright/test";
 // the *shape* the seed guarantees, never a count or a date:
 //
 //   Broadbeach Towers   crew of 2, one named cleaner  → slot 1 always taken, slot 2 offered
-//   Palm Grove Practice crew of 1, no named cleaner   → fully open, no crew line
+//   Palm Grove Practice crew of 1, no named cleaner   → fully open, one spot shown
 //   Southport Office    crew of 1, one named cleaner  → fully assigned, never on the board
 //
 // removed.cleaner has a historical cleaner membership but belongs to no active company, so her
@@ -51,7 +51,8 @@ test.describe("@CLE-20 the board of open vacancies", () => {
     const soonest = cards.first();
     await expect(soonest).toContainText("Coastal Demo Cleaning");
     await expect(soonest).toContainText(/(Broadbeach Towers · Broadbeach|Palm Grove Practice · Robina)/);
-    await expect(soonest).toContainText(/Standard clean · \d+ h/);
+    await expect(soonest).toContainText("Standard clean");
+    await expect(soonest.locator(".vacancy-card__duration")).toContainText(/h/);
     await expect(soonest).toContainText(/\d{1,2}:\d{2} (am|pm)/);
     await expect(soonest).toContainText(/\$\d+/);
   });
@@ -71,9 +72,9 @@ test.describe("@CLE-20 the board of open vacancies", () => {
       await expect(crewCards.nth(index)).toContainText("1 of 2 spots open");
     }
 
-    // A single-cleaner job says nothing about crew.
-    await expect(cards.filter({ hasText: "Palm Grove Practice" }).first()).not.toContainText(
-      "spots open",
+    // Option C makes even the single available slot explicit.
+    await expect(cards.filter({ hasText: "Palm Grove Practice" }).first()).toContainText(
+      "1 spot open",
     );
 
     // Southport Office is crew-of-one with a named cleaner: no slot is ever open there.

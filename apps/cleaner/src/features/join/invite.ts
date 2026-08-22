@@ -1,3 +1,6 @@
+import type { AppLocale } from "@/i18n/config";
+import { cleanerTranslator } from "@/i18n/messages";
+
 export type InviteState = "active" | "expired" | "revoked" | "unknown";
 
 export type InvitePreview = {
@@ -16,48 +19,57 @@ export function normaliseInviteCode(rawCode: string) {
   return rawCode.trim().toUpperCase();
 }
 
-export function describeInviteProblem(preview: InvitePreview): string {
+export function describeInviteProblem(
+  preview: InvitePreview,
+  locale: AppLocale = "en-AU",
+): string {
+  const t = cleanerTranslator(locale);
   const company = preview.companyName;
 
   switch (preview.state) {
     case "active":
       return "";
     case "expired":
-      return company
-        ? `This invite link from ${company} has expired. Ask them for a new link.`
-        : "This invite link has expired. Ask the company for a new link.";
+      return company ? t("Join.inviteExpiredCompany", { company }) : t("Join.inviteExpired");
     case "revoked":
-      return company
-        ? `This invite link from ${company} is no longer in use. Ask them for a new link.`
-        : "This invite link is no longer in use. Ask the company for a new link.";
+      return company ? t("Join.inviteRevokedCompany", { company }) : t("Join.inviteRevoked");
     case "unknown":
-      return "We do not know this invite link. Check the link, or ask the company to send it again.";
+      return t("Join.inviteUnknown");
   }
 }
 
 // The RPC refuses with a fixed set of messages. Anything else is a bug or a race, and the
 // cleaner sees a sentence rather than a database error.
-const joinFailures: ReadonlyMap<string, string> = new Map([
-  ["Invite code not found", "We do not know this invite link. Ask the company to send it again."],
-  [
-    "Invite code is no longer active",
-    "This invite link is no longer in use. Ask the company for a new link.",
-  ],
-  ["Invite code has expired", "This invite link has expired. Ask the company for a new link."],
-  ["Cleaner access required", "This app is for cleaners. Sign in with your cleaner account."],
-  [
-    // Key is the RPC's own message, verbatim; only the sentence we show is ours.
-    "This company removed you from their pool",
-    "This company removed you. Ask them to add you again.",
-  ],
+export type JoinFailureKey =
+  | "cleanerAccessRequired"
+  | "joinError"
+  | "joinExpired"
+  | "joinInactive"
+  | "joinUnknown"
+  | "removed";
+
+const joinFailureKeys: ReadonlyMap<string, Exclude<JoinFailureKey, "joinError">> = new Map([
+  ["Invite code not found", "joinUnknown"],
+  ["Invite code is no longer active", "joinInactive"],
+  ["Invite code has expired", "joinExpired"],
+  ["Cleaner access required", "cleanerAccessRequired"],
+  ["This company removed you from their pool", "removed"],
 ]);
 
-export function describeJoinFailure(message: string): string {
-  return joinFailures.get(message) ?? "We could not add you to this company. Please try again.";
+export function joinFailureKey(message: string): JoinFailureKey {
+  return joinFailureKeys.get(message) ?? "joinError";
 }
 
-export function describeCleanerCount(cleanerCount: number): string {
-  if (cleanerCount <= 0) return "You would be their first Cleaner staff member.";
-  if (cleanerCount === 1) return "1 cleaner is already on their staff.";
-  return `${cleanerCount} cleaners are already on their staff.`;
+export function describeJoinFailure(message: string, locale: AppLocale = "en-AU"): string {
+  return cleanerTranslator(locale)(`Join.${joinFailureKey(message)}`);
+}
+
+export function describeCleanerCount(
+  cleanerCount: number,
+  locale: AppLocale = "en-AU",
+): string {
+  const t = cleanerTranslator(locale);
+  return cleanerCount <= 0
+    ? t("Join.firstCleaner")
+    : t("Join.cleanerCount", { count: cleanerCount });
 }

@@ -1,3 +1,6 @@
+import type { AppLocale } from "@/i18n/config";
+import { cleanerTranslator } from "@/i18n/messages";
+
 import type { ApplicationStatus } from "./types";
 
 /**
@@ -14,23 +17,27 @@ export type VacancyState =
   | { kind: "waiting" }
   | { kind: "closed"; reason: string };
 
-export function toVacancyState(status: ApplicationStatus | null): VacancyState {
+export function toVacancyState(
+  status: ApplicationStatus | null,
+  locale: AppLocale = "en-AU",
+): VacancyState {
+  const t = cleanerTranslator(locale);
   if (status === null) return { kind: "open" };
 
   switch (status) {
     case "applied":
       return { kind: "waiting" };
     case "withdrawn":
-      return { kind: "closed", reason: "You withdrew from this job." };
+      return { kind: "closed", reason: t("Board.closedWithdrawn") };
     case "not_selected":
-      return { kind: "closed", reason: "This job went to someone else." };
+      return { kind: "closed", reason: t("Board.closedNotSelected") };
     case "assigned":
       // Not "you are already on this job": `cleaner_job_board` excludes every job she holds
       // an active assignment on, and `unassign_cleaner` rewrites the application to
       // `not_selected` in the same transaction that releases the slot. So a card can never
       // carry `assigned` while it is true. The honest reason is the one the other closed
       // states give — a prior application row exists, and `apply_to_job` refuses a second.
-      return { kind: "closed", reason: "You already applied to this job." };
+      return { kind: "closed", reason: t("Board.closedAlreadyApplied") };
   }
 }
 
@@ -41,26 +48,44 @@ type DatabaseError = { message?: string } | null | undefined;
  * contract to translate from. Anything else is a bug or an outage: say so plainly rather
  * than forward a Postgres string to someone on a phone.
  */
-const applyMessages = new Map<string, string>([
-  ["Job has no open slots", "This job is full now."],
-  ["Cleaner can apply only once per job", "You already applied to this job."],
-  ["Cleaner is already assigned to this job", "You are already on this job."],
-  ["Job is not available", "This job is not open to you any more."],
+export type BoardErrorKey =
+  | "errorAlreadyApplied"
+  | "errorAlreadyAssigned"
+  | "errorApply"
+  | "errorFull"
+  | "errorNoApplication"
+  | "errorUnavailable"
+  | "errorWithdraw";
+
+const applyMessageKeys = new Map<string, Exclude<BoardErrorKey, "errorApply" | "errorNoApplication" | "errorWithdraw">>([
+  ["Job has no open slots", "errorFull"],
+  ["Cleaner can apply only once per job", "errorAlreadyApplied"],
+  ["Cleaner is already assigned to this job", "errorAlreadyAssigned"],
+  ["Job is not available", "errorUnavailable"],
 ]);
 
-const withdrawMessages = new Map<string, string>([
-  ["Active application not found", "You do not have an application to withdraw."],
+const withdrawMessageKeys = new Map<string, Extract<BoardErrorKey, "errorNoApplication">>([
+  ["Active application not found", "errorNoApplication"],
 ]);
 
-export function describeApplyError(error: DatabaseError): string {
-  return (
-    applyMessages.get(error?.message ?? "") ?? "We could not send your application. Try again."
-  );
+export function applyErrorKey(error: DatabaseError): BoardErrorKey {
+  return applyMessageKeys.get(error?.message ?? "") ?? "errorApply";
 }
 
-export function describeWithdrawError(error: DatabaseError): string {
-  return (
-    withdrawMessages.get(error?.message ?? "") ??
-    "We could not withdraw your application. Try again."
-  );
+export function withdrawErrorKey(error: DatabaseError): BoardErrorKey {
+  return withdrawMessageKeys.get(error?.message ?? "") ?? "errorWithdraw";
+}
+
+export function describeApplyError(
+  error: DatabaseError,
+  locale: AppLocale = "en-AU",
+): string {
+  return cleanerTranslator(locale)(`Board.${applyErrorKey(error)}`);
+}
+
+export function describeWithdrawError(
+  error: DatabaseError,
+  locale: AppLocale = "en-AU",
+): string {
+  return cleanerTranslator(locale)(`Board.${withdrawErrorKey(error)}`);
 }

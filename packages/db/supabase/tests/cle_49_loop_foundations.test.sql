@@ -71,7 +71,7 @@ select results_eq(
     where table_schema = 'public'
       and table_name = 'cleaner_job_board'$$,
   $$values (
-    'job_id,company_id,company_name,company_logo_path,site_name,suburb,service_id,service_name,scheduled_start,duration_minutes,cleaner_pay_cents,crew_size,crew_slot,my_application_status'::text collate "C"
+    'job_id,company_id,company_name,company_logo_path,site_name,suburb,service_id,service_name,scheduled_start,duration_minutes,cleaner_pay_cents,crew_size,crew_slot,my_application_status,service_slug'::text collate "C"
   )$$,
   'the board view exposes only its reviewed safe projection'
 );
@@ -81,7 +81,7 @@ select results_eq(
     where table_schema = 'public'
       and table_name = 'cleaner_my_jobs'$$,
   $$values (
-    'assignment_id,job_id,slot_number,company_id,company_name,company_logo_path,site_name,suburb,service_id,service_name,status,scheduled_start,duration_minutes,cleaner_pay_cents,assigned_at'::text collate "C"
+    'assignment_id,job_id,slot_number,company_id,company_name,company_logo_path,site_name,suburb,service_id,service_name,status,scheduled_start,duration_minutes,cleaner_pay_cents,assigned_at,service_slug'::text collate "C"
   )$$,
   'the assigned-job view exposes only its reviewed safe projection'
 );

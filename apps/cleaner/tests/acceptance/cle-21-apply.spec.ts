@@ -21,7 +21,7 @@ function openCards(page: Page) {
 }
 
 function appliedCards(page: Page) {
-  return page.getByRole("list", { name: "Applied" }).getByRole("listitem");
+  return page.getByRole("list", { name: "Applied jobs" }).getByRole("listitem");
 }
 
 test.describe("@CLE-21 applying and withdrawing", () => {
@@ -40,41 +40,53 @@ test.describe("@CLE-21 applying and withdrawing", () => {
       .filter({ hasNotText: "This job went to someone else." })
       .first();
     await expect(target).toBeVisible();
-    await expect(target.getByRole("button", { name: "Apply" })).toBeEnabled();
-    // Pin the exact instance by its date-and-time line, so the assertions below follow
-    // this card rather than any other generated instance of the same site.
-    const when = (await target.locator(".vacancy-card__when").innerText()).trim();
+    await expect(target.getByRole("button", { name: "Apply for job" })).toBeEnabled();
+    // Pin the exact instance by its visible date and time, so the assertions below follow
+    // this card rather than any other generated instance of the same site. Match the two
+    // fields independently because Playwright normalises whitespace in `hasText` filters.
+    const date = (await target.locator(".vacancy-card__date").innerText()).trim();
+    const time = (await target.locator(".vacancy-card__time").innerText()).trim();
 
-    await target.getByRole("button", { name: "Apply" }).click();
+    await target.getByRole("button", { name: "Apply for job" }).click();
 
     // One tap moves it into Applied with a visible waiting state.
-    const waiting = appliedCards(page).filter({ hasText: when });
+    const waiting = appliedCards(page).filter({ hasText: date }).filter({ hasText: time });
     await expect(waiting).toHaveCount(1);
-    await expect(waiting).toContainText("Waiting to hear back");
+    await expect(waiting).toContainText("Company will confirm — you are not assigned yet");
     await expect(waiting.getByRole("button", { name: "Withdraw" })).toBeEnabled();
     // It is no longer offered as open work.
-    await expect(openCards(page).filter({ hasText: when })).toHaveCount(0);
+    await expect(
+      openCards(page).filter({ hasText: date }).filter({ hasText: time }),
+    ).toHaveCount(0);
 
     // The waiting state is the database's, not this component's.
     await page.reload();
-    const afterReload = appliedCards(page).filter({ hasText: when });
-    await expect(afterReload).toContainText("Waiting to hear back");
+    const afterReload = appliedCards(page)
+      .filter({ hasText: date })
+      .filter({ hasText: time });
+    await expect(afterReload).toContainText(
+      "Company will confirm — you are not assigned yet",
+    );
 
     await afterReload.getByRole("button", { name: "Withdraw" }).click();
 
     // The card returns to the open list, but the database refuses a second application, so
     // Apply is shut and says why instead of failing on tap.
-    await expect(appliedCards(page).filter({ hasText: when })).toHaveCount(0);
-    const withdrawn = openCards(page).filter({ hasText: when });
+    await expect(
+      appliedCards(page).filter({ hasText: date }).filter({ hasText: time }),
+    ).toHaveCount(0);
+    const withdrawn = openCards(page).filter({ hasText: date }).filter({ hasText: time });
     await expect(withdrawn).toHaveCount(1);
     await expect(withdrawn).toContainText("You withdrew from this job.");
-    await expect(withdrawn.getByRole("button", { name: "Apply" })).toBeDisabled();
+    await expect(withdrawn.getByRole("button", { name: "Apply for job" })).toBeDisabled();
 
     // And that is durable too.
     await page.reload();
-    const stillWithdrawn = openCards(page).filter({ hasText: when });
+    const stillWithdrawn = openCards(page)
+      .filter({ hasText: date })
+      .filter({ hasText: time });
     await expect(stillWithdrawn).toContainText("You withdrew from this job.");
-    await expect(stillWithdrawn.getByRole("button", { name: "Apply" })).toBeDisabled();
+    await expect(stillWithdrawn.getByRole("button", { name: "Apply for job" })).toBeDisabled();
   });
 
   test("never reveals the address or client contact once she has applied", async ({ page }) => {

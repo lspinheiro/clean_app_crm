@@ -1,4 +1,6 @@
 import type { JobStatus } from "./types";
+import type { AppLocale } from "@/i18n/config";
+import { cleanerTranslator } from "@/i18n/messages";
 
 /**
  * What the card may offer, derived from the job's status.
@@ -18,52 +20,56 @@ export type JobAction =
       busyLabel: string;
     };
 
-const BUSY = "Saving…";
-
-export function toJobAction(status: JobStatus): JobAction {
+export function toJobAction(status: JobStatus, locale: AppLocale = "en-AU"): JobAction {
+  const t = cleanerTranslator(locale);
+  const busy = t("MyJobs.saving");
   switch (status) {
     case "draft":
     case "posted":
       // She holds a slot, but the job only becomes `assigned` once the whole crew is in —
       // `assign_job_slot` flips it when active assignments reach crew_size.
-      return { kind: "waiting", reason: "Starts once the crew is complete" };
+      return { kind: "waiting", reason: t("MyJobs.waitingCrew") };
     case "assigned":
-      return { kind: "advance", to: "on_the_way", label: "On my way", busyLabel: BUSY };
+      return { kind: "advance", to: "on_the_way", label: t("MyJobs.onMyWay"), busyLabel: busy };
     case "on_the_way":
-      return { kind: "advance", to: "in_progress", label: "Start work", busyLabel: BUSY };
+      return { kind: "advance", to: "in_progress", label: t("MyJobs.startWork"), busyLabel: busy };
     case "in_progress":
       // Irreversible, and CLE-50's trigger writes the pay ledger in the same transaction.
       return {
         kind: "confirm",
         to: "completed",
-        label: "Job done",
-        confirmLabel: "Tap again to confirm",
-        busyLabel: BUSY,
+        label: t("MyJobs.jobDone"),
+        confirmLabel: t("MyJobs.confirmDone"),
+        busyLabel: busy,
       };
     // `cleaner_my_jobs` filters both of the following, so neither reaches a card by any
     // route this design knows of. They exist because the switch is exhaustive, and they
     // explain themselves rather than throwing, in case a route it does not know of exists.
     case "completed":
-      return { kind: "waiting", reason: "This job is finished." };
+      return { kind: "waiting", reason: t("MyJobs.finished") };
     case "cancelled":
-      return { kind: "waiting", reason: "This job was cancelled." };
+      return { kind: "waiting", reason: t("MyJobs.cancelled") };
   }
 }
 
 type DatabaseError = { message?: string } | null | undefined;
+
+export type StatusErrorKey = "errorMoved" | "errorNoAccess" | "errorUpdate";
+
+export function statusErrorKey(error: DatabaseError): StatusErrorKey {
+  if (error?.message === "Assigned cleaner access required") return "errorNoAccess";
+  if (error?.message === "Invalid job status transition") return "errorMoved";
+  return "errorUpdate";
+}
 
 /**
  * The RPC raises with fixed messages that CLE-49's pgTAP suite pins, so they are a stable
  * contract to translate from. Anything else is a bug or an outage: say so plainly rather
  * than forward a Postgres string to someone on a phone.
  */
-const statusMessages = new Map<string, string>([
-  ["Assigned cleaner access required", "You are not on this job any more."],
-  ["Invalid job status transition", "This job has already moved on."],
-]);
-
-export function describeStatusError(error: DatabaseError): string {
-  return (
-    statusMessages.get(error?.message ?? "") ?? "We could not update this job. Try again."
-  );
+export function describeStatusError(
+  error: DatabaseError,
+  locale: AppLocale = "en-AU",
+): string {
+  return cleanerTranslator(locale)(`MyJobs.${statusErrorKey(error)}`);
 }

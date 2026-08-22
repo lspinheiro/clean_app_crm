@@ -5,17 +5,19 @@ import { describe, expect, it } from "vitest";
 
 const globalsPath = path.resolve(process.cwd(), "src/app/globals.css");
 const contractPath = path.resolve(process.cwd(), "../../DESIGN.md");
+const localeLayoutPath = path.resolve(process.cwd(), "src/app/(localized)/[locale]/layout.tsx");
 
 describe("CLE-19 cleaner app design-system plumbing", () => {
   it("loads Tailwind v4 and the canonical The Clean Crew semantic colours", async () => {
     const css = await readFile(globalsPath, "utf8");
 
     expect(css).toContain('@import "tailwindcss"');
-    expect(css).toContain("--color-ink: #000000");
+    expect(css).toContain("--color-primary: #2563eb");
+    expect(css).toContain("--color-ink: #0f172a");
     expect(css).toContain("--color-paper: #ffffff");
-    expect(css).toContain("--color-bubble: #00c2ff");
-    expect(css).toContain("--color-success: #06c167");
-    expect(css).toContain("--color-danger: #e11900");
+    expect(css).toContain("--color-bubble: #06b6d4");
+    expect(css).toContain("--color-success: #15803d");
+    expect(css).toContain("--color-danger: #b91c1c");
   });
 
   it("keeps the implemented radii and the two canonical Trust Blue shadow levels", async () => {
@@ -24,7 +26,7 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
 
     expect(css).toMatch(/\.field input\s*\{[^}]*border-radius: 8px;/);
     expect(css).toMatch(/\.invite-card\s*\{[^}]*border-radius: 12px;/);
-    expect(css).toMatch(/\.button\s*\{[^}]*border-radius: 999px;/);
+    expect(css).toMatch(/\.button\s*\{[^}]*border-radius: 8px;/);
     // The Trust Blue redesign replaced the single floating shadow with two levels. The CRM
     // moved at the time; this app did not, and the mismatch is what the contract assertion
     // below is for. Both values are quoted from DESIGN.md, which is canonical for the code,
@@ -62,6 +64,33 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
 
     expect(css).toMatch(/\.screen\s*\{[^}]*max-width: var\(--screen-max\);/);
     expect(contract).toContain("390px design width");
+  });
+
+  it("protects full own-language names in the compact signed-in control", async () => {
+    const css = await readFile(globalsPath, "utf8");
+
+    expect(css).toMatch(/\.language-control--compact\s*\{[^}]*flex:\s*0 0 auto;/);
+    expect(css).toMatch(
+      /\.language-control--compact select\s*\{[^}]*min-width:\s*184px;[^}]*width:\s*184px;/,
+    );
+  });
+
+  it("keeps the approved Opportunity ledger direction contract in production markup", async () => {
+    const layout = await readFile(localeLayoutPath, "utf8");
+
+    for (const block of ["THESIS:", "OWN-WORLD:", "STORY:", "FIRST VIEWPORT:", "FORM:", "FINISH:"]) {
+      expect(layout).toContain(block);
+    }
+    expect(layout).toContain('data-design-contract="the-clean-crew-trust-blue-v1"');
+  });
+
+  it("keeps applied work compact and Withdraw visually quiet", async () => {
+    const css = await readFile(globalsPath, "utf8");
+
+    expect(css).toMatch(/\.vacancy-card--applied\s*\{[^}]*display:\s*grid;/);
+    expect(css).toMatch(
+      /\.vacancy-card--applied \.vacancy-card__actions \.button\s*\{[^}]*width:\s*auto;[^}]*border:\s*0;[^}]*background:\s*transparent;[^}]*color:\s*var\(--color-primary\);/,
+    );
   });
 
   it("honours reduced motion", async () => {

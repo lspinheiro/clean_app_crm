@@ -54,4 +54,13 @@ describe("Trust Blue design-system plumbing", () => {
     expect(css).toMatch(/\.button--small\s*{[^}]*min-height:\s*44px/);
     expect(css).toMatch(/\.preferred-add-row \.button\s*{[^}]*min-height:\s*44px/);
   });
+
+  it("registers easing utilities separately from regular duration variables", async () => {
+    const css = await readFile(path.resolve(process.cwd(), "src/app/globals.css"), "utf8");
+
+    expect(css).toMatch(/@theme\s*\{[^}]*--ease-standard:\s*cubic-bezier\(0\.2, 0, 0, 1\);/);
+    expect(css).toMatch(/@theme\s*\{[^}]*--ease-exit:\s*cubic-bezier\(0\.4, 0, 1, 1\);/);
+    expect(css).toMatch(/:root\s*\{[^}]*--duration-fast:\s*150ms;/);
+    expect(css).toMatch(/:root\s*\{[^}]*--duration-standard:\s*250ms;/);
+  });
 });

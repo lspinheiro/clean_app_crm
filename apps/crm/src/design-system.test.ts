@@ -92,6 +92,54 @@ describe("Trust Blue contract", () => {
     expect(css).not.toContain("--shadow-floating");
   });
 
+  it("defines the functional motion scale and consumes it for finite transitions", () => {
+    expect(designContract).toContain("`--duration-fast` `150ms`");
+    expect(designContract).toContain("`--duration-standard` `250ms`");
+    expect(designContract).toContain("`--ease-standard` `cubic-bezier(0.2, 0, 0, 1)`");
+    expect(designContract).toContain("`--ease-exit` `cubic-bezier(0.4, 0, 1, 1)`");
+    expect(designContract).toContain("No sibling staggering");
+    expect(designContract).toContain("View Transitions are out of scope");
+
+    expect(css).toMatch(/@theme\s*\{[^}]*--ease-standard:\s*cubic-bezier\(0\.2, 0, 0, 1\);/);
+    expect(css).toMatch(/@theme\s*\{[^}]*--ease-exit:\s*cubic-bezier\(0\.4, 0, 1, 1\);/);
+    expect(css).toMatch(/:root\s*\{[^}]*--duration-fast:\s*150ms;/);
+    expect(css).toMatch(/:root\s*\{[^}]*--duration-standard:\s*250ms;/);
+
+    const transitions = css.match(/transition:\s*[^;]+;/g) ?? [];
+    expect(transitions.length).toBeGreaterThan(0);
+    for (const transition of transitions) {
+      expect(transition).toContain("var(--duration-fast)");
+      expect(transition).toContain("var(--ease-standard)");
+      expect(transition).not.toMatch(/\b150ms\b/);
+    }
+  });
+
+  it("shares roster macro-geometry between loaded and loading states at each breakpoint", () => {
+    expect(css).toMatch(/:root\s*\{[^}]*--roster-grid-min-width:\s*960px;/);
+    expect(css).toMatch(/:root\s*\{[^}]*--roster-label-column-width:\s*188px;/);
+    expect(css).toMatch(/\.roster-grid\s*\{[^}]*min-width:\s*var\(--roster-grid-min-width\);/);
+    expect(css).toMatch(
+      /\.roster-loading__row\s*\{[^}]*min-width:\s*var\(--roster-grid-min-width\);[^}]*grid-template-columns:\s*var\(--roster-label-column-width\) repeat\(7, minmax\(0, 1fr\)\);/,
+    );
+    expect(css).toMatch(
+      /\.roster-grid thead th:first-child,[\s\S]*?\.roster-grid tbody th\s*\{[^}]*width:\s*var\(--roster-label-column-width\);/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 880px\)[\s\S]*?:root\s*\{[^}]*--roster-grid-min-width:\s*840px;[^}]*--roster-label-column-width:\s*128px;/,
+    );
+    expect(css).toMatch(/\.roster-skeleton\s*\{[^}]*background:\s*var\(--color-surface-alt\);/);
+    expect(css).toMatch(
+      /\.roster-skeleton::after\s*\{[\s\S]*?var\(--color-surface-border\)[\s\S]*?animation:\s*roster-shimmer/,
+    );
+  });
+
+  it("makes motion effectively static for reduced-motion users", () => {
+    expect(designContract).toContain("elements and pseudo-elements");
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\*, \*::before, \*::after\s*\{[^}]*animation-duration:\s*0\.01ms !important;[^}]*animation-iteration-count:\s*1 !important;[^}]*transition-duration:\s*0\.01ms !important;/,
+    );
+  });
+
   it("marks the active nav item with primary text and a 2px primary underline", () => {
     expect(css).toMatch(
       /\.primary-navigation a\[aria-current="page"\]\s*\{[^}]*var\(--color-primary\)/,

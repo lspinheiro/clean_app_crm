@@ -26,12 +26,16 @@
   --color-gray-800: #262626;
   --color-gray-900: #141414;
   --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }
 
 :root {
   color-scheme: light;
   /* Phone-first: 390px design width, per DESIGN.md. */
   --screen-max: 430px;
+  --duration-fast: 150ms;
+  --duration-standard: 250ms;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
 }
@@ -267,7 +271,7 @@ a {
   color: var(--color-paper);
   font-weight: 700;
   cursor: pointer;
-  transition: transform 150ms ease;
+  transition: transform var(--duration-fast) var(--ease-standard);
 }
 
 .button:active {
@@ -493,8 +497,11 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .button {
-    transition: none;
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 
   .button:active {

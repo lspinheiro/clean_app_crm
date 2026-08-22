@@ -120,7 +120,12 @@ word-for-word translation of the English catalogue.
 - **Today marker** (roster grid): `primary-container` wash on the column, `primary`
   header text, small `primary`-filled "TODAY" tag.
 - **Bottom sheets** (mobile): floating card pinned to bottom, drag handle, `card` shadow.
-- **Skeletons**: shimmer on `surface-alt`/`surface-border`; respect reduced motion.
+- **Skeletons**: base on `surface-alt` with a `surface-border` shimmer band. Match the stable
+  macro-geometry of the content at every breakpoint — outer bounds, toolbar footprint, column
+  tracks, row-height class, and reserved persistent regions — rather than promising an exact
+  dynamic row count. Loaded and loading variants share local geometry variables. Decorative
+  marks are `aria-hidden`; the boundary provides one localised busy announcement and no
+  interactive controls. Background revalidation preserves useful loaded content.
 - **Bubble loader**: outlined `primary`/`accent` circles rising and swaying; static
   circles under reduced motion.
 
@@ -142,9 +147,28 @@ word-for-word translation of the English catalogue.
 
 ## Interaction & motion
 
-Motion is functional and brief (150ms transforms, 200–300ms sheets); the bubble loader is
-the only playful motion. Every async action shows busy state on its trigger. Respect
-`prefers-reduced-motion` everywhere.
+Motion is functional and brief. The duration scale is `--duration-fast` `150ms` for immediate
+feedback, disclosures, press feedback, and exits, and `--duration-standard` `250ms` for routine
+entrances and bottom-sheet entry. The easing tokens are `--ease-standard` `cubic-bezier(0.2, 0, 0, 1)`
+for entry and state settlement, and `--ease-exit` `cubic-bezier(0.4, 0, 1, 1)` for dismissal.
+Duration tokens are regular `:root` custom
+properties; easing tokens use Tailwind's `--ease-*` `@theme` namespace.
+
+Interaction grammar:
+
+- Micro-feedback and disclosures use fast + standard. Bottom sheets enter from the bottom with
+  standard + standard and exit with fast + exit.
+- Finite UI transitions animate transform, opacity, colour, or background colour. Do not animate
+  layout-driving properties. Motion is interruptible and never delays focus, interactivity, or
+  navigation.
+- No sibling staggering or bespoke route choreography. Next.js View Transitions are out of scope
+  for the current milestone.
+- The bubble loader is the only playful motion. Bubble, spinner, and skeleton-shimmer cycles keep
+  component-specific durations rather than joining the finite interaction scale.
+
+Every async action shows busy state on its trigger. Under `prefers-reduced-motion`, both apps
+cover elements and pseudo-elements: continuous motion becomes static, press-scale and spatial
+movement are removed, and focus and interactivity never wait for animation.
 
 ## Accessibility
 
@@ -183,6 +207,10 @@ numbers.
 
 ## Decision log
 
+- **22 Aug 2026 — Functional motion contract adopted.** Both apps use a 150ms/250ms finite
+  interaction scale with named standard and exit easings. Skeletons preserve stable
+  macro-geometry through shared local variables and become static under reduced motion. Route
+  View Transitions and motion libraries remain out of scope for the current milestone.
 - **17 Aug 2026 — Bilingual alpha adopted.** Both apps support `en-AU` and `pt-BR` on every
   shipped alpha surface. Language changes first-party copy and readable formatting, while AUD,
   `Australia/Brisbane`, domain state, and user-authored content remain unchanged. The product

@@ -1,9 +1,11 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MyJobRow } from "@/features/my-jobs/types";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { createSupabaseHarness } from "@/test/supabase";
+import { renderWithCleanerIntl as render } from "@/test/render";
 
 const mocks = vi.hoisted(() => ({
   harness: null as ReturnType<typeof createSupabaseHarness<never>> | null,
@@ -57,6 +59,7 @@ function card(siteName: string) {
 let harness: ReturnType<typeof createSupabaseHarness<MyJobRow>>;
 
 beforeEach(() => {
+  window.history.replaceState({}, "", "/en-AU/my-jobs");
   harness = createSupabaseHarness<MyJobRow>();
   mocks.harness = harness as unknown as ReturnType<typeof createSupabaseHarness<never>>;
   mocks.useCleaner.mockReturnValue({
@@ -102,6 +105,24 @@ describe("CLE-24 the address is fetched only when she asks", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "We cannot show the address for this job any more.",
     );
+  });
+});
+
+describe("F15 my-jobs language changes", () => {
+  it("reformats the current rows without fetching the list again", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <LanguageSwitcher />
+        <MyJobsPage />
+      </>,
+    );
+    await harness.answerRead(0, [row()]);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Language" }), "pt-BR");
+
+    await screen.findByRole("combobox", { name: "Idioma" });
+    expect(harness.reads).toHaveLength(1);
   });
 });
 

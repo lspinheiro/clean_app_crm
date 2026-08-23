@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import {
@@ -8,7 +8,7 @@ import {
   isAppLocale,
   localeFromCookieString,
   localeFromLanguages,
-  localePath,
+  localisedAddress,
   type CleanerPath,
 } from "@/i18n/config";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -21,7 +21,6 @@ function explicitLocaleCookie() {
 
 export function LegacyLocaleRedirect({ pathname }: Readonly<{ pathname: CleanerPath }>) {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     let active = true;
@@ -45,15 +44,23 @@ export function LegacyLocaleRedirect({ pathname }: Readonly<{ pathname: CleanerP
         : localeFromLanguages(navigator.languages);
 
       const basePath: CleanerPath = pathname === "/" ? "/board" : pathname;
-      const query = searchParams.toString();
-      if (active) router.replace(`${localePath(locale, basePath)}${query ? `?${query}` : ""}`);
+      if (active) {
+        router.replace(
+          localisedAddress(
+            locale,
+            basePath,
+            window.location.search,
+            window.location.hash,
+          ),
+        );
+      }
     }
 
     void resolveLocale();
     return () => {
       active = false;
     };
-  }, [pathname, router, searchParams]);
+  }, [pathname, router]);
 
   return (
     <main aria-label="The Clean Crew" className="screen screen--centred" aria-busy="true">

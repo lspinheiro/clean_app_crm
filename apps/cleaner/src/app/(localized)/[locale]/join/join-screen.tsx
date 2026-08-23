@@ -7,8 +7,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
 import {
-  describeInviteProblem,
-  describeCleanerCount,
+  cleanerCountCopy,
+  inviteProblem,
   isInviteState,
   joinFailureKey,
   normaliseInviteCode,
@@ -17,11 +17,14 @@ import {
 } from "@/features/join/invite";
 import {
   cleanerDetailsKeySchema,
+  isJoinValidationKey,
   registrationKeySchema,
   type JoinValidationKey,
 } from "@/features/join/schema";
+import { useHydrated } from "@/hooks/use-hydrated";
 import {
   isAppLocale,
+  localeFromCookieString,
   localePath,
   persistLocaleCookie,
   type AppLocale,
@@ -43,8 +46,14 @@ type AccountState =
   | { status: "error" }
   | {
       status: "authenticated";
-      email: string;
-      profile: { full_name: string; phone: string | null; suburb: string | null };
+      email: string | null;
+      userId: string;
+      profile: {
+        full_name: string;
+        phone: string | null;
+        preferred_locale: string | null;
+        suburb: string | null;
+      };
     };
 
 type CleanerDetails = {
@@ -60,7 +69,6 @@ type JoinErrorKey =
   | "checkDetails"
   | "confirmEmail"
   | "createAccountError"
-  | "preferenceError"
   | "signOutError";
 
 export function JoinScreen() {
@@ -77,6 +85,7 @@ export function JoinScreen() {
   const [error, setError] = useState<JoinErrorKey | null>(null);
   const [signUpAccountExists, setSignUpAccountExists] = useState(false);
   const [pending, setPending] = useState(false);
+  const hydrated = useHydrated();
   const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,14 +134,15 @@ export function JoinScreen() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("full_name, phone, suburb")
+        .select("full_name, phone, preferred_locale, suburb")
         .eq("id", data.user.id)
         .maybeSingle();
       if (profileError || !profile) return { status: "error" };
 
       return {
         status: "authenticated",
-        email: data.user.email ?? t("signedInAccount"),
+        email: data.user.email ?? null,
+        userId: data.user.id,
         profile,
       };
     }
@@ -144,7 +154,7 @@ export function JoinScreen() {
     return () => {
       active = false;
     };
-  }, [accountAttempt, code, t]);
+  }, [accountAttempt, code]);
 
   useEffect(() => {
     if (error) errorRef.current?.focus();
@@ -158,7 +168,7 @@ export function JoinScreen() {
         ? { status: "ready", invite, code }
         : { status: "problem", invite };
 
-  async function completeJoin(details: CleanerDetails) {
+  async function completeJoin(details: CleanerDetails, savedLocale?: string | null) {
     const supabase = getSupabaseClient();
     const { error: joinError } = await supabase.rpc("join_company_pool", {
       invite_code: code,
@@ -172,24 +182,11 @@ export function JoinScreen() {
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("preferred_locale")
-      .eq("id", (await supabase.auth.getUser()).data.user?.id ?? "")
-      .maybeSingle();
-    const targetLocale = isAppLocale(profile?.preferred_locale)
-      ? profile.preferred_locale
-      : locale;
-    if (!isAppLocale(profile?.preferred_locale)) {
-      const { error: preferenceError } = await supabase.rpc("set_preferred_locale", {
-        target_locale: targetLocale,
-      });
-      if (preferenceError) {
-        setError("preferenceError");
-        setPending(false);
-        return;
-      }
-    }
+    const explicitLocale = localeFromCookieString(document.cookie);
+    const targetLocale = explicitLocale ?? (isAppLocale(savedLocale) ? savedLocale : locale);
+    // The join is already committed. A transient preference failure must not strand the
+    // cleaner on an invitation she has successfully accepted.
+    await supabase.rpc("set_preferred_locale", { target_locale: targetLocale });
     persistLocaleCookie(targetLocale);
     router.replace(localePath(targetLocale, "/board"));
   }
@@ -207,7 +204,8 @@ export function JoinScreen() {
       suburb: String(formData.get("suburb") ?? ""),
     });
     if (!parsed.success) {
-      setError((parsed.error.issues[0]?.message as JoinValidationKey | undefined) ?? "checkDetails");
+      const key = parsed.error.issues[0]?.message;
+      setError(isJoinValidationKey(key) ? key : "checkDetails");
       setPending(false);
       return;
     }
@@ -236,7 +234,7 @@ export function JoinScreen() {
       return;
     }
 
-    await completeJoin(parsed.data);
+    await completeJoin(parsed.data, locale);
   }
 
   async function joinExistingAccount(formData: FormData) {
@@ -249,12 +247,15 @@ export function JoinScreen() {
       suburb: String(formData.get("suburb") ?? ""),
     });
     if (!parsed.success) {
-      setError((parsed.error.issues[0]?.message as JoinValidationKey | undefined) ?? "checkDetails");
+      const key = parsed.error.issues[0]?.message;
+      setError(isJoinValidationKey(key) ? key : "checkDetails");
       setPending(false);
       return;
     }
 
-    await completeJoin(parsed.data);
+    await completeJoin(parsed.data, account.status === "authenticated"
+      ? account.profile.preferred_locale
+      : null);
   }
 
   async function switchAccount() {
@@ -274,21 +275,38 @@ export function JoinScreen() {
   if (screen.status === "loading") {
     return (
       <>
-        <div className="auth-toolbar"><LanguageSwitcher compact disabled={pending} /></div>
+        <div className="auth-toolbar">
+          <LanguageSwitcher
+            authenticated={account.status === "authenticated"}
+            compact
+            disabled={pending || !hydrated}
+          />
+        </div>
         <p className="screen-lead" role="status">{t("loadingInvite")}</p>
       </>
     );
   }
 
   if (screen.status === "no-code" || screen.status === "problem") {
-    const message =
+    const problem =
       screen.status === "no-code"
-        ? t("missingCode")
-        : describeInviteProblem(screen.invite, locale);
+        ? null
+        : inviteProblem(screen.invite);
+    const message = screen.status === "no-code"
+      ? t("missingCode")
+      : problem?.values
+        ? t(problem.key, problem.values)
+        : t(problem?.key ?? "inviteUnknown");
 
     return (
       <>
-        <div className="auth-toolbar"><LanguageSwitcher compact disabled={pending} /></div>
+        <div className="auth-toolbar">
+          <LanguageSwitcher
+            authenticated={account.status === "authenticated"}
+            compact
+            disabled={pending || !hydrated}
+          />
+        </div>
         <h1 className="screen-title">{t("cannotOpenTitle")}</h1>
         <div className="invite-problem" role="alert">
           <p>{message}</p>
@@ -303,7 +321,7 @@ export function JoinScreen() {
         <LanguageSwitcher
           authenticated={account.status === "authenticated"}
           compact
-          disabled={pending}
+          disabled={pending || !hydrated}
         />
       </div>
       <div>
@@ -313,7 +331,10 @@ export function JoinScreen() {
       <div className="invite-card">
         <span className="invite-card__company">{screen.invite.companyName}</span>
         <span className="invite-card__cleaners">
-          {describeCleanerCount(screen.invite.cleanerCount, locale)}
+          {(() => {
+            const count = cleanerCountCopy(screen.invite.cleanerCount);
+            return count.values ? t(count.key, count.values) : t(count.key);
+          })()}
         </span>
       </div>
       {account.status === "loading" ? (
@@ -389,7 +410,7 @@ export function JoinScreen() {
                 ) : null}
               </div>
             ) : null}
-            <button className="button" disabled={pending} type="submit">
+            <button className="button" disabled={pending || !hydrated} type="submit">
               {pending ? t("joining") : t("joinStaff")}
             </button>
             <p className="consent-caption">
@@ -411,11 +432,11 @@ export function JoinScreen() {
           <div className="auth-account">
             <div className="auth-account__identity">
               <span>{t("signedInAs")}</span>
-              <strong>{account.email}</strong>
+              <strong>{account.email ?? t("signedInAccount")}</strong>
             </div>
             <button
               className="text-action"
-              disabled={pending}
+              disabled={pending || !hydrated}
               onClick={() => void switchAccount()}
               type="button"
             >
@@ -432,7 +453,7 @@ export function JoinScreen() {
               <p>{t(error)}</p>
             </div>
           ) : null}
-          <button className="button" disabled={pending} type="submit">
+          <button className="button" disabled={pending || !hydrated} type="submit">
             {pending ? t("joining") : t("joinStaff")}
           </button>
           <p className="consent-caption">

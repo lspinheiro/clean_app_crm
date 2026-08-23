@@ -1,6 +1,3 @@
-import type { AppLocale } from "@/i18n/config";
-import { cleanerTranslator } from "@/i18n/messages";
-
 import type { ApplicationStatus } from "./types";
 
 /**
@@ -15,29 +12,28 @@ import type { ApplicationStatus } from "./types";
 export type VacancyState =
   | { kind: "open" }
   | { kind: "waiting" }
-  | { kind: "closed"; reason: string };
+  | {
+      kind: "closed";
+      reason: "closedAlreadyApplied" | "closedNotSelected" | "closedWithdrawn";
+    };
 
-export function toVacancyState(
-  status: ApplicationStatus | null,
-  locale: AppLocale = "en-AU",
-): VacancyState {
-  const t = cleanerTranslator(locale);
+export function toVacancyState(status: ApplicationStatus | null): VacancyState {
   if (status === null) return { kind: "open" };
 
   switch (status) {
     case "applied":
       return { kind: "waiting" };
     case "withdrawn":
-      return { kind: "closed", reason: t("Board.closedWithdrawn") };
+      return { kind: "closed", reason: "closedWithdrawn" };
     case "not_selected":
-      return { kind: "closed", reason: t("Board.closedNotSelected") };
+      return { kind: "closed", reason: "closedNotSelected" };
     case "assigned":
       // Not "you are already on this job": `cleaner_job_board` excludes every job she holds
       // an active assignment on, and `unassign_cleaner` rewrites the application to
       // `not_selected` in the same transaction that releases the slot. So a card can never
       // carry `assigned` while it is true. The honest reason is the one the other closed
       // states give — a prior application row exists, and `apply_to_job` refuses a second.
-      return { kind: "closed", reason: t("Board.closedAlreadyApplied") };
+      return { kind: "closed", reason: "closedAlreadyApplied" };
   }
 }
 
@@ -74,18 +70,4 @@ export function applyErrorKey(error: DatabaseError): BoardErrorKey {
 
 export function withdrawErrorKey(error: DatabaseError): BoardErrorKey {
   return withdrawMessageKeys.get(error?.message ?? "") ?? "errorWithdraw";
-}
-
-export function describeApplyError(
-  error: DatabaseError,
-  locale: AppLocale = "en-AU",
-): string {
-  return cleanerTranslator(locale)(`Board.${applyErrorKey(error)}`);
-}
-
-export function describeWithdrawError(
-  error: DatabaseError,
-  locale: AppLocale = "en-AU",
-): string {
-  return cleanerTranslator(locale)(`Board.${withdrawErrorKey(error)}`);
 }

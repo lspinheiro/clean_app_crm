@@ -1,15 +1,9 @@
-import { createTranslator } from "next-intl";
-
-import enAu from "../../messages/en-AU.json";
-import ptBr from "../../messages/pt-BR.json";
-
 import type { AppLocale } from "./config";
 
-export const messagesByLocale = {
-  "en-AU": enAu,
-  "pt-BR": ptBr,
-} as const;
+export type CleanerMessages = typeof import("./catalogues/en-AU")["default"];
 
-export function cleanerTranslator(locale: AppLocale) {
-  return createTranslator({ locale, messages: messagesByLocale[locale] });
+export async function loadCleanerMessages(locale: AppLocale): Promise<CleanerMessages> {
+  return locale === "pt-BR"
+    ? (await import("./catalogues/pt-BR")).default
+    : (await import("./catalogues/en-AU")).default;
 }

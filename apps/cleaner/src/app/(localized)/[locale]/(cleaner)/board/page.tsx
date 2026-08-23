@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BrandBubbles } from "@/components/brand-bubbles";
 import {
@@ -26,17 +26,17 @@ const boardColumns =
 
 type BoardState =
   | { status: "loading" }
-  | { status: "ready"; vacancies: Vacancy[] }
+  | { status: "ready"; rows: BoardRow[] }
   | { status: "error" };
 
-async function loadBoard(locale: AppLocale): Promise<BoardState> {
+async function loadBoard(): Promise<BoardState> {
   const { data, error } = await getSupabaseClient()
     .from("cleaner_job_board")
     .select(boardColumns)
     .order("scheduled_start");
 
   if (error) return { status: "error" };
-  return { status: "ready", vacancies: toVacancies((data ?? []) as BoardRow[], locale) };
+  return { status: "ready", rows: (data ?? []) as BoardRow[] };
 }
 
 /**
@@ -49,8 +49,8 @@ type JobStanding = ApplicationStatus | null | "absent";
 function standingOf(board: BoardState, jobId: string): JobStanding {
   if (board.status !== "ready") return "absent";
 
-  const vacancy = board.vacancies.find((candidate) => candidate.jobId === jobId);
-  return vacancy ? vacancy.applicationStatus : "absent";
+  const row = board.rows.find((candidate) => candidate.job_id === jobId);
+  return row ? row.my_application_status : "absent";
 }
 
 export default function BoardPage() {
@@ -74,14 +74,14 @@ export default function BoardPage() {
 
   const readBoard = useCallback(async () => {
     const ticket = ++issuedTicket.current;
-    const next = await loadBoard(locale);
+    const next = await loadBoard();
 
     if (ticket > appliedTicket.current) {
       appliedTicket.current = ticket;
       shown.current = next;
       setBoard(next);
     }
-  }, [locale]);
+  }, []);
 
   useEffect(() => {
     void readBoard();
@@ -151,12 +151,15 @@ export default function BoardPage() {
     [runOnJob],
   );
 
+  const vacancies = useMemo(
+    () => (board.status === "ready" ? toVacancies(board.rows, locale) : []),
+    [board, locale],
+  );
+
   // The layout holds the gate; this only renders once it has allowed the cleaner through.
   if (cleaner.status !== "allowed") return null;
 
   const { profile } = cleaner;
-
-  const vacancies = board.status === "ready" ? board.vacancies : [];
   const applied = vacancies.filter((vacancy) => vacancy.applicationStatus === "applied");
   const open = vacancies.filter((vacancy) => vacancy.applicationStatus !== "applied");
 

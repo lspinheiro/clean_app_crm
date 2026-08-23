@@ -15,7 +15,7 @@ import { expect, test, type Page } from "@playwright/test";
 // Locators never filter a card by the control it currently offers. Advancing a job is
 // exactly what changes that control, so such a locator stops matching the card it was
 // meant to follow — and a card holding an armed confirmation is invisible to a filter
-// looking for "Job done". Cards are addressed by position or by site name instead.
+// looking for "Job done". Cards are addressed by their stable seeded job identity instead.
 //
 // Tests in this file run in order against one database. The chain and finish tests drive
 // …0802 to `completed`, so they own it; the crew-2 test owns …0804 on another site.
@@ -23,6 +23,8 @@ const cleanerEmail = "cleaner.one@clean-app.example.test";
 const crewMateEmail = "cleaner.two@clean-app.example.test";
 const unassignedEmail = "cleaner.three@clean-app.example.test";
 const demoPassword = "local-demo-only";
+const statusChainJobId = "10000000-0000-4000-8000-000000000802";
+const crewJobId = "10000000-0000-4000-8000-000000000804";
 
 // Seeded values that must never reach a cleaner who is not assigned.
 const gatedFromUnassigned = ["10 Surf Parade", "Demo access notes"];
@@ -39,18 +41,14 @@ function myJobCards(page: Page) {
   return page.getByRole("list", { name: "My jobs" }).getByRole("listitem");
 }
 
-/**
- * …0802 is scheduled a day out and every other job of hers is later, so the soonest-first
- * order puts it first for as long as it is live. Each test that uses it asserts the
- * control it expects, so a wrong assumption fails on the spot rather than silently
- * driving the wrong job.
- */
-function soonestCard(page: Page) {
-  return myJobCards(page).first();
+function statusChainCard(page: Page) {
+  return page
+    .getByRole("list", { name: "My jobs" })
+    .locator(`[data-job-id="${statusChainJobId}"]`);
 }
 
 function palmGroveCard(page: Page) {
-  return myJobCards(page).filter({ hasText: "Palm Grove Practice" }).first();
+  return page.getByRole("list", { name: "My jobs" }).locator(`[data-job-id="${crewJobId}"]`);
 }
 
 async function openMyJobs(page: Page, email: string) {
@@ -82,7 +80,7 @@ test.describe("@CLE-24 the address is gated on assignment", () => {
   test("appears on her own card once she asks for it", async ({ page }) => {
     await openMyJobs(page, cleanerEmail);
 
-    const card = soonestCard(page);
+    const card = statusChainCard(page);
     await expect(card.getByRole("button", { name: "On my way" })).toBeVisible();
 
     // Listing must not reveal it: every get_cleaner_job_access call writes an audit row,
@@ -113,22 +111,22 @@ test.describe("@CLE-24 working the job", () => {
   test("drives the job through the chain, and the status survives a reload", async ({ page }) => {
     await openMyJobs(page, cleanerEmail);
 
-    const card = soonestCard(page);
+    const card = statusChainCard(page);
     await card.getByRole("button", { name: "On my way" }).click();
     await expect(card.getByRole("button", { name: "Start work" })).toBeVisible();
 
     // The status lives in the database, not in component state.
     await page.reload();
-    await expect(soonestCard(page).getByRole("button", { name: "Start work" })).toBeVisible();
+    await expect(statusChainCard(page).getByRole("button", { name: "Start work" })).toBeVisible();
 
-    await soonestCard(page).getByRole("button", { name: "Start work" }).click();
-    await expect(soonestCard(page).getByRole("button", { name: "Job done" })).toBeVisible();
+    await statusChainCard(page).getByRole("button", { name: "Start work" }).click();
+    await expect(statusChainCard(page).getByRole("button", { name: "Job done" })).toBeVisible();
   });
 
   test("takes two taps to finish, and the finished job leaves the list", async ({ page }) => {
     await openMyJobs(page, cleanerEmail);
 
-    const card = soonestCard(page);
+    const card = statusChainCard(page);
     const before = await myJobCards(page).count();
     await expect(card).toContainText("Broadbeach Towers");
 

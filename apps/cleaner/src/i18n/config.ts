@@ -25,11 +25,6 @@ export function localeFromLanguages(languages: readonly string[]): AppLocale {
   return defaultLocale;
 }
 
-export function localeFromPathname(pathname: string): AppLocale {
-  const candidate = pathname.split("/").filter(Boolean)[0];
-  return isAppLocale(candidate) ? candidate : defaultLocale;
-}
-
 export function localePrefix(pathname: string): AppLocale | null {
   const candidate = pathname.split("/").filter(Boolean)[0];
   return isAppLocale(candidate) ? candidate : null;
@@ -61,10 +56,35 @@ export function localePath(locale: AppLocale, pathname: CleanerPath): LocalisedC
 export function localePath(locale: AppLocale, pathname: string): string;
 export function localePath(locale: AppLocale, pathname: string): string {
   const normalised = pathname.startsWith("/") ? pathname : `/${pathname}`;
-  const withoutLocale = normalised.replace(/^\/(?:en-AU|pt-BR)(?=\/|$)/, "") || "/";
+  const currentLocale = localePrefix(normalised);
+  const withoutLocale = currentLocale
+    ? normalised.slice(currentLocale.length + 1) || "/"
+    : normalised;
   return `/${locale}${withoutLocale === "/" ? "" : withoutLocale}`;
 }
 
 export function pathWithoutLocale(pathname: string): string {
-  return pathname.replace(/^\/(?:en-AU|pt-BR)(?=\/|$)/, "") || "/";
+  const currentLocale = localePrefix(pathname);
+  return currentLocale ? pathname.slice(currentLocale.length + 1) || "/" : pathname || "/";
+}
+
+export function localisedAddress(
+  locale: AppLocale,
+  pathname: CleanerPath,
+  search?: string,
+  hash?: string,
+): `/${AppLocale}${string}`;
+export function localisedAddress(
+  locale: AppLocale,
+  pathname: string,
+  search?: string,
+  hash?: string,
+): string;
+export function localisedAddress(
+  locale: AppLocale,
+  pathname: string,
+  search = "",
+  hash = "",
+): string {
+  return `${localePath(locale, pathname)}${search}${hash}`;
 }

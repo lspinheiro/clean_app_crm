@@ -1,10 +1,10 @@
 import type { AppLocale } from "@/i18n/config";
-import { cleanerTranslator } from "@/i18n/messages";
+import { dateTimeFormatterFor, numberFormatterFor } from "@/i18n/intl";
 
 // Queensland has no daylight saving, so the operating timezone never moves when the
 // display language changes.
 function dateFormatter(locale: AppLocale) {
-  return new Intl.DateTimeFormat(locale, {
+  return dateTimeFormatterFor(locale, {
     timeZone: "Australia/Brisbane",
     weekday: "short",
     day: "numeric",
@@ -13,7 +13,7 @@ function dateFormatter(locale: AppLocale) {
 }
 
 function timeFormatter(locale: AppLocale) {
-  return new Intl.DateTimeFormat(locale, {
+  return dateTimeFormatterFor(locale, {
     timeZone: "Australia/Brisbane",
     hour: locale === "en-AU" ? "numeric" : "2-digit",
     minute: "2-digit",
@@ -31,7 +31,7 @@ export function formatJobTime(value: string, locale: AppLocale = "en-AU") {
 }
 
 export function formatJobDuration(minutes: number, locale: AppLocale = "en-AU") {
-  const number = new Intl.NumberFormat(locale);
+  const number = numberFormatterFor(locale);
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
   if (!hours) return `${number.format(remainingMinutes)} min`;
@@ -40,7 +40,7 @@ export function formatJobDuration(minutes: number, locale: AppLocale = "en-AU") 
 }
 
 export function formatCleanerPay(cents: number, locale: AppLocale = "en-AU") {
-  return new Intl.NumberFormat(locale, {
+  return numberFormatterFor(locale, {
     style: "currency",
     currency: "AUD",
     maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
@@ -51,10 +51,10 @@ export function formatCleanerPay(cents: number, locale: AppLocale = "en-AU") {
 export function describeOpenSlots(
   openSlots: number,
   crewSize: number,
-  locale: AppLocale = "en-AU",
 ) {
-  const t = cleanerTranslator(locale);
   return crewSize <= 1
-    ? t("Board.oneSpotOpen")
-    : t("Board.crewSpotsOpen", { open: openSlots, total: crewSize });
+    ? openSlots > 0
+      ? { key: "oneSpotOpen" as const, values: undefined }
+      : { key: "noSpotsOpen" as const, values: undefined }
+    : { key: "crewSpotsOpen" as const, values: { open: openSlots, total: crewSize } };
 }

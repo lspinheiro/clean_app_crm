@@ -1,15 +1,17 @@
 import type { AppLocale } from "@/i18n/config";
+import { collatorFor } from "@/i18n/intl";
 
 import type { MyJob, MyJobRow } from "./types";
 
 function bySoonestThenSite(left: MyJob, right: MyJob, locale: AppLocale) {
+  const collator = collatorFor(locale);
   const byStart = left.scheduledStart.localeCompare(right.scheduledStart);
   if (byStart) return byStart;
 
-  const bySite = left.siteName.localeCompare(right.siteName, locale);
+  const bySite = collator.compare(left.siteName, right.siteName);
   if (bySite) return bySite;
 
-  return left.jobId.localeCompare(right.jobId);
+  return collator.compare(left.jobId, right.jobId);
 }
 
 /**

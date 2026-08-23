@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CleanerIntlProvider } from "@/i18n/provider";
+import { cleanerTestMessages } from "@/test/render";
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(),
@@ -44,7 +45,7 @@ import { JoinScreen } from "./join-screen";
 
 function renderJoin() {
   return render(
-    <CleanerIntlProvider initialLocale="en-AU">
+    <CleanerIntlProvider initialLocale="en-AU" initialMessages={cleanerTestMessages["en-AU"]}>
       <JoinScreen />
     </CleanerIntlProvider>,
   );
@@ -52,6 +53,7 @@ function renderJoin() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  document.cookie = "NEXT_LOCALE=; path=/; max-age=0";
   document.documentElement.lang = "en-AU";
   window.history.replaceState({}, "", "/en-AU/join?code=CLEAN1");
   mocks.searchParams = new URLSearchParams("code=CLEAN1");
@@ -86,15 +88,64 @@ describe("Cleaner join language behavior", () => {
     expect(container.querySelector("form")).toHaveAttribute("novalidate");
   });
 
-  it("returns an existing account to its saved language without overwriting it", async () => {
+  it("persists the language explicitly selected for an existing account", async () => {
     const user = userEvent.setup();
+    renderJoin();
+
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Language" }),
+      "pt-BR",
+    );
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Idioma" }),
+      "en-AU",
+    );
+    await user.click(await screen.findByRole("button", { name: "Join the Cleaner staff" }));
+
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/en-AU/board"));
+    expect(mocks.rpc).toHaveBeenCalledWith("set_preferred_locale", {
+      target_locale: "en-AU",
+    });
+  });
+
+  it("finishes joining when saving the selected locale fails", async () => {
+    const user = userEvent.setup();
+    document.cookie = "NEXT_LOCALE=en-AU; path=/";
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === "cleaner_invite_preview") {
+        return Promise.resolve({
+          data: [{ company_name: "Coastal Demo Cleaning", pool_size: 1, state: "active" }],
+          error: null,
+        });
+      }
+      if (name === "set_preferred_locale") {
+        return Promise.resolve({ data: null, error: new Error("preference unavailable") });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
     renderJoin();
 
     await user.click(await screen.findByRole("button", { name: "Join the Cleaner staff" }));
 
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/pt-BR/board"));
-    expect(mocks.rpc).not.toHaveBeenCalledWith("set_preferred_locale", {
-      target_locale: "en-AU",
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/en-AU/board"));
+  });
+
+  it("persists an authenticated language choice while the invite is still loading", async () => {
+    const user = userEvent.setup();
+    const preview = new Promise(() => undefined);
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === "cleaner_invite_preview") return preview;
+      return Promise.resolve({ data: null, error: null });
     });
+    renderJoin();
+    await waitFor(() => expect(mocks.from).toHaveBeenCalled());
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Language" }), "pt-BR");
+
+    await waitFor(() =>
+      expect(mocks.rpc).toHaveBeenCalledWith("set_preferred_locale", {
+        target_locale: "pt-BR",
+      }),
+    );
   });
 });

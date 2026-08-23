@@ -1,36 +1,35 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
 import { pathWithoutLocale } from "./config";
-import { messagesByLocale } from "./messages";
-import { useCleanerLocale } from "./provider";
 
 export function DocumentMetadata() {
   const pathname = usePathname();
-  const { locale } = useCleanerLocale();
+  const t = useTranslations("Metadata");
 
   useEffect(() => {
-    const metadata = messagesByLocale[locale].Metadata;
     const route = pathWithoutLocale(pathname);
     const pageTitle =
       route === "/login"
-        ? metadata.loginTitle
+        ? t("loginTitle")
         : route === "/join"
-          ? metadata.joinTitle
+          ? t("joinTitle")
           : route === "/board"
-            ? metadata.boardTitle
+            ? t("boardTitle")
             : route === "/my-jobs"
-              ? metadata.myJobsTitle
-              : metadata.title;
-    document.title = pageTitle === metadata.title
-      ? metadata.title
-      : `${pageTitle} · ${metadata.title}`;
+              ? t("myJobsTitle")
+              : t("title");
+    const productTitle = t("title");
+    document.title = pageTitle === productTitle
+      ? productTitle
+      : `${pageTitle} · ${productTitle}`;
     document
       .querySelector<HTMLMetaElement>('meta[name="description"]')
-      ?.setAttribute("content", metadata.description);
-  }, [locale, pathname]);
+      ?.setAttribute("content", t("description"));
+  }, [pathname, t]);
 
   return null;
 }

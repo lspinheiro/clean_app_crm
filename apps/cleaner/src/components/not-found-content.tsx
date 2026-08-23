@@ -2,20 +2,24 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+import enAu from "../../messages/en-AU.json";
+import ptBr from "../../messages/pt-BR.json";
+
 import {
   defaultLocale,
   localePath,
+  localisedAddress,
   locales,
   pathWithoutLocale,
   persistLocaleCookie,
   publicLocaleFor,
   type AppLocale,
 } from "@/i18n/config";
-import { messagesByLocale } from "@/i18n/messages";
 
 import { BrandBubbles } from "./brand-bubbles";
 
 const noLocaleSubscription = () => () => undefined;
+const notFoundMessages = { "en-AU": enAu, "pt-BR": ptBr } as const;
 
 export function NotFoundContent() {
   const routeLocale = useSyncExternalStore(
@@ -25,7 +29,7 @@ export function NotFoundContent() {
   );
   const [selectedLocale, setSelectedLocale] = useState<AppLocale | null>(null);
   const locale = selectedLocale ?? routeLocale;
-  const messages = messagesByLocale[locale];
+  const messages = notFoundMessages[locale];
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -38,7 +42,12 @@ export function NotFoundContent() {
     window.history.replaceState(
       window.history.state,
       "",
-      `${localePath(nextLocale, route)}${window.location.search}${window.location.hash}`,
+      localisedAddress(
+        nextLocale,
+        route,
+        window.location.search,
+        window.location.hash,
+      ),
     );
     setSelectedLocale(nextLocale);
   }

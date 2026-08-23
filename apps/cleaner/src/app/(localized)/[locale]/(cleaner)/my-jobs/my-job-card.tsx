@@ -42,11 +42,11 @@ export function MyJobCard({
   const locale = useLocale() as AppLocale;
   const t = useTranslations("MyJobs");
   const servicesT = useTranslations("Services");
-  const action = toJobAction(job.status, locale);
+  const action = toJobAction(job.status);
   const service = getServiceLabel({ name: job.serviceName, slug: job.serviceSlug }, servicesT);
 
   return (
-    <li className="my-job-card">
+    <li className="my-job-card" data-job-id={job.jobId}>
       <div className="my-job-card__head">
         <div>
           <p className="my-job-card__company">{job.companyName}</p>
@@ -93,7 +93,7 @@ export function MyJobCard({
       )}
 
       {action.kind === "waiting" ? (
-        <p className="my-job-card__note">{action.reason}</p>
+        <p className="my-job-card__note">{t(action.reason)}</p>
       ) : null}
 
       {confirming ? (
@@ -120,10 +120,10 @@ export function MyJobCard({
             type="button"
           >
             {busy
-              ? action.busyLabel
+              ? t(action.busyLabel)
               : action.kind === "confirm" && confirming
-                ? action.confirmLabel
-                : action.label}
+                ? t(action.confirmLabel)
+                : t(action.label)}
           </button>
         </div>
       )}

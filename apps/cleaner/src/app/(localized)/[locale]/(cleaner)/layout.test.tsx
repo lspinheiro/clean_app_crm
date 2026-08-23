@@ -1,34 +1,39 @@
 import { render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CleanerIntlProvider } from "@/i18n/provider";
+import { cleanerTestMessages } from "@/test/render";
 
 const mocks = vi.hoisted(() => ({
+  replace: vi.fn(),
+  signOut: vi.fn(),
   useCleaner: vi.fn(),
   usePathname: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/use-cleaner", () => ({ useCleaner: mocks.useCleaner }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: vi.fn() }),
+  useRouter: () => ({ replace: mocks.replace }),
   usePathname: mocks.usePathname,
+}));
+vi.mock("@/lib/supabase/client", () => ({
+  getSupabaseClient: () => ({ auth: { signOut: mocks.signOut } }),
 }));
 
 import CleanerLayout from "./layout";
 
 function renderLayout(locale: "en-AU" | "pt-BR" = "en-AU") {
   return render(
-    <CleanerIntlProvider initialLocale={locale}>
+    <CleanerIntlProvider initialLocale={locale} initialMessages={cleanerTestMessages[locale]}>
       <CleanerLayout>{null}</CleanerLayout>
     </CleanerIntlProvider>,
   );
 }
 
-afterEach(() => {
-  delete (globalThis as { __CLEANER_TEST_LOCALE__?: string }).__CLEANER_TEST_LOCALE__;
-});
-
 beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.signOut.mockResolvedValue({ error: null });
   mocks.useCleaner.mockReturnValue({
     status: "allowed",
     profile: { id: "cleaner-1", full_name: "Ana Souza", suburb: "Robina" },
@@ -77,7 +82,6 @@ describe("CLE-24 the cleaner app has two places to be", () => {
   });
 
   it("localises the signed-in navigation without changing its destinations", () => {
-    (globalThis as { __CLEANER_TEST_LOCALE__?: string }).__CLEANER_TEST_LOCALE__ = "pt-BR";
     mocks.usePathname.mockReturnValue("/pt-BR/board");
     renderLayout("pt-BR");
 
@@ -90,5 +94,32 @@ describe("CLE-24 the cleaner app has two places to be", () => {
       "/pt-BR/my-jobs",
     );
     expect(screen.getByRole("combobox", { name: "Idioma" })).toHaveValue("pt-BR");
+  });
+
+  it("recovers the sign-out control and reports a failed sign out", async () => {
+    const user = userEvent.setup();
+    mocks.signOut.mockResolvedValue({ error: new Error("network unavailable") });
+    renderLayout();
+
+    await user.click(screen.getByRole("button", { name: "Sign out" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "We couldn't sign you out. Try again.",
+    );
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it("also recovers when sign out throws a transport exception", async () => {
+    const user = userEvent.setup();
+    mocks.signOut.mockRejectedValue(new TypeError("offline"));
+    renderLayout();
+
+    await user.click(screen.getByRole("button", { name: "Sign out" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "We couldn't sign you out. Try again.",
+    );
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
   });
 });

@@ -1,8 +1,8 @@
 ---
 version: 1
 slug: "apps-cleaner-src-app-cleaner-board-page-tsx"
-primary_target: "apps/cleaner/src/app/(cleaner)/board/page.tsx"
-related_targets: ["apps/cleaner/src/app/(cleaner)/board/vacancy-card.tsx","apps/cleaner/src/app/(cleaner)/layout.tsx","apps/cleaner/src/app/globals.css"]
+primary_target: "apps/cleaner/src/app/(localized)/[locale]/(cleaner)/board/page.tsx"
+related_targets: ["apps/cleaner/src/app/(localized)/[locale]/(cleaner)/board/vacancy-card.tsx","apps/cleaner/src/app/(localized)/[locale]/(cleaner)/layout.tsx","apps/cleaner/src/app/globals.css"]
 ---
 
 ## Scope and mode

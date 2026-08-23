@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { defaultLocale, isAppLocale } from "@/i18n/config";
-import { messagesByLocale } from "@/i18n/messages";
+import { loadCleanerMessages } from "@/i18n/messages";
 
 type BoardLayoutProps = Readonly<{
   children: React.ReactNode;
@@ -11,7 +11,7 @@ type BoardLayoutProps = Readonly<{
 export async function generateMetadata({ params }: BoardLayoutProps): Promise<Metadata> {
   const { locale: candidate } = await params;
   const locale = isAppLocale(candidate) ? candidate : defaultLocale;
-  return { title: messagesByLocale[locale].Metadata.boardTitle };
+  return { title: (await loadCleanerMessages(locale)).Metadata.boardTitle };
 }
 
 export default function BoardLayout({ children }: BoardLayoutProps) {

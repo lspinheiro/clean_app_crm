@@ -1,10 +1,9 @@
 import "./globals.css";
 
 import { NotFoundContent } from "@/components/not-found-content";
+import { documentLocaleBootstrapScript } from "@/i18n/document-locale-script";
 
 import { cleanerLabels, cleanerSans } from "./fonts";
-
-const documentLocaleScript = `document.documentElement.lang=/^\\/(?:pt-BR)(?:\\/|$)/.test(location.pathname)?"pt-BR":"en-AU"`;
 
 export default function GlobalNotFound() {
   return (
@@ -15,7 +14,7 @@ export default function GlobalNotFound() {
     >
       <head>
         <title>The Clean Crew</title>
-        <script dangerouslySetInnerHTML={{ __html: documentLocaleScript }} />
+        <script dangerouslySetInnerHTML={{ __html: documentLocaleBootstrapScript() }} />
       </head>
       <body>
         <NotFoundContent />

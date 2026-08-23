@@ -1,13 +1,13 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BrandBubbles } from "@/components/brand-bubbles";
 import { accessErrorKey, type AccessErrorKey } from "@/features/my-jobs/access";
 import { toMyJobs } from "@/features/my-jobs/model";
 import { statusErrorKey, type StatusErrorKey } from "@/features/my-jobs/status";
-import type { JobStatus, MyJob, MyJobRow } from "@/features/my-jobs/types";
+import type { JobStatus, MyJobRow } from "@/features/my-jobs/types";
 import type { AppLocale } from "@/i18n/config";
 import { useCleaner } from "@/lib/auth/use-cleaner";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -27,17 +27,17 @@ type MyJobsErrorKey = AccessErrorKey | StatusErrorKey;
 
 type ListState =
   | { status: "loading" }
-  | { status: "ready"; jobs: MyJob[] }
+  | { status: "ready"; rows: MyJobRow[] }
   | { status: "error" };
 
-async function loadMyJobs(locale: AppLocale): Promise<ListState> {
+async function loadMyJobs(): Promise<ListState> {
   const { data, error } = await getSupabaseClient()
     .from("cleaner_my_jobs")
     .select(myJobColumns)
     .order("scheduled_start");
 
   if (error) return { status: "error" };
-  return { status: "ready", jobs: toMyJobs((data ?? []) as MyJobRow[], locale) };
+  return { status: "ready", rows: (data ?? []) as MyJobRow[] };
 }
 
 /**
@@ -48,8 +48,8 @@ async function loadMyJobs(locale: AppLocale): Promise<ListState> {
 function standingOf(list: ListState, jobId: string): JobStatus | "absent" {
   if (list.status !== "ready") return "absent";
 
-  const job = list.jobs.find((candidate) => candidate.jobId === jobId);
-  return job ? job.status : "absent";
+  const row = list.rows.find((candidate) => candidate.job_id === jobId);
+  return row ? row.status : "absent";
 }
 
 export default function MyJobsPage() {
@@ -76,14 +76,14 @@ export default function MyJobsPage() {
 
   const readList = useCallback(async () => {
     const ticket = ++issuedTicket.current;
-    const next = await loadMyJobs(locale);
+    const next = await loadMyJobs();
 
     if (ticket > appliedTicket.current) {
       appliedTicket.current = ticket;
       shown.current = next;
       setList(next);
     }
-  }, [locale]);
+  }, []);
 
   useEffect(() => {
     void readList();
@@ -198,10 +198,13 @@ export default function MyJobsPage() {
     });
   }, []);
 
+  const jobs = useMemo(
+    () => (list.status === "ready" ? toMyJobs(list.rows, locale) : []),
+    [list, locale],
+  );
+
   // The layout holds the gate; this only renders once it has allowed the cleaner through.
   if (cleaner.status !== "allowed") return null;
-
-  const jobs = list.status === "ready" ? list.jobs : [];
 
   return (
     <main className="screen">

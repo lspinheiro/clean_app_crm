@@ -19,6 +19,7 @@
     "retry": "Try again",
     "signOut": "Sign out",
     "signingOut": "Signing out…",
+    "signOutError": "We couldn't sign you out. Try again.",
     "brand": "The Clean Crew"
   },
   "Navigation": {
@@ -39,8 +40,7 @@
     "missingPassword": "Enter your password.",
     "checkDetails": "Check your details.",
     "incorrectCredentials": "Email or password is incorrect.",
-    "cleanerOnly": "This app is for cleaners. Company admins use the CRM.",
-    "preferenceError": "We could not save your language. Try again."
+    "cleanerOnly": "This app is for cleaners. Company admins use the CRM."
   },
   "Join": {
     "loadingInvite": "Loading invitation…",
@@ -72,7 +72,6 @@
     "createAccountError": "We could not create your account. Check your details and try again.",
     "confirmEmail": "Check your email to confirm your account, then open this invitation again.",
     "signOutError": "We could not sign you out. Try again.",
-    "preferenceError": "We could not save your language. Try again.",
     "firstCleaner": "You would be their first Cleaner staff member.",
     "cleanerCount": "{count, plural, one {# cleaner is already on their staff.} other {# cleaners are already on their staff.}}",
     "inviteExpiredCompany": "This invite link from {company} has expired. Ask them for a new link.",
@@ -112,6 +111,7 @@
     "withdrawing": "Withdrawing…",
     "appliedReassurance": "Company will confirm — you are not assigned yet",
     "oneSpotOpen": "1 spot open",
+    "noSpotsOpen": "No spots open",
     "crewSpotsOpen": "{open} of {total} spots open",
     "closedWithdrawn": "You withdrew from this job.",
     "closedNotSelected": "This job went to someone else.",

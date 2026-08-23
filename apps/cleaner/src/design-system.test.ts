@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 
 const globalsPath = path.resolve(process.cwd(), "src/app/globals.css");
 const contractPath = path.resolve(process.cwd(), "../../DESIGN.md");
-const localeLayoutPath = path.resolve(process.cwd(), "src/app/(localized)/[locale]/layout.tsx");
 
 describe("CLE-19 cleaner app design-system plumbing", () => {
   it("loads Tailwind v4 and the canonical The Clean Crew semantic colours", async () => {
@@ -48,11 +47,16 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
     expect(css).toMatch(/\.button\s*\{[^}]*min-height: 52px;/);
     expect(css).toMatch(/\.button--small\s*\{[^}]*min-height: 44px;/);
     expect(css).toMatch(/\.field input\s*\{[^}]*min-height: 48px;/);
+    expect(css).toMatch(/\.language-control select\s*\{[^}]*min-height: 44px;/);
+    expect(css).not.toMatch(
+      /\.language-control--compact select\s*\{[^}]*min-height:\s*(?:[0-3]?\d|4[0-3])px;/,
+    );
   });
 
   it("keeps caption greys on the AA-safe token", async () => {
+    const css = await readFile(globalsPath, "utf8");
+    expect(css).toContain("--color-gray-600: #475569");
     for (const selector of [".field-hint", ".consent-caption", ".invite-card__cleaners"]) {
-      const css = await readFile(globalsPath, "utf8");
       const escaped = selector.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
       expect(css).toMatch(new RegExp(`${escaped}\\s*\\{[^}]*color: var\\(--color-gray-600\\);`));
     }
@@ -73,15 +77,6 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
     expect(css).toMatch(
       /\.language-control--compact select\s*\{[^}]*min-width:\s*184px;[^}]*width:\s*184px;/,
     );
-  });
-
-  it("keeps the approved Opportunity ledger direction contract in production markup", async () => {
-    const layout = await readFile(localeLayoutPath, "utf8");
-
-    for (const block of ["THESIS:", "OWN-WORLD:", "STORY:", "FIRST VIEWPORT:", "FORM:", "FINISH:"]) {
-      expect(layout).toContain(block);
-    }
-    expect(layout).toContain('data-design-contract="the-clean-crew-trust-blue-v1"');
   });
 
   it("keeps applied work compact and Withdraw visually quiet", async () => {

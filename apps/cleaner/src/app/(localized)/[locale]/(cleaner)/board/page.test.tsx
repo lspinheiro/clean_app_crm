@@ -1,8 +1,10 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BoardRow } from "@/features/board/types";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { renderWithCleanerIntl as render } from "@/test/render";
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(),
@@ -86,6 +88,7 @@ function card(siteName: string) {
 }
 
 beforeEach(() => {
+  window.history.replaceState({}, "", "/en-AU/board");
   reads = [];
   calls = [];
 
@@ -155,6 +158,24 @@ describe("CLE-21 the board keeps a failure readable", () => {
     await answerRead(2, [row({ ...jobB, my_application_status: "applied" })]);
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("F15 board language changes", () => {
+  it("reformats the current rows without fetching the board again", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <LanguageSwitcher />
+        <BoardPage />
+      </>,
+    );
+    await answerRead(0, [row()]);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Language" }), "pt-BR");
+
+    await screen.findByRole("combobox", { name: "Idioma" });
+    expect(reads).toHaveLength(1);
   });
 });
 

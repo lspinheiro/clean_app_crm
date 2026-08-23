@@ -19,6 +19,7 @@
     "retry": "Tentar novamente",
     "signOut": "Sair",
     "signingOut": "Saindo…",
+    "signOutError": "Não foi possível sair. Tente novamente.",
     "brand": "The Clean Crew"
   },
   "Navigation": {
@@ -39,8 +40,7 @@
     "missingPassword": "Digite sua senha.",
     "checkDetails": "Confira seus dados.",
     "incorrectCredentials": "E-mail ou senha incorretos.",
-    "cleanerOnly": "Este aplicativo é para profissionais de limpeza. Administradores da empresa usam o CRM.",
-    "preferenceError": "Não foi possível salvar seu idioma. Tente novamente."
+    "cleanerOnly": "Este aplicativo é para profissionais de limpeza. Administradores da empresa usam o CRM."
   },
   "Join": {
     "loadingInvite": "Carregando convite…",
@@ -72,7 +72,6 @@
     "createAccountError": "Não foi possível criar sua conta. Confira seus dados e tente novamente.",
     "confirmEmail": "Confirme sua conta pelo e-mail e depois abra este convite novamente.",
     "signOutError": "Não foi possível sair da sua conta. Tente novamente.",
-    "preferenceError": "Não foi possível salvar seu idioma. Tente novamente.",
     "firstCleaner": "Você seria a primeira pessoa da equipe de limpeza.",
     "cleanerCount": "{count, plural, one {# profissional já faz parte da equipe.} other {# profissionais já fazem parte da equipe.}}",
     "inviteExpiredCompany": "O link de convite da empresa {company} expirou. Peça um novo link.",
@@ -112,6 +111,7 @@
     "withdrawing": "Retirando…",
     "appliedReassurance": "A empresa vai confirmar — este serviço ainda não foi atribuído a você",
     "oneSpotOpen": "1 vaga aberta",
+    "noSpotsOpen": "Nenhuma vaga aberta",
     "crewSpotsOpen": "{open} de {total} vagas abertas",
     "closedWithdrawn": "Você retirou sua candidatura a este serviço.",
     "closedNotSelected": "Este serviço foi atribuído a outra pessoa.",

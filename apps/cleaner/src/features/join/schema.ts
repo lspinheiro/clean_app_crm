@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-import type { AppLocale } from "@/i18n/config";
-import { cleanerTranslator } from "@/i18n/messages";
-
 function requiredText(message: string) {
   return z.string().trim().min(1, message);
 }
@@ -19,7 +16,20 @@ export type JoinValidationKey =
   | "validationPhoneDigits"
   | "validationSuburb";
 
-type ValidationMessages = Record<JoinValidationKey, string>;
+const joinValidationKeys: readonly JoinValidationKey[] = [
+  "validationEmail",
+  "validationFullName",
+  "validationPassword",
+  "validationPhone",
+  "validationPhoneDigits",
+  "validationSuburb",
+];
+
+export function isJoinValidationKey(value: string | undefined): value is JoinValidationKey {
+  return joinValidationKeys.some((key) => key === value);
+}
+
+type ValidationMessages = Record<JoinValidationKey, JoinValidationKey>;
 
 function cleanerDetailsSchemaWith(messages: ValidationMessages) {
   return z.object({
@@ -34,18 +44,6 @@ function cleanerDetailsSchemaWith(messages: ValidationMessages) {
   });
 }
 
-function validationMessages(locale: AppLocale): ValidationMessages {
-  const t = cleanerTranslator(locale);
-  return {
-    validationEmail: t("Join.validationEmail"),
-    validationFullName: t("Join.validationFullName"),
-    validationPassword: t("Join.validationPassword"),
-    validationPhone: t("Join.validationPhone"),
-    validationPhoneDigits: t("Join.validationPhoneDigits"),
-    validationSuburb: t("Join.validationSuburb"),
-  };
-}
-
 const validationKeys: ValidationMessages = {
   validationEmail: "validationEmail",
   validationFullName: "validationFullName",
@@ -55,25 +53,10 @@ const validationKeys: ValidationMessages = {
   validationSuburb: "validationSuburb",
 };
 
-export function createCleanerDetailsSchema(locale: AppLocale = "en-AU") {
-  return cleanerDetailsSchemaWith(validationMessages(locale));
-}
-
-export function createRegistrationSchema(locale: AppLocale = "en-AU") {
-  const messages = validationMessages(locale);
-  return cleanerDetailsSchemaWith(messages).extend({
-    email: z.email(messages.validationEmail),
-    password: z.string().min(8, messages.validationPassword),
-  });
-}
-
 export const cleanerDetailsKeySchema = cleanerDetailsSchemaWith(validationKeys);
 export const registrationKeySchema = cleanerDetailsKeySchema.extend({
   email: z.email(validationKeys.validationEmail),
   password: z.string().min(8, validationKeys.validationPassword),
 });
 
-export const cleanerDetailsSchema = createCleanerDetailsSchema();
-export const registrationSchema = createRegistrationSchema();
-
-export type Registration = z.infer<typeof registrationSchema>;
+export type Registration = z.infer<typeof registrationKeySchema>;

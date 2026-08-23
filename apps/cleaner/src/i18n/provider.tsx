@@ -6,11 +6,11 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 import {
-  localePath,
+  localisedAddress,
   persistLocaleCookie,
   type AppLocale,
 } from "./config";
-import { messagesByLocale } from "./messages";
+import { loadCleanerMessages, type CleanerMessages } from "./messages";
 
 type LocaleContextValue = {
   locale: AppLocale;
@@ -22,16 +22,26 @@ type LocaleContextValue = {
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 function replaceLocaleInAddress(locale: AppLocale) {
-  const nextPath = localePath(locale, window.location.pathname);
-  const nextAddress = `${nextPath}${window.location.search}${window.location.hash}`;
+  const nextAddress = localisedAddress(
+    locale,
+    window.location.pathname,
+    window.location.search,
+    window.location.hash,
+  );
   window.history.replaceState(window.history.state, "", nextAddress);
 }
 
 export function CleanerIntlProvider({
   children,
+  initialMessages,
   initialLocale,
-}: Readonly<{ children: React.ReactNode; initialLocale: AppLocale }>) {
+}: Readonly<{
+  children: React.ReactNode;
+  initialLocale: AppLocale;
+  initialMessages: CleanerMessages;
+}>) {
   const [locale, setLocale] = useState(initialLocale);
+  const [messages, setMessages] = useState(initialMessages);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
 
@@ -54,9 +64,19 @@ export function CleanerIntlProvider({
         }
       }
 
+      let nextMessages: CleanerMessages;
+      try {
+        nextMessages = await loadCleanerMessages(nextLocale);
+      } catch {
+        setPending(false);
+        setError(true);
+        return false;
+      }
+
       persistLocaleCookie(nextLocale);
       document.documentElement.lang = nextLocale;
       replaceLocaleInAddress(nextLocale);
+      setMessages(nextMessages);
       setLocale(nextLocale);
       setPending(false);
       return true;
@@ -73,7 +93,7 @@ export function CleanerIntlProvider({
     <LocaleContext.Provider value={value}>
       <NextIntlClientProvider
         locale={locale}
-        messages={messagesByLocale[locale]}
+        messages={messages}
         timeZone="Australia/Brisbane"
       >
         {children}

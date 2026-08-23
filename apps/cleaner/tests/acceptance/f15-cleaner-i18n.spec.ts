@@ -21,8 +21,8 @@ async function setSavedLocale(locale: "en-AU" | "pt-BR") {
 }
 
 test.describe("@F15 bilingual Cleaner app", () => {
-  test.beforeAll(() => setSavedLocale("en-AU"));
-  test.afterAll(() => setSavedLocale("en-AU"));
+  test.beforeEach(() => setSavedLocale("en-AU"));
+  test.afterEach(() => setSavedLocale("en-AU"));
 
   test("switches before sign-in without losing the invite task or entered values", async ({
     page,
@@ -44,6 +44,10 @@ test.describe("@F15 bilingual Cleaner app", () => {
     await expect(page.locator(".form-error")).toHaveText(
       "Digite um endereço de e-mail válido.",
     );
+
+    await page.getByLabel("E-mail").fill(cleanerEmail);
+    await page.getByRole("button", { name: "Entrar" }).click();
+    await expect(page).toHaveURL(/\/pt-BR\/join\?code=CLEAN1DEMOJOIN99$/);
 
     await page.goto("/pt-BR/rota-inexistente");
     await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();

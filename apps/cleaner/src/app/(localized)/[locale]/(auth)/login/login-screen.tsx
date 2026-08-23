@@ -7,7 +7,14 @@ import { z } from "zod";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { normaliseInviteCode } from "@/features/join/invite";
-import { isAppLocale, localePath, persistLocaleCookie, type AppLocale } from "@/i18n/config";
+import { useHydrated } from "@/hooks/use-hydrated";
+import {
+  isAppLocale,
+  localeFromCookieString,
+  localePath,
+  persistLocaleCookie,
+  type AppLocale,
+} from "@/i18n/config";
 import { evaluateCleanerAccess } from "@/lib/auth/access";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
@@ -22,10 +29,10 @@ export function LoginScreen() {
     | "incorrectCredentials"
     | "invalidEmail"
     | "missingPassword"
-    | "preferenceError"
     | null
   >(null);
   const [pending, setPending] = useState(false);
+  const hydrated = useHydrated();
 
   const inviteCode = normaliseInviteCode(searchParams.get("code") ?? "");
   const notAuthorised = searchParams.get("error") === "not-authorised";
@@ -58,14 +65,21 @@ export function LoginScreen() {
       return;
     }
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id, preferred_locale")
       .eq("id", data.user.id)
       .maybeSingle();
 
+    if (profileError || !profile) {
+      await supabase.auth.signOut();
+      setError("checkDetails");
+      setPending(false);
+      return;
+    }
+
     if (!inviteCode) {
-      const { data: membership } = await supabase
+      const { data: membership, error: membershipError } = await supabase
         .from("cleaner_pool_memberships")
         .select("profile_id, status")
         .eq("profile_id", data.user.id)
@@ -73,6 +87,7 @@ export function LoginScreen() {
         .maybeSingle();
 
       if (
+        membershipError ||
         evaluateCleanerAccess({ userId: data.user.id, profile, membership }).kind === "denied"
       ) {
         await supabase.auth.signOut();
@@ -82,19 +97,13 @@ export function LoginScreen() {
       }
     }
 
-    const targetLocale = isAppLocale(profile?.preferred_locale)
-      ? profile.preferred_locale
-      : locale;
-    if (!isAppLocale(profile?.preferred_locale)) {
-      const { error: preferenceError } = await supabase.rpc("set_preferred_locale", {
-        target_locale: targetLocale,
-      });
-      if (preferenceError) {
-        setError("preferenceError");
-        setPending(false);
-        return;
-      }
-    }
+    const explicitLocale = localeFromCookieString(document.cookie);
+    const targetLocale = explicitLocale ?? (
+      isAppLocale(profile.preferred_locale) ? profile.preferred_locale : locale
+    );
+    // A language-switcher choice is persisted in the cookie before sign-in, so it wins
+    // over an older profile value. Saving remains best-effort after authentication.
+    await supabase.rpc("set_preferred_locale", { target_locale: targetLocale });
     persistLocaleCookie(targetLocale);
 
     if (inviteCode) {
@@ -110,7 +119,7 @@ export function LoginScreen() {
   return (
     <>
       <div className="auth-toolbar">
-        <LanguageSwitcher compact disabled={pending} />
+        <LanguageSwitcher compact disabled={pending || !hydrated} />
       </div>
       <div>
         <h1 className="screen-title">{t("title")}</h1>
@@ -150,7 +159,7 @@ export function LoginScreen() {
             {t(error)}
           </p>
         ) : null}
-        <button className="button" disabled={pending} type="submit">
+        <button className="button" disabled={pending || !hydrated} type="submit">
           {pending ? t("pending") : t("submit")}
         </button>
       </form>

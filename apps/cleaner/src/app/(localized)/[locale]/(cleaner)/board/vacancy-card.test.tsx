@@ -1,14 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { Vacancy } from "@/features/board/types";
+import type { AppLocale } from "@/i18n/config";
+import { renderWithCleanerIntl as render } from "@/test/render";
 
 import { VacancyCard } from "./vacancy-card";
-
-afterEach(() => {
-  delete (globalThis as { __CLEANER_TEST_LOCALE__?: string }).__CLEANER_TEST_LOCALE__;
-});
 
 function vacancy(overrides: Partial<Vacancy> = {}): Vacancy {
   return {
@@ -28,7 +26,10 @@ function vacancy(overrides: Partial<Vacancy> = {}): Vacancy {
   };
 }
 
-function renderCard(props: Partial<Parameters<typeof VacancyCard>[0]> = {}) {
+function renderCard(
+  props: Partial<Parameters<typeof VacancyCard>[0]> = {},
+  locale: AppLocale = "en-AU",
+) {
   const onApply = vi.fn();
   const onWithdraw = vi.fn();
 
@@ -43,6 +44,7 @@ function renderCard(props: Partial<Parameters<typeof VacancyCard>[0]> = {}) {
         {...props}
       />
     </ul>,
+    { locale },
   );
 
   return { onApply, onWithdraw };
@@ -116,8 +118,7 @@ describe("CLE-21 applying from the board", () => {
   });
 
   it("renders structured labels and built-in services in Brazilian Portuguese", () => {
-    (globalThis as { __CLEANER_TEST_LOCALE__?: string }).__CLEANER_TEST_LOCALE__ = "pt-BR";
-    renderCard();
+    renderCard({}, "pt-BR");
 
     expect(
       screen.getByRole("button", { name: "Candidatar-se ao serviço" }),

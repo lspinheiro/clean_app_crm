@@ -7,7 +7,7 @@ import { NotFoundContent } from "./not-found-content";
 beforeEach(() => {
   document.cookie = "NEXT_LOCALE=; path=/; max-age=0";
   document.documentElement.lang = "en-AU";
-  window.history.replaceState({}, "", "/pt-BR/rota-inexistente?origem=teste");
+  window.history.replaceState({}, "", "/pt-BR/rota-inexistente?origem=teste#detalhes");
 });
 
 describe("Cleaner missing routes", () => {
@@ -25,6 +25,7 @@ describe("Cleaner missing routes", () => {
 
     expect(window.location.pathname).toBe("/en-AU/rota-inexistente");
     expect(window.location.search).toBe("?origem=teste");
+    expect(window.location.hash).toBe("#detalhes");
     expect(screen.getByRole("heading", { name: "Page not found" })).toBeVisible();
   });
 
@@ -36,5 +37,6 @@ describe("Cleaner missing routes", () => {
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Página não encontrada" })).toBeVisible(),
     );
+    expect(document.documentElement.lang).toBe("pt-BR");
   });
 });

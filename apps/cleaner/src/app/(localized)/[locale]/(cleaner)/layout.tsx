@@ -28,6 +28,23 @@ export default function CleanerLayout({
   const commonT = useTranslations("Common");
   const cleaner = useCleaner();
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState(false);
+
+  async function signOut() {
+    setSigningOut(true);
+    setSignOutError(false);
+    try {
+      const { error } = await getSupabaseClient().auth.signOut();
+      if (!error) {
+        router.replace(localePath(locale, "/login"));
+        return;
+      }
+    } catch {
+      // A transport exception and a returned AuthError have the same recovery here.
+    }
+    setSigningOut(false);
+    setSignOutError(true);
+  }
 
   useEffect(() => {
     if (cleaner.status === "denied") {
@@ -57,16 +74,16 @@ export default function CleanerLayout({
           <button
             className="app-header__sign-out"
             disabled={signingOut}
-            onClick={() => {
-              setSigningOut(true);
-              void getSupabaseClient().auth.signOut().then(() => {
-                router.replace(localePath(locale, "/login"));
-              });
-            }}
+            onClick={() => void signOut()}
             type="button"
           >
             {signingOut ? commonT("signingOut") : commonT("signOut")}
           </button>
+          {signOutError ? (
+            <span className="field-error" role="alert">
+              {commonT("signOutError")}
+            </span>
+          ) : null}
         </div>
       </header>
       {children}

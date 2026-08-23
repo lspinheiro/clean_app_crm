@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type { MyJob } from "@/features/my-jobs/types";
+import { renderWithCleanerIntl as render } from "@/test/render";
 
 import { MyJobCard } from "./my-job-card";
 

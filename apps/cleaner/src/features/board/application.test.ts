@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { describeApplyError, describeWithdrawError, toVacancyState } from "./application";
+import { applyErrorKey, toVacancyState, withdrawErrorKey } from "./application";
 import type { ApplicationStatus } from "./types";
 
 describe("CLE-21 vacancy state", () => {
@@ -17,14 +17,14 @@ describe("CLE-21 vacancy state", () => {
     // pgTAP calls this "withdrawal does not allow queue re-entry".
     expect(toVacancyState("withdrawn")).toEqual({
       kind: "closed",
-      reason: "You withdrew from this job.",
+      reason: "closedWithdrawn",
     });
   });
 
   it("closes the card when the job went to someone else", () => {
     expect(toVacancyState("not_selected")).toEqual({
       kind: "closed",
-      reason: "This job went to someone else.",
+      reason: "closedNotSelected",
     });
   });
 
@@ -35,7 +35,7 @@ describe("CLE-21 vacancy state", () => {
     // is the one the other closed states give: a prior application row exists.
     expect(toVacancyState("assigned")).toEqual({
       kind: "closed",
-      reason: "You already applied to this job.",
+      reason: "closedAlreadyApplied",
     });
   });
 
@@ -48,43 +48,31 @@ describe("CLE-21 vacancy state", () => {
   });
 });
 
-describe("CLE-21 apply errors read as plain English", () => {
+describe("CLE-21 apply errors map to safe UI keys", () => {
   it.each([
-    ["Job has no open slots", "This job is full now."],
-    ["Cleaner can apply only once per job", "You already applied to this job."],
-    ["Cleaner is already assigned to this job", "You are already on this job."],
-    ["Job is not available", "This job is not open to you any more."],
-  ])("turns %s into a sentence she can act on", (message, expected) => {
-    expect(describeApplyError({ message })).toBe(expected);
+    ["Job has no open slots", "errorFull"],
+    ["Cleaner can apply only once per job", "errorAlreadyApplied"],
+    ["Cleaner is already assigned to this job", "errorAlreadyAssigned"],
+    ["Job is not available", "errorUnavailable"],
+  ])("maps %s without leaking the database message", (message, expected) => {
+    expect(applyErrorKey({ message })).toBe(expected);
   });
 
   it("never leaks a raw database message", () => {
-    expect(describeApplyError({ message: 'duplicate key value violates unique constraint "x"' })).toBe(
-      "We could not send your application. Try again.",
-    );
+    expect(applyErrorKey({ message: 'duplicate key value violates unique constraint "x"' })).toBe("errorApply");
   });
 
   it("copes with an error that carries no message at all", () => {
-    expect(describeApplyError(null)).toBe("We could not send your application. Try again.");
-  });
-
-  it("maps the same database contract to Brazilian Portuguese", () => {
-    expect(describeApplyError({ message: "Job has no open slots" }, "pt-BR")).toBe(
-      "Este serviço acabou de ser preenchido.",
-    );
+    expect(applyErrorKey(null)).toBe("errorApply");
   });
 });
 
-describe("CLE-21 withdraw errors read as plain English", () => {
+describe("CLE-21 withdraw errors map to safe UI keys", () => {
   it("explains a missing application", () => {
-    expect(describeWithdrawError({ message: "Active application not found" })).toBe(
-      "You do not have an application to withdraw.",
-    );
+    expect(withdrawErrorKey({ message: "Active application not found" })).toBe("errorNoApplication");
   });
 
   it("falls back without leaking internals", () => {
-    expect(describeWithdrawError({ message: "deadlock detected" })).toBe(
-      "We could not withdraw your application. Try again.",
-    );
+    expect(withdrawErrorKey({ message: "deadlock detected" })).toBe("errorWithdraw");
   });
 });

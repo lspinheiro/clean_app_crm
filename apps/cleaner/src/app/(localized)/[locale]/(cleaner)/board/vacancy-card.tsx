@@ -25,29 +25,70 @@ export function VacancyCard({ vacancy, busy, error, onApply, onWithdraw }: Vacan
   const locale = useLocale() as AppLocale;
   const t = useTranslations("Board");
   const servicesT = useTranslations("Services");
-  const slots = describeOpenSlots(vacancy.openSlots, vacancy.crewSize, locale);
-  const state = toVacancyState(vacancy.applicationStatus, locale);
+  const slots = describeOpenSlots(vacancy.openSlots, vacancy.crewSize);
+  const state = toVacancyState(vacancy.applicationStatus);
   const service = getServiceLabel(
     { name: vacancy.serviceName, slug: vacancy.serviceSlug },
     servicesT,
   );
+  const date = formatJobDate(vacancy.scheduledStart, locale);
+  const time = formatJobTime(vacancy.scheduledStart, locale);
+  const duration = formatJobDuration(vacancy.durationMinutes, locale);
+  const pay = formatCleanerPay(vacancy.cleanerPayCents, locale);
+
+  if (state.kind === "waiting") {
+    return (
+      <li className="vacancy-card vacancy-card--applied">
+        <div className="vacancy-card__date-time">
+          <span className="vacancy-card__date">{date}</span>
+          <span className="vacancy-card__time">{time}</span>
+        </div>
+        <span className="vacancy-card__pay">{pay}</span>
+        <p className="vacancy-card__site">
+          {vacancy.siteName} · {vacancy.suburb}
+        </p>
+        <span className="visually-hidden">{vacancy.companyName}</span>
+        <span className="visually-hidden">
+          {slots.values ? t(slots.key, slots.values) : t(slots.key)}
+        </span>
+        <p aria-live="polite" className="vacancy-card__waiting" role="status">
+          {t("appliedReassurance")}
+        </p>
+        {error ? (
+          <p className="vacancy-card__error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="vacancy-card__actions">
+          <button
+            className="button button--secondary button--small"
+            disabled={busy}
+            onClick={() => onWithdraw(vacancy.jobId)}
+            type="button"
+          >
+            {busy ? t("withdrawing") : t("withdraw")}
+          </button>
+        </div>
+      </li>
+    );
+  }
 
   return (
-    <li className={`vacancy-card${state.kind === "waiting" ? " vacancy-card--applied" : ""}`}>
+    <li className="vacancy-card">
       <div className="vacancy-card__metrics">
         <div className="vacancy-card__date-time">
           <span className="vacancy-card__date">
-            {formatJobDate(vacancy.scheduledStart, locale)}
+            {date}
           </span>
           <span className="vacancy-card__time">
-            {formatJobTime(vacancy.scheduledStart, locale)}
+            {time}
           </span>
         </div>
         <span className="vacancy-card__duration">
-          {formatJobDuration(vacancy.durationMinutes, locale)}
+          {duration}
         </span>
         <span className="vacancy-card__pay">
-          {formatCleanerPay(vacancy.cleanerPayCents, locale)}
+          {pay}
         </span>
       </div>
 
@@ -57,17 +98,16 @@ export function VacancyCard({ vacancy, busy, error, onApply, onWithdraw }: Vacan
           {vacancy.siteName} · {vacancy.suburb}
         </p>
         <p className="vacancy-card__where">
-          {service} · <span className="vacancy-card__slots">{slots}</span>
+          {service} ·{" "}
+          <span className="vacancy-card__slots">
+            {slots.values ? t(slots.key, slots.values) : t(slots.key)}
+          </span>
         </p>
       </div>
 
-      {state.kind === "waiting" ? (
-        <p aria-live="polite" className="vacancy-card__waiting" role="status">
-          {t("appliedReassurance")}
-        </p>
+      {state.kind === "closed" ? (
+        <p className="vacancy-card__note">{t(state.reason)}</p>
       ) : null}
-
-      {state.kind === "closed" ? <p className="vacancy-card__note">{state.reason}</p> : null}
 
       {error ? (
         <p className="vacancy-card__error" role="alert">
@@ -76,25 +116,14 @@ export function VacancyCard({ vacancy, busy, error, onApply, onWithdraw }: Vacan
       ) : null}
 
       <div className="vacancy-card__actions">
-        {state.kind === "waiting" ? (
-          <button
-            className="button button--secondary button--small"
-            disabled={busy}
-            onClick={() => onWithdraw(vacancy.jobId)}
-            type="button"
-          >
-            {busy ? t("withdrawing") : t("withdraw")}
-          </button>
-        ) : (
-          <button
-            className="button button--small"
-            disabled={busy || state.kind === "closed"}
-            onClick={() => onApply(vacancy.jobId)}
-            type="button"
-          >
-            {busy ? t("applying") : t("apply")}
-          </button>
-        )}
+        <button
+          className="button button--small"
+          disabled={busy || state.kind === "closed"}
+          onClick={() => onApply(vacancy.jobId)}
+          type="button"
+        >
+          {busy ? t("applying") : t("apply")}
+        </button>
       </div>
     </li>
   );

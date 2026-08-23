@@ -24,7 +24,7 @@
   --color-gray-300: #cbd5e1;
   --color-gray-400: #94a3b8;
   --color-gray-500: #64748b;
-  --color-gray-600: #64748b;
+  --color-gray-600: #475569;
   --color-gray-700: #334155;
   --color-gray-800: #1e293b;
   --color-gray-900: #0f172a;
@@ -409,12 +409,13 @@ a {
 
 .empty-state {
   display: flex;
+  align-items: center;
   flex-direction: column;
-  gap: 8px;
-  padding: 24px 16px;
+  gap: 14px;
+  padding: 28px 20px;
   border: 1px solid var(--color-gray-200);
   border-radius: 12px;
-  background: var(--color-gray-50);
+  background: var(--color-paper);
   text-align: center;
 }
 
@@ -423,9 +424,9 @@ a {
   color: var(--color-gray-600);
 }
 
-.screen-footer {
-  margin-top: auto;
-  padding-top: 16px;
+.empty-state .empty-state__title {
+  color: var(--color-gray-900);
+  font-weight: 700;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -524,15 +525,22 @@ a {
   display: flex;
   min-height: 100dvh;
   flex-direction: column;
+  background: var(--color-gray-50);
 }
 
 .tab-bar {
+  z-index: 10;
   position: sticky;
   bottom: 0;
   display: grid;
+  width: 100%;
+  max-width: var(--screen-max);
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
+  margin: 0 auto;
   border-top: 1px solid var(--color-gray-200);
+  border-right: 1px solid var(--color-gray-200);
+  border-left: 1px solid var(--color-gray-200);
   background: var(--color-paper);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -612,7 +620,6 @@ a {
 .language-control--compact select {
   min-width: 184px;
   width: 184px;
-  min-height: 40px;
   padding-left: 10px;
   font-size: 13px;
 }
@@ -659,10 +666,6 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
-.vacancy-card--applied .vacancy-card__metrics {
-  display: contents;
-}
-
 .vacancy-card__date-time {
   display: flex;
   min-width: 0;
@@ -674,8 +677,7 @@ a {
   grid-area: when;
 }
 
-.vacancy-card__date,
-.vacancy-card__pay {
+.vacancy-card__date {
   color: var(--color-gray-900);
   font-size: 17px;
   font-weight: 700;
@@ -693,11 +695,10 @@ a {
 
 .vacancy-card__pay {
   color: var(--color-primary);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 22px;
   white-space: nowrap;
-}
-
-.vacancy-card--applied .vacancy-card__duration {
-  display: none;
 }
 
 .vacancy-card--applied .vacancy-card__pay {
@@ -710,10 +711,6 @@ a {
   display: flex;
   flex-direction: column;
   gap: 3px;
-}
-
-.vacancy-card--applied .vacancy-card__details {
-  display: contents;
 }
 
 .vacancy-card__company {
@@ -731,13 +728,9 @@ a {
   line-height: 19px;
 }
 
-.vacancy-card--applied .vacancy-card__company,
-.vacancy-card--applied .vacancy-card__where:nth-child(3) {
-  display: none;
-}
-
-.vacancy-card--applied .vacancy-card__where:nth-child(2) {
+.vacancy-card--applied .vacancy-card__site {
   grid-area: site;
+  margin: 0;
   color: var(--color-gray-900);
   font-size: 15px;
   font-weight: 700;
@@ -860,19 +853,6 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
-.empty-state {
-  align-items: center;
-  gap: 14px;
-  padding: 28px 20px;
-  border-color: var(--color-gray-200);
-  background: var(--color-paper);
-}
-
-.empty-state__title {
-  color: var(--color-gray-900) !important;
-  font-weight: 700;
-}
-
 .empty-state--error .brand-bubbles {
   opacity: 0.72;
 }
@@ -884,8 +864,7 @@ a {
 }
 
 .board-skeleton__applied,
-.board-skeleton__heading,
-.board-skeleton__card span {
+.board-skeleton__heading {
   background: var(--color-gray-200);
   animation: skeleton-pulse 1.4s ease-in-out infinite alternate;
 }
@@ -917,6 +896,8 @@ a {
 .board-skeleton__card span {
   height: 20px;
   border-radius: 6px;
+  background: var(--color-gray-200);
+  animation: skeleton-pulse 1.4s ease-in-out infinite alternate;
 }
 
 .board-skeleton__card span:nth-child(2) {
@@ -930,11 +911,6 @@ a {
 @keyframes skeleton-pulse {
   from { opacity: 0.56; }
   to { opacity: 1; }
-}
-
-.app-shell {
-  min-height: 100dvh;
-  background: var(--color-gray-50);
 }
 
 .app-shell > .screen {
@@ -986,15 +962,6 @@ a {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-}
-
-.tab-bar {
-  z-index: 10;
-  width: 100%;
-  max-width: var(--screen-max);
-  margin: 0 auto;
-  border-right: 1px solid var(--color-gray-200);
-  border-left: 1px solid var(--color-gray-200);
 }
 
 @media (max-width: 420px) {

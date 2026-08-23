@@ -1,6 +1,3 @@
-import type { AppLocale } from "@/i18n/config";
-import { cleanerTranslator } from "@/i18n/messages";
-
 export type InviteState = "active" | "expired" | "revoked" | "unknown";
 
 export type InvitePreview = {
@@ -19,22 +16,32 @@ export function normaliseInviteCode(rawCode: string) {
   return rawCode.trim().toUpperCase();
 }
 
-export function describeInviteProblem(
-  preview: InvitePreview,
-  locale: AppLocale = "en-AU",
-): string {
-  const t = cleanerTranslator(locale);
+export type InviteProblem = {
+  key:
+    | "inviteExpired"
+    | "inviteExpiredCompany"
+    | "inviteRevoked"
+    | "inviteRevokedCompany"
+    | "inviteUnknown";
+  values?: { company: string };
+};
+
+export function inviteProblem(preview: InvitePreview): InviteProblem | null {
   const company = preview.companyName;
 
   switch (preview.state) {
     case "active":
-      return "";
+      return null;
     case "expired":
-      return company ? t("Join.inviteExpiredCompany", { company }) : t("Join.inviteExpired");
+      return company
+        ? { key: "inviteExpiredCompany", values: { company } }
+        : { key: "inviteExpired" };
     case "revoked":
-      return company ? t("Join.inviteRevokedCompany", { company }) : t("Join.inviteRevoked");
+      return company
+        ? { key: "inviteRevokedCompany", values: { company } }
+        : { key: "inviteRevoked" };
     case "unknown":
-      return t("Join.inviteUnknown");
+      return { key: "inviteUnknown" };
   }
 }
 
@@ -60,16 +67,8 @@ export function joinFailureKey(message: string): JoinFailureKey {
   return joinFailureKeys.get(message) ?? "joinError";
 }
 
-export function describeJoinFailure(message: string, locale: AppLocale = "en-AU"): string {
-  return cleanerTranslator(locale)(`Join.${joinFailureKey(message)}`);
-}
-
-export function describeCleanerCount(
-  cleanerCount: number,
-  locale: AppLocale = "en-AU",
-): string {
-  const t = cleanerTranslator(locale);
+export function cleanerCountCopy(cleanerCount: number) {
   return cleanerCount <= 0
-    ? t("Join.firstCleaner")
-    : t("Join.cleanerCount", { count: cleanerCount });
+    ? { key: "firstCleaner" as const, values: undefined }
+    : { key: "cleanerCount" as const, values: { count: cleanerCount } };
 }

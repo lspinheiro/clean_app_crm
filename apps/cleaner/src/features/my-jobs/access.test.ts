@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { describeAccessError, toMapsUrl } from "./access";
+import { accessErrorKey, toMapsUrl } from "./access";
 
 describe("CLE-24 the maps handoff", () => {
   it("builds a universal https link rather than a platform scheme", () => {
@@ -18,20 +18,16 @@ describe("CLE-24 the maps handoff", () => {
   });
 });
 
-describe("CLE-24 access errors read as plain English", () => {
+describe("CLE-24 access errors map to safe UI keys", () => {
   it("explains an address she may no longer see", () => {
-    expect(describeAccessError({ message: "Job access is unavailable" })).toBe(
-      "We cannot show the address for this job any more.",
-    );
+    expect(accessErrorKey({ message: "Job access is unavailable" })).toBe("errorAddressUnavailable");
   });
 
   it("never leaks a raw database message", () => {
-    expect(describeAccessError({ message: 'permission denied for table "sites"' })).toBe(
-      "We could not load the address. Try again.",
-    );
+    expect(accessErrorKey({ message: 'permission denied for table "sites"' })).toBe("errorAddress");
   });
 
   it("copes with an error carrying no message at all", () => {
-    expect(describeAccessError(null)).toBe("We could not load the address. Try again.");
+    expect(accessErrorKey(null)).toBe("errorAddress");
   });
 });

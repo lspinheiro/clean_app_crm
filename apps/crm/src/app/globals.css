@@ -4947,16 +4947,31 @@ button.company-switcher__company:hover {
   }
 
   .brand-lockup { font-size: 20px; }
+  /* The wordmark gives way to the bubble mark so the company switcher can share the
+     first header row; the lockup keeps its own aria-label, so the home link stays named.
+     Three stacked header rows cost ~40% of a short phone viewport before any page
+     content — the roster grid has to start above the fold. */
+  .brand-lockup > span { display: none; }
   .header-actions { margin-left: auto; }
   .primary-navigation { gap: 16px; }
   .company-switcher {
-    order: 2;
+    position: static;
     min-width: 0;
-    max-width: none;
-    flex-basis: 100%;
+    /* Basis 0, not auto: flex wrapping is decided on an item's content width, so an auto
+       basis pushes the switcher back onto its own row on narrow phones. The inherited
+       270px cap keeps it from stretching across a wide phone. */
+    flex: 1 1 0;
   }
   .company-switcher__trigger { width: 100%; }
-  .company-switcher__panel { width: 100%; }
+  /* Static switcher, so the panel resolves against the sticky header and spans the shell
+     width — the same anchoring the account menu uses. Company names are how you tell
+     memberships apart, so the panel must not inherit the narrowed trigger's width. */
+  .company-switcher__panel {
+    top: calc(100% + 10px);
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
   .company-creation-header { margin-block: 28px 26px; }
   .company-creation-form { padding: 22px 18px; }
   .company-creation-form__fields { grid-template-columns: 1fr; }

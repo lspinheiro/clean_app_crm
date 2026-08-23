@@ -190,28 +190,49 @@ the first owner, and one account can belong to more than one company.
   A new e-mail sets up the account first; an existing account signs in and accepts.
   Acceptance creates the employee membership atomically. The owner sees each
   invitation's state (pending / accepted / expired / revoked) and can revoke a pending
-  invitation. There is no resend and no bulk invitation in alpha. The founder command
-  stays the only source of a company's **first** owner. Staff cannot manage employees
-  or company settings; every other CRM capability in this cycle is available to both
-  roles.
+  invitation. There is no resend and no bulk invitation in alpha. Employee invitations
+  never create a company's first owner: that owner comes from the trusted founder bootstrap
+  (S1) or authenticated in-CRM company creation (S35). Every active employee can open
+  Settings, change self-only account preferences such as language, and view the active
+  company's Business Identity. Staff cannot change company identity, inspect employee or
+  invitation records, or perform employee administration; every other CRM capability in
+  this cycle is available to both roles.
 
-- **S33** — The CRM is always scoped to one active company. The switcher lives in the
-  account menu and appears only when the account holds two or more employee
-  memberships; a switch swaps the whole CRM context and returns to the roster. The
-  last-active company is stored on the profile and restored at sign-in. A
-  single-membership account is scoped automatically and never sees a picker. An account
+- **S33** — The CRM is always scoped to one active company. The active company is visible
+  in a persistent header switcher beside The Clean Crew product identity, separate from
+  the personal account menu. The switcher is present even for a single membership so the
+  data boundary and the S35 creation entry point remain discoverable. A switch swaps the
+  whole CRM context and returns to the roster. The last-active company is stored on the
+  profile and restored at sign-in. An account
   with no employee membership sees a "no company access" screen that tells the person
   to ask an owner for an invitation and links to the cleaner app. The cleaner app has
   no switcher — the board already aggregates every joined company.
 
-- **S34** — Company settings shows the employees list: each employee membership with
-  name, e-mail, role, and joined date. An owner can change any employee's role and
+- **S34** — Settings applies permissions per capability rather than gating the whole
+  route. Every active employee can change their own language preference and view the
+  active company's name, logo, ABN, and timezone. Only owners can edit that Business
+  Identity or see the Company access and Invitations sections. Company access shows each
+  employee membership with name, e-mail, role, and joined date. An owner can change any
+  employee's role and
   remove any employee, including themselves — but the database refuses any change that
   would leave the company with zero owners. Removal ends the membership (the record is
   kept, not deleted, so history keeps its references), and the removed person's CRM
   access to that company dies on their next request — the S33 no-access or switcher
   logic catches them. Staff have no self-service "leave company" in alpha; removal is
   owner-initiated only.
+
+- **S35** — Any authenticated CRM employee can create a separate company from the
+  persistent company switcher, including a person who is Staff in the currently active
+  company. Creation collects a company name and ABN, validates both before mutation, and
+  refuses an ABN already attached to another company with guidance to request an invitation
+  from that company's owner. One atomic mutation creates an approved company, creates the
+  caller's active Owner membership, and persists the new company as the caller's active
+  context. Cancellation and failed validation create nothing. The successful flow enters
+  the locale-preserving onboarding handoff for the new company (which currently forwards
+  to its roster), where Business Identity can add its logo and the normal onboarding
+  surfaces can add clients, sites, work, and employees. This is available only
+  to an account that already has an active employee membership; it does not add public
+  signup or let a pool-only/no-company account bootstrap CRM access.
 
 ### Directed offers (serves CA-3/CA-4 with acceptance)
 
@@ -299,8 +320,9 @@ Not in the alpha (MVP/P1 per PRODUCT.md §3.4):
 - Structured reviews, public share links, vetting, general messaging, AI, and WhatsApp
   automation. The one-time S30 e-mail invitation is the only provider-backed alpha
   message. It has no reminders, contact list, delivery tracking, or funnel analytics.
-- Public company signup: alpha companies are invited and approved by us; onboarding
-  itself is self-serve.
+- Public company signup: a person's first CRM company remains founder-invited. S35 permits
+  an existing authenticated CRM employee to create another approved company from inside
+  the product; onboarding itself remains self-serve.
 - Operator journeys and the operator console: OP-1 was removed from the alpha
   (decision log #12). A trusted founder command sends the first-admin invitation; it is
   not an operator application. Operator journeys start at MVP (OP-2, vetting).
@@ -444,9 +466,10 @@ Partly supersedes #15 (which kept additional company-admin invitations out of sc
 The identity model becomes the standard multi-membership account model: one user
 account can hold memberships in more than one company, and each membership carries one
 company-side role. The alpha has exactly two roles: **owner** — everything, including
-employee management and company settings — and **staff** — day-to-day operations
-(clients, sites, recurring assignments, roster, jobs, dispatch, pool), with no employee
-management and no company settings. All of it is alpha-usable: an owner invites
+company identity changes and employee administration — and **staff** — day-to-day operations
+(clients, sites, recurring assignments, roster, jobs, dispatch, pool), self-only account
+preferences, and read-only Business Identity, with no company mutation or employee data.
+All of it is alpha-usable: an owner invites
 employees and picks the role, one person can belong to more than one company, and the
 CRM has a company switcher. Considered option: make only the schema ready and defer the
 switcher — rejected; the product owner wants the cohort to exercise the full model. The
@@ -479,10 +502,9 @@ step. The founder command remains the only source of a company's first owner.
 
 ### 19. One active company scopes the CRM; the switcher is membership-gated (2026-08-19)
 
-Delivers #16 at the session level. The CRM always operates in exactly one active
-company. The switcher shows only for accounts with two or more employee memberships;
-the last-active company persists on the profile and is restored at sign-in; a
-single-membership account never sees a picker. An account with no employee membership
+Delivers #16 at the session level, as amended by decision #21. The CRM always operates in
+exactly one active company. The last-active company persists on the profile and is restored
+at sign-in. An account with no employee membership
 gets a deliberate "no company access" screen, not an error. The cleaner app gets no
 switcher: the board aggregates all joined pools already, so cleaners never pick a
 company. Considered option: a per-session company picker at every sign-in — rejected
@@ -497,3 +519,17 @@ first owners made only by the founder command, a zero-owner company is locked ou
 permanently. Removal ends the membership but keeps the record for history. Considered
 option: no post-acceptance management in alpha — rejected because a departed employee
 would keep company access.
+
+### 21. Company context is persistent and authenticated employees can create companies (2026-08-21)
+
+Amends #15, #18, and #19. The active company moves out of the personal account menu into
+the persistent CRM header and remains visible for one or many memberships. Its menu lists
+the caller's companies, switches the whole CRM context, and ends with Create new company;
+there is no cross-company "all companies" view. Any account that already holds an active
+employee membership may create a separate company and becomes that company's first Owner,
+regardless of the role held in the previous company. The database creates the approved
+company, Owner membership, and active-company preference atomically and rejects duplicate
+ABNs. The trusted founder invitation remains the only way to bootstrap a person's first
+CRM company, so this does not introduce public signup. Considered option: keep creation in
+Settings or the personal account menu — rejected because company scope is persistent
+workspace context, not a personal preference.

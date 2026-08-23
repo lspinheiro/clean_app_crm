@@ -33,7 +33,7 @@ function validFormData() {
 function arrangeSupabase(
   identityResult: {
     data: Array<{ previous_logo_path: string | null }> | null;
-    error: { message: string } | null;
+    error: { code?: string; message: string } | null;
   },
 ) {
   const upload = vi.fn().mockResolvedValue({ error: null });
@@ -45,6 +45,7 @@ function arrangeSupabase(
       error: null,
     }),
   );
+  const releaseLogo = vi.fn().mockResolvedValue({ data: true, error: null });
   const updateIdentity = vi.fn().mockResolvedValue(identityResult);
   const rpc = vi.fn((name: string, args: Record<string, unknown>) => {
     if (name === "reserve_company_logo_upload") {
@@ -59,6 +60,7 @@ function arrangeSupabase(
         requested_object_name: args.requested_object_name,
       });
     }
+    if (name === "release_company_logo_upload") return releaseLogo(args);
     if (name === "update_company_identity") return updateIdentity(args);
     throw new Error(`Unexpected RPC: ${name}`);
   });
@@ -66,7 +68,7 @@ function arrangeSupabase(
     company: { id: companyId, logo_path: previousLogoPath },
     supabase: { storage: { from }, rpc },
   });
-  return { from, upload, remove, reserveLogo, rpc, updateIdentity };
+  return { from, upload, remove, releaseLogo, reserveLogo, rpc, updateIdentity };
 }
 
 describe("CLE-6 company identity transaction", () => {
@@ -128,7 +130,7 @@ describe("CLE-6 company identity transaction", () => {
   });
 
   it("reports an indeterminate RPC response without deleting the previous logo", async () => {
-    const { remove, updateIdentity, upload } = arrangeSupabase({
+    const { releaseLogo, remove, updateIdentity, upload } = arrangeSupabase({
       data: null,
       error: null,
     });
@@ -141,7 +143,36 @@ describe("CLE-6 company identity transaction", () => {
       formError: "user.companySaveUnconfirmed",
     });
     expect(upload).toHaveBeenCalledOnce();
+    expect(releaseLogo).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalledWith([previousLogoPath]);
+  });
+
+  it("reports a duplicate ABN inline and releases the uploaded candidate", async () => {
+    const { releaseLogo, remove, updateIdentity, upload } = arrangeSupabase({
+      data: null,
+      error: { code: "23505", message: "duplicate key value violates unique constraint" },
+    });
+
+    const result = await updateCompanyIdentity(validFormData());
+    const uploadedPath = upload.mock.calls[0]?.[0];
+
+    expect(result).toEqual({
+      ok: false,
+      fieldErrors: { abn: "user.companyAbnInUse" },
+      formError: null,
+    });
+    expect(releaseLogo).toHaveBeenCalledWith({
+      target_company_id: companyId,
+      target_object_name: uploadedPath,
+    });
+    expect(remove).toHaveBeenCalledWith([uploadedPath]);
+    expect(remove).not.toHaveBeenCalledWith([previousLogoPath]);
+    expect(updateIdentity.mock.invocationCallOrder[0]).toBeLessThan(
+      releaseLogo.mock.invocationCallOrder[0],
+    );
+    expect(releaseLogo.mock.invocationCallOrder[0]).toBeLessThan(
+      remove.mock.invocationCallOrder[0],
+    );
   });
 
   it("cleans a bounded stale candidate before reserving and uploading a new one", async () => {

@@ -17,7 +17,8 @@ Stories with a db surface in this file: S1 (first-admin invitation and company b
 S6 (consent-gated generation), S8 (multi-link
 invites), S9/S10 (join attribution), S16 (board projection changes), S19/S24 (ledger,
 mark-paid), S23 (pay basis), S20 (push, notification types), S26 (`product_events`),
-S28/S29 (offers), and S30 (company-scoped cleaner invitation batches).
+S28/S29 (offers), S30 (company-scoped cleaner invitation batches), and S35
+(authenticated additional-company bootstrap).
 
 F15 adds one shared profile preference used by both company admins and cleaners:
 `public.app_locale` has exactly `en-AU` and `pt-BR`; `profiles.preferred_locale` is
@@ -189,6 +190,42 @@ stateDiagram-v2
 ```
 
 The invitation can enter the privileged state only through the atomic acceptance RPC.
+
+## Data model — authenticated additional company creation (S35)
+
+`companies.abn` gains a global unique index. ABNs are already stored as canonical 11-digit
+text; the index is the race-safe company identity boundary while company names remain
+non-unique. Existing data must satisfy the index before this forward migration applies.
+
+`create_company(company_name text, company_abn text) returns uuid` is a security-definer
+RPC available only to `authenticated` and `service_role`. It derives the caller from
+`auth.uid()` and accepts no profile id, company id, role, status, or active-company input.
+It trims the name, removes ABN whitespace, enforces a 1–120 character name and exactly 11
+digits, locks the caller profile, and requires at least one active employee membership in
+an approved company. The existing membership can be Owner or Staff; its role does not
+cross the new tenant boundary.
+
+In one transaction the function:
+
+1. inserts one `approved` company;
+2. inserts one active `owner` employee membership for the caller; and
+3. sets `profiles.last_active_company` to the new company.
+
+The unique ABN violation is allowed to abort the transaction with SQLSTATE `23505`, which
+the CRM maps to invitation guidance. Every other invalid or unauthorised call aborts before
+a company row exists. Anonymous callers have no execute grant. A pool membership does not
+satisfy the employee precondition, so the no-company-access surface cannot bootstrap CRM
+authority through this capability.
+
+The same uniqueness boundary extends two existing workflows through narrow helper RPCs.
+`first_admin_company_abn_available(company_abn text) returns boolean` is executable only by
+an authenticated caller with a current pending first-admin invitation (plus
+`service_role`); it lets the server action reject an existing ABN before changing the
+invitee's Auth password, while the acceptance RPC's `23505` remains the race-safe final
+guard. `release_company_logo_upload(target_company_id uuid, target_object_name text)
+returns boolean` is Owner-only and deletes only the caller's exact unused reservation so a
+definitively failed identity update can remove its uploaded candidate. An indeterminate RPC
+response does not release the candidate because the company update may have committed.
 
 ## Data model — offers (S28, S29)
 

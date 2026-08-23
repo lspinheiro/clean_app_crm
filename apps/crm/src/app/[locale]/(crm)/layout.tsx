@@ -6,7 +6,7 @@ import { getCompanyLogoUrl } from "@/lib/company-logo";
 
 export default async function CrmLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const t = await getTranslations("Navigation");
-  const { company, membership, memberships, profile, supabase } = await requireCompanyAdmin();
+  const { company, memberships, profile, supabase, user } = await requireCompanyAdmin();
   const logoUrl = await getCompanyLogoUrl(supabase, company.logo_path);
   return (
     <>
@@ -14,9 +14,9 @@ export default async function CrmLayout({ children }: Readonly<{ children: React
       <CrmHeader
         companyId={company.id}
         companyName={company.name}
-        employeeRole={membership.role}
         logoUrl={logoUrl}
         memberships={memberships}
+        profileEmail={user.email ?? undefined}
         profileName={profile.full_name}
       />
       <div id="main-content" tabIndex={-1}>

@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   from: vi.fn(),
   getCompanyLogoUrl: vi.fn(),
   order: vi.fn(),
-  requireCompanyOwner: vi.fn(),
+  requireCompanyAdmin: vi.fn(),
   select: vi.fn(),
 }));
 
@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/auth/session", () => ({
-  requireCompanyOwner: mocks.requireCompanyOwner,
+  requireCompanyAdmin: mocks.requireCompanyAdmin,
 }));
 
 vi.mock("@/lib/company-logo", () => ({
@@ -26,10 +26,21 @@ vi.mock("@/lib/company-logo", () => ({
 
 import SettingsPage from "./page";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 describe("company settings language control", () => {
-  function ownerContext(invitations: unknown[] = [], employees: unknown[] = []) {
+  function companyContext({
+    invitations = [],
+    employees = [],
+    role = "owner",
+  }: {
+    invitations?: unknown[];
+    employees?: unknown[];
+    role?: "owner" | "staff";
+  } = {}) {
     let currentRelation = "";
     const query = {
       eq: mocks.eq,
@@ -54,13 +65,17 @@ describe("company settings language control", () => {
         name: "Coastal Demo Cleaning",
         timezone: "Australia/Brisbane",
       },
-      profile: { preferred_locale: "en-AU" },
+      profile: {
+        id: "10000000-0000-4000-8000-000000000001",
+        preferred_locale: "en-AU",
+      },
+      membership: { role },
       supabase: { from: mocks.from },
     };
   }
 
   it("offers both alpha languages without translating their names", async () => {
-    mocks.requireCompanyOwner.mockResolvedValue(ownerContext());
+    mocks.requireCompanyAdmin.mockResolvedValue(companyContext());
     mocks.getCompanyLogoUrl.mockResolvedValue(null);
 
     render(await SettingsPage());
@@ -71,9 +86,12 @@ describe("company settings language control", () => {
   });
 
   it("reports the saved profile preference instead of the bookmarked route locale", async () => {
-    mocks.requireCompanyOwner.mockResolvedValue({
-      ...ownerContext(),
-      profile: { preferred_locale: "pt-BR" },
+    mocks.requireCompanyAdmin.mockResolvedValue({
+      ...companyContext(),
+      profile: {
+        id: "10000000-0000-4000-8000-000000000001",
+        preferred_locale: "pt-BR",
+      },
     });
     mocks.getCompanyLogoUrl.mockResolvedValue(null);
 
@@ -83,8 +101,8 @@ describe("company settings language control", () => {
   });
 
   it("shows role selection and all four employee invitation states to an owner", async () => {
-    mocks.requireCompanyOwner.mockResolvedValue(ownerContext([
-      {
+    mocks.requireCompanyAdmin.mockResolvedValue(companyContext({
+      invitations: [{
         accepted_at: null,
         created_at: "2026-08-20T00:00:00.000Z",
         email: "pending@example.test",
@@ -123,14 +141,14 @@ describe("company settings language control", () => {
         invitation_state: "revoked",
         revoked_at: "2026-08-18T00:00:00.000Z",
         role: "owner",
-      },
-    ]));
+      }],
+    }));
     mocks.getCompanyLogoUrl.mockResolvedValue(null);
 
     render(await SettingsPage());
 
     expect(screen.getByRole("heading", { name: "Invite an employee" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Role" })).toHaveValue("staff");
+    expect(screen.getByRole("combobox", { name: "Company access" })).toHaveValue("staff");
     expect(screen.getByRole("option", { name: "Owner" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Staff" })).toBeInTheDocument();
     for (const state of ["Pending", "Accepted", "Expired", "Revoked"]) {
@@ -147,8 +165,8 @@ describe("company settings language control", () => {
   });
 
   it("shows active employees with identity, role, and Brisbane joined date", async () => {
-    mocks.requireCompanyOwner.mockResolvedValue(ownerContext([], [
-      {
+    mocks.requireCompanyAdmin.mockResolvedValue(companyContext({
+      employees: [{
         company_id: "10000000-0000-4000-8000-000000000010",
         email: "admin@clean-app.example.test",
         full_name: "Demo Company Admin",
@@ -165,19 +183,42 @@ describe("company settings language control", () => {
         membership_id: "10000000-0000-4000-8000-000000000093",
         profile_id: "10000000-0000-4000-8000-000000000006",
         role: "staff",
-      },
-    ]));
+      }],
+    }));
     mocks.getCompanyLogoUrl.mockResolvedValue(null);
 
     render(await SettingsPage());
 
-    const employees = screen.getByRole("region", { name: "Employees" });
+    const employees = screen.getByRole("region", { name: "Company access" });
     expect(within(employees).getByText("Demo Company Admin")).toBeInTheDocument();
     expect(within(employees).getByText("admin@clean-app.example.test")).toBeInTheDocument();
     expect(within(employees).getByText("Joined 1 Aug 2026")).toBeInTheDocument();
     expect(within(employees).getByRole("combobox", {
-      name: "Role for Harbour Demo Owner",
+      name: "Company access for Harbour Demo Owner",
     })).toHaveValue("staff");
     expect(mocks.from).toHaveBeenCalledWith("employee_membership_details");
+  });
+
+  it("gives staff personal settings and read-only company identity without admin data", async () => {
+    mocks.requireCompanyAdmin.mockResolvedValue(companyContext({ role: "staff" }));
+    mocks.getCompanyLogoUrl.mockResolvedValue(null);
+
+    render(await SettingsPage());
+
+    expect(screen.getByRole("heading", { name: "Settings", level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Your account" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Language" })).toBeInTheDocument();
+
+    const identity = screen.getByRole("region", { name: "Business identity" });
+    expect(within(identity).getByText("Coastal Demo Cleaning")).toBeInTheDocument();
+    expect(within(identity).getByText("53004085616")).toBeInTheDocument();
+    expect(within(identity).getByText("Australia/Brisbane")).toBeInTheDocument();
+    expect(within(identity).getByText("Only owners can edit company details."))
+      .toBeInTheDocument();
+    expect(within(identity).queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Company access" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Invite an employee" }))
+      .not.toBeInTheDocument();
+    expect(mocks.from).not.toHaveBeenCalled();
   });
 });

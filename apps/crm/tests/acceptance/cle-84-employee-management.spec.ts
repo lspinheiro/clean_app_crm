@@ -113,7 +113,8 @@ async function signIn(page: import("@playwright/test").Page, email: string) {
 }
 
 async function openSettings(page: import("@playwright/test").Page) {
-  await page.getByRole("link", { name: "Company settings" }).click();
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await page.getByRole("link", { name: "Settings" }).click();
   await expect(page).toHaveURL(/\/en-AU\/settings$/);
 }
 
@@ -124,7 +125,7 @@ test.describe("@CLE-84 owner employee management", () => {
     await signIn(page, "owner.one.cle84@clean-app.example.test");
     await openSettings(page);
 
-    const employees = page.getByRole("region", { name: "Employees" });
+    const employees = page.getByRole("region", { name: "Company access" });
     await expect(employees.getByText("CLE-84 Owner One", { exact: true })).toBeVisible();
     await expect(employees.getByText("owner.one.cle84@clean-app.example.test")).toBeVisible();
     await expect(employees.getByText("Joined 10 Aug 2026", { exact: true })).toBeVisible();
@@ -132,40 +133,54 @@ test.describe("@CLE-84 owner employee management", () => {
     await expect(page.getByText("invited.cle84@example.test", { exact: true })).toBeVisible();
 
     const staffRow = employees.getByRole("group", { name: "CLE-84 Staff" });
-    await staffRow.getByRole("combobox", { name: "Role for CLE-84 Staff" })
+    await staffRow.getByRole("combobox", { name: "Company access for CLE-84 Staff" })
       .selectOption("owner");
-    await staffRow.getByRole("button", { name: "Save role for CLE-84 Staff" }).click();
-    await expect(page.getByRole("status")).toHaveText("Employee role updated.");
-    await expect(staffRow.getByRole("combobox", { name: "Role for CLE-84 Staff" }))
+    await staffRow.getByRole("button", { name: "Save company access for CLE-84 Staff" }).click();
+    const promoteDialog = page.getByRole("dialog", { name: "Give CLE-84 Staff owner access?" });
+    await promoteDialog.getByRole("button", { name: "Give owner access" }).click();
+    await expect(staffRow.getByRole("status")).toHaveText(
+      "CLE-84 Staff now has Owner access.",
+    );
+    await expect(staffRow.getByRole("combobox", { name: "Company access for CLE-84 Staff" }))
       .toHaveValue("owner");
 
-    await staffRow.getByRole("button", { name: "Remove CLE-84 Staff" }).click();
-    await expect(page.getByRole("status")).toHaveText("Employee removed.");
+    await staffRow.getByRole("button", { name: "Remove company access for CLE-84 Staff" }).click();
+    const staffRemoveDialog = page.getByRole("dialog", {
+      name: "Remove CLE-84 Staff’s company access?",
+    });
+    await staffRemoveDialog.getByRole("button", { name: "Remove access" }).click();
     await expect(employees.getByText("CLE-84 Staff", { exact: true })).toHaveCount(0);
+    await expect(employees.getByRole("status")).toHaveText(
+      "CLE-84 Staff’s company access was removed.",
+    );
 
     const selfRow = employees.getByRole("group", { name: "CLE-84 Owner One" });
-    await selfRow.getByRole("button", { name: "Remove CLE-84 Owner One" }).click();
+    await selfRow.getByRole("button", {
+      name: "Remove company access for CLE-84 Owner One",
+    }).click();
+    const selfRemoveDialog = page.getByRole("dialog", { name: "Remove your company access?" });
+    await selfRemoveDialog.getByRole("button", { name: "Remove my access" }).click();
     await expect(page).toHaveURL(/\/en-AU\/no-company-access$/);
     await expect(page.getByRole("heading", { name: "No company access" })).toBeVisible();
   });
 
-  test("the remaining owner gets a clear refusal for both zero-owner outcomes", async ({ page }) => {
+  test("the remaining owner sees zero-owner changes protected before submission", async ({ page }) => {
     await signIn(page, "owner.two.cle84@clean-app.example.test");
     await openSettings(page);
 
-    const employees = page.getByRole("region", { name: "Employees" });
+    const employees = page.getByRole("region", { name: "Company access" });
     const selfRow = employees.getByRole("group", { name: "CLE-84 Owner Two" });
-    await selfRow.getByRole("combobox", { name: "Role for CLE-84 Owner Two" })
+    await expect(selfRow.getByText(
+      "Assign another owner before changing or removing this access.",
+    )).toBeVisible();
+    await selfRow.getByRole("combobox", { name: "Company access for CLE-84 Owner Two" })
       .selectOption("staff");
-    await selfRow.getByRole("button", { name: "Save role for CLE-84 Owner Two" }).click();
-    await expect(employees.getByRole("alert")).toHaveText(
-      "This company must keep at least one owner.",
-    );
-
-    await selfRow.getByRole("button", { name: "Remove CLE-84 Owner Two" }).click();
-    await expect(employees.getByRole("alert")).toHaveText(
-      "This company must keep at least one owner.",
-    );
+    await expect(selfRow.getByRole("button", {
+      name: "Save company access for CLE-84 Owner Two",
+    })).toBeDisabled();
+    await expect(selfRow.getByRole("button", {
+      name: "Remove company access for CLE-84 Owner Two",
+    })).toBeDisabled();
     await expect(page).toHaveURL(/\/en-AU\/settings$/);
   });
 });

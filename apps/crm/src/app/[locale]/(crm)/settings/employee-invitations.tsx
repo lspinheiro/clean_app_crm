@@ -1,5 +1,6 @@
 "use client";
 
+import { Ban, CheckCircle2, CircleX, Clock3 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useState, useTransition } from "react";
 
@@ -28,6 +29,14 @@ const initialResult: EmployeeInvitationActionResult = {
   formError: null,
   ok: false,
 };
+
+function InvitationStateIcon({ state }: { state: EmployeeInvitationListItem["state"] }) {
+  const props = { "aria-hidden": true as const, size: 13, strokeWidth: 2.4 };
+  if (state === "accepted") return <CheckCircle2 {...props} />;
+  if (state === "expired") return <CircleX {...props} />;
+  if (state === "revoked") return <Ban {...props} />;
+  return <Clock3 {...props} />;
+}
 
 function localiseResult(
   result: EmployeeInvitationActionResult,
@@ -94,8 +103,11 @@ export function EmployeeInvitations({ invitations }: EmployeeInvitationsProps) {
         <div>
           <h2 id="employee-invitations-heading">{t("title")}</h2>
           <p>{t("description")}</p>
+          <p className="employee-invitations__expiry">
+            <Clock3 aria-hidden="true" size={15} strokeWidth={2.2} />
+            <span>{t("expiry")}</span>
+          </p>
         </div>
-        <span className="employee-invitations__expiry">{t("expiry")}</span>
       </div>
 
       <form className="employee-invitation-form" noValidate onSubmit={submit}>
@@ -122,7 +134,12 @@ export function EmployeeInvitations({ invitations }: EmployeeInvitationsProps) {
         </div>
         <div className="field employee-invitation-form__role">
           <label htmlFor="employee-invitation-role">{t("role")}</label>
-          <select defaultValue="staff" id="employee-invitation-role" name="role">
+          <select
+            aria-describedby="employee-invitation-access-help"
+            defaultValue="staff"
+            id="employee-invitation-role"
+            name="role"
+          >
             <option value="staff">{t("staff")}</option>
             <option value="owner">{t("owner")}</option>
           </select>
@@ -130,6 +147,9 @@ export function EmployeeInvitations({ invitations }: EmployeeInvitationsProps) {
         <button className="button" disabled={pending} type="submit">
           {pending && busyId === null ? t("sending") : t("send")}
         </button>
+        <p className="employee-invitation-form__access-help" id="employee-invitation-access-help">
+          {t("accessHelp")}
+        </p>
       </form>
 
       {result.ok === false && result.formError ? (
@@ -146,6 +166,7 @@ export function EmployeeInvitations({ invitations }: EmployeeInvitationsProps) {
               <span>{t(invitation.role)} · {dateFormatter.format(new Date(invitation.createdAt))}</span>
             </div>
             <span className={`invitation-state invitation-state--${invitation.state}`}>
+              <InvitationStateIcon state={invitation.state} />
               {t(invitation.state)}
             </span>
             {invitation.state === "pending" ? (

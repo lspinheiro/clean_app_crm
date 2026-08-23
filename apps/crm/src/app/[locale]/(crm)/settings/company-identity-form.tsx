@@ -34,15 +34,10 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = useState<CompanyIdentityFieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(logoUrl);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
 
   function handleLogoSelection(file: File | undefined) {
     setSaved(false);
@@ -59,8 +54,22 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
+    setDirty(true);
     setPreviewUrl(URL.createObjectURL(file));
   }
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  useEffect(() => {
+    const preHydrationFile = fileInputRef.current?.files?.[0];
+    if (!preHydrationFile) return;
+    setDirty(true);
+    setPreviewUrl(URL.createObjectURL(preHydrationFile));
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -94,6 +103,7 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
       setFieldErrors(result.fieldErrors);
       setFormError(result.formError);
       if (result.ok) {
+        setDirty(false);
         setSaved(true);
         if (fileInputRef.current) fileInputRef.current.value = "";
         router.refresh();
@@ -124,7 +134,10 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
                 defaultValue={company.name}
                 id="company-name"
                 name="name"
-                onChange={() => setSaved(false)}
+                onChange={() => {
+                  setDirty(true);
+                  setSaved(false);
+                }}
                 type="text"
                 autoComplete="organization"
               />
@@ -143,7 +156,10 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
                 id="company-abn"
                 inputMode="numeric"
                 name="abn"
-                onChange={() => setSaved(false)}
+                onChange={() => {
+                  setDirty(true);
+                  setSaved(false);
+                }}
                 type="text"
               />
               {fieldErrors.abn ? (
@@ -192,19 +208,21 @@ export function CompanyIdentityForm({ company, logoUrl }: CompanyIdentityFormPro
           </div>
         </div>
         <p className="timezone-row">{t("timezone", { timezone: company.timezone })}</p>
+        <div className="settings-card__footer" aria-live="polite">
+          <div className="settings-save-feedback">
+            {formError ? (
+              <p className="form-error" role="alert">
+                {formError}
+              </p>
+            ) : (
+              <span className="save-status">{saved ? t("saved") : ""}</span>
+            )}
+          </div>
+          <button className="button" disabled={busy || !dirty} type="submit">
+            {busy ? t("saving") : t("saveBusinessIdentity")}
+          </button>
+        </div>
       </section>
-
-      <div className="settings-actions" aria-live="polite">
-        <span className="save-status">{saved ? t("saved") : ""}</span>
-        <button className="button" disabled={busy} type="submit">
-          {busy ? t("saving") : t("saveChanges")}
-        </button>
-      </div>
-      {formError ? (
-        <p className="form-error settings-form-error" role="alert">
-          {formError}
-        </p>
-      ) : null}
     </form>
   );
 }

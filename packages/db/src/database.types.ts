@@ -1568,6 +1568,14 @@ export type Database = {
         Args: { target_recurring_assignment_id: string }
         Returns: undefined
       }
+      create_company: {
+        Args: { company_abn: string; company_name: string }
+        Returns: string
+      }
+      first_admin_company_abn_available: {
+        Args: { company_abn: string }
+        Returns: boolean
+      }
       create_client: {
         Args: {
           client_contact_name?: string
@@ -1764,6 +1772,10 @@ export type Database = {
           recipient_id: string
           status: string
         }[]
+      }
+      release_company_logo_upload: {
+        Args: { target_company_id: string; target_object_name: string }
+        Returns: boolean
       }
       prepare_pool_invite_email_retry: {
         Args: { retry_key: string; selected_batch_id: string }

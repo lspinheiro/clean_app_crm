@@ -128,6 +128,28 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   profile and company fields from S1. It accepts no role, status, profile identifier, or company
   identifier. The `/onboarding` route stays inside the CRM guard and is the stable CLE-47
   handoff; until CLE-47 lands, it redirects to the roster.
+- **Company context (`components/company-switcher.tsx`, `(crm)/layout`)** — the product
+  brand and current company are separate header controls. The selector is rendered for
+  every active employee, marks the current membership, lists other active memberships
+  with their company-specific role, and ends with Create new company. The personal
+  account menu keeps only profile identity, Settings, and Sign out. Pointer-outside and
+  Escape dismiss the selector; Escape restores focus. Desktop order is product brand,
+  company selector, primary navigation, account control. At the mobile breakpoint the
+  brand and account control stay on the first row, the company selector sits below the
+  brand, and navigation follows without horizontal page overflow. Long company names
+  truncate in the trigger while the full name remains in its accessible label and panel.
+- **Additional company creation (`(crm)/companies/new`, `actions/company-creation.ts`,
+  `features/company-creation`)** — a locale-prefixed, guarded page collects company name
+  and ABN, explains that the caller becomes the first Owner, and names the current company
+  in its cancel/back affordance. Client and server share the same Zod boundary: trim the
+  name, strip ABN whitespace, require 1–120 name characters and exactly 11 ABN digits.
+  Submit calls only `create_company(company_name, company_abn)`; no browser value chooses
+  profile, role, status, company id, or active company. A successful call redirects through
+  the locale-preserving `/onboarding` handoff. Duplicate ABN is a field-linked, localised
+  invitation-guidance error; every other database failure is one safe retry message. The
+  form preserves entered values, disables repeat submit while pending, and a cancel creates
+  no state. Logo upload stays in Business Identity after creation so storage is not part of
+  the atomic company/membership transaction.
 - **Job detail (`(crm)/jobs/[jobId]`)** — gains the directed route: an "offer to…"
   picker over the company's active cleaners not already assigned, applied, or offered; pending
   offers listed with age and a revoke action; the assign path shows the new invariant
@@ -165,6 +187,27 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   first persists `profiles.preferred_locale` through its self-only RPC, then replaces
   the same path and query in the chosen locale. Built-in services translate by stable
   slug; user-entered names, addresses and notes pass through unchanged.
+
+### Settings permission matrix (S32, S34, F15)
+
+The Settings route uses the active-membership guard and projects sections from explicit
+capabilities. It does not use one coarse owner-only page gate.
+
+| Capability | Staff | Owner | Enforcement |
+|---|---|---|---|
+| Open Settings | view | view | active employee membership |
+| Change language | edit own | edit own | self-only `set_preferred_locale` RPC |
+| Business Identity | view | view and edit | read from active company; `updateCompanyIdentity` keeps the owner guard |
+| Employee directory | hidden | view and manage | query and employee-management actions are owner-only |
+| Invitations | hidden | view and manage | query and invitation actions are owner-only |
+| Switch active company | own memberships | own memberships | existing S33 membership-scoped action |
+| Create another company | create as first Owner | create as first Owner | account-level `create_company` requires an existing active employee membership |
+
+Staff receives a semantic read-only Business Identity summary rather than disabled form
+controls. The CRM does not query employee or invitation views for Staff, so hiding the
+sections also avoids disclosing employee e-mail addresses. UI projection is not the
+security boundary: all company, employee, and invitation mutations retain their owner
+checks on the server and in database RPCs.
 
 ## Interaction sequences
 
@@ -274,6 +317,14 @@ maps an invalid token to the public unavailable state. The acceptance action sho
 errors for form input and keeps the entered values. It uses one safe unavailable message
 for every invitation state error.
 It never returns the Supabase secret, token hash, raw provider error, role, or company id.
+
+For S35, invalid name or ABN returns field-linked localised errors before any RPC call.
+The database uses the stable `23505` unique-violation code for an existing ABN; the action
+maps only that condition to the ABN invitation guidance and never exposes a company id or
+raw database message. An absent session, no active employee membership, or any unexpected
+database response becomes one safe unavailable/retry state. Because the RPC owns every
+write, failed and duplicate calls leave the previous company active and create no tenant
+or membership.
 
 ## Performance
 

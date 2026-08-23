@@ -26,6 +26,7 @@ describe("CRM layout accessibility", () => {
       ],
       profile: { full_name: "Taylor Admin" },
       supabase: {},
+      user: { email: "taylor@example.com" },
     });
     mocks.getCompanyLogoUrl.mockResolvedValue(null);
 

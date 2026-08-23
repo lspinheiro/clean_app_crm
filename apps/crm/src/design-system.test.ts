@@ -242,6 +242,12 @@ describe("Trust Blue contract", () => {
 });
 
 describe("design-review conformance contracts", () => {
+  it("keeps outlined danger actions off the primary blue fill", () => {
+    expect(css).toMatch(
+      /\.button--danger\s*{[^}]*background:\s*var\(--color-surface-card\);[^}]*color:\s*var\(--color-on-danger-container\);/,
+    );
+  });
+
   it("keeps caption text on an AA-safe grey while reserving gray-500 for glyphs", () => {
     for (const selector of [
       ".field-hint",
@@ -261,7 +267,10 @@ describe("design-review conformance contracts", () => {
         new RegExp(`${escapedSelector}\\s*\\{[^}]*color: var\\(--color-gray-600\\);`),
       );
     }
-    expect(occurrences(css, "color: var(--color-gray-500);")).toBe(2);
+    expect(occurrences(css, "color: var(--color-gray-500);")).toBe(3);
+    expect(css).toMatch(
+      /\.company-switcher__chevron\s*\{[^}]*color: var\(--color-gray-500\);/,
+    );
     expect(css).toMatch(/\.search-field\s*\{[^}]*color: var\(--color-gray-500\);/);
     expect(css).toMatch(/\.roster-no-work\s*\{[^}]*color: var\(--color-gray-500\);/);
   });
@@ -269,6 +278,14 @@ describe("design-review conformance contracts", () => {
   it("keeps shell and temporal navigation on the 44px target floor", () => {
     expect(css).toMatch(/\.primary-navigation a\s*\{[^}]*min-width: 44px;/);
     expect(css).toMatch(/\.roster-this-week\s*\{[^}]*min-height: 44px;/);
+  });
+
+  it("leaves enough mobile navigation space for Portuguese labels", () => {
+    const mobileRules = css.slice(
+      css.indexOf("@media (max-width: 560px)"),
+      css.indexOf("@media (prefers-reduced-motion: reduce)"),
+    );
+    expect(mobileRules).toMatch(/\.primary-navigation\s*\{[^}]*gap:\s*16px;/);
   });
 
   it("lets mobile gap context wrap instead of disappearing behind ellipses", () => {

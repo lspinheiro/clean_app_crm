@@ -78,7 +78,7 @@ test.describe("@F15 bilingual CRM", () => {
       ["/pt-BR/clients/import", "Importar clientes e locais"],
       ["/pt-BR/cleaners", "Equipe de limpeza"],
       ["/pt-BR/money", "Financeiro"],
-      ["/pt-BR/settings", "Configurações da empresa"],
+      ["/pt-BR/settings", "Configurações"],
     ] as const;
 
     for (const [route, heading] of routeChecks) {
@@ -106,7 +106,7 @@ test.describe("@F15 bilingual CRM", () => {
     await page.getByRole("combobox", { name: "Idioma" }).selectOption("en-AU");
     await expect(page).toHaveURL(/\/en-AU\/settings$/);
     await expect(
-      page.getByRole("heading", { name: "Company settings", level: 1 }),
+      page.getByRole("heading", { name: "Settings", level: 1 }),
     ).toBeVisible();
   });
 });

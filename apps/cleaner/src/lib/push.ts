@@ -87,6 +87,22 @@ export async function unsubscribeFromPush(): Promise<void> {
   }
 }
 
+export type PushSubscriptionState = "subscribed" | "unsubscribed" | "unsupported";
+
+export async function getPushSubscriptionState(): Promise<PushSubscriptionState> {
+  if (!isPushSupported()) return "unsupported";
+
+  try {
+    const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+    if (!registration) return "unsubscribed";
+    return (await registration.pushManager.getSubscription())
+      ? "subscribed"
+      : "unsubscribed";
+  } catch {
+    return "unsubscribed";
+  }
+}
+
 function writePushPromptState(state: PushPromptState): void {
   if (typeof window === "undefined") return;
   try {

@@ -6,7 +6,7 @@ export const defaultLocale: AppLocale = "en-AU";
 export const localeCookieName = "NEXT_LOCALE";
 export const localeCookieMaxAgeSeconds = 60 * 60 * 24 * 365;
 
-export type CleanerPath = "/" | "/login" | "/join" | "/board" | "/my-jobs";
+export type CleanerPath = "/" | "/login" | "/join" | "/board" | "/my-jobs" | "/profile";
 export type LocalisedCleanerPath =
   | `/${AppLocale}`
   | `/${AppLocale}${Exclude<CleanerPath, "/">}`;

@@ -89,6 +89,7 @@ function card(siteName: string) {
 
 beforeEach(() => {
   window.history.replaceState({}, "", "/en-AU/board");
+  window.localStorage.removeItem("cleaner.install-offer");
   reads = [];
   calls = [];
 
@@ -111,6 +112,41 @@ beforeEach(() => {
   mocks.useCleaner.mockReturnValue({
     status: "allowed",
     profile: { id: "cleaner-1", full_name: "Ana Souza", suburb: "Robina" },
+  });
+});
+
+describe("CLE-26 install upgrade", () => {
+  it("offers installation after the board renders when the browser makes it available", async () => {
+    render(<BoardPage />);
+    await answerRead(0, [row()]);
+
+    const event = new Event("beforeinstallprompt", { cancelable: true });
+    Object.assign(event, {
+      prompt: vi.fn().mockResolvedValue(undefined),
+      userChoice: Promise.resolve({ outcome: "accepted" }),
+    });
+    window.dispatchEvent(event);
+
+    expect(await screen.findByRole("heading", { name: "Install The Clean Crew" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Not now" })).toBeVisible();
+  });
+
+  it("closes the install offer without an error when the browser prompt is dismissed", async () => {
+    const user = userEvent.setup();
+    render(<BoardPage />);
+    await answerRead(0, [row()]);
+
+    const event = new Event("beforeinstallprompt", { cancelable: true });
+    Object.assign(event, {
+      prompt: vi.fn().mockResolvedValue(undefined),
+      userChoice: Promise.resolve({ outcome: "dismissed" }),
+    });
+    window.dispatchEvent(event);
+
+    await user.click(await screen.findByRole("button", { name: "Install app" }));
+
+    expect(screen.queryByRole("heading", { name: "Install The Clean Crew" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
 

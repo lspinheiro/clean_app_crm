@@ -418,6 +418,133 @@ a {
   box-shadow: 0 8px 24px rgb(21 27 38 / 8%);
 }
 
+.upgrade-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 14px;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+}
+
+.upgrade-prompt__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.upgrade-prompt__body {
+  margin: 6px 0 0;
+  color: var(--color-gray-600);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.upgrade-prompt__actions {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-screen {
+  padding-bottom: 36px;
+}
+
+.profile-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+}
+
+.profile-panel__title,
+.profile-setting h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.profile-panel__body,
+.profile-setting p {
+  margin: 0;
+  color: var(--color-gray-600);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.profile-notice {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-status-success-tint);
+  color: var(--color-status-success-text);
+}
+
+.company-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.company-list__item {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.company-list__item:first-child {
+  border-top: 0;
+}
+
+.status-chip {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-family: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-chip--active {
+  background: var(--color-status-success-tint);
+  color: var(--color-status-success-text);
+}
+
+.status-chip--removed {
+  background: var(--color-status-danger-tint);
+  color: var(--color-status-danger-text);
+}
+
+.profile-setting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.profile-setting:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .push-opt-in__title {
   margin: 0;
   font-size: 18px;

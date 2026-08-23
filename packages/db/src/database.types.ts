@@ -1409,18 +1409,19 @@ export type Database = {
       }
       cleaner_pool_memberships: {
         Row: {
+          company_id: string | null
+          company_name: string | null
           profile_id: string | null
           status: Database["public"]["Enums"]["member_status"] | null
         }
-        Insert: {
-          profile_id?: string | null
-          status?: Database["public"]["Enums"]["member_status"] | null
-        }
-        Update: {
-          profile_id?: string | null
-          status?: Database["public"]["Enums"]["member_status"] | null
-        }
         Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "company_members_profile_id_fkey"
             columns: ["profile_id"]
@@ -1907,6 +1908,10 @@ export type Database = {
       }
       set_site_preferred_cleaners: {
         Args: { cleaner_ids: string[]; target_site_id: string }
+        Returns: undefined
+      }
+      update_cleaner_profile: {
+        Args: { full_name: string; phone: string; suburb: string }
         Returns: undefined
       }
       update_client: {

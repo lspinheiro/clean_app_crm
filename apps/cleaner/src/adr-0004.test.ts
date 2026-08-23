@@ -61,4 +61,15 @@ describe("ADR 0004 — the cleaner app stays wrapper-ready", () => {
 
     expect(config).toMatch(/output:\s*["']export["']/);
   });
+
+  it("ships a standalone web app manifest on the localised cleaner route", () => {
+    const manifestPath = path.join(srcRoot, "app/manifest.ts");
+    expect(existsSync(manifestPath)).toBe(true);
+
+    const manifest = readFileSync(manifestPath, "utf8");
+    expect(manifest).toMatch(/display:\s*["']standalone["']/);
+    expect(manifest).toMatch(/start_url:\s*["']\/["']/);
+    expect(manifest).toContain("#2563EB");
+    expect(manifest).toContain("#F8FAFC");
+  });
 });

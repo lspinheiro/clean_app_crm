@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BrandBubbles } from "@/components/brand-bubbles";
+import { InstallPrompt } from "@/components/install-prompt";
 import { PushOptInPrompt } from "@/components/push-opt-in-prompt";
 import {
   applyErrorKey,
@@ -188,6 +189,7 @@ export default function BoardPage() {
         </p>
       </header>
 
+      <InstallPrompt />
       <PushOptInPrompt />
 
       {/* Sits outside the list on purpose: it carries the reasons whose card has gone, and

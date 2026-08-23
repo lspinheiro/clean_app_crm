@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { describeStatusError, toJobAction } from "./status";
+import { statusErrorKey, toJobAction } from "./status";
 import type { JobStatus } from "./types";
 
 describe("CLE-24 the card offers only what the database allows", () => {
@@ -10,7 +10,7 @@ describe("CLE-24 the card offers only what the database allows", () => {
     for (const status of ["draft", "posted"] as const) {
       expect(toJobAction(status)).toEqual({
         kind: "waiting",
-        reason: "Starts once the crew is complete",
+        reason: "waitingCrew",
       });
     }
   });
@@ -19,8 +19,8 @@ describe("CLE-24 the card offers only what the database allows", () => {
     expect(toJobAction("assigned")).toEqual({
       kind: "advance",
       to: "on_the_way",
-      label: "On my way",
-      busyLabel: "Saving…",
+      label: "onMyWay",
+      busyLabel: "saving",
     });
   });
 
@@ -28,8 +28,8 @@ describe("CLE-24 the card offers only what the database allows", () => {
     expect(toJobAction("on_the_way")).toEqual({
       kind: "advance",
       to: "in_progress",
-      label: "Start work",
-      busyLabel: "Saving…",
+      label: "startWork",
+      busyLabel: "saving",
     });
   });
 
@@ -37,20 +37,20 @@ describe("CLE-24 the card offers only what the database allows", () => {
     expect(toJobAction("in_progress")).toEqual({
       kind: "confirm",
       to: "completed",
-      label: "Job done",
-      confirmLabel: "Tap again to confirm",
-      busyLabel: "Saving…",
+      label: "jobDone",
+      confirmLabel: "confirmDone",
+      busyLabel: "saving",
     });
   });
 
   it("explains a finished or cancelled job instead of offering a control", () => {
     expect(toJobAction("completed")).toEqual({
       kind: "waiting",
-      reason: "This job is finished.",
+      reason: "finished",
     });
     expect(toJobAction("cancelled")).toEqual({
       kind: "waiting",
-      reason: "This job was cancelled.",
+      reason: "cancelled",
     });
   });
 
@@ -78,21 +78,19 @@ describe("CLE-24 the card offers only what the database allows", () => {
   });
 });
 
-describe("CLE-24 status errors read as plain English", () => {
+describe("CLE-24 status errors map to safe UI keys", () => {
   it.each([
-    ["Assigned cleaner access required", "You are not on this job any more."],
-    ["Invalid job status transition", "This job has already moved on."],
-  ])("turns %s into a sentence she can act on", (message, expected) => {
-    expect(describeStatusError({ message })).toBe(expected);
+    ["Assigned cleaner access required", "errorNoAccess"],
+    ["Invalid job status transition", "errorMoved"],
+  ])("maps %s without leaking the database message", (message, expected) => {
+    expect(statusErrorKey({ message })).toBe(expected);
   });
 
   it("never leaks a raw database message", () => {
-    expect(describeStatusError({ message: "deadlock detected" })).toBe(
-      "We could not update this job. Try again.",
-    );
+    expect(statusErrorKey({ message: "deadlock detected" })).toBe("errorUpdate");
   });
 
   it("copes with an error carrying no message at all", () => {
-    expect(describeStatusError(null)).toBe("We could not update this job. Try again.");
+    expect(statusErrorKey(null)).toBe("errorUpdate");
   });
 });

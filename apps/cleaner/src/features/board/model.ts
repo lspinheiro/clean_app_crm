@@ -1,16 +1,20 @@
+import type { AppLocale } from "@/i18n/config";
+import { collatorFor } from "@/i18n/intl";
+
 import type { BoardRow, Vacancy } from "./types";
 
-function bySoonestThenName(left: Vacancy, right: Vacancy) {
+function bySoonestThenName(left: Vacancy, right: Vacancy, locale: AppLocale) {
+  const collator = collatorFor(locale);
   const byStart = left.scheduledStart.localeCompare(right.scheduledStart);
   if (byStart) return byStart;
 
-  const byCompany = left.companyName.localeCompare(right.companyName, "en-AU");
+  const byCompany = collator.compare(left.companyName, right.companyName);
   if (byCompany) return byCompany;
 
-  const bySite = left.siteName.localeCompare(right.siteName, "en-AU");
+  const bySite = collator.compare(left.siteName, right.siteName);
   if (bySite) return bySite;
 
-  return left.jobId.localeCompare(right.jobId);
+  return collator.compare(left.jobId, right.jobId);
 }
 
 /**
@@ -18,7 +22,7 @@ function bySoonestThenName(left: Vacancy, right: Vacancy) {
  * arrives twice. Collapse to one card per job and count what is still open — repeating an
  * identical card would read as a rendering bug.
  */
-export function toVacancies(rows: BoardRow[]): Vacancy[] {
+export function toVacancies(rows: BoardRow[], locale: AppLocale = "en-AU"): Vacancy[] {
   const byJob = new Map<string, Vacancy>();
 
   for (const row of rows) {
@@ -34,6 +38,7 @@ export function toVacancies(rows: BoardRow[]): Vacancy[] {
       siteName: row.site_name,
       suburb: row.suburb,
       serviceName: row.service_name,
+      serviceSlug: row.service_slug,
       scheduledStart: row.scheduled_start,
       durationMinutes: row.duration_minutes,
       cleanerPayCents: row.cleaner_pay_cents,
@@ -43,5 +48,5 @@ export function toVacancies(rows: BoardRow[]): Vacancy[] {
     });
   }
 
-  return [...byJob.values()].sort(bySoonestThenName);
+  return [...byJob.values()].sort((left, right) => bySoonestThenName(left, right, locale));
 }

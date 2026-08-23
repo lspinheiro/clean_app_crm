@@ -11,11 +11,12 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
     const css = await readFile(globalsPath, "utf8");
 
     expect(css).toContain('@import "tailwindcss"');
-    expect(css).toContain("--color-ink: #000000");
+    expect(css).toContain("--color-primary: #2563eb");
+    expect(css).toContain("--color-ink: #0f172a");
     expect(css).toContain("--color-paper: #ffffff");
-    expect(css).toContain("--color-bubble: #00c2ff");
-    expect(css).toContain("--color-success: #06c167");
-    expect(css).toContain("--color-danger: #e11900");
+    expect(css).toContain("--color-bubble: #06b6d4");
+    expect(css).toContain("--color-success: #15803d");
+    expect(css).toContain("--color-danger: #b91c1c");
   });
 
   it("keeps the implemented radii and the two canonical Trust Blue shadow levels", async () => {
@@ -24,7 +25,7 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
 
     expect(css).toMatch(/\.field input\s*\{[^}]*border-radius: 8px;/);
     expect(css).toMatch(/\.invite-card\s*\{[^}]*border-radius: 12px;/);
-    expect(css).toMatch(/\.button\s*\{[^}]*border-radius: 999px;/);
+    expect(css).toMatch(/\.button\s*\{[^}]*border-radius: 8px;/);
     // The Trust Blue redesign replaced the single floating shadow with two levels. The CRM
     // moved at the time; this app did not, and the mismatch is what the contract assertion
     // below is for. Both values are quoted from DESIGN.md, which is canonical for the code,
@@ -46,11 +47,16 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
     expect(css).toMatch(/\.button\s*\{[^}]*min-height: 52px;/);
     expect(css).toMatch(/\.button--small\s*\{[^}]*min-height: 44px;/);
     expect(css).toMatch(/\.field input\s*\{[^}]*min-height: 48px;/);
+    expect(css).toMatch(/\.language-control select\s*\{[^}]*min-height: 44px;/);
+    expect(css).not.toMatch(
+      /\.language-control--compact select\s*\{[^}]*min-height:\s*(?:[0-3]?\d|4[0-3])px;/,
+    );
   });
 
   it("keeps caption greys on the AA-safe token", async () => {
+    const css = await readFile(globalsPath, "utf8");
+    expect(css).toContain("--color-gray-600: #475569");
     for (const selector of [".field-hint", ".consent-caption", ".invite-card__cleaners"]) {
-      const css = await readFile(globalsPath, "utf8");
       const escaped = selector.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
       expect(css).toMatch(new RegExp(`${escaped}\\s*\\{[^}]*color: var\\(--color-gray-600\\);`));
     }
@@ -62,6 +68,24 @@ describe("CLE-19 cleaner app design-system plumbing", () => {
 
     expect(css).toMatch(/\.screen\s*\{[^}]*max-width: var\(--screen-max\);/);
     expect(contract).toContain("390px design width");
+  });
+
+  it("protects full own-language names in the compact signed-in control", async () => {
+    const css = await readFile(globalsPath, "utf8");
+
+    expect(css).toMatch(/\.language-control--compact\s*\{[^}]*flex:\s*0 0 auto;/);
+    expect(css).toMatch(
+      /\.language-control--compact select\s*\{[^}]*min-width:\s*184px;[^}]*width:\s*184px;/,
+    );
+  });
+
+  it("keeps applied work compact and Withdraw visually quiet", async () => {
+    const css = await readFile(globalsPath, "utf8");
+
+    expect(css).toMatch(/\.vacancy-card--applied\s*\{[^}]*display:\s*grid;/);
+    expect(css).toMatch(
+      /\.vacancy-card--applied \.vacancy-card__actions \.button\s*\{[^}]*width:\s*auto;[^}]*border:\s*0;[^}]*background:\s*transparent;[^}]*color:\s*var\(--color-primary\);/,
+    );
   });
 
   it("honours reduced motion", async () => {

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  describeInviteProblem,
-  describeJoinFailure,
-  describeCleanerCount,
+  cleanerCountCopy,
+  inviteProblem,
   isInviteState,
+  joinFailureKey,
   normaliseInviteCode,
 } from "./invite";
 
@@ -21,82 +21,68 @@ describe("CLE-19 invite code handling", () => {
   });
 });
 
-describe("CLE-19 plain-English invite problems", () => {
+describe("CLE-19 invite problems map to UI copy", () => {
   it("tells an expired link holder what to do next", () => {
     expect(
-      describeInviteProblem({
+      inviteProblem({
         state: "expired",
         companyName: "Coastal Demo Cleaning",
         cleanerCount: 3,
       }),
-    ).toBe("This invite link from Coastal Demo Cleaning has expired. Ask them for a new link.");
+    ).toEqual({ key: "inviteExpiredCompany", values: { company: "Coastal Demo Cleaning" } });
   });
 
   it("tells a superseded link holder what to do next", () => {
     expect(
-      describeInviteProblem({
+      inviteProblem({
         state: "revoked",
         companyName: "Coastal Demo Cleaning",
         cleanerCount: 3,
       }),
-    ).toBe(
-      "This invite link from Coastal Demo Cleaning is no longer in use. Ask them for a new link.",
-    );
+    ).toEqual({ key: "inviteRevokedCompany", values: { company: "Coastal Demo Cleaning" } });
   });
 
   it("does not name a company it could not find", () => {
     expect(
-      describeInviteProblem({ state: "unknown", companyName: null, cleanerCount: 0 }),
-    ).toBe("We do not know this invite link. Check the link, or ask the company to send it again.");
+      inviteProblem({ state: "unknown", companyName: null, cleanerCount: 0 }),
+    ).toEqual({ key: "inviteUnknown" });
   });
 
   it("falls back to a company-free sentence when the name is missing", () => {
     expect(
-      describeInviteProblem({ state: "expired", companyName: null, cleanerCount: 0 }),
-    ).toBe("This invite link has expired. Ask the company for a new link.");
+      inviteProblem({ state: "expired", companyName: null, cleanerCount: 0 }),
+    ).toEqual({ key: "inviteExpired" });
   });
 
   it("has nothing to say about a live link", () => {
     expect(
-      describeInviteProblem({
+      inviteProblem({
         state: "active",
         companyName: "Coastal Demo Cleaning",
         cleanerCount: 3,
       }),
-    ).toBe("");
+    ).toBeNull();
   });
 });
 
 describe("CLE-19 join failures", () => {
   it("turns each database refusal into a sentence a cleaner can act on", () => {
-    expect(describeJoinFailure("Invite code not found")).toBe(
-      "We do not know this invite link. Ask the company to send it again.",
-    );
-    expect(describeJoinFailure("Invite code is no longer active")).toBe(
-      "This invite link is no longer in use. Ask the company for a new link.",
-    );
-    expect(describeJoinFailure("Invite code has expired")).toBe(
-      "This invite link has expired. Ask the company for a new link.",
-    );
-    expect(describeJoinFailure("Cleaner access required")).toBe(
-      "This app is for cleaners. Sign in with your cleaner account.",
-    );
-    expect(describeJoinFailure("This company removed you from their pool")).toBe(
-      "This company removed you. Ask them to add you again.",
-    );
+    expect(joinFailureKey("Invite code not found")).toBe("joinUnknown");
+    expect(joinFailureKey("Invite code is no longer active")).toBe("joinInactive");
+    expect(joinFailureKey("Invite code has expired")).toBe("joinExpired");
+    expect(joinFailureKey("Cleaner access required")).toBe("cleanerAccessRequired");
+    expect(joinFailureKey("This company removed you from their pool")).toBe("removed");
   });
 
   it("never shows a raw database message", () => {
-    expect(describeJoinFailure('duplicate key value violates unique constraint "x"')).toBe(
-      "We could not add you to this company. Please try again.",
-    );
+    expect(joinFailureKey('duplicate key value violates unique constraint "x"')).toBe("joinError");
   });
 });
 
-describe("CLE-19 cleaner count wording", () => {
-  it("counts cleaners in plain words", () => {
-    expect(describeCleanerCount(0)).toBe("You would be their first Cleaner staff member.");
-    expect(describeCleanerCount(1)).toBe("1 cleaner is already on their staff.");
-    expect(describeCleanerCount(7)).toBe("7 cleaners are already on their staff.");
+describe("CLE-19 cleaner count copy", () => {
+  it("describes zero separately and supplies plural counts to the translator", () => {
+    expect(cleanerCountCopy(0)).toEqual({ key: "firstCleaner", values: undefined });
+    expect(cleanerCountCopy(1)).toEqual({ key: "cleanerCount", values: { count: 1 } });
+    expect(cleanerCountCopy(7)).toEqual({ key: "cleanerCount", values: { count: 7 } });
   });
 });

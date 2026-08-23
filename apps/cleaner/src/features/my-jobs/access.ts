@@ -12,16 +12,15 @@ export function toMapsUrl(address: string): string {
 
 type DatabaseError = { message?: string } | null | undefined;
 
+export type AccessErrorKey = "errorAddress" | "errorAddressUnavailable";
+
+export function accessErrorKey(error: DatabaseError): AccessErrorKey {
+  return error?.message === "Job access is unavailable"
+    ? "errorAddressUnavailable"
+    : "errorAddress";
+}
+
 /**
  * `get_cleaner_job_access` raises one fixed message, pinned by CLE-49's pgTAP suite.
  * Anything else is a bug or an outage.
  */
-const accessMessages = new Map<string, string>([
-  ["Job access is unavailable", "We cannot show the address for this job any more."],
-]);
-
-export function describeAccessError(error: DatabaseError): string {
-  return (
-    accessMessages.get(error?.message ?? "") ?? "We could not load the address. Try again."
-  );
-}

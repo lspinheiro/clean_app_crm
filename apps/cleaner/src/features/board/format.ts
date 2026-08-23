@@ -1,37 +1,46 @@
-// Mirrors apps/crm/src/features/jobs/format.ts so both apps read the same way. Timezone is
-// fixed to Brisbane: Queensland has no daylight saving, so the offset never moves.
-const brisbaneDateFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "Australia/Brisbane",
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-});
+import type { AppLocale } from "@/i18n/config";
+import { dateTimeFormatterFor, numberFormatterFor } from "@/i18n/intl";
 
-const brisbaneTimeFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "Australia/Brisbane",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
-});
-
-export function formatJobDate(value: string) {
-  return brisbaneDateFormatter.format(new Date(value));
+// Queensland has no daylight saving, so the operating timezone never moves when the
+// display language changes.
+function dateFormatter(locale: AppLocale) {
+  return dateTimeFormatterFor(locale, {
+    timeZone: "Australia/Brisbane",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 }
 
-export function formatJobTime(value: string) {
-  return brisbaneTimeFormatter.format(new Date(value)).toLowerCase();
+function timeFormatter(locale: AppLocale) {
+  return dateTimeFormatterFor(locale, {
+    timeZone: "Australia/Brisbane",
+    hour: locale === "en-AU" ? "numeric" : "2-digit",
+    minute: "2-digit",
+    hour12: locale === "en-AU",
+  });
 }
 
-export function formatJobDuration(minutes: number) {
+export function formatJobDate(value: string, locale: AppLocale = "en-AU") {
+  return dateFormatter(locale).format(new Date(value));
+}
+
+export function formatJobTime(value: string, locale: AppLocale = "en-AU") {
+  const formatted = timeFormatter(locale).format(new Date(value));
+  return locale === "en-AU" ? formatted.toLowerCase() : formatted;
+}
+
+export function formatJobDuration(minutes: number, locale: AppLocale = "en-AU") {
+  const number = numberFormatterFor(locale);
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  if (!hours) return `${remainingMinutes} min`;
-  if (!remainingMinutes) return `${hours} h`;
-  return `${hours} h ${remainingMinutes} min`;
+  if (!hours) return `${number.format(remainingMinutes)} min`;
+  if (!remainingMinutes) return `${number.format(hours)} h`;
+  return `${number.format(hours)} h ${number.format(remainingMinutes)} min`;
 }
 
-export function formatCleanerPay(cents: number) {
-  return new Intl.NumberFormat("en-AU", {
+export function formatCleanerPay(cents: number, locale: AppLocale = "en-AU") {
+  return numberFormatterFor(locale, {
     style: "currency",
     currency: "AUD",
     maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
@@ -39,7 +48,13 @@ export function formatCleanerPay(cents: number) {
 }
 
 /** A one-cleaner job has nothing to say about crew; a crew job states what is left. */
-export function describeOpenSlots(openSlots: number, crewSize: number) {
-  if (crewSize <= 1) return "";
-  return `${openSlots} of ${crewSize} spots open`;
+export function describeOpenSlots(
+  openSlots: number,
+  crewSize: number,
+) {
+  return crewSize <= 1
+    ? openSlots > 0
+      ? { key: "oneSpotOpen" as const, values: undefined }
+      : { key: "noSpotsOpen" as const, values: undefined }
+    : { key: "crewSpotsOpen" as const, values: { open: openSlots, total: crewSize } };
 }

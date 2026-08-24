@@ -104,7 +104,7 @@ jobs:
     if: needs.checks.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: internal-production
+    environment: internal-deployment
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -122,7 +122,7 @@ jobs:
         run: |
           for variable in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_ID; do
             if [[ -z "${!variable}" ]]; then
-              echo "::error::$variable is not configured in the internal-production environment."
+              echo "::error::$variable is not configured in the internal-deployment environment."
               exit 1
             fi
           done
@@ -148,7 +148,7 @@ jobs:
     needs: supabase
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    environment: internal-production
+    environment: internal-deployment
     env:
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_CLEANER_PROJECT_ID }}
@@ -197,7 +197,7 @@ jobs:
     needs: cleaner
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    environment: internal-production
+    environment: internal-deployment
     env:
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_CRM_PROJECT_ID }}

@@ -71,6 +71,11 @@ test.describe("@CLE-19 joining a company from the invite link", () => {
   test("invalid existing-account credentials preserve the invitation", async ({ page }) => {
     await page.goto(`/join?code=${activeCode}`);
     await page.getByRole("link", { name: "Sign in to join" }).click();
+
+    // Wait for the client-side navigation before touching the fields: /join carries its
+    // own "Email" input for the sign-up form, so filling too early silently types into
+    // the page being navigated away from and submits an empty login form.
+    await expect(page).toHaveURL(new RegExp(`/login\\?code=${activeCode}$`));
     await page.getByLabel("Email").fill(sameCompanyEmployeeEmail);
     await page.getByLabel("Password").fill("not-the-password");
     await page.getByRole("button", { name: "Sign in" }).click();

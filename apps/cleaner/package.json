@@ -11,6 +11,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:vocabulary": "pnpm --dir ../.. test:vocabulary",
     "test:e2e": "node ../../scripts/run-local-e2e.mjs --app cleaner",
     "db:start": "pnpm --dir ../../packages/db db:start",
     "db:stop": "pnpm --dir ../../packages/db db:stop",

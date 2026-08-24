@@ -64,4 +64,7 @@ file_size_limit = "10MiB"
 enabled = false
 
 [edge_runtime]
-enabled = false
+enabled = true
+
+[functions.push-dispatch]
+verify_jwt = false

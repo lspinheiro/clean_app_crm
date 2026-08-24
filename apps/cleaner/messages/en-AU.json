@@ -5,7 +5,8 @@
     "loginTitle": "Sign in",
     "joinTitle": "Join a company",
     "boardTitle": "Open jobs",
-    "myJobsTitle": "My jobs"
+    "myJobsTitle": "My jobs",
+    "profileTitle": "Profile"
   },
   "LocaleSwitcher": {
     "label": "Language",
@@ -25,7 +26,65 @@
   "Navigation": {
     "sections": "Sections",
     "board": "Open jobs",
-    "myJobs": "My jobs"
+    "myJobs": "My jobs",
+    "profile": "Profile"
+  },
+  "PushOptIn": {
+    "title": "Get job updates",
+    "body": "Turn on notifications so companies can tell you when a job is posted, assigned, or cancelled.",
+    "accept": "Turn on notifications",
+    "pending": "Turning on…",
+    "skip": "Not now",
+    "error": "We could not turn on notifications. You can try again."
+  },
+  "InstallPrompt": {
+    "title": "Install The Clean Crew",
+    "body": "Add the app to your home screen for quicker access to your jobs.",
+    "accept": "Install app",
+    "pending": "Opening install…",
+    "skip": "Not now",
+    "error": "Installation was not completed. You can try again from your profile."
+  },
+  "Profile": {
+    "title": "Your profile",
+    "lead": "Keep your details and company connections up to date.",
+    "loading": "Loading your profile…",
+    "loadError": "We could not load your profile.",
+    "detailsTitle": "Your details",
+    "saveProfile": "Save profile",
+    "savingProfile": "Saving…",
+    "profileSaved": "Profile saved.",
+    "saveError": "We could not save your profile. Try again.",
+    "signOutError": "We could not sign you out. Try again.",
+    "joinedCompanies": "Joined companies",
+    "membershipActive": "Active",
+    "membershipRemoved": "Removed",
+    "joinTitle": "Join another company",
+    "joinLead": "Enter the code from the company's cleaner invitation.",
+    "inviteCode": "Cleaner invitation code",
+    "codeRequired": "Enter a cleaner invitation code.",
+    "joinCompany": "Join company",
+    "joiningCompany": "Joining…",
+    "joinError": "We could not add you to this company. Please try again.",
+    "joinedCompany": "Joined {company}.",
+    "joinedCompanyFallback": "Company joined.",
+    "alreadyMember": "You already belong to {company}.",
+    "appTitle": "App settings",
+    "installTitle": "Install the app",
+    "installAvailable": "Install The Clean Crew on this device.",
+    "installInstalled": "The app is installed on this device.",
+    "installUnavailable": "Use your browser menu to add The Clean Crew to your home screen.",
+    "installApp": "Install app",
+    "installing": "Opening install…",
+    "installError": "Installation was not completed. Try again.",
+    "notificationsTitle": "Notifications",
+    "notificationsChecking": "Checking notification status…",
+    "notificationsOn": "Notifications are on",
+    "notificationsOff": "Notifications are off",
+    "notificationsUnavailable": "Notifications are not supported on this device.",
+    "enableNotifications": "Turn on notifications",
+    "enablingNotifications": "Turning on…",
+    "notificationsError": "We could not turn on notifications. Try again."
   },
   "Auth": {
     "title": "Sign in",

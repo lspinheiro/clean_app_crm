@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CleanerIntlProvider } from "@/i18n/provider";
+import { getPushPromptState, PUSH_PROMPT_STATE } from "@/lib/push";
 import { cleanerTestMessages } from "@/test/render";
 
 const mocks = vi.hoisted(() => ({
@@ -53,6 +54,7 @@ function renderJoin() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   document.cookie = "NEXT_LOCALE=; path=/; max-age=0";
   document.documentElement.lang = "en-AU";
   window.history.replaceState({}, "", "/en-AU/join?code=CLEAN1");
@@ -106,6 +108,7 @@ describe("Cleaner join language behavior", () => {
     expect(mocks.rpc).toHaveBeenCalledWith("set_preferred_locale", {
       target_locale: "en-AU",
     });
+    expect(getPushPromptState()).toBe(PUSH_PROMPT_STATE.pending);
   });
 
   it("finishes joining when saving the selected locale fails", async () => {

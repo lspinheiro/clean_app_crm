@@ -5,7 +5,8 @@
     "loginTitle": "Entrar",
     "joinTitle": "Entrar em uma empresa",
     "boardTitle": "Serviços disponíveis",
-    "myJobsTitle": "Meus serviços"
+    "myJobsTitle": "Meus serviços",
+    "profileTitle": "Perfil"
   },
   "LocaleSwitcher": {
     "label": "Idioma",
@@ -25,7 +26,65 @@
   "Navigation": {
     "sections": "Seções",
     "board": "Serviços disponíveis",
-    "myJobs": "Meus serviços"
+    "myJobs": "Meus serviços",
+    "profile": "Perfil"
+  },
+  "PushOptIn": {
+    "title": "Receba atualizações dos serviços",
+    "body": "Ative as notificações para saber quando uma empresa publicar, atribuir ou cancelar um serviço.",
+    "accept": "Ativar notificações",
+    "pending": "Ativando…",
+    "skip": "Agora não",
+    "error": "Não foi possível ativar as notificações. Você pode tentar novamente."
+  },
+  "InstallPrompt": {
+    "title": "Instale o The Clean Crew",
+    "body": "Adicione o aplicativo à tela inicial para acessar seus serviços mais rápido.",
+    "accept": "Instalar aplicativo",
+    "pending": "Abrindo instalação…",
+    "skip": "Agora não",
+    "error": "A instalação não foi concluída. Tente novamente pelo seu perfil."
+  },
+  "Profile": {
+    "title": "Seu perfil",
+    "lead": "Mantenha seus dados e vínculos com empresas atualizados.",
+    "loading": "Carregando seu perfil…",
+    "loadError": "Não foi possível carregar seu perfil.",
+    "detailsTitle": "Seus dados",
+    "saveProfile": "Salvar perfil",
+    "savingProfile": "Salvando…",
+    "profileSaved": "Perfil salvo.",
+    "saveError": "Não foi possível salvar seu perfil. Tente novamente.",
+    "signOutError": "Não foi possível sair. Tente novamente.",
+    "joinedCompanies": "Empresas conectadas",
+    "membershipActive": "Ativo",
+    "membershipRemoved": "Removido",
+    "joinTitle": "Entrar em outra empresa",
+    "joinLead": "Digite o código do convite para a equipe de limpeza enviado pela empresa.",
+    "inviteCode": "Código do convite para profissional de limpeza",
+    "codeRequired": "Digite um código de convite.",
+    "joinCompany": "Entrar na empresa",
+    "joiningCompany": "Entrando…",
+    "joinError": "Não foi possível adicionar você a esta empresa. Tente novamente.",
+    "joinedCompany": "Você entrou na empresa {company}.",
+    "joinedCompanyFallback": "Você entrou na empresa.",
+    "alreadyMember": "Você já faz parte da empresa {company}.",
+    "appTitle": "Configurações do aplicativo",
+    "installTitle": "Instalar o aplicativo",
+    "installAvailable": "Instale o The Clean Crew neste dispositivo.",
+    "installInstalled": "O aplicativo está instalado neste dispositivo.",
+    "installUnavailable": "Use o menu do navegador para adicionar o The Clean Crew à tela inicial.",
+    "installApp": "Instalar aplicativo",
+    "installing": "Abrindo instalação…",
+    "installError": "A instalação não foi concluída. Tente novamente.",
+    "notificationsTitle": "Notificações",
+    "notificationsChecking": "Verificando notificações…",
+    "notificationsOn": "As notificações estão ativadas",
+    "notificationsOff": "As notificações estão desativadas",
+    "notificationsUnavailable": "Este dispositivo não oferece suporte a notificações.",
+    "enableNotifications": "Ativar notificações",
+    "enablingNotifications": "Ativando…",
+    "notificationsError": "Não foi possível ativar as notificações. Tente novamente."
   },
   "Auth": {
     "title": "Entrar",

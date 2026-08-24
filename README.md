@@ -84,6 +84,10 @@ pnpm install
 pnpm crm dev
 ```
 
+Alongside Docker, Node and the Supabase CLI, `pnpm check` needs [Deno](https://docs.deno.com/runtime/getting_started/installation/)
+(`brew install deno`) to run the Edge Function tests. Only `packages/db/supabase/functions` uses
+it; `pnpm check` says so plainly if it is missing.
+
 With Docker running, `pnpm crm dev` starts or reuses the local Supabase stack, applies pending
 migrations without resetting existing data, reads the local URL and publishable key, and starts
 the CRM at `http://localhost:3000`. When the committed local Supabase configuration or Auth e-mail
@@ -177,6 +181,23 @@ Keep secrets in the GitHub environment, never repository files or variables. Res
 credentials remain configured in Vercel and Supabase and are not copied into GitHub.
 Only backward-compatible hosted migrations belong in this automated path; destructive
 or data-rewriting migrations require a manual release.
+
+The release also deploys every Edge Function under `packages/db/supabase/functions`.
+Deploying the code is all the workflow does; `push-dispatch` stays inert until the hosted
+project and database carry its configuration, which is set once by hand because each value
+is a secret:
+
+| Where | Name | Value |
+| --- | --- | --- |
+| Supabase function secrets | `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | The project's VAPID key pair and its `mailto:` subject. |
+| Supabase function secrets | `PUSH_DISPATCH_SECRET` | The bearer the database presents to the function. |
+| Hosted database setting | `app.settings.push_dispatch_bearer` | The same value as `PUSH_DISPATCH_SECRET`. |
+| Hosted database setting | `app.settings.push_dispatch_url` | `https://PROJECT_REF.supabase.co/functions/v1/push-dispatch`. |
+| Vercel (Cleaner) | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | The public half of the same VAPID pair. |
+
+Until `app.settings.push_dispatch_bearer` is set, the notifications trigger returns without
+enqueuing anything, so push is simply off rather than broken. See
+`packages/db/supabase/functions/push-dispatch/README.md` for the local equivalents.
 
 ## Status
 

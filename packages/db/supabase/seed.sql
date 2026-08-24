@@ -201,10 +201,16 @@ values
 on conflict (company_id, profile_id) do nothing;
 
 insert into public.company_invites (id, company_id, code)
-values (
+values
+(
   '10000000-0000-4000-8000-000000000201',
   '10000000-0000-4000-8000-000000000010',
   'CLEAN1DEMOJOIN99'
+),
+(
+  '10000000-0000-4000-8000-000000000203',
+  '10000000-0000-4000-8000-000000000020',
+  'HARBR2DEMOJOIN99'
 )
 on conflict (id) do nothing;
 
@@ -243,6 +249,14 @@ values
     'Riley Chen',
     '07 5555 0102',
     'Local single-site demo client'
+  ),
+  (
+    '10000000-0000-4000-8000-000000000305',
+    '10000000-0000-4000-8000-000000000020',
+    'Harbour Foreshore Offices',
+    'Demo Contact',
+    '07 5555 0201',
+    'Local second-company demo client'
   )
 on conflict (id) do nothing;
 
@@ -285,6 +299,14 @@ values
     'Palm Grove Practice',
     '21 Robina Town Centre Drive',
     'Robina',
+    null
+  ),
+  (
+    '10000000-0000-4000-8000-000000000405',
+    '10000000-0000-4000-8000-000000000305',
+    'Harbour Foreshore',
+    '1 Demo Harbour Drive',
+    'Main Beach',
     null
   )
 on conflict (id) do nothing;
@@ -415,6 +437,31 @@ set cleaner_id = excluded.cleaner_id;
 -- Jobs are generated from the recurring rules so fresh demo databases exercise
 -- the same 28-day roster path as production data.
 select public.generate_recurring_jobs();
+
+-- A second-company vacancy proves that joining another company expands the cleaner board.
+insert into public.jobs (
+  id,
+  site_id,
+  service_id,
+  scheduled_start,
+  duration_minutes,
+  cleaner_pay_cents,
+  client_charge_cents,
+  status,
+  crew_size
+) values (
+  '10000000-0000-4000-8000-000000000805',
+  '10000000-0000-4000-8000-000000000405',
+  '30000000-0000-4000-8000-000000000001',
+  (date_trunc('day', timezone('Australia/Brisbane', now())) + interval '10 days 10 hours')
+    at time zone 'Australia/Brisbane',
+  120,
+  14000,
+  22000,
+  'posted',
+  1
+)
+on conflict (id) do nothing;
 
 -- Keep the dispatch screens useful before the cleaner app is connected: the next
 -- Broadbeach crew-two vacancy has two real applicants while slot one stays assigned

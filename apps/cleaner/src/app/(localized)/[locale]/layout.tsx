@@ -26,6 +26,7 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
   return {
     title: { default: metadata.title, template: `%s · ${metadata.title}` },
     description: metadata.description,
+    manifest: "/manifest.webmanifest",
   };
 }
 

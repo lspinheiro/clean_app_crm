@@ -7,7 +7,12 @@ select
   (select name from public.companies where id = '10000000-0000-4000-8000-000000000010') as company_name,
   (select name from public.clients where id = '10000000-0000-4000-8000-000000000301') as client_name,
   (select address from public.sites where id = '10000000-0000-4000-8000-000000000401') as site_address,
-  (select code from public.company_invites where revoked_at is null) as invite_code;
+  (
+    select code
+    from public.company_invites
+    where company_id = '10000000-0000-4000-8000-000000000010'
+      and revoked_at is null
+  ) as invite_code;
 
 delete from public.site_preferred_cleaners
 where site_id = '10000000-0000-4000-8000-000000000401';
@@ -178,7 +183,12 @@ select is(
   'denied site mutation leaves the site unchanged'
 );
 select is(
-  (select code from public.company_invites where revoked_at is null),
+  (
+    select code
+    from public.company_invites
+    where company_id = '10000000-0000-4000-8000-000000000010'
+      and revoked_at is null
+  ),
   (select invite_code from company_status_authorization_baseline),
   'denied rotation leaves the active invite unchanged'
 );

@@ -41,12 +41,13 @@ beforeEach(() => {
   mocks.usePathname.mockReturnValue("/en-AU/board");
 });
 
-describe("CLE-24 the cleaner app has two places to be", () => {
-  it("offers both tabs to a signed-in cleaner", () => {
+describe("CLE-26 the cleaner app navigation", () => {
+  it("offers the board, jobs, and profile tabs to a signed-in cleaner", () => {
     renderLayout();
 
     const board = screen.getByRole("link", { name: "Open jobs" });
     const myJobs = screen.getByRole("link", { name: "My jobs" });
+    const profile = screen.getByRole("link", { name: "Profile" });
 
     expect(board).toHaveAttribute(
       "href",
@@ -56,8 +57,10 @@ describe("CLE-24 the cleaner app has two places to be", () => {
       "href",
       "/en-AU/my-jobs",
     );
+    expect(profile).toHaveAttribute("href", "/en-AU/profile");
     expect(board.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(myJobs.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(profile.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(screen.getByRole("combobox", { name: "Language" })).toBeInTheDocument();
   });
 
@@ -92,6 +95,10 @@ describe("CLE-24 the cleaner app has two places to be", () => {
     expect(screen.getByRole("link", { name: "Meus serviços" })).toHaveAttribute(
       "href",
       "/pt-BR/my-jobs",
+    );
+    expect(screen.getByRole("link", { name: "Perfil" })).toHaveAttribute(
+      "href",
+      "/pt-BR/profile",
     );
     expect(screen.getByRole("combobox", { name: "Idioma" })).toHaveValue("pt-BR");
   });

@@ -9,6 +9,11 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: "line",
+  // Matches the CRM config: `next dev` compiles a route on its first visit, and Playwright's
+  // 5s default expires on that first navigation under CI's slower CPU. The assertions are
+  // unchanged; only the time allowed for them to come true is.
+  expect: { timeout: 15_000 },
+  timeout: 60_000,
   use: {
     baseURL,
     trace: "retain-on-failure",

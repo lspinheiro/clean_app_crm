@@ -9,6 +9,14 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: "line",
+  // The suite drives `next dev`, which compiles each route on its first visit: a cold
+  // /en-AU/roster answers in 2.2s here against 0.4s warm, and CI runs this suite about
+  // twice as slowly. Playwright's 5s default therefore expires on the first navigation to
+  // a route no earlier test reached, which is a property of the dev server rather than of
+  // the behaviour under test. Waiting longer does not soften an assertion — every
+  // expectation still has to come true — so the ceiling is raised instead of retrying.
+  expect: { timeout: 15_000 },
+  timeout: 60_000,
   use: {
     baseURL,
     trace: "retain-on-failure",

@@ -15,6 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  DENO_VERSION: "2.2.8"
   NODE_VERSION: "24"
   PNPM_VERSION: "9.15.3"
   SUPABASE_CLI_VERSION: "2.114.0"
@@ -50,6 +51,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -142,6 +148,16 @@ jobs:
 
       - name: Verify migration idempotence
         run: supabase db push --dry-run --workdir packages/db
+
+      # Deployed after the migrations that create their callers. Push dispatch is best-effort
+      # by design — the enqueue trigger no-ops until `app.settings.push_dispatch_bearer` is set
+      # on the hosted database, so a function that is briefly absent cannot fail a job mutation.
+      # Per-function gateway settings, including `verify_jwt`, come from config.toml.
+      - name: Deploy Edge Functions
+        run: >-
+          supabase functions deploy
+          --project-ref "$SUPABASE_PROJECT_ID"
+          --workdir packages/db
 
   cleaner:
     name: Deploy Cleaner

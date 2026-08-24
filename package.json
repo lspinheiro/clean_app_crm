@@ -13,6 +13,7 @@
     "db:stop": "pnpm --filter @clean-app/db db:stop",
     "db:reset": "pnpm --filter @clean-app/db db:reset",
     "db:test": "pnpm --filter @clean-app/db db:test",
+    "test:functions": "pnpm --filter @clean-app/db run test:functions",
     "test": "pnpm --filter \"./apps/*\" run test:run",
     "test:e2e": "pnpm --workspace-concurrency=1 --filter \"./apps/*\" run test:e2e",
     "lint": "pnpm --filter \"./apps/*\" run lint",
@@ -20,6 +21,6 @@
     "build": "pnpm --reporter=append-only --workspace-concurrency=1 --filter \"./apps/*\" run build",
     "test:dev-setup": "node --test scripts/run-local-dev.test.mjs",
     "test:vocabulary": "node scripts/check-vocabulary.mjs",
-    "check": "pnpm test:vocabulary && pnpm test:dev-setup && pnpm test && pnpm db:test && pnpm lint && pnpm typecheck && pnpm build"
+    "check": "pnpm test:vocabulary && pnpm test:dev-setup && pnpm test && pnpm db:test && pnpm test:functions && pnpm lint && pnpm typecheck && pnpm build"
   }
 }

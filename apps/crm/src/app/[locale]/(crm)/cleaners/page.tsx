@@ -76,7 +76,11 @@ export default async function CleanersPage() {
         companyName={company.name}
         initialCode={displayedInvite?.code ?? null}
         initialInviteId={displayedInvite?.id ?? null}
-        key={displayedInvite?.code ?? "no-active-invite"}
+        // Keyed on the company, not the invite: a rotation changes the code, and keying on
+        // it tore the workspace down mid-rotation, shutting the details panel over the
+        // replacement link the admin had just generated to hand out. Switching company is
+        // the case that genuinely warrants a fresh workspace.
+        key={company.id}
         members={members}
       />
     </main>

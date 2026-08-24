@@ -48,6 +48,18 @@ export function CleanersWorkspace({
   const [activeCode, setActiveCode] = useState(initialCode);
   const [activeInviteId, setActiveInviteId] = useState(initialInviteId);
   const [detailsVisible, setDetailsVisible] = useState(false);
+  // A rotation updates the code locally and then calls router.refresh(), so the server
+  // re-renders this workspace with the replacement invite. Adopt whatever invite the
+  // server last reported — that also picks up a rotation performed by another admin —
+  // without discarding what the admin has open in front of them.
+  const [reportedCode, setReportedCode] = useState(initialCode);
+  const [reportedInviteId, setReportedInviteId] = useState(initialInviteId);
+  if (reportedCode !== initialCode || reportedInviteId !== initialInviteId) {
+    setReportedCode(initialCode);
+    setReportedInviteId(initialInviteId);
+    setActiveCode(initialCode);
+    setActiveInviteId(initialInviteId);
+  }
   const [copying, setCopying] = useState<"link" | "message" | null>(null);
   const [rotating, setRotating] = useState(false);
   const [status, setStatus] = useState("");

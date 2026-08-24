@@ -160,7 +160,7 @@ run still performs all checks but skips provider writes when the same commit alr
 completed the workflow; a manual run always deploys. Vercel's native Git integration is
 not required.
 
-Create a GitHub environment named `internal-production` under **Settings → Environments**
+Create a GitHub environment named `internal-deployment` under **Settings → Environments**
 and add:
 
 | Kind | Name | Source |

@@ -101,6 +101,34 @@ describe("Cleaner staff invitation workspace", () => {
     await waitFor(() => expect(mocks.rotateCleanerInvite).toHaveBeenCalledOnce());
     expect((await screen.findAllByText("ZX98YU76TS54RQ32")).length).toBeGreaterThan(0);
   });
+
+  it("keeps the open invite details showing the code the refreshed page reports", () => {
+    const { rerender } = render(
+      <CleanersWorkspace {...baseProps} initialCode="AB12CD34EF56GH78" />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Invite details" }));
+    expect(screen.getByRole("link", { name: "Cleaner signup link" })).toHaveAttribute(
+      "href",
+      "https://cleaner.example.test/join?code=AB12CD34EF56GH78",
+    );
+
+    // A rotation ends in router.refresh(), so the server re-renders this workspace with
+    // the replacement invite. The admin rotated the code in order to hand it out, so the
+    // details must stay open and must show the code the server now reports.
+    rerender(
+      <CleanersWorkspace
+        {...baseProps}
+        initialCode="ZX98YU76TS54RQ32"
+        initialInviteId="10000000-0000-4000-8000-000000000202"
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Cleaner signup link" })).toHaveAttribute(
+      "href",
+      "https://cleaner.example.test/join?code=ZX98YU76TS54RQ32",
+    );
+  });
 });
 
 describe("CLE-79 bulk cleaner invitation by email", () => {

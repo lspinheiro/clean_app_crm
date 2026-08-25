@@ -2,6 +2,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => {
+  const refresh = vi.fn();
   const channel = {
     on: vi.fn(),
     subscribe: vi.fn(),
@@ -11,14 +12,15 @@ const mocks = vi.hoisted(() => {
   return {
     channel,
     createClient: vi.fn(),
-    refresh: vi.fn(),
+    refresh,
     removeChannel: vi.fn(),
     realtimeCallback: null as null | (() => void),
+    router: { refresh },
   };
 });
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: mocks.refresh }),
+  useRouter: () => mocks.router,
 }));
 
 vi.mock("@/lib/supabase/browser", () => ({
@@ -107,22 +109,23 @@ describe("JobsList", () => {
     expect(screen.getByText("3 aguardando análise")).toBeInTheDocument();
   });
 
-  it("refreshes the live awaiting count when an authorised application changes", async () => {
-    const { unmount } = render(
+  it("refreshes from one fixed RLS-scoped application channel as the job list changes", async () => {
+    const firstJob = {
+      id: "22000000-0000-4000-8000-000000000501",
+      siteName: "Broadbeach Towers",
+      clientName: "Oceanview Property Group",
+      serviceName: "Standard clean",
+      scheduledStart: "2026-08-09T22:00:00Z",
+      durationMinutes: 120,
+      cleanerPayCents: 12000,
+      status: "posted" as const,
+      crewSize: 2,
+      assignedSlots: 1,
+      awaitingApplications: 1,
+    };
+    const { rerender, unmount } = render(
       <JobsList
-        jobs={[{
-          id: "22000000-0000-4000-8000-000000000501",
-          siteName: "Broadbeach Towers",
-          clientName: "Oceanview Property Group",
-          serviceName: "Standard clean",
-          scheduledStart: "2026-08-09T22:00:00Z",
-          durationMinutes: 120,
-          cleanerPayCents: 12000,
-          status: "posted",
-          crewSize: 2,
-          assignedSlots: 1,
-          awaitingApplications: 1,
-        }]}
+        jobs={[firstJob]}
       />,
     );
 
@@ -132,10 +135,21 @@ describe("JobsList", () => {
         event: "*",
         schema: "public",
         table: "job_applications",
-        filter: "job_id=in.(22000000-0000-4000-8000-000000000501)",
       },
       expect.any(Function),
     ));
+    const firstClient = mocks.createClient.mock.results[0]?.value;
+    expect(firstClient.channel).toHaveBeenCalledWith("jobs-application-counts");
+
+    rerender(
+      <JobsList
+        jobs={[
+          firstJob,
+          { ...firstJob, id: "22000000-0000-4000-8000-000000000502" },
+        ]}
+      />,
+    );
+    expect(mocks.createClient).toHaveBeenCalledOnce();
 
     act(() => mocks.realtimeCallback?.());
     expect(mocks.refresh).toHaveBeenCalledOnce();

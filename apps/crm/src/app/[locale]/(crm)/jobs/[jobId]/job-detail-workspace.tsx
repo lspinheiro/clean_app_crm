@@ -378,8 +378,11 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
             <div aria-label={t("awaitingReview")} role="region">
               <ul aria-label={t("jobApplicants")} className="application-review-list">
                 {awaitingApplicants.map((applicant, index) => {
-                  const selectedSlot = selectedReviewSlot[applicant.cleanerId]
-                    ?? String(openSlots[0]?.slotNumber ?? "");
+                  const storedSlot = selectedReviewSlot[applicant.cleanerId];
+                  const selectedSlot = storedSlot
+                    && openSlots.some((slot) => String(slot.slotNumber) === storedSlot)
+                    ? storedSlot
+                    : String(openSlots[0]?.slotNumber ?? "");
                   const selectedSlotNumber = Number(selectedSlot);
                   const applicantPendingAction = pendingReview?.cleanerId === applicant.cleanerId
                     ? pendingReview.action

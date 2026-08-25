@@ -279,6 +279,48 @@ describe("CLE-22 job detail workspace", () => {
     expect(mocks.refresh).toHaveBeenCalledOnce();
   });
 
+  it("falls back to a current open slot when a stored review selection becomes stale", async () => {
+    const user = userEvent.setup();
+    const twoOpenSlots: JobDetail = {
+      ...job,
+      slots: [
+        { slotNumber: 1, state: "open", previousAssignment: null },
+        { slotNumber: 2, state: "open", previousAssignment: null },
+      ],
+    };
+    const { rerender } = render(<JobDetailWorkspace job={twoOpenSlots} />);
+
+    await user.selectOptions(
+      screen.getByLabelText("Crew slot for Preferred First"),
+      "2",
+    );
+    rerender(
+      <JobDetailWorkspace
+        job={{
+          ...twoOpenSlots,
+          slots: [
+            { slotNumber: 1, state: "open", previousAssignment: null },
+            {
+              slotNumber: 2,
+              state: "assigned",
+              assignment: {
+                cleanerId: "10000000-0000-4000-8000-000000000007",
+                cleanerName: "Direct Cleaner",
+                source: "manual",
+                assignedAt: "2026-08-11T11:00:00Z",
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Crew slot for Preferred First")).toHaveValue("1");
+    expect(screen.getByRole("button", {
+      name: "Approve Preferred First for slot 1",
+    })).toBeEnabled();
+  });
+
   it("resolves without a reason and restores only an eligible not-selected response", async () => {
     const user = userEvent.setup();
     const resolvedJob: JobDetail = {

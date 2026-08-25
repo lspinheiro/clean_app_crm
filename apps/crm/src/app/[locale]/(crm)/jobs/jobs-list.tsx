@@ -25,20 +25,17 @@ export function JobsList({ jobs }: JobsListProps) {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("Jobs");
   const router = useRouter();
-  const jobIdFilter = jobs.map((job) => job.id).join(",");
 
   useEffect(() => {
-    if (!jobIdFilter) return;
     const supabase = createClient();
     const channel = supabase
-      .channel(`jobs-application-counts:${jobIdFilter}`)
+      .channel("jobs-application-counts")
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "job_applications",
-          filter: `job_id=in.(${jobIdFilter})`,
         },
         () => router.refresh(),
       )
@@ -46,7 +43,7 @@ export function JobsList({ jobs }: JobsListProps) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [jobIdFilter, router]);
+  }, [router]);
 
   if (!jobs.length) {
     return (

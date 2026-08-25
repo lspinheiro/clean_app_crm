@@ -48,7 +48,8 @@ export function NotificationBell({ notifications, profileId }: NotificationBellP
           event: "INSERT",
           schema: "public",
           table: "notifications",
-          filter: `recipient_id=eq.${profileId}`,
+          // Realtime still enforces notifications_select_own; this avoids refreshes for other types.
+          filter: "type=eq.application_received",
         },
         () => router.refresh(),
       )

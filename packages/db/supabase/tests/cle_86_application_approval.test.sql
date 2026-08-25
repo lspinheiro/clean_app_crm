@@ -340,6 +340,16 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000005', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select throws_ok(
+  $$select public.approve_job_application(
+      '86000000-0000-4000-8000-000000000501',
+      1,
+      '10000000-0000-4000-8000-000000000002'
+    )$$,
+  '42501',
+  'Company admin access required',
+  'a foreign-company owner cannot approve the application'
+);
+select throws_ok(
   $$select public.mark_job_application_not_selected(
       '86000000-0000-4000-8000-000000000501',
       '10000000-0000-4000-8000-000000000002'
@@ -388,6 +398,20 @@ select results_eq(
   $$values ('not_selected'::text, true, 0, 2, 2)$$,
   'not selected resolves only the response, without assignment, vacancy, reason, or notification side effects'
 );
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000005', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select throws_ok(
+  $$select public.restore_job_application(
+      '86000000-0000-4000-8000-000000000501',
+      '10000000-0000-4000-8000-000000000002'
+    )$$,
+  '42501',
+  'Company admin access required',
+  'a foreign-company owner cannot restore the application'
+);
+reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);

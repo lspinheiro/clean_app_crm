@@ -280,7 +280,7 @@ describe("CrmHeader", () => {
         event: "INSERT",
         schema: "public",
         table: "notifications",
-        filter: "recipient_id=eq.10000000-0000-4000-8000-000000000001",
+        filter: "type=eq.application_received",
       },
       expect.any(Function),
     );

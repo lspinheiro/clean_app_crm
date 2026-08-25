@@ -190,8 +190,10 @@ Reading order for the build: F10 → F11 → F12 → F13 → F14 → F1, F4, F5,
 
 ### F11 — Cleaner board (P0) *(new in v0.2; adopted from the co-founders' prototype)*
 
-- Each company has its own private **Cleaner staff**. Individual cleaners join through a cleaner
-  invitation code or share link. A cleaner can belong to more than one company's staff.
+- Each company has its own private **Cleaner staff**. A cleaner registers through a cleaner
+  invitation code or share link, which creates a **join request**; the company admits or rejects
+  it, and only admission makes that person one of its cleaners. Links are forwardable, so a link
+  never admits on its own. A cleaner can belong to more than one company's staff.
 - Vacancies post to the cleaner board. Cleaners **apply with one tap**. The admin assigns from the
   applicants, or assigns directly and skips the board. Applicants see a "waiting" state and can
   withdraw.
@@ -489,15 +491,16 @@ out.
 
 **CL-1 · Join a company** — Alpha —
 *Persona:* Ana.
-*What she can do:* join her employer's cleaners from a link in the group chat and start to see work,
-in under two minutes.
+*What she can do:* ask to join her employer's cleaners from a link in the group chat in under two
+minutes, and see work as soon as they admit her.
 *Stages:* (1) the invite link appears in the company WhatsApp group; (2) one-minute signup (name,
-phone, suburb); (3) PWA install prompt and push opt-in; (4) the board shows open jobs
-immediately.
+phone, suburb, optional note); (3) PWA install prompt and push opt-in; (4) a waiting screen while
+the company reviews the request; (5) push tells her she is in, and the board shows open jobs.
 *Touchpoints:* WhatsApp message, mobile browser → PWA, push notifications.
-*Emotions & pain points:* she is wary of another app and wary of a request for her details. She
-converts only because open jobs are visible straight after signup. Known friction: PWA install
-and push permissions on iPhone — test these early (§5.3).
+*Emotions & pain points:* she is wary of another app and wary of a request for her details. The
+admission gate takes away the immediate reward — no work is visible until the company admits her —
+so the company must answer quickly, and the push that tells her she is in is what brings her back.
+Known friction: PWA install and push permissions on iPhone — test these early (§5.3).
 *Features:* F11, F5.
 
 #### Phase B — Plan the work (demand → schedule)
@@ -894,9 +897,13 @@ entirely on the monorepo apps; the prototype is reference material, never runtim
 9. Complete `en-AU` and `pt-BR` support across both alpha apps, including the pre-auth language
    choice, persisted preference, validation and error states, invites, and in-app and push
    notifications (F15).
+10. Company admission of cleaners: a cleaner invitation link creates a join request instead of a
+   membership, and a company admin admits or rejects each request before that person sees any
+   work (F11).
 
 **Kept at prototype parity.** These capabilities are re-housed in the monorepo apps with visual
-fidelity preserved — not shared code: auth and roles, cleaner memberships and invite codes, job
+fidelity preserved — not shared code: auth and roles, cleaner invite codes and memberships (with
+admission added by delta item 10), job
 creation and the post/assign/draft flow, one-tap apply, address gating, job-done, the pay
 ledger, PWA push.
 **Explicitly absent from the alpha:** public signup, share links, vetting, structured reviews,

@@ -319,6 +319,14 @@ state only), and the vacancy view.
   credential (#9, written into the `apps/cleaner` component — the PRD decision fixed
   the trade-offs), the pay basis (#10, decision 12), the directed-offer flow (#11,
   decisions 9–10), and the bulk CSV import replacing seed tooling (#12, decision 13).
+- PRD decisions #22–#29 (2026-08-25) are **not** absorbed. A cleaner invitation link now
+  creates a join request, and a company admin admits or rejects that request before a
+  cleaner membership exists. This HLD still describes S9–S12 as "automatic cleaner
+  membership", and its data model outline holds no record for a waiting or a rejected
+  request. An HLD session must settle: whether the join request is a state on the cleaner
+  membership or its own entity; the RLS boundary that keeps a waiting person away from
+  every company view; the change to `join_company_pool`; how a rejection blocks a new
+  request from any link; and the new notification type for admit and reject.
 
 ## Decision log
 

@@ -191,13 +191,26 @@ is a secret:
 | --- | --- | --- |
 | Supabase function secrets | `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | The project's VAPID key pair and its `mailto:` subject. |
 | Supabase function secrets | `PUSH_DISPATCH_SECRET` | The bearer the database presents to the function. |
-| Hosted database setting | `app.settings.push_dispatch_bearer` | The same value as `PUSH_DISPATCH_SECRET`. |
-| Hosted database setting | `app.settings.push_dispatch_url` | `https://PROJECT_REF.supabase.co/functions/v1/push-dispatch`. |
+| Supabase Vault secret | `push_dispatch_bearer` | The same value as `PUSH_DISPATCH_SECRET`. |
+| Supabase Vault secret | `push_dispatch_url` | `https://PROJECT_REF.supabase.co/functions/v1/push-dispatch`. |
 | Vercel (Cleaner) | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | The public half of the same VAPID pair. |
 
-Until `app.settings.push_dispatch_bearer` is set, the notifications trigger returns without
-enqueuing anything, so push is simply off rather than broken. See
-`packages/db/supabase/functions/push-dispatch/README.md` for the local equivalents.
+Store the two Vault secrets by running, against the hosted database:
+
+```sql
+select vault.create_secret('<same-value-as-PUSH_DISPATCH_SECRET>', 'push_dispatch_bearer');
+select vault.create_secret(
+  'https://PROJECT_REF.supabase.co/functions/v1/push-dispatch',
+  'push_dispatch_url'
+);
+```
+
+Until `push_dispatch_bearer` is stored, the notifications trigger returns without enqueuing
+anything, so push is simply off rather than broken. These are Vault secrets rather than
+`app.settings.*` database settings because supautils reserves that prefix for
+`supabase_admin`: `alter database ... set` fails with 42501 for every role a project can
+assume. See `packages/db/supabase/functions/push-dispatch/README.md` for the local
+equivalents.
 
 ## Status
 

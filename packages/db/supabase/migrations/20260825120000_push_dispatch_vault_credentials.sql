@@ -27,19 +27,19 @@ declare
   dispatch_bearer text;
   dispatch_url text;
 begin
-  select nullif(btrim(secret.decrypted_secret), '')
-    into dispatch_bearer
+  -- One scan, so a fan-out inserting N notifications pays N AEAD decrypts, not 2N.
+  select
+    max(nullif(btrim(secret.decrypted_secret), ''))
+      filter (where secret.name = 'push_dispatch_bearer'),
+    max(nullif(btrim(secret.decrypted_secret), ''))
+      filter (where secret.name = 'push_dispatch_url')
+    into dispatch_bearer, dispatch_url
   from vault.decrypted_secrets secret
-  where secret.name = 'push_dispatch_bearer';
+  where secret.name in ('push_dispatch_bearer', 'push_dispatch_url');
 
   if dispatch_bearer is null then
     return new;
   end if;
-
-  select nullif(btrim(secret.decrypted_secret), '')
-    into dispatch_url
-  from vault.decrypted_secrets secret
-  where secret.name = 'push_dispatch_url';
 
   perform net.http_post(
     url := coalesce(dispatch_url, 'http://kong:8000/functions/v1/push-dispatch'),
@@ -65,3 +65,13 @@ $$;
 
 revoke all on function public.enqueue_notification_push_dispatch()
   from public, anon, authenticated;
+
+-- Residual exposure, deliberately not "fixed" here: pg_net ships `net.http_request_queue`
+-- and `net._http_response` granted to PUBLIC with no RLS, so a dispatch row transiently
+-- carries the bearer where the `anon` and `authenticated` roles can read it. It cannot be
+-- revoked from a migration — those tables are owned by `supabase_admin`, `postgres` holds
+-- no grant option on them, and REVOKE therefore reports success while changing nothing.
+-- What bounds it is PostgREST: `config.toml` exposes only `public` and `graphql_public`,
+-- so `/rest/v1/http_request_queue` is a 404 and no cleaner can reach those roles' SQL.
+-- Adding `net` to the exposed schemas would publish the webhook secret — see CLE-27
+-- follow-up before changing `[api].schemas`.

@@ -42,6 +42,30 @@ select throws_ok(
   'signed-in users cannot read dispatch credentials out of the vault'
 );
 
+-- Vault covers the secret at rest. It does not cover the pg_net queue, which carries the
+-- bearer in a PUBLIC-granted table with no RLS; that grant belongs to `supabase_admin` and
+-- cannot be revoked from a migration. What bounds it is the PostgREST schema allowlist, so
+-- assert the property that actually holds the line: dispatch lives outside the exposed
+-- schemas. If `net` is ever added to `[api].schemas`, the webhook secret becomes public.
+select is(
+  (select count(*)::integer from pg_namespace where nspname = 'net'),
+  1,
+  'dispatch queues through the net schema, which config.toml must never expose'
+);
+select ok(
+  not exists (
+    select 1
+    from information_schema.tables
+    where table_schema = 'public'
+      and table_name in ('http_request_queue', '_http_response')
+  ),
+  'the pg_net queue is not reachable from the PostgREST-exposed public schema'
+);
+
+-- This file owns its credential state; a developer following the local setup in
+-- push-dispatch/README.md leaves real secrets behind, and the vault name index is unique.
+delete from vault.secrets where name in ('push_dispatch_bearer', 'push_dispatch_url');
+
 insert into public.jobs (
   id, site_id, service_id, scheduled_start, duration_minutes,
   cleaner_pay_cents, client_charge_cents, status, crew_size, notes

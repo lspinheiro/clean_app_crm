@@ -150,8 +150,9 @@ jobs:
         run: supabase db push --dry-run --workdir packages/db
 
       # Deployed after the migrations that create their callers. Push dispatch is best-effort
-      # by design — the enqueue trigger no-ops until `app.settings.push_dispatch_bearer` is set
-      # on the hosted database, so a function that is briefly absent cannot fail a job mutation.
+      # by design — the enqueue trigger no-ops until the `push_dispatch_bearer` Vault secret is
+      # stored on the hosted database, so a function that is briefly absent cannot fail a job
+      # mutation.
       # Per-function gateway settings, including `verify_jwt`, come from config.toml.
       - name: Deploy Edge Functions
         run: >-

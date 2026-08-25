@@ -341,6 +341,9 @@ select ok(
   'dispatch reads configurable URL and bearer settings and catches every enqueue failure'
 );
 
+-- Own the credential state rather than inheriting it: a developer who followed the local
+-- setup in push-dispatch/README.md has real secrets stored, and vault names are unique.
+delete from vault.secrets where name in ('push_dispatch_bearer', 'push_dispatch_url');
 select vault.create_secret(
   'http://kong:8000/functions/v1/push-dispatch',
   'push_dispatch_url'

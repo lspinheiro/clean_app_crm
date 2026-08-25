@@ -29,24 +29,23 @@ flowchart LR
     Job --> Slots["Numbered crew slots"]
     Slots --> Assignment
     Slots --> Vacancy["Vacancy projection when unfilled"]
-    Vacancy --> Board["Future cleaner board"]
+    Vacancy --> Board["Cleaner open-jobs board"]
 ```
 
-The diagram distinguishes present scheduling/persistence concepts from the future cleaner-board consumer. Vacancy is a view/projection over unfilled crew slots, not a table; roster and future board consumers must not introduce a bypassing outbound object.
+The diagram distinguishes the implemented scheduling/persistence concepts and their implemented cleaner-board projection. Vacancy is a view/projection over unfilled crew slots, not a table; roster and board consumers must not introduce a bypassing outbound object.
 
 ### Product laws
 
 - Jobs have `crew_size >= 1` and per-slot assignments. A vacancy is an unfilled slot, and released history remains meaningful for dispatch presentation.
 - The ledger records agreed amounts and settlement state; it never moves money. No worker payment surface or fee is allowed.
-- Cleaner access is assignment-gated: future cleaner views/RPCs must not expose client phone, client charge, or internal notes, and address/access notes appear only after assignment.
+- Cleaner access is assignment-gated: cleaner views/RPCs must not expose client phone, client charge, or internal notes, and address/access notes appear only after assignment.
 - Reviews are structured rather than public free-text ratings. Vetting/identity material is minimised and restricted.
 - Critical workflow mutations belong in atomic database RPCs with first-accept-wins handling where the workflow requires it. See [data/security](../architecture/data-and-security.md#security-and-product-constraints).
-<!-- openwiki: broken internal link [../workflows/crm-localization.md#product-boundary-and-invariants] heading anchor "product-boundary-and-invariants" does not exist in "../workflows/crm-localization.md". Fix the href or restore the target, then delete this comment. -->
-- F15 language choice is explicit and persistent. It changes labels and locale-aware presentation only: AUD and `Australia/Brisbane` remain fixed, `The Clean Crew` remains literal, and names, addresses, access instructions, and notes remain as written rather than automatically translated. See [the CRM localization workflow](../workflows/crm-localization.md#product-boundary-and-invariants).
+- F15 language choice is explicit and persistent. It changes labels and locale-aware presentation only: AUD and `Australia/Brisbane` remain fixed, `The Clean Crew` remains literal, and names, addresses, access instructions, and notes remain as written rather than automatically translated. See [the CRM localization workflow](../workflows/crm-localization.md#formatting-messages-and-cache-invalidation) and [cleaner app routing](../workflows/cleaner-app.md#scope-and-runtime-boundary).
 
 ## v0.4 and v0.5 product changes
 
-Product v0.4 makes `docs/PRODUCT.md` canonical locally and replaces alpha exit criteria with qualitative partner-company validation. The cleaner app now implements invitation/pool joining and a privacy-minimized open-jobs board, documented in [the cleaner app workflow](../workflows/cleaner-app.md); the following requirements remain future direction rather than proof of an implemented feature. Product v0.5 adds cross-cutting F15: alpha first-party surfaces are intended to support `en-AU` and `pt-BR`, with explicit persistent selection. The CRM implementation is documented in [bilingual CRM routing and locale preference](../workflows/crm-localization.md); no cleaner-app F15 implementation is established by the inspected source.
+Product v0.4 makes `docs/PRODUCT.md` canonical locally and replaces alpha exit criteria with qualitative partner-company validation. The cleaner app now implements invitation joining, an open-jobs board with application withdrawal, and assignment-gated My Jobs operations, documented in [the cleaner app workflow](../workflows/cleaner-app.md); this does not establish the planned weekly agenda or preferences. Product v0.5 adds cross-cutting F15: the CRM and cleaner app both support `en-AU` and `pt-BR` with explicit persistent selection. The CRM implementation is documented in [bilingual CRM routing and locale preference](../workflows/crm-localization.md); cleaner route and legacy-redirect selection are documented in [the cleaner app workflow](../workflows/cleaner-app.md#scope-and-runtime-boundary).
 
 | Direction | Product meaning | Implementation status |
 |---|---|---|

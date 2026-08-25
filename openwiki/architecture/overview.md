@@ -36,7 +36,7 @@ The CRM route/action boundary and the cleaner browser boundary both depend on [d
 | Component | Responsibility | Public/runtime boundary | Primary validation |
 |---|---|---|---|
 | `apps/crm` | Company-admin CRM: authentication, client/site import and management, roster, job, and Money surfaces, plus server actions. | Browser routes and Next server actions; its application imports database types through `@clean-app/db`. | Focused Vitest route/action/model tests; `pnpm typecheck`; `pnpm build` when shipped route/build surface changes. |
-| `apps/cleaner` | Cleaner-facing invitation, login, and open-jobs board. It is client-first and static-exportable. | Browser-side Supabase auth, dedicated cleaner views, and cleaner RPCs; no server actions or proxy. | Focused Vitest tests; `pnpm --filter cleaner typecheck`; cleaner E2E only for affected flows. |
+| `apps/cleaner` | Cleaner-facing invitation, login, open-jobs application board, and assignment-gated My Jobs operations. It is client-first and static-exportable. | Browser-side Supabase auth, dedicated cleaner views, and cleaner RPCs; no server actions or proxy. | Focused Vitest tests; `pnpm --filter cleaner typecheck`; cleaner E2E only for affected flows. |
 | `packages/db` | Supabase CLI owner for schema migrations, seed, generated `Database` type, SQL regression tests, and concurrency probes. | Database tables, policies, views, functions/RPCs, and generated type surface. | `pnpm db:test` with local Docker/Supabase. |
 | `packages/ui` | Reserved shared UI owner. | No package or public exports exist. | Evidence-blocked. |
 

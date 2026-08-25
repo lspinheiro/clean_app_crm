@@ -1,15 +1,15 @@
 ---
 type: operations and extension guide
 title: OpenWiki Automation, Diagram Validation, and Connector Contract
-description: The working tree contains a pinned GitHub Actions workflow to refresh OpenWiki and create a pull request. Repository-local skills prescribe Mermaid validation and secure built-in connector implementation, but no connector source is implemented here.
+description: A pinned GitHub Actions workflow refreshes OpenWiki and creates a documentation pull request. Repository-local skills prescribe Mermaid validation and secure built-in connector implementation, but no connector source is implemented here.
 tags: [openwiki, github-actions, documentation, mermaid, connectors]
 ---
 
 # OpenWiki Automation, Diagram Validation, and Connector Contract
 
-## Working-tree automation
+## OpenWiki update automation
 
-At inspection time, the Git repository has no commits or tracked files; this workflow is present in the working tree. `.github/workflows/openwiki-update.yml` is the only GitHub Actions workflow present. It can be run manually (`workflow_dispatch`) or daily at 08:00 UTC (`0 8 * * *`). It has `contents: write` and `pull-requests: write` permissions because its purpose is to regenerate OpenWiki documentation and open/update a documentation pull request.
+`.github/workflows/openwiki-update.yml` refreshes this wiki from the repository's full Git history. It can be run manually (`workflow_dispatch`) or daily at 08:00 UTC (`0 8 * * *`). It has `contents: write` and `pull-requests: write` permissions because its purpose is to regenerate OpenWiki documentation and open/update a documentation pull request. It is distinct from the application release pipeline documented in [daily internal release](daily-release.md).
 
 ```mermaid
 sequenceDiagram
@@ -50,7 +50,7 @@ The working tree also contains untracked `.claude/settings.local.json`, `.codex/
 
 The skill’s syntax rules matter because OpenWiki validates Mermaid fences after generation and converts a parse failure to a plain text fence. In brief: use `sequenceDiagram`, `stateDiagram-v2`, `erDiagram`, or `flowchart` according to the represented relationship; avoid semicolons, pipes, and unescaped angle brackets in labels; quote punctuated flowchart labels; use aliases for spaced sequence participants; and avoid Mermaid reserved identifiers. The workflow’s Mermaid/jsdom installation is the operational counterpart to this instruction.
 
-The repository now has application runtime flows documented with source-grounded diagrams, including the CRM request boundary in [architecture](../architecture/overview.md), cleaner join/board flow in [the cleaner app workflow](../workflows/cleaner-app.md), CSV import control flow in [client and site CSV import](../workflows/client-site-import.md), and ledger lifecycle in [company pay ledger](../workflows/pay-ledger.md).
+The repository now has application runtime flows documented with source-grounded diagrams, including the CRM request boundary in [architecture](../architecture/overview.md), cleaner join/board flow in [the cleaner app workflow](../workflows/cleaner-app.md), CSV import control flow in [client and site CSV import](../workflows/client-site-import.md), ledger lifecycle in [company pay ledger](../workflows/pay-ledger.md), and the provider deployment order in [daily internal release](daily-release.md).
 
 ## Connector extension contract
 

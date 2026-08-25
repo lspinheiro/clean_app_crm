@@ -41,32 +41,29 @@ test("@CLE-33 mobile grid shows a usable day window with snap and sticky headers
   const labelHeader = grid.getByRole("columnheader", { name: "Site" });
   const mondayHeader = grid.getByRole("columnheader", { name: /^Mon / });
   const tuesdayHeader = grid.getByRole("columnheader", { name: /^Tue / });
-  await expect(mondayHeader).toBeInViewport({
-    ratio: 1,
-  });
-  await expect(tuesdayHeader).toBeInViewport({
-    ratio: 1,
-  });
   const [gridBox, labelBox, mondayBox, tuesdayBox] = await Promise.all([
     grid.boundingBox(),
     labelHeader.boundingBox(),
     mondayHeader.boundingBox(),
     tuesdayHeader.boundingBox(),
   ]);
-  expect(labelBox?.x).toBeGreaterThanOrEqual(gridBox?.x ?? 0);
-  expect(mondayBox?.x).toBeGreaterThanOrEqual(labelBox?.x ?? 0);
-  expect(mondayBox?.x).toBeGreaterThanOrEqual(
-    (labelBox?.x ?? 0) + (labelBox?.width ?? 0) - 1,
-  );
-  expect((tuesdayBox?.x ?? 0) + (tuesdayBox?.width ?? 0))
-    .toBeLessThanOrEqual((gridBox?.x ?? 0) + (gridBox?.width ?? 0) + 1);
+  const viewport = page.viewportSize();
+  if (!gridBox || !labelBox || !mondayBox || !tuesdayBox || !viewport) {
+    throw new Error("Could not measure the mobile roster day window.");
+  }
+  expect(gridBox.x).toBeGreaterThanOrEqual(0);
+  expect(gridBox.x + gridBox.width).toBeLessThanOrEqual(viewport.width + 1);
+  expect(labelBox.x).toBeGreaterThanOrEqual(gridBox.x);
+  expect(mondayBox.x).toBeGreaterThanOrEqual(labelBox.x + labelBox.width - 1);
+  expect(tuesdayBox.x + tuesdayBox.width)
+    .toBeLessThanOrEqual(gridBox.x + gridBox.width + 1);
 
   // Horizontal panning snaps to day-column boundaries.
   const snapType = await grid.evaluate(
     (element) => getComputedStyle(element).scrollSnapType,
   );
   expect(snapType).toContain("x");
-  const dayWidth = (tuesdayBox?.x ?? 0) - (mondayBox?.x ?? 0);
+  const dayWidth = tuesdayBox.x - mondayBox.x;
   expect(dayWidth).toBeGreaterThan(0);
   await grid.evaluate((element, target) => {
     element.scrollTo({ left: target, behavior: "smooth" });

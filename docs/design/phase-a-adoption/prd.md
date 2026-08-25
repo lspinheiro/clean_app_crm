@@ -62,7 +62,7 @@ jobs and cleaners.
 
 ```mermaid
 flowchart LR
-    A[Receive founder\ninvitation] --> B[Accept invitation:\naccount + company] --> C[Enter clients\nand sites] --> D[Enter recurring\nassignments] --> E[Invite the\nworkforce] --> F[See the first\nroster week]
+    A[Receive founder\ninvitation] --> B[Accept invitation:\naccount + company] --> C[Enter clients\nand sites] --> D[Enter recurring\nassignments] --> E[Invite the\nworkforce] --> F[Admit the cleaners\nwho ask to join] --> G[See the first\nroster week]
 ```
 
 - **S1** — A founder invites the first company admin through a trusted repository command.
@@ -101,9 +101,11 @@ flowchart LR
 - **S8** — Create a Cleaner staff invitation, ready to post into the company's WhatsApp group.
   The invitation carries the details of what the cleaner applies for — the work on offer
   and its pay shape (hourly rate or fixed amount), described so the link is a real offer,
-  not a bare signup URL. A cleaner who accepts the invitation joins the company's Cleaner staff.
+  not a bare signup URL. A person who accepts the invitation asks to join the company's Cleaner staff;
+  the company admits that person before they become one of its cleaners (S36).
   When the admin creates a link, they can optionally set an expiry time and a maximum
-  number of registrations; the admin can revoke a link at any time. The flow is: generate
+  number of registrations — the count of people who may ask to join through that link,
+  whether the company admits them or not; the admin can revoke a link at any time. The flow is: generate
   → send → watch who joins. There is no in-place regeneration — a revoked link is dead,
   and the admin creates a new link when needed. For each link the admin sees its state
   (active / expired / revoked / limit reached) and its registration count; each
@@ -113,16 +115,31 @@ flowchart LR
   exact recipient count and recipient-facing copy before the admin confirms the send.
   The admin must confirm that the recipients are existing workers who expect the
   invitation.
+- **S36** — Review the join requests the company's links produced. The Staff screen lists
+  each waiting request with the person's name, phone, suburb, the optional note they
+  wrote, the time of the request, and the invitation link that carried it. The Staff
+  navigation item shows a count of waiting requests; the CRM sends no other alert. The
+  admin admits or rejects each request. Admission creates the cleaner membership and
+  attributes it to the link. Rejection closes the request and records no reason, and that
+  person cannot ask the same company again from any link. The screen keeps rejected
+  requests, so the admin can admit a person rejected by mistake. Both owner and staff can
+  admit and reject: the company's cleaners are day-to-day operations, not employee
+  administration (decision #17). Each decision notifies the person by push (S20). The
+  admin can select several waiting requests and decide them together; no control admits
+  or rejects every waiting request at once. The list can be filtered by the invitation
+  link that carried each request, which separates the workers the admin invited by e-mail
+  from people who arrived through a forwarded link.
 
 ### CL-1 · Join a company (Ana) — designed end-to-end
 
 ```mermaid
 flowchart LR
-    A[Tap the invite link] --> B[One-minute registration] --> C[Cleaner membership\ncreated automatically] --> D[PWA install prompt\n+ push opt-in] --> E[See open jobs\non the board]
+    A[Tap the invite link] --> B[One-minute registration] --> C[Join request sent] --> D[PWA install prompt\n+ push opt-in] --> E[Wait for the company\nto admit] --> F[See open jobs\non the board]
 ```
 
-From the WhatsApp invite link to open jobs in under two minutes, all inside
-`apps/cleaner`. This surface is the seed of F12's magic-link registration (MVP).
+From the WhatsApp invite link to a sent join request in under two minutes, all inside
+`apps/cleaner`. Open jobs follow when the company admits the request. This surface is the
+seed of F12's magic-link registration (MVP).
 
 - **S9** — Register from the invite link with Google social login or email + password.
   Name, phone, and suburb are required profile fields regardless of credential. The flow
@@ -130,11 +147,21 @@ From the WhatsApp invite link to open jobs in under two minutes, all inside
   blocks OAuth) and steers OAuth users to the system browser; email + password is the
   path that always works in the webview. A link that is expired, revoked, or at its
   registration limit shows an "invite no longer active" state instead of the form.
-- **S10** — The cleaner membership is created automatically at registration.
+  Registration also offers one optional free-text note, which the person uses to say
+  where they saw the link or anything else the company should know. The note is part of
+  the join request and is not a profile field.
+- **S10** — Registration creates a join request, not a cleaner membership. The person
+  then waits for the company to admit them. A waiting screen names the company the person
+  asked to join and shows the state of the request. Before admission there is no board and
+  no vacancy data. The person sees three states: waiting, admitted, and rejected. A
+  rejected request shows that the company closed it, with no reason given. The state
+  belongs to one company, not to the account: a cleaner who is already admitted at one
+  company keeps that company's board while a request at a second company waits.
 - **S11** — PWA install prompt and push opt-in. Both are skippable: a cleaner who
   declines still reaches the board — "the PWA is an upgrade, not a gate" (PRODUCT.md
   §3.7).
-- **S12** — The board lists open vacancies immediately after registration.
+- **S12** — The board lists the company's open vacancies after the company admits the
+  join request, and not before.
 - **S27** — Sign in on return visits with the same credential (Google or
   email + password); standard email-based password reset.
 
@@ -159,7 +186,8 @@ The prototype's cleaner loop, re-housed at capability parity with visual fidelit
   settled decisions: a manually posted vacancy notifies the company's cleaners (never generated
   instances — decision #2); a directed offer notifies its cleaner (S28); an accepted
   application notifies the assigned cleaner (PRODUCT.md CA-3); mark-paid notifies the
-  cleaner (PRODUCT.md CL-4, "push on settlement").
+  cleaner (PRODUCT.md CL-4, "push on settlement"); an admitted or a rejected join request
+  notifies the person who asked (S36).
 - **S21** — Profile with joined companies.
 
 ### Parity port · `apps/crm` dispatch (serves CA-2…CA-5 and CL-4 at prototype parity)
@@ -301,6 +329,9 @@ Approved Stitch references:
 | Does any alpha company need daily-frequency recurring assignments? Weekly/fortnightly covers the known cohort. | Leonardo | Extend on evidence (feeds Appendix B q3 sizing) |
 | What does cleaner e-mail entry or CSV import produce, given cleaners must register themselves (credential + consent)? | Leonardo | Resolved 2026-08-18: both produce one send list. Direct entry accepts multiple addresses; CSV accepts `email` and optional `name`. Neither creates an account or cleaner membership. |
 | Facebook login for cleaners: enable when the cohort shows demand (decision log #9 defers it) | Leonardo | Open |
+| PRODUCT.md CL-7 (MVP, register from a group post) says the person "joins the company's cleaners with the job open, and applies". The admission gate makes that sequence impossible: without a membership there is no board and no application. The MVP share-link cycle must redesign the journey. | Leonardo | Open — CL-7 left unedited on 2026-08-25 so the cycle that owns it can grill it |
+| CA-1 order: S5 recurring assignments carry named cleaners, but nobody is a cleaner until the company admits them, and the backbone puts "Enter recurring assignments" before "Invite the workforce". The gate adds a review step between the two. Does the admin enter the workforce first, or create assignments without named cleaners and add the names after admission? Found by the validation walk on 2026-08-25. | Leonardo | Open |
+| How long does a company keep the name, phone, suburb, and note of a person it rejected? Rejected join requests are kept so that a rejection stays final (decision #26), so the records accumulate with no rule to remove them. | Leonardo | Open |
 | Sync of PRODUCT.md revisions (v0.4) with decisions 0002 and 2026-08-10 | Leonardo | Resolved 2026-08-12: `docs/PRODUCT.md` is canonical in this repo; §3.2/§3.4 reworded per decision 0002; exit criteria replaced by qualitative partner validation |
 
 Technical open questions (generation horizon, notification discipline) live in the
@@ -314,6 +345,9 @@ Not in this cycle (cycle 2, same stage):
 - Dropout and urgent backfill (CA-6/CL-6).
 - First-job marker and outcome capture (CA-9).
 - First-accept-wins assignment (enters with the cascade).
+- A richer cleaner profile: photo and structured experience. Decision #25 keeps the alpha
+  profile at name, phone, and suburb. A photo also needs a storage and sensitive-data
+  decision that this cycle did not take.
 
 Not in the alpha (MVP/P1 per PRODUCT.md §3.4):
 
@@ -533,3 +567,112 @@ ABNs. The trusted founder invitation remains the only way to bootstrap a person'
 CRM company, so this does not introduce public signup. Considered option: keep creation in
 Settings or the personal account menu — rejected because company scope is persistent
 workspace context, not a personal preference.
+
+### 22. Every cleaner join needs company approval (2026-08-25)
+
+Partly supersedes #3 (which joined the Cleaner staff at registration). A cleaner
+invitation link admits nobody by itself. A person who registers from a link does not
+become one of the company's cleaners. A company admin must approve that person first,
+and only approval creates the cleaner membership. This applies to every link, with no
+per-link exception. Considered option: make review a setting on each link, so a link
+sent to an existing workforce admits immediately — rejected because a recipient can
+forward the link to anybody. The admin does not control who receives a link, so the link
+cannot be the gate.
+
+### 23. No board access before approval (2026-08-25)
+
+Refines #22, and partly supersedes #3 (which showed the board immediately after
+registration). A person who waits for approval sees a waiting screen. That person does
+not see the cleaner board. The board shows the company's vacancies with their sites,
+times, service types, and pay. A person who holds a forwarded link is the person the
+approval gate stops, so that person must not read the company's schedule. Consequence:
+PRODUCT.md CL-1 can no longer use "the board shows open jobs immediately" as the moment
+that makes a cleaner stay, and push notification becomes the way the person comes back
+after approval.
+
+### 24. The vocabulary is join request, admit, and reject (2026-08-25)
+
+A person who registers from a cleaner invitation link creates a **join request**. A
+company admin **admits** or **rejects** that request. Considered options: *application*
+and *applicant* — rejected because a board application is a cleaner who applies to a job,
+so a CRM that shows "3 applications waiting" would carry two meanings at once;
+*candidate* — rejected because PRODUCT.md F4/F6 keeps that word for the MVP recruitment
+pipeline; *approve/deny* and *accept/decline* — rejected because accept and decline are
+what a cleaner does to an offer (S29). The documents already used *admit* for entry into
+the Cleaner staff ("the link that admitted it").
+
+### 25. One optional note on the join request; the cleaner profile stays global and minimal (2026-08-25)
+
+Registration keeps its three required profile fields — full name, phone, and suburb — and
+adds one optional free-text note. The note belongs to the join request, not to the
+profile. The cleaner profile stays global: one profile for each account, which every
+company the person joins can see. A later cycle extends that global profile with a photo
+and structured experience, in the F5 direction; both are additive and neither is needed
+now.
+
+- **Considered option:** put the note on the profile — rejected because a person who asks
+  to join two companies writes something different to each one, and a profile-level note
+  would show one company what the person wrote to another.
+- **Consequence:** the note is the only field that a later, richer profile does not
+  absorb. Everything else the alpha collects stays on the profile and grows there.
+
+### 26. Rejection is visible, reasonless, and final for the person (2026-08-25)
+
+A company admin rejects a join request and records no reason. The person sees that the
+company closed the request. That person cannot create a new join request for the same
+company from any link. The company can still admit the person later from the CRM, which
+is the way back from a rejection made by mistake. This is the same shape as removal
+today: `join_company_pool` already refuses a removed cleaner, so an old link cannot undo
+a company decision.
+
+- **Considered options:** leave the request silent — rejected because a person who hears
+  nothing cannot tell a rejection from a broken app, and the admin cannot tell a rejected
+  request from one nobody has read yet; let the person ask again — rejected because a
+  link the admin does not control would reopen the request every day.
+- **Consequence:** no free-text reason is stored. AGENTS.md keeps company-authored text
+  about a cleaner out of the product because of the defamation boundary, and a stored
+  rejection reason is that kind of text.
+
+### 27. An invitation link's limit counts registrations, not admissions (2026-08-25)
+
+A registration and an admission were the same event before this cycle, so a link's limit
+had only one meaning. They are now separate events, and the limit counts registrations:
+how many people may ask to join through that link. A link that reaches its limit stops
+accepting registrations and shows the "invite no longer active" state (S9).
+
+- **Considered option:** count admissions, so the limit means "at most N cleaners join
+  from this link" — rejected because the admin does not control who holds the link. A
+  link forwarded into a job group would then produce an unbounded number of join requests
+  to review. A link that reaches its limit is a visible problem that one new link fixes
+  (decision #8); a thousand waiting requests is not.
+- **Consequence:** the limit is a bound on review work, not a headcount for the Cleaner
+  staff. Cleaners the admin actually invited can be locked out by a forwarded link, and
+  the admin's remedy is to create a new link and send it.
+
+### 28. Both decisions notify the person; the CRM gets a count only (2026-08-25)
+
+An admitted join request and a rejected join request each send push to the person who
+asked. The gate removed the reason to open the cleaner app — a person who registers now
+sees a waiting screen and no work — so push is what brings that person back. Rejection
+sends push for the same reason as decision #26: a person who is waiting for an answer and
+never gets one cannot tell a rejection from a broken app. Push opt-in stays skippable
+(S11), so the waiting screen always shows the state at sign-in as well.
+
+- **Consequence:** the CRM gets a count of waiting requests on its Staff navigation item
+  and nothing more. The CRM has no notification surface today, and building one is
+  infrastructure this cycle was not asked for.
+
+### 29. Admission is multi-select; no control decides every request at once (2026-08-25)
+
+The admin selects one or more waiting join requests and admits or rejects the selection
+together. The CRM has no "admit all" and no "reject all". The bulk send list (S30) can
+produce dozens of registrations in one night, so a decision on a whole workforce must
+cost about the same as a decision on one person.
+
+- **Considered option:** an "admit all" control — rejected because a link forwarded out
+  of the company's group puts those requests in the same list, and one tap would admit
+  those people together with the invited workers. Selection keeps every admission an act
+  the admin performed on a name the admin read.
+- **Consequence:** the request list can be filtered by the invitation link that carried
+  each request. This is what separates a workforce invited by e-mail from people who
+  arrived through a forwarded link.

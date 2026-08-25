@@ -38,8 +38,9 @@ select results_eq(
     ('job_assigned'::text collate "C"),
     ('job_posted'::text collate "C"),
     ('job_cancelled'::text collate "C"),
+    ('application_received'::text collate "C"),
     ('payment_marked_paid'::text collate "C")$$,
-  'notification records retain every CLE-49 event after settlement is added'
+  'notification records retain loop, application-review, and settlement events'
 );
 select is(
   (
@@ -1492,7 +1493,7 @@ select results_eq(
 );
 
 create temporary table cle49_touched_generated_job as
-select distinct on (job.id)
+select
   job.id,
   job.recurring_assignment_id,
   to_jsonb(job) as snapshot,
@@ -1504,12 +1505,11 @@ select distinct on (job.id)
   ) as application_count
 from public.jobs job
 join public.job_applications application on application.job_id = job.id
-where job.recurring_assignment_id is not null
+where job.id = current_setting('test.cle49_generated_crew_job')::uuid
+  and job.recurring_assignment_id is not null
   and job.status = 'posted'
   and job.manually_edited_at is not null
-  and application.status = 'applied'
-order by job.id
-limit 1;
+  and application.status = 'applied';
 select is(
   (select count(*)::integer from cle49_touched_generated_job),
   1,
@@ -1545,12 +1545,20 @@ select results_eq(
       count(*) filter (where application.resolved_at is not null)::integer,
       (select count(*)::integer
        from public.notifications notification
-       where notification.job_id = (select id from cle49_touched_generated_job))
+       where notification.job_id = (select id from cle49_touched_generated_job)
+         and notification.type = 'application_received')
     from public.job_applications application
     where application.job_id = (select id from cle49_touched_generated_job)$$,
-  $$select application_count, application_count, application_count, 0
+  $$select
+      application_count,
+      application_count,
+      application_count,
+      (select count(*)::integer
+       from public.employee_memberships membership
+       where membership.company_id = '10000000-0000-4000-8000-000000000010'
+         and membership.status = 'active')
     from cle49_touched_generated_job$$,
-  'any job cancellation resolves a waiting application instead of stranding it'
+  'any job cancellation resolves a waiting application without removing its CRM notification'
 );
 select is(
   (
@@ -1562,9 +1570,10 @@ select is(
       '49000000-0000-4000-8000-000000000702',
       '49000000-0000-4000-8000-000000000703'
     )
+      and notification.type <> 'application_received'
   ),
   0,
-  'generated postings and recurring assignments create no notification records'
+  'generated postings and recurring assignments create no automatic notification records'
 );
 
 select * from finish();

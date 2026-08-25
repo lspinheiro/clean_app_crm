@@ -12,6 +12,7 @@ vi.mock("@/lib/auth/session", () => ({
 }));
 
 import { assignJobSlot, cancelJob, createOneOffJob } from "./jobs";
+import * as jobActions from "./jobs";
 
 const jobId = "23000000-0000-4000-8000-000000000501";
 
@@ -42,6 +43,24 @@ function validAssignmentFormData() {
   formData.set("slotNumber", "2");
   formData.set("cleanerId", "10000000-0000-4000-8000-000000000003");
   return formData;
+}
+
+function validApplicationReviewFormData() {
+  const formData = new FormData();
+  formData.set("jobId", jobId);
+  formData.set("slotNumber", "2");
+  formData.set("cleanerId", "10000000-0000-4000-8000-000000000003");
+  return formData;
+}
+
+type ApplicationReviewAction = (
+  formData: FormData,
+) => Promise<{ ok: boolean; formError: string | null }>;
+
+function applicationReviewAction(name: string): ApplicationReviewAction {
+  const action = Reflect.get(jobActions, name);
+  expect(action, `${name} must be exported`).toEqual(expect.any(Function));
+  return action as ApplicationReviewAction;
 }
 
 describe("CLE-23 one-off job action", () => {
@@ -280,6 +299,117 @@ describe("CLE-22 job dispatch actions", () => {
     await expect(cancelJob(jobId)).resolves.toEqual({
       ok: false,
       formError: "user.cancellationUnconfirmed",
+    });
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
+  });
+});
+
+describe("CLE-86 application review actions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.rpc.mockResolvedValue({ data: null, error: null, status: 200 });
+    mocks.requireCompanyAdmin.mockResolvedValue({
+      supabase: { rpc: mocks.rpc },
+    });
+  });
+
+  it("exports the three explicit review operations", () => {
+    expect(Reflect.get(jobActions, "approveJobApplication")).toEqual(expect.any(Function));
+    expect(Reflect.get(jobActions, "markJobApplicationNotSelected"))
+      .toEqual(expect.any(Function));
+    expect(Reflect.get(jobActions, "restoreJobApplication"))
+      .toEqual(expect.any(Function));
+  });
+
+  it("approves the exact applicant and slot through the atomic review RPC", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: "49000000-0000-4000-8000-000000000701",
+      error: null,
+      status: 200,
+    });
+
+    await expect(
+      applicationReviewAction("approveJobApplication")(
+        validApplicationReviewFormData(),
+      ),
+    ).resolves.toEqual({ ok: true, formError: null });
+
+    expect(mocks.rpc).toHaveBeenCalledWith("approve_job_application", {
+      target_job_id: jobId,
+      target_slot_number: 2,
+      target_cleaner_id: "10000000-0000-4000-8000-000000000003",
+    });
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
+    expectLocalizedRevalidation("/jobs");
+    expectLocalizedRevalidation("/roster");
+  });
+
+  it.each([
+    ["markJobApplicationNotSelected", "mark_job_application_not_selected"],
+    ["restoreJobApplication", "restore_job_application"],
+  ])("submits %s with only job and cleaner identity", async (name, rpcName) => {
+    const formData = validApplicationReviewFormData();
+    formData.delete("slotNumber");
+
+    await expect(applicationReviewAction(name)(formData)).resolves.toEqual({
+      ok: true,
+      formError: null,
+    });
+
+    expect(mocks.rpc).toHaveBeenCalledWith(rpcName, {
+      target_job_id: jobId,
+      target_cleaner_id: "10000000-0000-4000-8000-000000000003",
+    });
+    expect([...formData.keys()]).not.toContain("reason");
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
+  });
+
+  it("rejects malformed review identity before authentication", async () => {
+    const formData = validApplicationReviewFormData();
+    formData.set("cleanerId", "not-a-uuid");
+
+    await expect(
+      applicationReviewAction("markJobApplicationNotSelected")(formData),
+    ).resolves.toEqual({
+      ok: false,
+      formError: "user.validApplicationReview",
+    });
+    expect(mocks.requireCompanyAdmin).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("maps stale or foreign review state to one safe changed-state message", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Company admin access required" },
+      status: 403,
+    });
+
+    await expect(
+      applicationReviewAction("restoreJobApplication")(
+        validApplicationReviewFormData(),
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      formError: "user.applicationChanged",
+    });
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
+  });
+
+  it("treats a transport failure as unconfirmed and refreshes authoritative state", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Failed to fetch" },
+      status: 0,
+    });
+
+    await expect(
+      applicationReviewAction("markJobApplicationNotSelected")(
+        validApplicationReviewFormData(),
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      formError: "user.applicationReviewUnconfirmed",
     });
     expectLocalizedRevalidation(`/jobs/${jobId}`);
   });

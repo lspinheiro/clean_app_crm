@@ -23,6 +23,7 @@ select results_eq(
     ('job_assigned'::text collate "C"),
     ('job_posted'::text collate "C"),
     ('job_cancelled'::text collate "C"),
+    ('application_received'::text collate "C"),
     ('payment_marked_paid'::text collate "C")$$,
   'notification records include settlement without replacing job events'
 );

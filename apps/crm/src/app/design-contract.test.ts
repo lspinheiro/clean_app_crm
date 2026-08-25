@@ -55,6 +55,12 @@ describe("Trust Blue design-system plumbing", () => {
     expect(css).toMatch(/\.preferred-add-row \.button\s*{[^}]*min-height:\s*44px/);
   });
 
+  it("keeps deep-linked application queues below the sticky header", async () => {
+    const css = await readFile(path.resolve(process.cwd(), "src/app/globals.css"), "utf8");
+
+    expect(css).toMatch(/#applications\s*{[^}]*scroll-margin-top:/);
+  });
+
   it("registers easing utilities separately from regular duration variables", async () => {
     const css = await readFile(path.resolve(process.cwd(), "src/app/globals.css"), "utf8");
 

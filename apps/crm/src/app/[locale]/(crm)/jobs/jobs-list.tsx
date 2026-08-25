@@ -1,5 +1,9 @@
-import { Clock3, Users } from "lucide-react";
+"use client";
+
+import { ClipboardCheck, Clock3, Users } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import {
   formatCleanerPay,
@@ -11,6 +15,7 @@ import {
 import type { JobSummary } from "@/features/jobs/types";
 import type { AppLocale } from "@/i18n/config";
 import { Link } from "@/i18n/navigation";
+import { createClient } from "@/lib/supabase/browser";
 
 type JobsListProps = {
   jobs: JobSummary[];
@@ -19,6 +24,27 @@ type JobsListProps = {
 export function JobsList({ jobs }: JobsListProps) {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("Jobs");
+  const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("jobs-application-counts")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "job_applications",
+        },
+        () => router.refresh(),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [router]);
+
   if (!jobs.length) {
     return (
       <section className="jobs-empty">
@@ -63,6 +89,16 @@ export function JobsList({ jobs }: JobsListProps) {
                     })}
                   </span>
                 </span>
+                {job.awaitingApplications > 0 ? (
+                  <span className="job-awaiting-count">
+                    <ClipboardCheck aria-hidden="true" size={16} />
+                    <span className="tabular-numerals">
+                      {t("awaitingReviewCount", {
+                        count: job.awaitingApplications,
+                      })}
+                    </span>
+                  </span>
+                ) : null}
               </div>
             </div>
             <div className="job-pay">

@@ -75,4 +75,32 @@ describe("CRM message catalogues", () => {
       "Nenhum integrante ativo",
     );
   });
+
+  it("ships the complete bilingual application-review and notification contract", () => {
+    const english = leafMessages(enAu);
+    const portuguese = leafMessages(ptBr);
+    const requiredKeys = [
+      "Navigation.notifications",
+      "Navigation.notificationsUnread",
+      "Navigation.newApplication",
+      "Jobs.awaitingReviewCount",
+      "Jobs.applicationsSummary",
+      "Jobs.awaitingReview",
+      "Jobs.resolvedResponses",
+      "Jobs.approvalAssignsImmediately",
+      "Jobs.approveApplicantForSlot",
+      "Jobs.markNotSelected",
+      "Jobs.restoreApplication",
+      "Jobs.approvingApplicant",
+      "Jobs.markingNotSelected",
+      "Jobs.restoringApplication",
+      "Jobs.assignDirectly",
+      "Jobs.jobActions",
+    ];
+
+    for (const key of requiredKeys) {
+      expect(english.has(key), `${key} in en-AU`).toBe(true);
+      expect(portuguese.has(key), `${key} in pt-BR`).toBe(true);
+    }
+  });
 });

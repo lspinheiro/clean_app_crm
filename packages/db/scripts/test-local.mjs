@@ -24,6 +24,9 @@ run(process.execPath, [
   fileURLToPath(new URL("./test-loop-concurrency.mjs", import.meta.url)),
 ]);
 run(process.execPath, [
+  fileURLToPath(new URL("./test-application-review-concurrency.mjs", import.meta.url)),
+]);
+run(process.execPath, [
   fileURLToPath(new URL("./test-pay-ledger-concurrency.mjs", import.meta.url)),
 ]);
 run(process.execPath, [

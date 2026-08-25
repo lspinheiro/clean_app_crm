@@ -1,12 +1,26 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
-  requireCompanyAdmin: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const channel = { on: vi.fn(), subscribe: vi.fn() };
+  channel.on.mockReturnValue(channel);
+  channel.subscribe.mockReturnValue(channel);
+  return {
+    channel,
+    createClient: vi.fn(),
+    removeChannel: vi.fn(),
+    requireCompanyAdmin: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/auth/session", () => ({
   requireCompanyAdmin: mocks.requireCompanyAdmin,
+}));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+vi.mock("@/lib/supabase/browser", () => ({
+  createClient: mocks.createClient,
 }));
 
 import JobsPage from "./page";
@@ -36,6 +50,13 @@ function queryBuilder(result: QueryResult) {
 
 describe("CLE-23 jobs entry point", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.channel.on.mockReturnValue(mocks.channel);
+    mocks.channel.subscribe.mockReturnValue(mocks.channel);
+    mocks.createClient.mockReturnValue({
+      channel: vi.fn(() => mocks.channel),
+      removeChannel: mocks.removeChannel,
+    });
     mocks.requireCompanyAdmin.mockResolvedValue({
       company: { id: "company-1" },
       supabase: {
@@ -77,5 +98,13 @@ describe("CLE-23 jobs entry point", () => {
       "company-1",
     );
     expect(queries.get("clients")?.eq).toHaveBeenCalledWith("company_id", "company-1");
+    expect(queries.get("job_applications")?.eq).toHaveBeenCalledWith(
+      "jobs.sites.clients.company_id",
+      "company-1",
+    );
+    expect(queries.get("job_applications")?.eq).toHaveBeenCalledWith(
+      "status",
+      "applied",
+    );
   });
 });

@@ -92,7 +92,7 @@ test.describe("@F15 bilingual CRM", () => {
       "/pt-BR/jobs/10000000-0000-4000-8000-000000000801",
     );
     await expect(page.getByRole("heading", { name: "Broadbeach Towers", level: 1 })).toBeVisible();
-    await expect(page.getByText("Visão geral", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Candidaturas", level: 2 })).toBeVisible();
 
     await page.goto(
       "/pt-BR/clients/10000000-0000-4000-8000-000000000301",

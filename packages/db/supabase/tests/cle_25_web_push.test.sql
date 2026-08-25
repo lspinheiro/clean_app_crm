@@ -319,7 +319,7 @@ select ok(
       and not trigger.tgisinternal
       and pg_get_functiondef(procedure.oid) ~* 'net[.]http_post'
     limit 1
-  ) ~ 'app[.]settings[.]push_dispatch_url'
+  ) ~ 'push_dispatch_url'
     and (
       select pg_get_functiondef(procedure.oid)
       from pg_trigger trigger
@@ -328,7 +328,7 @@ select ok(
         and not trigger.tgisinternal
         and pg_get_functiondef(procedure.oid) ~* 'net[.]http_post'
       limit 1
-    ) ~ 'app[.]settings[.]push_dispatch_bearer'
+    ) ~ 'push_dispatch_bearer'
     and (
       select pg_get_functiondef(procedure.oid)
       from pg_trigger trigger
@@ -341,12 +341,11 @@ select ok(
   'dispatch reads configurable URL and bearer settings and catches every enqueue failure'
 );
 
-select set_config(
-  'app.settings.push_dispatch_url',
+select vault.create_secret(
   'http://kong:8000/functions/v1/push-dispatch',
-  true
+  'push_dispatch_url'
 );
-select set_config('app.settings.push_dispatch_bearer', 'cle-25-local-test-secret', true);
+select vault.create_secret('cle-25-local-test-secret', 'push_dispatch_bearer');
 delete from net.http_request_queue;
 
 insert into public.jobs (
@@ -560,7 +559,7 @@ select is(
 
 -- Missing webhook credentials disable dispatch without ever failing the durable insert.
 delete from net.http_request_queue;
-select set_config('app.settings.push_dispatch_bearer', '', true);
+delete from vault.secrets where name = 'push_dispatch_bearer';
 select lives_ok(
   $$insert into public.notifications (recipient_id, job_id, type)
     values (
@@ -578,8 +577,11 @@ select is(
 
 -- A synchronous pg_net error is swallowed after the enqueue path is entered.
 delete from net.http_request_queue;
-select set_config('app.settings.push_dispatch_bearer', 'test-dispatch-secret', true);
-select set_config('app.settings.push_dispatch_url', 'not-a-url', true);
+select vault.create_secret('test-dispatch-secret', 'push_dispatch_bearer');
+select vault.update_secret(
+  (select id from vault.secrets where name = 'push_dispatch_url'),
+  'not-a-url'
+);
 select lives_ok(
   $$insert into public.notifications (recipient_id, job_id, type)
     values (

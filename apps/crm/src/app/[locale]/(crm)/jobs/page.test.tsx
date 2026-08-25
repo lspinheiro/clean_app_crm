@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/session", () => ({
   requireCompanyAdmin: mocks.requireCompanyAdmin,
 }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
 
 import JobsPage from "./page";
 
@@ -77,5 +80,13 @@ describe("CLE-23 jobs entry point", () => {
       "company-1",
     );
     expect(queries.get("clients")?.eq).toHaveBeenCalledWith("company_id", "company-1");
+    expect(queries.get("job_applications")?.eq).toHaveBeenCalledWith(
+      "jobs.sites.clients.company_id",
+      "company-1",
+    );
+    expect(queries.get("job_applications")?.eq).toHaveBeenCalledWith(
+      "status",
+      "applied",
+    );
   });
 });

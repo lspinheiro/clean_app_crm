@@ -1,6 +1,8 @@
 "use server";
 
 import {
+  applicationReviewIdentitySchema,
+  approveJobApplicationSchema,
   assignJobSlotSchema,
   firstJobFieldErrors,
   jobIdSchema,
@@ -189,6 +191,106 @@ export async function assignJobSlot(
     };
   }
 
+  return { ok: true, formError: null };
+}
+
+export async function approveJobApplication(
+  formData: FormData,
+): Promise<JobOperationResult> {
+  const parsed = approveJobApplicationSchema.safeParse({
+    jobId: String(formData.get("jobId") ?? ""),
+    slotNumber: String(formData.get("slotNumber") ?? ""),
+    cleanerId: String(formData.get("cleanerId") ?? ""),
+  });
+  if (!parsed.success) {
+    return { ok: false, formError: userMessage("validApplicationReview") };
+  }
+
+  const { supabase } = await requireCompanyAdmin();
+  let data: string | null;
+  let error: { message: string } | null;
+  let status: number | undefined;
+  try {
+    ({ data, error, status } = await supabase.rpc("approve_job_application", {
+      target_job_id: parsed.data.jobId,
+      target_slot_number: parsed.data.slotNumber,
+      target_cleaner_id: parsed.data.cleanerId,
+    }));
+  } catch {
+    revalidateJobConsumers(parsed.data.jobId);
+    return {
+      ok: false,
+      formError: userMessage("applicationReviewUnconfirmed"),
+    };
+  }
+
+  revalidateJobConsumers(parsed.data.jobId);
+  if (error) {
+    return {
+      ok: false,
+      formError: status === 0
+        ? userMessage("applicationReviewUnconfirmed")
+        : userMessage("applicationChanged"),
+    };
+  }
+  if (!data) {
+    return {
+      ok: false,
+      formError: userMessage("applicationReviewUnconfirmed"),
+    };
+  }
+  return { ok: true, formError: null };
+}
+
+export async function markJobApplicationNotSelected(
+  formData: FormData,
+): Promise<JobOperationResult> {
+  return reviewApplicationWithoutSlot(formData, "mark_job_application_not_selected");
+}
+
+export async function restoreJobApplication(
+  formData: FormData,
+): Promise<JobOperationResult> {
+  return reviewApplicationWithoutSlot(formData, "restore_job_application");
+}
+
+async function reviewApplicationWithoutSlot(
+  formData: FormData,
+  rpcName: "mark_job_application_not_selected" | "restore_job_application",
+): Promise<JobOperationResult> {
+  const parsed = applicationReviewIdentitySchema.safeParse({
+    jobId: String(formData.get("jobId") ?? ""),
+    cleanerId: String(formData.get("cleanerId") ?? ""),
+  });
+  if (!parsed.success) {
+    return { ok: false, formError: userMessage("validApplicationReview") };
+  }
+
+  const { supabase } = await requireCompanyAdmin();
+  let error: { message: string } | null;
+  let status: number | undefined;
+  try {
+    ({ error, status } = await supabase.rpc(rpcName, {
+      target_job_id: parsed.data.jobId,
+      target_cleaner_id: parsed.data.cleanerId,
+    }));
+  } catch {
+    revalidateJobConsumers(parsed.data.jobId);
+    return {
+      ok: false,
+      formError: userMessage("applicationReviewUnconfirmed"),
+    };
+  }
+
+  revalidateJobConsumers(parsed.data.jobId);
+  if (error) {
+    return {
+      ok: false,
+      formError: status === 0
+        ? userMessage("applicationReviewUnconfirmed")
+        : userMessage("applicationChanged"),
+    };
+  }
   return { ok: true, formError: null };
 }
 

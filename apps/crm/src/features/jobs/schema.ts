@@ -93,6 +93,15 @@ export const assignJobSlotSchema = z.object({
   cleanerId: z.string().uuid(),
 });
 
+export const applicationReviewIdentitySchema = z.object({
+  jobId: z.string().uuid(),
+  cleanerId: z.string().uuid(),
+});
+
+export const approveJobApplicationSchema = applicationReviewIdentitySchema.extend({
+  slotNumber: z.coerce.number<number>().int().min(1),
+});
+
 export const jobIdSchema = z.string().uuid();
 
 export function firstJobFieldErrors(error: z.ZodError) {

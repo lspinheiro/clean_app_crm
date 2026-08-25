@@ -22,6 +22,7 @@ export default async function JobsPage() {
   const [
     { data: jobRows, error: jobError },
     { data: assignmentRows, error: assignmentError },
+    { data: applicationRows, error: applicationError },
     { data: siteRows, error: siteError },
     { data: clientRows, error: clientError },
     { data: serviceRows, error: serviceError },
@@ -39,6 +40,11 @@ export default async function JobsPage() {
       .eq("jobs.sites.clients.company_id", company.id)
       .is("unassigned_at", null),
     supabase
+      .from("job_applications")
+      .select("job_id, jobs!inner(sites!inner(clients!inner(company_id)))")
+      .eq("jobs.sites.clients.company_id", company.id)
+      .eq("status", "applied"),
+    supabase
       .from("sites")
       .select("id, client_id, name, clients!inner(company_id)")
       .eq("clients.company_id", company.id),
@@ -47,6 +53,7 @@ export default async function JobsPage() {
   ]);
   if (jobError) throw jobError;
   if (assignmentError) throw assignmentError;
+  if (applicationError) throw applicationError;
   if (siteError) throw siteError;
   if (clientError) throw clientError;
   if (serviceError) throw serviceError;
@@ -71,6 +78,9 @@ export default async function JobsPage() {
       crewSize: job.crew_size,
       assignedSlots: assignmentRows.filter(
         (assignment) => assignment.job_id === job.id,
+      ).length,
+      awaitingApplications: applicationRows.filter(
+        (application) => application.job_id === job.id,
       ).length,
     };
   });

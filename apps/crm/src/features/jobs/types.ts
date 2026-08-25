@@ -17,6 +17,7 @@ export type JobSummary = {
   status: JobStatus;
   crewSize: number;
   assignedSlots: number;
+  awaitingApplications: number;
 };
 
 export type JobApplicant = {

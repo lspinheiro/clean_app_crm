@@ -3,18 +3,57 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CrmHeader } from "./crm-header";
 
-const { mockUsePathname } = vi.hoisted(() => ({
-  mockUsePathname: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const channel = { on: vi.fn(), subscribe: vi.fn() };
+  channel.on.mockReturnValue(channel);
+  channel.subscribe.mockReturnValue(channel);
+  const updateQuery = {
+    update: vi.fn(),
+    in: vi.fn(),
+    is: vi.fn(),
+  };
+  updateQuery.update.mockReturnValue(updateQuery);
+  updateQuery.in.mockReturnValue(updateQuery);
+  updateQuery.is.mockResolvedValue({ error: null });
+  return {
+    channel,
+    createClient: vi.fn(),
+    mockUsePathname: vi.fn(),
+    realtimeCallback: null as null | (() => void),
+    refresh: vi.fn(),
+    removeChannel: vi.fn(),
+    updateQuery,
+  };
+});
 
 vi.mock("next/navigation", () => ({
-  usePathname: mockUsePathname,
+  usePathname: mocks.mockUsePathname,
+  useRouter: () => ({ refresh: mocks.refresh }),
+}));
+
+vi.mock("@/lib/supabase/browser", () => ({
+  createClient: mocks.createClient,
 }));
 
 describe("CrmHeader", () => {
   beforeEach(() => {
     cleanup();
-    mockUsePathname.mockReturnValue("/roster");
+    vi.clearAllMocks();
+    mocks.mockUsePathname.mockReturnValue("/roster");
+    mocks.realtimeCallback = null;
+    mocks.channel.on.mockImplementation((_kind, _config, callback) => {
+      mocks.realtimeCallback = callback;
+      return mocks.channel;
+    });
+    mocks.channel.subscribe.mockReturnValue(mocks.channel);
+    mocks.updateQuery.update.mockReturnValue(mocks.updateQuery);
+    mocks.updateQuery.in.mockReturnValue(mocks.updateQuery);
+    mocks.updateQuery.is.mockResolvedValue({ error: null });
+    mocks.createClient.mockReturnValue({
+      channel: vi.fn(() => mocks.channel),
+      from: vi.fn(() => mocks.updateQuery),
+      removeChannel: mocks.removeChannel,
+    });
   });
 
   it("does not advertise job creation before the workflow ships", () => {
@@ -53,7 +92,7 @@ describe("CrmHeader", () => {
   });
 
   it("offers owner settings inside the account menu and marks it current", () => {
-    mockUsePathname.mockReturnValue("/settings/identity");
+    mocks.mockUsePathname.mockReturnValue("/settings/identity");
     render(
       <CrmHeader
         companyId="company-1"
@@ -181,6 +220,75 @@ describe("CrmHeader", () => {
       .toBeInTheDocument();
     expect(within(companyGroup).getByText("Owner", { exact: true })).toBeInTheDocument();
     expect(within(companyGroup).getByText("Staff", { exact: true })).toBeInTheDocument();
+  });
+
+  it("shows durable application notifications, marks unread rows read, and refreshes live", async () => {
+    const { unmount } = render(
+      <CrmHeader
+        companyId="company-1"
+        companyName="Coastal Demo Cleaning"
+        logoUrl={null}
+        memberships={[
+          { companyId: "company-1", companyName: "Coastal Demo Cleaning", role: "owner" },
+        ]}
+        notifications={[
+          {
+            id: "86000000-0000-4000-8000-000000000802",
+            jobId: "22000000-0000-4000-8000-000000000502",
+            siteName: "Southport Office",
+            createdAt: "2026-08-25T00:02:00Z",
+            readAt: null,
+          },
+          {
+            id: "86000000-0000-4000-8000-000000000801",
+            jobId: "22000000-0000-4000-8000-000000000501",
+            siteName: "Broadbeach Towers",
+            createdAt: "2026-08-25T00:01:00Z",
+            readAt: null,
+          },
+        ]}
+        profileId="10000000-0000-4000-8000-000000000001"
+        profileName="Taylor Admin"
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Notifications, 2 unread" });
+    expect(trigger).toHaveTextContent("2");
+    fireEvent.click(trigger);
+
+    const list = screen.getByRole("list", { name: "Notifications" });
+    expect(within(list).getAllByRole("listitem").map((item) => item.textContent))
+      .toEqual([
+        expect.stringContaining("Southport Office"),
+        expect.stringContaining("Broadbeach Towers"),
+      ]);
+    expect(within(list).getByRole("link", { name: /Broadbeach Towers/ }))
+      .toHaveAttribute("href", "/jobs/22000000-0000-4000-8000-000000000501#applications");
+
+    await vi.waitFor(() => expect(mocks.updateQuery.update).toHaveBeenCalledWith({
+      read_at: expect.any(String),
+    }));
+    expect(mocks.updateQuery.in).toHaveBeenCalledWith("id", [
+      "86000000-0000-4000-8000-000000000802",
+      "86000000-0000-4000-8000-000000000801",
+    ]);
+    expect(mocks.updateQuery.is).toHaveBeenCalledWith("read_at", null);
+
+    expect(mocks.channel.on).toHaveBeenCalledWith(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "notifications",
+        filter: "recipient_id=eq.10000000-0000-4000-8000-000000000001",
+      },
+      expect.any(Function),
+    );
+    mocks.realtimeCallback?.();
+    expect(mocks.refresh).toHaveBeenCalled();
+
+    unmount();
+    expect(mocks.removeChannel).toHaveBeenCalledWith(mocks.channel);
   });
 
 });

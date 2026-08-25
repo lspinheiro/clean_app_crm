@@ -1,13 +1,21 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
-  notFound: vi.fn(() => {
-    throw new Error("NEXT_NOT_FOUND");
-  }),
-  refresh: vi.fn(),
-  requireCompanyAdmin: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const channel = { on: vi.fn(), subscribe: vi.fn() };
+  channel.on.mockReturnValue(channel);
+  channel.subscribe.mockReturnValue(channel);
+  return {
+    channel,
+    createBrowserClient: vi.fn(),
+    notFound: vi.fn(() => {
+      throw new Error("NEXT_NOT_FOUND");
+    }),
+    refresh: vi.fn(),
+    removeChannel: vi.fn(),
+    requireCompanyAdmin: vi.fn(),
+  };
+});
 
 vi.mock("next/navigation", () => ({
   notFound: mocks.notFound,
@@ -15,6 +23,9 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/lib/auth/session", () => ({
   requireCompanyAdmin: mocks.requireCompanyAdmin,
+}));
+vi.mock("@/lib/supabase/browser", () => ({
+  createClient: mocks.createBrowserClient,
 }));
 
 import JobDetailPage from "./page";
@@ -176,6 +187,10 @@ function trackedSupabase(overrides: Partial<Record<string, QueryResult>> = {}) {
 
 describe("CLE-22 job detail route", () => {
   beforeEach(() => {
+    mocks.createBrowserClient.mockReturnValue({
+      channel: vi.fn(() => mocks.channel),
+      removeChannel: mocks.removeChannel,
+    });
     vi.clearAllMocks();
   });
 

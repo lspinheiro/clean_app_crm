@@ -1561,6 +1561,14 @@ export type Database = {
         Returns: string
       }
       apply_to_job: { Args: { target_job_id: string }; Returns: string }
+      approve_job_application: {
+        Args: {
+          target_cleaner_id: string
+          target_job_id: string
+          target_slot_number: number
+        }
+        Returns: string
+      }
       assign_job_slot: {
         Args: {
           target_cleaner_id: string
@@ -1857,6 +1865,10 @@ export type Database = {
         Args: { target_cleaner_id: string; target_company_id: string }
         Returns: undefined
       }
+      mark_job_application_not_selected: {
+        Args: { target_cleaner_id: string; target_job_id: string }
+        Returns: undefined
+      }
       remove_employee: {
         Args: { target_company_id: string; target_membership_id: string }
         Returns: undefined
@@ -1864,6 +1876,10 @@ export type Database = {
       reserve_company_logo_upload: {
         Args: { requested_object_name: string; target_company_id: string }
         Returns: string
+      }
+      restore_job_application: {
+        Args: { target_cleaner_id: string; target_job_id: string }
+        Returns: undefined
       }
       revoke_first_admin_invitation: {
         Args: { target_invitation_id: string }
@@ -2041,6 +2057,7 @@ export type Database = {
         | "job_assigned"
         | "job_posted"
         | "job_cancelled"
+        | "application_received"
         | "payment_marked_paid"
       recurrence_frequency: "weekly" | "fortnightly"
     }
@@ -2190,6 +2207,7 @@ export const Constants = {
         "job_assigned",
         "job_posted",
         "job_cancelled",
+        "application_received",
         "payment_marked_paid",
       ],
       recurrence_frequency: ["weekly", "fortnightly"],

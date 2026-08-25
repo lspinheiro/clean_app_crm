@@ -69,6 +69,10 @@
     "signOut": "Sair",
     "companyLogo": "Logo da {companyName}",
     "brandLabel": "Início da The Clean Crew"
+    ,"notifications": "Notificações"
+    ,"notificationsUnread": "Notificações, {count} não lidas"
+    ,"newApplication": "Nova candidatura para {siteName}"
+    ,"noNotifications": "Nenhuma nova candidatura ainda."
   },
   "CompanySwitcher": {
     "label": "Empresa atual",
@@ -307,6 +311,7 @@
     "noJobsDescription": "Os serviços gerados pelas programações recorrentes aparecerão aqui.",
     "companyJobs": "Serviços da empresa",
     "assignedCount": "{assigned}/{total} posições preenchidas",
+    "awaitingReviewCount": "{count, plural, one {# aguardando análise} other {# aguardando análise}}",
     "cleanerPay": "Pagamento do profissional",
     "perSlot": "/posição",
     "back": "Voltar para serviços",
@@ -402,6 +407,26 @@
     ,"jobApplicants": "Candidatos ao serviço"
     ,"preferredRank": "Preferência nº {rank}"
     ,"noApplications": "Nenhuma candidatura ainda."
+    ,"applications": "Candidaturas"
+    ,"applicationsSummary": "{openSlots, plural, one {# posição aberta} other {# posições abertas}} · {count, plural, one {# aguardando análise} other {# aguardando análise}}"
+    ,"awaitingReview": "Aguardando análise"
+    ,"resolvedResponses": "Respostas resolvidas"
+    ,"approvalAssignsImmediately": "A aprovação aloca {cleanerName} imediatamente na posição selecionada."
+    ,"crewSlotForApplicant": "Posição da equipe para {cleanerName}"
+    ,"slotOption": "Posição {slot}"
+    ,"approveApplicantForSlot": "Aprovar {cleanerName} para a posição {slot}"
+    ,"markNotSelected": "Marcar {cleanerName} como não selecionado"
+    ,"restoreApplication": "Restaurar {cleanerName}"
+    ,"approvingApplicant": "Aprovando {cleanerName}…"
+    ,"markingNotSelected": "Marcando {cleanerName} como não selecionado…"
+    ,"restoringApplication": "Restaurando {cleanerName}…"
+    ,"reviewingApplication": "Atualizando…"
+    ,"applicationReviewNotConfirmed": "Não foi possível confirmar a atualização da candidatura. Revise a resposta atualizada antes de tentar novamente."
+    ,"appliedAt": "Candidatura em {time}"
+    ,"noAwaitingApplications": "Nenhuma candidatura aguarda análise."
+    ,"assignDirectly": "Alocar um profissional diretamente"
+    ,"directAssignmentDescription": "Use este caminho separado para um profissional ativo que não se candidatou."
+    ,"jobActions": "Ações do serviço"
     ,"closeOpenSlots": "Fechar todas as posições em aberto"
     ,"cancelQuestion": "Cancelar este serviço?"
     ,"cancelDescription": "As alocações ativas serão liberadas, as vagas serão fechadas e os profissionais afetados verão o cancelamento."
@@ -795,6 +820,7 @@
     "validStartTime": "Selecione um horário de início válido.",
     "validRecurringAssignment": "Selecione uma programação recorrente válida.",
     "validAssignment": "Selecione uma alocação válida antes de tentar novamente.",
+    "validApplicationReview": "Selecione uma resposta de candidatura válida antes de tentar novamente.",
     "activeCleaner": "Selecione profissionais ativos.",
     "validDuration": "Insira uma duração válida.",
     "durationPositive": "Insira uma duração maior que zero.",
@@ -825,6 +851,8 @@
     "jobChanged": "Este serviço mudou durante a alocação. Revise as posições atualizadas da equipe.",
     "cleanerAssignFailed": "Não foi possível alocar o profissional. Revise as posições atualizadas da equipe e tente novamente.",
     "assignmentUnconfirmed": "Não foi possível confirmar a alocação. Revise as posições atualizadas da equipe antes de tentar novamente.",
+    "applicationChanged": "Esta candidatura mudou durante a análise. Revise a resposta atualizada.",
+    "applicationReviewUnconfirmed": "Não foi possível confirmar a atualização da candidatura. Revise a resposta atualizada antes de tentar novamente.",
     "jobCancelFailed": "Não foi possível cancelar o serviço.",
     "jobCancelChanged": "Não foi possível cancelar o serviço. Revise o serviço atualizado e tente novamente.",
     "cancellationUnconfirmed": "Não foi possível confirmar o cancelamento. Revise o serviço atualizado antes de tentar novamente.",

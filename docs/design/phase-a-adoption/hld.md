@@ -326,7 +326,22 @@ state only), and the vacancy view.
   request. An HLD session must settle: whether the join request is a state on the cleaner
   membership or its own entity; the RLS boundary that keeps a waiting person away from
   every company view; the change to `join_company_pool`; how a rejection blocks a new
-  request from any link; and the new notification type for admit and reject.
+  request from any link; and the new notification type for admit and reject. That type
+  must land in its own migration, after the `application_received` value that the
+  `codex/cle-86-application-approval-flow` branch adds, because `alter type … add value`
+  needs a migration of its own.
+- An audit of `origin/main` on 2026-08-25 read all 40 references to `company_members` in
+  the migration set. 31 filter on `status`, 5 are table definition or grants, and 2 are
+  one-time data steps in `cle_81`. Two reads decide the entity question above:
+  - `cleaner_pool_memberships` (`cle_26`) already returns `(profile_id, company_id,
+    company_name, status)` for `auth.uid()`. If the join request is a state on the
+    cleaner membership, the S10 waiting screen has a data source already built, and the
+    app layer filters the state. This is the strongest evidence for that option.
+  - `accept_first_admin_invitation` (`cle_80`) refuses any caller that holds **any**
+    `company_members` row, with no filter on `status`. If a waiting join request creates
+    such a row, a person who is waiting at one company is silently refused when a founder
+    invites them to bootstrap their own company. The entity choice must either avoid the
+    row or fix this call site.
 
 ## Decision log
 

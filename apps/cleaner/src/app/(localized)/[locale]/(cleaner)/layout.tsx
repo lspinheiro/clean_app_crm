@@ -8,6 +8,7 @@ import { Briefcase, ClipboardCheck, UserRound } from "lucide-react";
 
 import { BrandBubbles } from "@/components/brand-bubbles";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { NotificationBell } from "@/components/notification-bell";
 import type { AppLocale } from "@/i18n/config";
 import { localePath, pathWithoutLocale } from "@/i18n/config";
 import { useCleaner } from "@/lib/auth/use-cleaner";
@@ -71,6 +72,7 @@ export default function CleanerLayout({
           <span>{commonT("brand")}</span>
         </Link>
         <div className="app-header__actions">
+          <NotificationBell profileId={cleaner.profile.id} />
           <LanguageSwitcher authenticated compact />
           <button
             className="app-header__sign-out"

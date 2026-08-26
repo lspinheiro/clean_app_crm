@@ -29,6 +29,16 @@
     "myJobs": "Meus serviços",
     "profile": "Perfil"
   },
+  "Notifications": {
+    "title": "Notificações",
+    "unread": "Notificações, {count, plural, one {# não lida} other {# não lidas}}",
+    "loadError": "Não foi possível carregar suas novidades.",
+    "empty": "Nenhuma novidade ainda.",
+    "jobPosted": "Novo serviço disponível",
+    "jobAssigned": "Você recebeu um serviço",
+    "jobCancelled": "Um serviço foi cancelado",
+    "paymentMarkedPaid": "Um serviço foi marcado como pago"
+  },
   "PushOptIn": {
     "title": "Receba atualizações dos serviços",
     "body": "Ative as notificações para saber quando uma empresa publicar, atribuir ou cancelar um serviço.",

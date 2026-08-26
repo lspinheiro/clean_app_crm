@@ -49,11 +49,11 @@ enable_signup = true
 otp_expiry = 604800
 
 [auth.email.template.invite]
-subject = "The Clean Crew company invitation / Convite da empresa"
+subject = "{{ if eq .Data.preferred_locale \"pt-BR\" }}Convite da empresa The Clean Crew{{ else }}The Clean Crew company invitation{{ end }}"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.recovery]
-subject = "Continue your company invitation / Continue seu convite da empresa"
+subject = "{{ if eq .Data.preferred_locale \"pt-BR\" }}Continue seu convite da empresa{{ else }}Continue your company invitation{{ end }}"
 content_path = "./supabase/templates/recovery.html"
 
 [storage]

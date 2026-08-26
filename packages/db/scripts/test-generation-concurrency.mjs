@@ -110,8 +110,8 @@ try {
       'weekly', 1, '2026-08-10', '20:00', 60, 9000, 2
     );
     insert into public.recurring_assignment_cleaners (
-      recurring_assignment_id, slot_number, cleaner_id
-    ) values ('${ruleId}', 1, '${cleanerId}');
+      recurring_assignment_id, slot_number, cleaner_id, accepted_at
+    ) values ('${ruleId}', 1, '${cleanerId}', clock_timestamp());
     commit;
   `);
 

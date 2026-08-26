@@ -1414,17 +1414,19 @@ insert into public.recurring_assignments (
     '2099-08-22', '18:00', 60, 9000, 2, true
   );
 insert into public.recurring_assignment_cleaners (
-  recurring_assignment_id, slot_number, cleaner_id
+  recurring_assignment_id, slot_number, cleaner_id, accepted_at
 ) values
   (
     '49000000-0000-4000-8000-000000000702',
     1,
-    '49000000-0000-4000-8000-000000000003'
+    '49000000-0000-4000-8000-000000000003',
+    clock_timestamp()
   ),
   (
     '49000000-0000-4000-8000-000000000703',
     1,
-    '49000000-0000-4000-8000-000000000002'
+    '49000000-0000-4000-8000-000000000002',
+    clock_timestamp()
   );
 select lives_ok(
   $$select public.generate_recurring_jobs_at(

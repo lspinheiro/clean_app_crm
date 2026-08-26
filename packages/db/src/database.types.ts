@@ -967,18 +967,21 @@ export type Database = {
       }
       recurring_assignment_cleaners: {
         Row: {
+          accepted_at: string | null
           cleaner_id: string
           created_at: string
           recurring_assignment_id: string
           slot_number: number
         }
         Insert: {
+          accepted_at?: string | null
           cleaner_id: string
           created_at?: string
           recurring_assignment_id: string
           slot_number: number
         }
         Update: {
+          accepted_at?: string | null
           cleaner_id?: string
           created_at?: string
           recurring_assignment_id?: string
@@ -2239,6 +2242,13 @@ export type Database = {
       decline_offer: { Args: { target_offer_id: string }; Returns: undefined }
       offer_job: {
         Args: { target_cleaner_id: string; target_job_id: string }
+        Returns: string
+      }
+      offer_series: {
+        Args: {
+          target_cleaner_id: string
+          target_recurring_assignment_id: string
+        }
         Returns: string
       }
       revoke_offer: { Args: { target_offer_id: string }; Returns: undefined }

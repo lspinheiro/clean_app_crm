@@ -520,11 +520,12 @@ insert into public.recurring_assignments (
   'weekly', 1, '2099-08-03', '06:00', 60, 8000, 2
 );
 insert into public.recurring_assignment_cleaners (
-  recurring_assignment_id, slot_number, cleaner_id
+  recurring_assignment_id, slot_number, cleaner_id, accepted_at
 ) values (
   '25000000-0000-4000-8000-000000000701',
   1,
-  '10000000-0000-4000-8000-000000000004'
+  '10000000-0000-4000-8000-000000000004',
+  clock_timestamp()
 );
 select ok(
   public.generate_recurring_jobs_at(

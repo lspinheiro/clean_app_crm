@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/browser";
 
-export type ApplicationNotification = {
+type NotificationBase = {
   id: string;
   jobId: string;
   siteName: string;
@@ -16,10 +16,35 @@ export type ApplicationNotification = {
   readAt: string | null;
 };
 
+export type CrmNotification =
+  | (NotificationBase & { type: "application_received" })
+  | (NotificationBase & { type: "offer_declined" });
+
 type NotificationBellProps = {
-  notifications: ApplicationNotification[];
+  notifications: CrmNotification[];
   profileId: string;
 };
+
+function assertNever(value: never): never {
+  throw new Error(`Unhandled CRM notification: ${JSON.stringify(value)}`);
+}
+
+function getNotificationPresentation(notification: CrmNotification) {
+  switch (notification.type) {
+    case "application_received":
+      return {
+        href: `/jobs/${notification.jobId}#applications`,
+        messageKey: "newApplication" as const,
+      };
+    case "offer_declined":
+      return {
+        href: `/jobs/${notification.jobId}`,
+        messageKey: "offerDeclined" as const,
+      };
+    default:
+      return assertNever(notification);
+  }
+}
 
 export function NotificationBell({ notifications, profileId }: NotificationBellProps) {
   const locale = useLocale();
@@ -41,15 +66,15 @@ export function NotificationBell({ notifications, profileId }: NotificationBellP
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel(`application-notifications:${profileId}`)
+      .channel(`crm-notifications:${profileId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "notifications",
-          // Realtime still enforces notifications_select_own; this avoids refreshes for other types.
-          filter: "type=eq.application_received",
+          // Realtime still enforces notifications_select_own; keep this to CRM-addressed types.
+          filter: "type=in.(application_received,offer_declined)",
         },
         () => router.refresh(),
       )
@@ -121,19 +146,25 @@ export function NotificationBell({ notifications, profileId }: NotificationBellP
         </div>
         {sortedItems.length ? (
           <ul aria-label={t("notifications")} className="notification-menu__list">
-            {sortedItems.map((item) => (
-              <li className={item.readAt ? undefined : "notification-menu__item--unread"} key={item.id}>
-                <Link href={`/jobs/${item.jobId}#applications`} onClick={closeMenu}>
-                  <span>{t("newApplication", { siteName: item.siteName })}</span>
-                  <time dateTime={item.createdAt}>
-                    {new Intl.DateTimeFormat(locale, {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }).format(new Date(item.createdAt))}
-                  </time>
-                </Link>
-              </li>
-            ))}
+            {sortedItems.map((item) => {
+              const presentation = getNotificationPresentation(item);
+              return (
+                <li
+                  className={item.readAt ? undefined : "notification-menu__item--unread"}
+                  key={item.id}
+                >
+                  <Link href={presentation.href} onClick={closeMenu}>
+                    <span>{t(presentation.messageKey, { siteName: item.siteName })}</span>
+                    <time dateTime={item.createdAt}>
+                      {new Intl.DateTimeFormat(locale, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(item.createdAt))}
+                    </time>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="notification-menu__empty">{t("noNotifications")}</p>

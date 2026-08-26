@@ -72,7 +72,8 @@
     "notifications": "Notifications",
     "notificationsUnread": "Notifications, {count} unread",
     "newApplication": "New application for {siteName}",
-    "noNotifications": "No new applications yet."
+    "offerDeclined": "Offer declined for {siteName}",
+    "noNotifications": "No notifications yet."
   },
   "CompanySwitcher": {
     "label": "Current company",

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Pencil, Plus, X } from "lucide-react";
+import { CalendarClock, CheckCircle2, Clock3, Pencil, Plus, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useRef, useState } from "react";
 
@@ -69,6 +69,23 @@ function FieldError({ id, message }: { id: string; message?: string }) {
       {message}
     </span>
   ) : null;
+}
+
+type OfferAgeTranslator = (
+  key: "offerAgeNow" | "offerAgeMinutes" | "offerAgeHours" | "offerAgeDays",
+  values?: { count: number },
+) => string;
+
+function formatOfferAge(createdAt: string, t: OfferAgeTranslator) {
+  const elapsedMinutes = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(createdAt).getTime()) / 60_000),
+  );
+  if (elapsedMinutes < 1) return t("offerAgeNow");
+  if (elapsedMinutes < 60) return t("offerAgeMinutes", { count: elapsedMinutes });
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return t("offerAgeHours", { count: elapsedHours });
+  return t("offerAgeDays", { count: Math.floor(elapsedHours / 24) });
 }
 
 export function SiteRecurringAssignments({
@@ -225,6 +242,39 @@ export function SiteRecurringAssignments({
                   <span>
                     {formatNamedCoverage(rule, labels)} · {formatAud(rule.cleanerPayCents, locale)}{t("perSlot")}
                   </span>
+                  {rule.namedCleaners.length ? (
+                    <div
+                      aria-label={t("namedOfferStates")}
+                      className="recurring-cleaner-consent-list"
+                      role="list"
+                    >
+                      {rule.namedCleaners.map((cleaner) => (
+                        <div
+                          className="recurring-cleaner-consent"
+                          key={cleaner.id}
+                          role="listitem"
+                        >
+                          <strong>{cleaner.name}</strong>
+                          <span
+                            className={`series-consent-chip series-consent-chip--${cleaner.consentState.status}`}
+                          >
+                            {cleaner.consentState.status === "offered" ? (
+                              <Clock3 aria-hidden="true" size={13} />
+                            ) : (
+                              <CheckCircle2 aria-hidden="true" size={13} />
+                            )}
+                            {t(cleaner.consentState.status)}
+                          </span>
+                          {cleaner.consentState.status === "offered"
+                            && cleaner.consentState.createdAt ? (
+                            <time dateTime={cleaner.consentState.createdAt}>
+                              {formatOfferAge(cleaner.consentState.createdAt, t)}
+                            </time>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="recurring-actions">
                   <button

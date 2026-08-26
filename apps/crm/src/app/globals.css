@@ -3317,6 +3317,56 @@ button.company-switcher__company:hover {
   font-size: 12px;
 }
 
+.recurring-cleaner-consent-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.recurring-cleaner-consent {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.recurring-copy .recurring-cleaner-consent strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.recurring-copy .series-consent-chip {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 5px;
+  margin-top: 0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recurring-copy .series-consent-chip--offered {
+  background: var(--color-warning-container);
+  color: var(--color-on-warning-container);
+}
+
+.recurring-copy .series-consent-chip--accepted {
+  background: var(--color-success-container);
+  color: var(--color-on-success-container);
+}
+
+.recurring-cleaner-consent time {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
 .recurring-actions {
   display: flex;
   align-items: center;

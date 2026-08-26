@@ -1407,6 +1407,44 @@ export type Database = {
           },
         ]
       }
+      cleaner_notifications: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          job_id: string | null
+          notification_id: string | null
+          read_at: string | null
+          scheduled_start: string | null
+          service_name: string | null
+          service_slug: string | null
+          site_name: string | null
+          suburb: string | null
+          type: Database["public"]["Enums"]["notification_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_job_board"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "notifications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["job_id"]
+          },
+        ]
+      }
       cleaner_pool_memberships: {
         Row: {
           company_id: string | null

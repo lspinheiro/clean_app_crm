@@ -24,8 +24,11 @@ select results_eq(
     ('job_posted'::text collate "C"),
     ('job_cancelled'::text collate "C"),
     ('application_received'::text collate "C"),
-    ('payment_marked_paid'::text collate "C")$$,
-  'notification records include settlement without replacing job events'
+    ('payment_marked_paid'::text collate "C"),
+    ('offer_received'::text collate "C"),
+    ('offer_declined'::text collate "C"),
+    ('job_paid'::text collate "C")$$,
+  'notification records include settlement and offers without replacing job events'
 );
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.ledger_entries'::regclass),

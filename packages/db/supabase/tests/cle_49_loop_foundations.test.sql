@@ -39,8 +39,11 @@ select results_eq(
     ('job_posted'::text collate "C"),
     ('job_cancelled'::text collate "C"),
     ('application_received'::text collate "C"),
-    ('payment_marked_paid'::text collate "C")$$,
-  'notification records retain loop, application-review, and settlement events'
+    ('payment_marked_paid'::text collate "C"),
+    ('offer_received'::text collate "C"),
+    ('offer_declined'::text collate "C"),
+    ('job_paid'::text collate "C")$$,
+  'notification records retain loop, application-review, settlement, and offer events'
 );
 select is(
   (

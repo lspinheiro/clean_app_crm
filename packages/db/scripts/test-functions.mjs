@@ -51,7 +51,16 @@ if (version.error || version.status !== 0) {
 for (const directory of directories) {
   const name = path.basename(directory);
   console.log(`Testing Edge Function ${name}...`);
-  const result = spawnSync("deno", ["test"], { cwd: directory, stdio: "inherit", shell });
+  // Pinned to UTC so a timezone assertion actually bites. Push payloads state Queensland
+  // time explicitly; on a developer machine already set to Australia/Brisbane, dropping
+  // that option produces byte-identical output and the test would pass while every
+  // near-midnight job shipped the wrong day.
+  const result = spawnSync("deno", ["test"], {
+    cwd: directory,
+    stdio: "inherit",
+    shell,
+    env: { ...process.env, TZ: "UTC" },
+  });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
 }

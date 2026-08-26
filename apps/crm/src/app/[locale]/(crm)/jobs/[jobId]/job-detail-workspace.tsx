@@ -6,11 +6,11 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   approveJobApplication,
-  assignJobSlot,
   cancelJob,
   markJobApplicationNotSelected,
   restoreJobApplication,
 } from "@/app/actions/jobs";
+import { offerJob, revokeJobOffer } from "@/app/actions/offers";
 import {
   formatCleanerPay,
   formatJobDate,
@@ -23,6 +23,7 @@ import type {
   JobApplicationStatus,
   JobDetail,
   JobCleanerCandidate,
+  JobPendingOffer,
   JobSlot,
 } from "@/features/jobs/types";
 import type { AppLocale } from "@/i18n/config";
@@ -140,6 +141,23 @@ function applicantInitials(applicant: JobApplicant) {
     .join("");
 }
 
+type OfferAgeTranslator = (
+  key: "offerAgeNow" | "offerAgeMinutes" | "offerAgeHours" | "offerAgeDays",
+  values?: { count: number },
+) => string;
+
+function formatOfferAge(createdAt: string, t: OfferAgeTranslator) {
+  const elapsedMinutes = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(createdAt).getTime()) / 60_000),
+  );
+  if (elapsedMinutes < 1) return t("offerAgeNow");
+  if (elapsedMinutes < 60) return t("offerAgeMinutes", { count: elapsedMinutes });
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return t("offerAgeHours", { count: elapsedHours });
+  return t("offerAgeDays", { count: Math.floor(elapsedHours / 24) });
+}
+
 export function JobDetailWorkspace({ job }: { job: JobDetail }) {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("Jobs");
@@ -147,14 +165,33 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
   const cancelDialog = useRef<HTMLDialogElement>(null);
   const jobActionsMenu = useRef<HTMLDetailsElement>(null);
   const jobActionsTrigger = useRef<HTMLElement>(null);
-  const [selectedBySlot, setSelectedBySlot] = useState<Record<string, string>>({});
+  const offerLifecycleKey = [
+    job.id,
+    job.status,
+    job.slots.map((slot) => slotLifecycleKey(job.id, slot)).join("|"),
+    job.pendingOffers.map((offer) => offer.id).join("|"),
+  ].join(":");
+  const [selectedOffer, setSelectedOffer] = useState({
+    cleanerId: "",
+    lifecycleKey: offerLifecycleKey,
+  });
+  const selectedOfferCleanerId = selectedOffer.lifecycleKey === offerLifecycleKey
+    ? selectedOffer.cleanerId
+    : "";
   const [selectedReviewSlot, setSelectedReviewSlot] = useState<Record<string, string>>({});
-  const [busySlot, setBusySlot] = useState<string | null>(null);
+  const [sendingOffer, setSendingOffer] = useState(false);
+  const [revokingOfferId, setRevokingOfferId] = useState<string | null>(null);
+  const [offerError, setOfferError] = useState<{
+    lifecycleKey: string;
+    message: string;
+  } | null>(null);
+  const visibleOfferError = offerError?.lifecycleKey === offerLifecycleKey
+    ? offerError.message
+    : null;
   const [pendingReview, setPendingReview] = useState<{
     action: ApplicationReviewAction;
     cleanerId: string;
   } | null>(null);
-  const [slotError, setSlotError] = useState<{ slotKey: string; message: string } | null>(null);
   const [reviewError, setReviewError] = useState<{ cleanerId: string; message: string } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -173,16 +210,23 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
     () => job.applicants.filter((applicant) => applicant.status !== "applied"),
     [job.applicants],
   );
-  const directCandidates = useMemo(() => {
-    const applicantIds = new Set(job.applicants.map((applicant) => applicant.cleanerId));
+  const offerCandidates = useMemo(() => {
+    const excludedCleanerIds = new Set([
+      ...job.applicants.map((applicant) => applicant.cleanerId),
+      ...job.pendingOffers.map((offer) => offer.cleanerId),
+      ...job.slots.flatMap((slot) => (
+        slot.state === "assigned" ? [slot.assignment.cleanerId] : []
+      )),
+    ]);
     return job.cleanerCandidates.filter(
-      (candidate) => !applicantIds.has(candidate.cleanerId),
+      (candidate) => !excludedCleanerIds.has(candidate.cleanerId),
     );
-  }, [job.applicants, job.cleanerCandidates]);
-  const directCandidatesById = new Map(
-    directCandidates.map((candidate) => [candidate.cleanerId, candidate]),
+  }, [job.applicants, job.cleanerCandidates, job.pendingOffers, job.slots]);
+  const offerCandidatesById = new Map(
+    offerCandidates.map((candidate) => [candidate.cleanerId, candidate]),
   );
   const canAssign = job.status === "draft" || job.status === "posted";
+  const canOffer = canAssign && job.pendingOffers.length < openSlots.length;
   const canReview = job.status === "posted" && openSlots.length > 0;
   const canCancel = cancellableStatuses.includes(job.status);
   const assignedCount = job.slots.filter((slot) => slot.state === "assigned").length;
@@ -232,29 +276,50 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
     };
   }, []);
 
-  async function handleAssign(event: FormEvent<HTMLFormElement>, slotKey: string) {
+  async function handleOffer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    setBusySlot(slotKey);
-    setSlotError(null);
+    setSendingOffer(true);
+    setOfferError(null);
     try {
-      const result = await assignJobSlot(formData);
+      const result = await offerJob(formData);
       if (!result.ok) {
-        setSlotError({
-          slotKey,
+        setOfferError({
+          lifecycleKey: offerLifecycleKey,
           message: localiseUserMessage(result.formError, locale) ?? result.formError,
         });
       }
     } catch {
-      setSlotError({ slotKey, message: t("assignmentNotConfirmed") });
+      setOfferError({
+        lifecycleKey: offerLifecycleKey,
+        message: t("offerNotConfirmed"),
+      });
     } finally {
       router.refresh();
-      setSelectedBySlot((current) => {
-        const next = { ...current };
-        delete next[slotKey];
-        return next;
+      setSelectedOffer({ cleanerId: "", lifecycleKey: offerLifecycleKey });
+      setSendingOffer(false);
+    }
+  }
+
+  async function handleRevokeOffer(offer: JobPendingOffer) {
+    setRevokingOfferId(offer.id);
+    setOfferError(null);
+    try {
+      const result = await revokeJobOffer(job.id, offer.id);
+      if (!result.ok) {
+        setOfferError({
+          lifecycleKey: offerLifecycleKey,
+          message: localiseUserMessage(result.formError, locale) ?? result.formError,
+        });
+      }
+    } catch {
+      setOfferError({
+        lifecycleKey: offerLifecycleKey,
+        message: t("offerNotConfirmed"),
       });
-      setBusySlot(null);
+    } finally {
+      router.refresh();
+      setRevokingOfferId(null);
     }
   }
 
@@ -608,65 +673,87 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
           </section>
 
           <section
-            aria-label={t("assignDirectly")}
-            className="job-detail-section direct-assignment-section"
+            aria-label={t("directedOffers")}
+            className="job-detail-section directed-offers-section"
             role="region"
           >
             <div className="job-detail-section__heading">
-              <h2>{t("assignDirectly")}</h2>
-              <p>{t("directAssignmentDescription")}</p>
+              <h2>{t("directedOffers")}</h2>
+              <p>{t("directedOffersDescription")}</p>
             </div>
-            {canAssign && openSlots.length && directCandidates.length ? (
-              <div className="direct-assignment-list">
-                {openSlots.map((slot) => {
-                  const slotKey = slotLifecycleKey(job.id, slot);
-                  const selectedCleanerId = selectedBySlot[slotKey] ?? "";
-                  const selectedCleaner = directCandidatesById.get(selectedCleanerId);
-                  return (
-                    <form key={slotKey} onSubmit={(event) => handleAssign(event, slotKey)}>
-                      <input name="jobId" type="hidden" value={job.id} />
-                      <input name="slotNumber" type="hidden" value={slot.slotNumber} />
-                      <label htmlFor={`slot-${slot.slotNumber}-cleaner`}>
-                        {t("cleanerForSlot", { slot: slot.slotNumber })}
-                      </label>
-                      <select
-                        id={`slot-${slot.slotNumber}-cleaner`}
-                        name="cleanerId"
-                        onChange={(event) => setSelectedBySlot((current) => ({
-                          ...current,
-                          [slotKey]: event.target.value,
-                        }))}
-                        value={selectedCleanerId}
-                      >
-                        <option value="">{t("chooseCleaner")}</option>
-                        {directCandidates.map((candidate) => (
-                          <option key={candidate.cleanerId} value={candidate.cleanerId}>
-                            {candidateLabel(candidate, t)}
-                          </option>
-                        ))}
-                      </select>
+            {job.pendingOffers.length ? (
+              <div aria-label={t("pendingOffers")} className="pending-offers" role="region">
+                <h3>{t("pendingOffers")}</h3>
+                <ul>
+                  {job.pendingOffers.map((offer) => (
+                    <li key={offer.id}>
+                      <div>
+                        <strong>{offer.cleanerName}</strong>
+                        <span className="application-chip application-chip--pending">
+                          <Clock3 aria-hidden="true" size={13} />
+                          {t("offerPending")}
+                        </span>
+                        <time dateTime={offer.createdAt}>
+                          {formatOfferAge(offer.createdAt, t)}
+                        </time>
+                      </div>
                       <button
-                        aria-label={selectedCleaner
-                          ? t("assignSelected", {
-                              cleanerName: selectedCleaner.cleanerName,
-                              slot: slot.slotNumber,
-                            })
-                          : t("assignSlot", { slot: slot.slotNumber })}
-                        className="button button--secondary"
-                        disabled={!selectedCleaner || busySlot !== null}
-                        type="submit"
+                        aria-label={t("revokeOfferTo", { cleanerName: offer.cleanerName })}
+                        className="button button--secondary button--small"
+                        disabled={sendingOffer || revokingOfferId !== null}
+                        onClick={() => void handleRevokeOffer(offer)}
+                        type="button"
                       >
-                        {busySlot === slotKey ? t("assigning") : t("assign")}
+                        {revokingOfferId === offer.id
+                          ? t("revokingOffer")
+                          : t("revokeOffer")}
                       </button>
-                      {slotError?.slotKey === slotKey ? (
-                        <p className="job-operation-error" role="alert">{slotError.message}</p>
-                      ) : null}
-                    </form>
-                  );
-                })}
+                    </li>
+                  ))}
+                </ul>
               </div>
+            ) : null}
+            {canOffer && offerCandidates.length ? (
+              <form className="directed-offer-form" onSubmit={handleOffer}>
+                <input name="jobId" type="hidden" value={job.id} />
+                <label htmlFor="job-offer-cleaner">{t("cleanerToOffer")}</label>
+                <select
+                  id="job-offer-cleaner"
+                  name="cleanerId"
+                  onChange={(event) => setSelectedOffer({
+                    cleanerId: event.target.value,
+                    lifecycleKey: offerLifecycleKey,
+                  })}
+                  value={selectedOfferCleanerId}
+                >
+                  <option value="">{t("chooseOfferCleaner")}</option>
+                  {offerCandidates.map((candidate) => (
+                    <option key={candidate.cleanerId} value={candidate.cleanerId}>
+                      {candidateLabel(candidate, t)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  aria-label={selectedOfferCleanerId
+                    ? t("sendOfferTo", {
+                        cleanerName: offerCandidatesById.get(selectedOfferCleanerId)?.cleanerName
+                          ?? "",
+                      })
+                    : t("sendOffer")}
+                  className="button"
+                  disabled={!selectedOfferCleanerId || sendingOffer || revokingOfferId !== null}
+                  type="submit"
+                >
+                  {sendingOffer ? t("sendingOffer") : t("sendOffer")}
+                </button>
+              </form>
             ) : canAssign && openSlots.length ? (
-              <p className="job-slot-empty">{t("noCleanerCandidates")}</p>
+              <p className="job-slot-empty">
+                {canOffer ? t("noOfferCandidates") : t("offerCapacityHeld")}
+              </p>
+            ) : null}
+            {visibleOfferError ? (
+              <p className="job-operation-error" role="alert">{visibleOfferError}</p>
             ) : null}
           </section>
         </aside>

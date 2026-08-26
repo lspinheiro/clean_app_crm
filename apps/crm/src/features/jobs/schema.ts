@@ -93,6 +93,16 @@ export const assignJobSlotSchema = z.object({
   cleanerId: z.string().uuid(),
 });
 
+export const jobOfferSchema = z.object({
+  jobId: z.string().uuid(),
+  cleanerId: z.string().uuid(),
+});
+
+export const jobOfferRevocationSchema = z.object({
+  jobId: z.string().uuid(),
+  offerId: z.string().uuid(),
+});
+
 export const applicationReviewIdentitySchema = z.object({
   jobId: z.string().uuid(),
   cleanerId: z.string().uuid(),

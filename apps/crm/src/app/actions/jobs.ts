@@ -158,6 +158,12 @@ export async function assignJobSlot(
         formError: userMessage("cleanerUnavailable"),
       };
     }
+    if (error.message === "Revoke the pending offer first") {
+      return {
+        ok: false,
+        formError: userMessage("revokePendingOfferFirst"),
+      };
+    }
     if (
       error.message === "Crew slot is already assigned" ||
       error.message === "Cleaner already has a slot on this job" ||
@@ -226,6 +232,12 @@ export async function approveJobApplication(
 
   revalidateJobConsumers(parsed.data.jobId);
   if (error) {
+    if (error.message === "Revoke the pending offer first") {
+      return {
+        ok: false,
+        formError: userMessage("revokePendingOfferFirst"),
+      };
+    }
     return {
       ok: false,
       formError: status === 0

@@ -94,7 +94,10 @@ describe("CRM message catalogues", () => {
       "Jobs.approvingApplicant",
       "Jobs.markingNotSelected",
       "Jobs.restoringApplication",
-      "Jobs.assignDirectly",
+      "Jobs.directedOffers",
+      "Jobs.pendingOffers",
+      "Jobs.sendOfferTo",
+      "Jobs.revokeOfferTo",
       "Jobs.jobActions",
     ];
 
@@ -102,5 +105,12 @@ describe("CRM message catalogues", () => {
       expect(english.has(key), `${key} in en-AU`).toBe(true);
       expect(portuguese.has(key), `${key} in pt-BR`).toBe(true);
     }
+  });
+
+  it("keeps the assignment pending-offer guard verbatim in both catalogues", () => {
+    expect(enAu.UserMessages.revokePendingOfferFirst)
+      .toBe("Revoke the pending offer first");
+    expect(ptBr.UserMessages.revokePendingOfferFirst)
+      .toBe("Revoke the pending offer first");
   });
 });

@@ -265,6 +265,20 @@ describe("CLE-22 job dispatch actions", () => {
     expectLocalizedRevalidation(`/jobs/${jobId}`);
   });
 
+  it("maps the pending-offer assignment guard to its verbatim UI message", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Revoke the pending offer first" },
+      status: 400,
+    });
+
+    await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
+      ok: false,
+      formError: "user.revokePendingOfferFirst",
+    });
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
+  });
+
   it("cancels through the loop RPC and refreshes vacancies and roster state", async () => {
     await expect(cancelJob(jobId)).resolves.toEqual({ ok: true, formError: null });
 
@@ -342,6 +356,24 @@ describe("CLE-86 application review actions", () => {
     expectLocalizedRevalidation(`/jobs/${jobId}`);
     expectLocalizedRevalidation("/jobs");
     expectLocalizedRevalidation("/roster");
+  });
+
+  it("maps an applicant assignment blocked by a pending offer to the verbatim message", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Revoke the pending offer first" },
+      status: 400,
+    });
+
+    await expect(
+      applicationReviewAction("approveJobApplication")(
+        validApplicationReviewFormData(),
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      formError: "user.revokePendingOfferFirst",
+    });
+    expectLocalizedRevalidation(`/jobs/${jobId}`);
   });
 
   it.each([

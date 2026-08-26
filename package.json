@@ -20,7 +20,8 @@
     "typecheck": "pnpm --filter \"./apps/*\" run typecheck",
     "build": "pnpm --reporter=append-only --workspace-concurrency=1 --filter \"./apps/*\" run build",
     "test:dev-setup": "node --test scripts/run-local-dev.test.mjs",
+    "test:auth-templates": "node --test scripts/auth-email-templates.test.mjs",
     "test:vocabulary": "node scripts/check-vocabulary.mjs",
-    "check": "pnpm test:vocabulary && pnpm test:dev-setup && pnpm test && pnpm db:test && pnpm test:functions && pnpm lint && pnpm typecheck && pnpm build"
+    "check": "pnpm test:vocabulary && pnpm test:dev-setup && pnpm test:auth-templates && pnpm test && pnpm db:test && pnpm test:functions && pnpm lint && pnpm typecheck && pnpm build"
   }
 }

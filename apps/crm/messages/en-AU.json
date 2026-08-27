@@ -884,7 +884,8 @@
     "logoPrepareFailed": "The logo upload could not be prepared. Your company details were not changed.",
     "staleLogoCleanupFailed": "A previous pending logo could not be cleared. Your company details were not changed.",
     "logoUploadFailed": "The logo could not be uploaded. Your company details were not changed.",
-    "generic": "This action could not be completed. Please try again."
+    "generic": "This action could not be completed. Please try again.",
+    "employeeInvitationRateLimited": "Too many invitation e-mails have gone out just now. Wait a minute and send it again."
   },
   "Services": {
     "office-clean": "Office clean",

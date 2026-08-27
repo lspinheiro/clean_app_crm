@@ -170,6 +170,69 @@ describe("CLE-83 employee invitation actions", () => {
     });
   });
 
+  it("tells the owner to wait when the e-mail provider is rate limiting, and says why in the log", async () => {
+    // Dotto's first invitation was revoked 46 ms after it was created on 2026-08-25 and
+    // nothing recorded why. A bare `catch {}` made a rate limit, a bad address and a provider
+    // outage the same event, so the owner was told to "check the address" for a problem that
+    // had nothing to do with the address.
+    const logged: unknown[][] = [];
+    const consoleError = vi.spyOn(console, "error").mockImplementation((...args) => {
+      logged.push(args);
+    });
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: [{
+          account_existed: false,
+          invitation_expires_at: "2026-08-27T00:00:00.000Z",
+          invitation_id: invitationId,
+        }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+    mocks.inviteUserByEmail.mockResolvedValue({
+      data: { user: null },
+      error: { code: "over_email_send_rate_limit", message: "email rate limit exceeded", status: 429 },
+    });
+
+    await expect(inviteEmployeeAction(invitationForm())).resolves.toMatchObject({
+      formError: "user.employeeInvitationRateLimited",
+      ok: false,
+    });
+    expect(JSON.stringify(logged)).toMatch(/over_email_send_rate_limit/);
+
+    consoleError.mockRestore();
+  });
+
+  it("keeps the provider's reason out of the owner's screen but not out of the log", async () => {
+    const logged: unknown[][] = [];
+    const consoleError = vi.spyOn(console, "error").mockImplementation((...args) => {
+      logged.push(args);
+    });
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: [{
+          account_existed: false,
+          invitation_expires_at: "2026-08-27T00:00:00.000Z",
+          invitation_id: invitationId,
+        }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+    mocks.inviteUserByEmail.mockResolvedValue({
+      data: { user: null },
+      error: { message: "mailbox unavailable for winston@example.test", status: 400 },
+    });
+
+    const result = await inviteEmployeeAction(invitationForm());
+
+    expect(result).toMatchObject({ formError: "user.employeeInvitationDeliveryFailed", ok: false });
+    // The reason has to survive somewhere, or the next unexplained revoke is unexplainable too.
+    expect(JSON.stringify(logged)).toMatch(/mailbox unavailable/);
+    expect(JSON.stringify(result)).not.toMatch(/mailbox unavailable/);
+
+    consoleError.mockRestore();
+  });
+
   it("rejects malformed input before resolving owner authority", async () => {
     await expect(inviteEmployeeAction(invitationForm("not-an-email"))).resolves.toMatchObject({
       fieldErrors: { email: expect.any(String) },

@@ -884,7 +884,8 @@
     "logoPrepareFailed": "Não foi possível preparar o envio do logotipo. Os dados da empresa não foram alterados.",
     "staleLogoCleanupFailed": "Não foi possível remover um logotipo pendente anterior. Os dados da empresa não foram alterados.",
     "logoUploadFailed": "Não foi possível enviar o logotipo. Os dados da empresa não foram alterados.",
-    "generic": "Não foi possível concluir esta ação. Tente novamente."
+    "generic": "Não foi possível concluir esta ação. Tente novamente.",
+    "employeeInvitationRateLimited": "Muitos e-mails de convite foram enviados agora. Espere um minuto e envie novamente."
   },
   "Services": {
     "office-clean": "Limpeza de escritório",

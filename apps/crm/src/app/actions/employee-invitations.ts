@@ -54,6 +54,14 @@ function confirmationUrl(appUrl: string, locale: "en-AU" | "pt-BR", invitationId
   return url.toString();
 }
 
+/** Carries the provider's reason to the handler without putting it in front of the owner. */
+class DeliveryRejected extends Error {
+  constructor(readonly cause: unknown) {
+    super("Delivery rejected");
+    this.name = "DeliveryRejected";
+  }
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -82,6 +90,18 @@ function existingAccountMessage(input: {
     subject: `Invitation to join ${input.companyName}`,
     text: `${input.companyName} invited you to join its team. Sign in and accept the invitation: ${input.invitationUrl}\n\nThe invitation expires in 7 days. If you did not expect this message, ignore it.`,
   };
+}
+
+/**
+ * Supabase reports an exhausted e-mail allowance as 429 / `over_email_send_rate_limit`. The
+ * project's `rate_limit_email_sent` is a per-hour figure, so an owner testing invitations
+ * reaches it easily — and "check the address" is the wrong thing to tell them.
+ */
+function isEmailRateLimit(cause: unknown): boolean {
+  if (typeof cause !== "object" || cause === null) return false;
+  const status = Reflect.get(cause, "status");
+  const code = Reflect.get(cause, "code");
+  return status === 429 || code === "over_email_send_rate_limit";
 }
 
 async function revokeFailedDelivery(
@@ -171,7 +191,7 @@ export async function inviteEmployeeAction(
         }],
         replyTo: configuration.replyTo,
       });
-      if (outcomes[0]?.status !== "accepted") throw new Error("Delivery rejected");
+      if (outcomes[0]?.status !== "accepted") throw new DeliveryRejected(outcomes[0]);
     } else {
       const admin = createAdminClient();
       const { data, error } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
@@ -182,11 +202,25 @@ export async function inviteEmployeeAction(
         },
         redirectTo: confirmationUrl(appUrl, parsed.data.locale, prepared.invitation_id),
       });
-      if (error || !data.user) throw new Error("Delivery rejected");
+      if (error || !data.user) throw new DeliveryRejected(error);
     }
-  } catch {
+  } catch (cause) {
+    // The reason has to survive. A bare `catch {}` here made a rate limit, a rejected address
+    // and a provider outage the same event, which is why an invitation revoked 46 ms after it
+    // was created on 2026-08-25 could not be explained afterwards.
+    const reason = cause instanceof DeliveryRejected ? cause.cause : cause;
+    console.error("Employee invitation delivery failed", {
+      companyId: company.id,
+      invitationId: prepared.invitation_id,
+      reason,
+    });
     await revokeFailedDelivery(supabase, company.id, prepared.invitation_id);
-    return failure(userMessage("employeeInvitationDeliveryFailed"));
+    // The provider's text can name the address or the mailbox, so it stays in the log.
+    return failure(userMessage(
+      isEmailRateLimit(reason)
+        ? "employeeInvitationRateLimited"
+        : "employeeInvitationDeliveryFailed",
+    ));
   }
 
   revalidateLocalizedPath("/settings");

@@ -33,7 +33,9 @@ select columns_are(
     'accepted_at',
     'revoked_at',
     'superseded_at',
-    'accepted_by_profile_id'
+    'accepted_by_profile_id',
+    -- CLE-92: bounds self-service re-sends of the link.
+    'last_link_sent_at'
   ],
   'employee invitations retain role, inviter, account path, lifecycle, and acceptance identity'
 );

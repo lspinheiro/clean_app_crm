@@ -68,11 +68,11 @@
     "switchToCompany": "Trocar para {companyName}",
     "signOut": "Sair",
     "companyLogo": "Logo da {companyName}",
-    "brandLabel": "Início da The Clean Crew"
-    ,"notifications": "Notificações"
-    ,"notificationsUnread": "Notificações, {count} não lidas"
-    ,"newApplication": "Nova candidatura para {siteName}"
-    ,"noNotifications": "Nenhuma nova candidatura ainda."
+    "brandLabel": "Início da The Clean Crew",
+    "notifications": "Notificações",
+    "notificationsUnread": "Notificações, {count} não lidas",
+    "newApplication": "Nova candidatura para {siteName}",
+    "noNotifications": "Nenhuma nova candidatura ainda."
   },
   "CompanySwitcher": {
     "label": "Empresa atual",
@@ -221,7 +221,26 @@
     "signIn": "Entrar",
     "unavailableTitle": "Este convite não está disponível",
     "unavailableDescription": "O convite é inválido, expirou, foi revogado, já foi aceito ou pertence a outra conta.",
-    "backToLogin": "Voltar para entrar"
+    "backToLogin": "Voltar para entrar",
+    "wrongAccountTitle": "Você entrou com outra conta",
+    "wrongAccountDescription": "Este convite é para {invitee}. Você entrou como {signedIn}.",
+    "useAnotherAccount": "Usar outra conta",
+    "checkAccountTitle": "Não foi possível abrir este convite na sua conta",
+    "checkAccountDescription": "Confirme seu endereço de e-mail e abra o link novamente.",
+    "linkUsedTitle": "Este link já foi aberto",
+    "linkUsedDescription": "Links de convite funcionam uma única vez, e um verificador de e-mail pode tê-lo aberto antes de você. Peça à {companyName} para enviar outro.",
+    "expiredTitle": "Este convite venceu",
+    "expiredDescription": "Convites duram sete dias. Peça à empresa para enviar outro.",
+    "revokedTitle": "Este convite foi retirado",
+    "revokedDescription": "A empresa cancelou o convite ou o substituiu por um mais recente.",
+    "acceptedTitle": "Este convite já foi aceito",
+    "acceptedDescription": "Entre para acessar a empresa.",
+    "unknownTitle": "Não encontramos este convite",
+    "unknownDescription": "Confira o link do seu e-mail ou peça à empresa para enviar outro.",
+    "requestLink": "Enviar um novo link",
+    "requestLinkSending": "Enviando…",
+    "requestLinkSent": "Confira sua caixa de entrada. Se este convite continuar aberto, um novo link está a caminho de {invitee}.",
+    "requestLinkFailed": "Não foi possível enviar um novo link agora. Espere um minuto e tente novamente."
   },
   "EmployeeManagement": {
     "title": "Acesso à empresa",
@@ -320,119 +339,119 @@
     "createDescription": "Comece pelos padrões do local e depois ajuste a programação, a equipe e os valores acordados.",
     "setupSiteTitle": "Cadastre primeiro um local do cliente",
     "setupSiteDescription": "Um serviço precisa de um local e de um tipo de serviço ativo antes de ser salvo.",
-    "openClients": "Abrir clientes e locais"
-    ,"noDefaults": "Nenhum padrão foi definido para {siteName}. Preencha os detalhes do serviço abaixo."
-    ,"defaultsLoaded": "Os padrões de {siteName} foram carregados. Você pode alterá-los para este serviço."
-    ,"step1": "Etapa 1"
-    ,"chooseSiteTitle": "Escolha o local"
-    ,"chooseSiteDescription": "O cliente determina os locais disponíveis. Os padrões do local servem apenas como ponto de partida."
-    ,"client": "Cliente"
-    ,"chooseClient": "Selecione um cliente"
-    ,"site": "Local"
-    ,"chooseSite": "Selecione um local"
-    ,"step2": "Etapa 2"
-    ,"scheduleTitle": "Defina o serviço e a programação"
-    ,"brisbaneTimes": "Os horários são informados e exibidos em Australia/Brisbane."
-    ,"service": "Serviço"
-    ,"chooseService": "Selecione um serviço"
-    ,"date": "Data do serviço"
-    ,"detailDate": "Data"
-    ,"startTime": "Horário de início"
-    ,"duration": "Duração (horas)"
-    ,"detailDuration": "Duração"
-    ,"statusDraft": "Rascunho"
-    ,"statusPosted": "Publicado"
-    ,"statusAssigned": "Alocado"
-    ,"statusOnTheWay": "A caminho"
-    ,"statusInProgress": "Em andamento"
-    ,"statusCompleted": "Concluído"
-    ,"statusCancelled": "Cancelado"
-    ,"step3": "Etapa 3"
-    ,"commercialTitle": "Defina a equipe e os detalhes comerciais"
-    ,"commercialDescription": "O pagamento do profissional é acordado por posição. O valor cobrado do cliente e as observações ficam visíveis apenas para administradores."
-    ,"crewSize": "Tamanho da equipe"
-    ,"cleanerPayPerSlot": "Pagamento do profissional por posição (AUD)"
-    ,"clientCharge": "Valor cobrado do cliente (AUD, somente administradores)"
-    ,"internalNotes": "Observações internas (somente administradores)"
-    ,"notesPlaceholder": "Adicione contexto operacional para os administradores da empresa"
-    ,"draftHint": "Rascunhos permanecem privados. A publicação cria uma vaga para cada posição aberta na equipe."
-    ,"saveDraft": "Salvar rascunho"
-    ,"saving": "Salvando…"
-    ,"post": "Publicar para os profissionais"
-    ,"posting": "Publicando…"
-    ,"saveFailed": "Não foi possível salvar o serviço. Tente novamente."
-    ,"applicationApplied": "Candidatou-se"
-    ,"applicationAssigned": "Selecionado"
-    ,"applicationNotSelected": "Não selecionado"
-    ,"applicationWithdrawn": "Candidatura retirada"
-    ,"preferredCandidate": "{cleanerName} — preferência nº {rank}"
-    ,"slotAssigned": "Preenchida"
-    ,"slotOpen": "Aberta"
-    ,"slotClosed": "Fechada"
-    ,"previouslyAssigned": "Anteriormente preenchida por {cleanerName}"
-    ,"chooseApplicant": "Escolha um candidato ou profissional"
-    ,"noActiveAssignment": "Sem alocação ativa"
-    ,"detailEyebrow": "Detalhes do serviço"
-    ,"cancelJob": "Cancelar serviço"
-    ,"overview": "Visão geral"
-    ,"scheduleAndSite": "Programação e local"
-    ,"start": "Início"
-    ,"siteAddress": "Endereço do local"
-    ,"accessNotes": "Instruções de acesso"
-    ,"noAccessNotes": "Nenhuma instrução de acesso registrada."
-    ,"adminOnly": "Somente administradores"
-    ,"commercialDetail": "Detalhes comerciais"
-    ,"cleanerPayPerSlotLabel": "Pagamento do profissional por posição"
-    ,"clientChargeLabel": "Valor cobrado do cliente"
-    ,"notRecorded": "Não informado"
-    ,"internalNotesLabel": "Observações internas"
-    ,"noInternalNotes": "Nenhuma observação interna registrada."
-    ,"crew": "Equipe"
-    ,"crewSlots": "Posições da equipe"
-    ,"crewSlot": "Posição da equipe {slot}"
-    ,"cleanerForSlot": "Profissional para a posição {slot}"
-    ,"chooseCleaner": "Selecione um profissional"
-    ,"applicantsGroup": "Candidatos"
-    ,"cleanersGroup": "Profissionais"
-    ,"assignSelected": "Alocar {cleanerName} na posição {slot}"
-    ,"assignSlot": "Alocar profissional na posição {slot}"
-    ,"assigning": "Alocando…"
-    ,"assign": "Alocar"
-    ,"noCleanerCandidates": "Nenhum profissional ativo está disponível para alocação."
-    ,"assignmentNotConfirmed": "Não foi possível confirmar a alocação. Revise as posições atualizadas da equipe antes de tentar novamente."
-    ,"cancellationNotConfirmed": "Não foi possível confirmar o cancelamento. Revise o serviço atualizado antes de tentar novamente."
-    ,"cleanerResponse": "Resposta dos profissionais"
-    ,"applicants": "Candidatos"
-    ,"applicantsDescription": "As preferências do local definem a ordem; o status registra o resultado."
-    ,"jobApplicants": "Candidatos ao serviço"
-    ,"preferredRank": "Preferência nº {rank}"
-    ,"noApplications": "Nenhuma candidatura ainda."
-    ,"applications": "Candidaturas"
-    ,"applicationsSummary": "{openSlots, plural, one {# posição aberta} other {# posições abertas}} · {count, plural, one {# aguardando análise} other {# aguardando análise}}"
-    ,"awaitingReview": "Aguardando análise"
-    ,"resolvedResponses": "Respostas resolvidas"
-    ,"approvalAssignsImmediately": "A aprovação aloca {cleanerName} imediatamente na posição selecionada."
-    ,"crewSlotForApplicant": "Posição da equipe para {cleanerName}"
-    ,"slotOption": "Posição {slot}"
-    ,"approveApplicantForSlot": "Aprovar {cleanerName} para a posição {slot}"
-    ,"markNotSelected": "Marcar {cleanerName} como não selecionado"
-    ,"restoreApplication": "Restaurar {cleanerName}"
-    ,"approvingApplicant": "Aprovando {cleanerName}…"
-    ,"markingNotSelected": "Marcando {cleanerName} como não selecionado…"
-    ,"restoringApplication": "Restaurando {cleanerName}…"
-    ,"reviewingApplication": "Atualizando…"
-    ,"applicationReviewNotConfirmed": "Não foi possível confirmar a atualização da candidatura. Revise a resposta atualizada antes de tentar novamente."
-    ,"appliedAt": "Candidatura em {time}"
-    ,"noAwaitingApplications": "Nenhuma candidatura aguarda análise."
-    ,"assignDirectly": "Alocar um profissional diretamente"
-    ,"directAssignmentDescription": "Use este caminho separado para um profissional ativo que não se candidatou."
-    ,"jobActions": "Ações do serviço"
-    ,"closeOpenSlots": "Fechar todas as posições em aberto"
-    ,"cancelQuestion": "Cancelar este serviço?"
-    ,"cancelDescription": "As alocações ativas serão liberadas, as vagas serão fechadas e os profissionais afetados verão o cancelamento."
-    ,"keepJob": "Manter serviço"
-    ,"cancelling": "Cancelando…"
-    ,"confirmCancellation": "Confirmar cancelamento"
+    "openClients": "Abrir clientes e locais",
+    "noDefaults": "Nenhum padrão foi definido para {siteName}. Preencha os detalhes do serviço abaixo.",
+    "defaultsLoaded": "Os padrões de {siteName} foram carregados. Você pode alterá-los para este serviço.",
+    "step1": "Etapa 1",
+    "chooseSiteTitle": "Escolha o local",
+    "chooseSiteDescription": "O cliente determina os locais disponíveis. Os padrões do local servem apenas como ponto de partida.",
+    "client": "Cliente",
+    "chooseClient": "Selecione um cliente",
+    "site": "Local",
+    "chooseSite": "Selecione um local",
+    "step2": "Etapa 2",
+    "scheduleTitle": "Defina o serviço e a programação",
+    "brisbaneTimes": "Os horários são informados e exibidos em Australia/Brisbane.",
+    "service": "Serviço",
+    "chooseService": "Selecione um serviço",
+    "date": "Data do serviço",
+    "detailDate": "Data",
+    "startTime": "Horário de início",
+    "duration": "Duração (horas)",
+    "detailDuration": "Duração",
+    "statusDraft": "Rascunho",
+    "statusPosted": "Publicado",
+    "statusAssigned": "Alocado",
+    "statusOnTheWay": "A caminho",
+    "statusInProgress": "Em andamento",
+    "statusCompleted": "Concluído",
+    "statusCancelled": "Cancelado",
+    "step3": "Etapa 3",
+    "commercialTitle": "Defina a equipe e os detalhes comerciais",
+    "commercialDescription": "O pagamento do profissional é acordado por posição. O valor cobrado do cliente e as observações ficam visíveis apenas para administradores.",
+    "crewSize": "Tamanho da equipe",
+    "cleanerPayPerSlot": "Pagamento do profissional por posição (AUD)",
+    "clientCharge": "Valor cobrado do cliente (AUD, somente administradores)",
+    "internalNotes": "Observações internas (somente administradores)",
+    "notesPlaceholder": "Adicione contexto operacional para os administradores da empresa",
+    "draftHint": "Rascunhos permanecem privados. A publicação cria uma vaga para cada posição aberta na equipe.",
+    "saveDraft": "Salvar rascunho",
+    "saving": "Salvando…",
+    "post": "Publicar para os profissionais",
+    "posting": "Publicando…",
+    "saveFailed": "Não foi possível salvar o serviço. Tente novamente.",
+    "applicationApplied": "Candidatou-se",
+    "applicationAssigned": "Selecionado",
+    "applicationNotSelected": "Não selecionado",
+    "applicationWithdrawn": "Candidatura retirada",
+    "preferredCandidate": "{cleanerName} — preferência nº {rank}",
+    "slotAssigned": "Preenchida",
+    "slotOpen": "Aberta",
+    "slotClosed": "Fechada",
+    "previouslyAssigned": "Anteriormente preenchida por {cleanerName}",
+    "chooseApplicant": "Escolha um candidato ou profissional",
+    "noActiveAssignment": "Sem alocação ativa",
+    "detailEyebrow": "Detalhes do serviço",
+    "cancelJob": "Cancelar serviço",
+    "overview": "Visão geral",
+    "scheduleAndSite": "Programação e local",
+    "start": "Início",
+    "siteAddress": "Endereço do local",
+    "accessNotes": "Instruções de acesso",
+    "noAccessNotes": "Nenhuma instrução de acesso registrada.",
+    "adminOnly": "Somente administradores",
+    "commercialDetail": "Detalhes comerciais",
+    "cleanerPayPerSlotLabel": "Pagamento do profissional por posição",
+    "clientChargeLabel": "Valor cobrado do cliente",
+    "notRecorded": "Não informado",
+    "internalNotesLabel": "Observações internas",
+    "noInternalNotes": "Nenhuma observação interna registrada.",
+    "crew": "Equipe",
+    "crewSlots": "Posições da equipe",
+    "crewSlot": "Posição da equipe {slot}",
+    "cleanerForSlot": "Profissional para a posição {slot}",
+    "chooseCleaner": "Selecione um profissional",
+    "applicantsGroup": "Candidatos",
+    "cleanersGroup": "Profissionais",
+    "assignSelected": "Alocar {cleanerName} na posição {slot}",
+    "assignSlot": "Alocar profissional na posição {slot}",
+    "assigning": "Alocando…",
+    "assign": "Alocar",
+    "noCleanerCandidates": "Nenhum profissional ativo está disponível para alocação.",
+    "assignmentNotConfirmed": "Não foi possível confirmar a alocação. Revise as posições atualizadas da equipe antes de tentar novamente.",
+    "cancellationNotConfirmed": "Não foi possível confirmar o cancelamento. Revise o serviço atualizado antes de tentar novamente.",
+    "cleanerResponse": "Resposta dos profissionais",
+    "applicants": "Candidatos",
+    "applicantsDescription": "As preferências do local definem a ordem; o status registra o resultado.",
+    "jobApplicants": "Candidatos ao serviço",
+    "preferredRank": "Preferência nº {rank}",
+    "noApplications": "Nenhuma candidatura ainda.",
+    "applications": "Candidaturas",
+    "applicationsSummary": "{openSlots, plural, one {# posição aberta} other {# posições abertas}} · {count, plural, one {# aguardando análise} other {# aguardando análise}}",
+    "awaitingReview": "Aguardando análise",
+    "resolvedResponses": "Respostas resolvidas",
+    "approvalAssignsImmediately": "A aprovação aloca {cleanerName} imediatamente na posição selecionada.",
+    "crewSlotForApplicant": "Posição da equipe para {cleanerName}",
+    "slotOption": "Posição {slot}",
+    "approveApplicantForSlot": "Aprovar {cleanerName} para a posição {slot}",
+    "markNotSelected": "Marcar {cleanerName} como não selecionado",
+    "restoreApplication": "Restaurar {cleanerName}",
+    "approvingApplicant": "Aprovando {cleanerName}…",
+    "markingNotSelected": "Marcando {cleanerName} como não selecionado…",
+    "restoringApplication": "Restaurando {cleanerName}…",
+    "reviewingApplication": "Atualizando…",
+    "applicationReviewNotConfirmed": "Não foi possível confirmar a atualização da candidatura. Revise a resposta atualizada antes de tentar novamente.",
+    "appliedAt": "Candidatura em {time}",
+    "noAwaitingApplications": "Nenhuma candidatura aguarda análise.",
+    "assignDirectly": "Alocar um profissional diretamente",
+    "directAssignmentDescription": "Use este caminho separado para um profissional ativo que não se candidatou.",
+    "jobActions": "Ações do serviço",
+    "closeOpenSlots": "Fechar todas as posições em aberto",
+    "cancelQuestion": "Cancelar este serviço?",
+    "cancelDescription": "As alocações ativas serão liberadas, as vagas serão fechadas e os profissionais afetados verão o cancelamento.",
+    "keepJob": "Manter serviço",
+    "cancelling": "Cancelando…",
+    "confirmCancellation": "Confirmar cancelamento"
   },
   "Clients": {
     "eyebrow": "Cadastros da empresa",
@@ -869,7 +888,8 @@
     "logoPrepareFailed": "Não foi possível preparar o envio do logotipo. Os dados da empresa não foram alterados.",
     "staleLogoCleanupFailed": "Não foi possível remover um logotipo pendente anterior. Os dados da empresa não foram alterados.",
     "logoUploadFailed": "Não foi possível enviar o logotipo. Os dados da empresa não foram alterados.",
-    "generic": "Não foi possível concluir esta ação. Tente novamente."
+    "generic": "Não foi possível concluir esta ação. Tente novamente.",
+    "employeeInvitationRateLimited": "Muitos e-mails de convite foram enviados agora. Espere um minuto e envie novamente."
   },
   "Services": {
     "office-clean": "Limpeza de escritório",

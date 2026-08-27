@@ -27,6 +27,7 @@ import { initialEmployeeInvitationState } from "@/features/employee-invitations/
 import {
   acceptEmployeeInvitationAction,
   inviteEmployeeAction,
+  requestEmployeeInvitationLinkAction,
   revokeEmployeeInvitationAction,
 } from "./employee-invitations";
 
@@ -116,8 +117,9 @@ describe("CLE-83 employee invitation actions", () => {
         invitation_kind: "employee",
         preferred_locale: "en-AU",
       },
-      redirectTo:
-        `https://crm.example.test/en-AU/auth/confirm?employeeInvitation=${invitationId}`,
+      // In the path, not a query: a redirect with no query cannot be joined with the wrong
+      // separator, which is how an invitation reached an invitee as `site_url&token_hash=…`.
+      redirectTo: `https://crm.example.test/en-AU/auth/confirm/${invitationId}`,
     });
     expect(mocks.sendResendEmailBatches).not.toHaveBeenCalled();
   });
@@ -168,6 +170,69 @@ describe("CLE-83 employee invitation actions", () => {
       target_company_id: companyId,
       target_invitation_id: invitationId,
     });
+  });
+
+  it("tells the owner to wait when the e-mail provider is rate limiting, and says why in the log", async () => {
+    // Dotto's first invitation was revoked 46 ms after it was created on 2026-08-25 and
+    // nothing recorded why. A bare `catch {}` made a rate limit, a bad address and a provider
+    // outage the same event, so the owner was told to "check the address" for a problem that
+    // had nothing to do with the address.
+    const logged: unknown[][] = [];
+    const consoleError = vi.spyOn(console, "error").mockImplementation((...args) => {
+      logged.push(args);
+    });
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: [{
+          account_existed: false,
+          invitation_expires_at: "2026-08-27T00:00:00.000Z",
+          invitation_id: invitationId,
+        }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+    mocks.inviteUserByEmail.mockResolvedValue({
+      data: { user: null },
+      error: { code: "over_email_send_rate_limit", message: "email rate limit exceeded", status: 429 },
+    });
+
+    await expect(inviteEmployeeAction(invitationForm())).resolves.toMatchObject({
+      formError: "user.employeeInvitationRateLimited",
+      ok: false,
+    });
+    expect(JSON.stringify(logged)).toMatch(/over_email_send_rate_limit/);
+
+    consoleError.mockRestore();
+  });
+
+  it("keeps the provider's reason out of the owner's screen but not out of the log", async () => {
+    const logged: unknown[][] = [];
+    const consoleError = vi.spyOn(console, "error").mockImplementation((...args) => {
+      logged.push(args);
+    });
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: [{
+          account_existed: false,
+          invitation_expires_at: "2026-08-27T00:00:00.000Z",
+          invitation_id: invitationId,
+        }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+    mocks.inviteUserByEmail.mockResolvedValue({
+      data: { user: null },
+      error: { message: "mailbox unavailable for winston@example.test", status: 400 },
+    });
+
+    const result = await inviteEmployeeAction(invitationForm());
+
+    expect(result).toMatchObject({ formError: "user.employeeInvitationDeliveryFailed", ok: false });
+    // The reason has to survive somewhere, or the next unexplained revoke is unexplainable too.
+    expect(JSON.stringify(logged)).toMatch(/mailbox unavailable/);
+    expect(JSON.stringify(result)).not.toMatch(/mailbox unavailable/);
+
+    consoleError.mockRestore();
   });
 
   it("rejects malformed input before resolving owner authority", async () => {
@@ -247,5 +312,96 @@ describe("CLE-83 employee invitation actions", () => {
       target_invitation_id: invitationId,
       target_locale: "en-AU",
     });
+  });
+});
+
+// The invitation record lives seven days; the token in the e-mail dies on the first GET. A
+// scanner or a reload spends it, and `prepare_employee_invitation` refuses while an
+// invitation is open, so before this the only recourse was revoke-and-reinvite by an admin.
+
+describe("requesting a fresh invitation link", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.NEXT_PUBLIC_CRM_APP_URL = "https://crm.example.test/path";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://supabase.example.test";
+    process.env.SUPABASE_SECRET_KEY = "supabase-secret";
+    // The invitee has no session, so the action reaches the database with the service role
+    // rather than through requireCompanyOwner.
+    mocks.createAdminClient.mockReturnValue({
+      auth: { admin: { inviteUserByEmail: mocks.inviteUserByEmail } },
+      rpc: mocks.rpc,
+    });
+    mocks.inviteUserByEmail.mockResolvedValue({ data: { user: { id: "new-user" } }, error: null });
+  });
+
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_CRM_APP_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_SECRET_KEY;
+  });
+
+  it("re-sends the invitation that already exists rather than minting a new one", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: [{
+        account_confirmed: false,
+        claimed: true,
+        invitee_email: "invitee@example.test",
+        locale: "pt-BR",
+      }],
+      error: null,
+    });
+    mocks.inviteUserByEmail.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+
+    await expect(requestEmployeeInvitationLinkAction(invitationId)).resolves.toEqual({ ok: true });
+
+    expect(mocks.rpc).toHaveBeenCalledWith("claim_employee_invitation_link", {
+      target_invitation_id: invitationId,
+    });
+    // Minting a new invitation would orphan the link already in the invitee's inbox.
+    expect(mocks.rpc).not.toHaveBeenCalledWith(
+      "prepare_employee_invitation",
+      expect.anything(),
+    );
+    expect(mocks.inviteUserByEmail).toHaveBeenCalledWith(
+      "invitee@example.test",
+      expect.objectContaining({
+        data: expect.objectContaining({ invitation_kind: "employee" }),
+      }),
+    );
+  });
+
+  it("says the same thing whether or not the invitation could be re-sent", async () => {
+    // A refusal that named its reason would tell whoever holds a link id which invitations
+    // are live, and let them time the answers.
+    mocks.rpc.mockResolvedValueOnce({
+      data: [{ account_confirmed: null, claimed: false, invitee_email: null, locale: null }],
+      error: null,
+    });
+
+    await expect(requestEmployeeInvitationLinkAction(invitationId)).resolves.toEqual({ ok: true });
+    expect(mocks.inviteUserByEmail).not.toHaveBeenCalled();
+  });
+
+  it("refuses an identifier that is not an invitation before touching the database", async () => {
+    await expect(requestEmployeeInvitationLinkAction("not-a-uuid")).resolves.toMatchObject({
+      ok: false,
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("does not re-invite an account that already has a usable login", async () => {
+    // `inviteUserByEmail` rejects a registered address, and a confirmed invitee can sign in.
+    mocks.rpc.mockResolvedValueOnce({
+      data: [{
+        account_confirmed: true,
+        claimed: true,
+        invitee_email: "invitee@example.test",
+        locale: "en-AU",
+      }],
+      error: null,
+    });
+
+    await expect(requestEmployeeInvitationLinkAction(invitationId)).resolves.toEqual({ ok: true });
+    expect(mocks.inviteUserByEmail).not.toHaveBeenCalled();
   });
 });

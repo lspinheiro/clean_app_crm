@@ -73,9 +73,12 @@ export function requiredRedirectUrls() {
   const locales = ["en-AU", "pt-BR"];
 
   return [
+    // The employee invitation rides in the path. It was a query parameter until 2026-08-27,
+    // which is what a literal allow-list entry refused; keeping a query-carrying URL here
+    // would guard a shape the apps no longer ask for.
     ...locales.map(
       (locale) =>
-        `https://crm.thecleancrew.app/${locale}/auth/confirm?employeeInvitation=${sampleInvitation}`,
+        `https://crm.thecleancrew.app/${locale}/auth/confirm/${sampleInvitation}`,
     ),
     ...locales.map((locale) => `https://crm.thecleancrew.app/${locale}/auth/confirm`),
     ...locales.map((locale) => `https://cleaner.thecleancrew.app/${locale}/auth/confirm`),

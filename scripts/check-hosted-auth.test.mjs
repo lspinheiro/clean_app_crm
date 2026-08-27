@@ -288,7 +288,7 @@ test("an entry without a wildcard does not permit the same path carrying a query
   assert.equal(
     matchesRedirectPattern(
       "https://crm.thecleancrew.app/en-AU/auth/confirm",
-      "https://crm.thecleancrew.app/en-AU/auth/confirm?employeeInvitation=abc",
+      "https://crm.thecleancrew.app/en-AU/auth/confirm/00000000-0000-4000-8000-000000000000",
     ),
     false,
   );
@@ -298,7 +298,7 @@ test("a wildcard entry permits the redirect the CRM actually asks for", () => {
   assert.equal(
     matchesRedirectPattern(
       "https://crm.thecleancrew.app/**",
-      "https://crm.thecleancrew.app/en-AU/auth/confirm?employeeInvitation=abc",
+      "https://crm.thecleancrew.app/en-AU/auth/confirm/00000000-0000-4000-8000-000000000000",
     ),
     true,
   );
@@ -310,7 +310,7 @@ test("the redirects the apps request are stated, both locales and both apps", ()
   assert.ok(required.length >= 4);
   for (const locale of ["en-AU", "pt-BR"]) {
     assert.ok(
-      required.some((url) => url.includes(`/${locale}/auth/confirm?employeeInvitation=`)),
+      required.some((url) => url.includes(`/${locale}/auth/confirm/`)),
       `${locale} employee confirm redirect must be required`,
     );
   }
@@ -339,7 +339,7 @@ test("an allow-list that refuses a required redirect is drift", () => {
   assert.ok(entry, "an allow-list that refuses the CRM's redirect must be reported");
   // Auth does not report a refusal — it silently sends the invitee to site_url — so the
   // message has to name what was refused.
-  assert.match(entry.actual, /employeeInvitation/);
+  assert.match(entry.actual, /auth\/confirm\//);
 });
 
 test("an allow-list with the wildcard entries reports no drift", () => {

@@ -116,18 +116,33 @@ test.describe("@CLE-83 owner employee invitations", () => {
     await expect(page).toHaveURL(/\/en-AU\/roster$/);
   });
 
-  test("revoked and expired invitations remain unavailable", async ({ page }) => {
+  // CLE-91: these used to share one sentence with "not signed in" and "signed in as somebody
+  // else", which is why nobody who hit it could tell what to do next. Each state says what
+  // happened now, so asserting the specific heading is the point rather than an incidental
+  // detail.
+  test("a withdrawn invitation says it was withdrawn", async ({ page }) => {
     await signIn(page, "cleaner.two@clean-app.example.test");
     await expect(page).toHaveURL(/\/en-AU\/no-company-access$/);
 
-    for (const invitationId of [
-      "83000000-0000-4000-8000-000000000203",
-      "83000000-0000-4000-8000-000000000204",
-    ]) {
-      await page.goto(`/en-AU/invite/accept?employeeInvitation=${invitationId}`);
-      await expect(page.getByRole("heading", { name: "This invitation is not available" }))
-        .toBeVisible();
-      await expect(page.getByRole("button", { name: "Accept invitation" })).toHaveCount(0);
-    }
+    await page.goto(
+      "/en-AU/invite/accept?employeeInvitation=83000000-0000-4000-8000-000000000203",
+    );
+
+    await expect(page.getByRole("heading", { name: "This invitation was withdrawn" }))
+      .toBeVisible();
+    await expect(page.getByRole("button", { name: "Accept invitation" })).toHaveCount(0);
+  });
+
+  test("an expired invitation says it expired", async ({ page }) => {
+    await signIn(page, "cleaner.two@clean-app.example.test");
+    await expect(page).toHaveURL(/\/en-AU\/no-company-access$/);
+
+    await page.goto(
+      "/en-AU/invite/accept?employeeInvitation=83000000-0000-4000-8000-000000000204",
+    );
+
+    await expect(page.getByRole("heading", { name: "This invitation has expired" }))
+      .toBeVisible();
+    await expect(page.getByRole("button", { name: "Accept invitation" })).toHaveCount(0);
   });
 });

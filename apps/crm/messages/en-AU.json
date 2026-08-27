@@ -236,7 +236,11 @@
     "acceptedTitle": "This invitation was already accepted",
     "acceptedDescription": "Sign in to reach the company.",
     "unknownTitle": "We could not find this invitation",
-    "unknownDescription": "Check the link in your e-mail, or ask the company to send a new one."
+    "unknownDescription": "Check the link in your e-mail, or ask the company to send a new one.",
+    "requestLink": "Send me a new link",
+    "requestLinkSending": "Sending…",
+    "requestLinkSent": "Check your inbox. If this invitation is still open, a new link is on its way to {invitee}.",
+    "requestLinkFailed": "We could not send a new link just now. Wait a minute and try again."
   },
   "EmployeeManagement": {
     "title": "Company access",

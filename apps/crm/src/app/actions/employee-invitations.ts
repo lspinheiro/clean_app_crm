@@ -227,6 +227,62 @@ export async function inviteEmployeeAction(
   return { ok: true };
 }
 
+/**
+ * Callable without a session: the invitee has no account yet, which is the whole problem.
+ * Authority comes from holding the invitation id — an unguessable uuid that reached the
+ * inbox — and from the claim, which refuses anything but a live invitation and bounds
+ * re-sends to the project's own sixty-second `smtp_max_frequency`.
+ *
+ * The answer is always `ok`. Reporting why a claim was refused would tell whoever holds a
+ * link id which invitations are live, and let them time the answers.
+ */
+export async function requestEmployeeInvitationLinkAction(
+  invitationId: string,
+): Promise<EmployeeInvitationActionResult> {
+  const parsed = employeeInvitationIdSchema.safeParse(invitationId);
+  if (!parsed.success) return failure(userMessage("employeeInvitationFailed"));
+
+  const appUrl = process.env.NEXT_PUBLIC_CRM_APP_URL;
+  if (!appUrl) return failure(userMessage("employeeInvitationFailed"));
+
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("claim_employee_invitation_link", {
+    target_invitation_id: parsed.data,
+  });
+  const claim = data?.[0];
+  if (error || !claim?.claimed || !claim.invitee_email || !claim.locale) {
+    return { ok: true };
+  }
+
+  // A confirmed account already has a way in, and `inviteUserByEmail` rejects a registered
+  // address. Recovering one needs the confirmation redirect to carry no query string, which
+  // is the next slice; until then this stops at the account that can already sign in.
+  if (claim.account_confirmed) return { ok: true };
+
+  try {
+    const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(
+      claim.invitee_email,
+      {
+        data: {
+          company_name: "",
+          invitation_kind: "employee",
+          preferred_locale: claim.locale,
+        },
+        redirectTo: confirmationUrl(appUrl, claim.locale, parsed.data),
+      },
+    );
+    if (inviteError) throw new DeliveryRejected(inviteError);
+  } catch (cause) {
+    const reason = cause instanceof DeliveryRejected ? cause.cause : cause;
+    console.error("Employee invitation link could not be re-sent", {
+      invitationId: parsed.data,
+      reason,
+    });
+  }
+
+  return { ok: true };
+}
+
 export async function revokeEmployeeInvitationAction(
   invitationId: string,
 ): Promise<EmployeeInvitationActionResult> {

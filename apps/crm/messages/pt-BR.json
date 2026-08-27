@@ -236,7 +236,11 @@
     "acceptedTitle": "Este convite já foi aceito",
     "acceptedDescription": "Entre para acessar a empresa.",
     "unknownTitle": "Não encontramos este convite",
-    "unknownDescription": "Confira o link do seu e-mail ou peça à empresa para enviar outro."
+    "unknownDescription": "Confira o link do seu e-mail ou peça à empresa para enviar outro.",
+    "requestLink": "Enviar um novo link",
+    "requestLinkSending": "Enviando…",
+    "requestLinkSent": "Confira sua caixa de entrada. Se este convite continuar aberto, um novo link está a caminho de {invitee}.",
+    "requestLinkFailed": "Não foi possível enviar um novo link agora. Espere um minuto e tente novamente."
   },
   "EmployeeManagement": {
     "title": "Acesso à empresa",

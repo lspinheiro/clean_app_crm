@@ -1602,6 +1602,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      claim_employee_invitation_link: {
+        Args: { target_invitation_id: string }
+        Returns: {
+          account_confirmed: boolean
+          claimed: boolean
+          invitee_email: string
+          locale: Database["public"]["Enums"]["app_locale"]
+        }[]
+      }
       cleaner_invite_preview: {
         Args: { invite_code: string }
         Returns: {
@@ -1617,6 +1626,16 @@ export type Database = {
       create_company: {
         Args: { company_abn: string; company_name: string }
         Returns: string
+      }
+      employee_invitation_preview: {
+        Args: { target_invitation_id: string }
+        Returns: {
+          account_existed: boolean
+          company_name: string
+          invitee_hint: string
+          role: Database["public"]["Enums"]["employee_role"]
+          state: string
+        }[]
       }
       first_admin_company_abn_available: {
         Args: { company_abn: string }

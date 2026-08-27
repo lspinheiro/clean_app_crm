@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { BrandBubbles } from "@/components/brand-bubbles";
 import { FirstAdminAcceptanceForm } from "./accept-form";
 import { EmployeeAcceptance } from "./employee-acceptance";
+import { RequestNewLink } from "./request-new-link";
 import { UseAnotherAccount } from "./use-another-account";
 import { employeeInvitationIdSchema } from "@/features/employee-invitations/schema";
 import { defaultLocale, isAppLocale } from "@/i18n/config";
@@ -143,6 +144,10 @@ export default async function FirstAdminAcceptancePage({
           employeeT("linkUsedDescription", {
             companyName: preview.company_name ?? "",
           }),
+          <RequestNewLink
+            invitationId={employeeInvitation.data}
+            inviteeHint={preview.invitee_hint}
+          />,
         );
       }
 

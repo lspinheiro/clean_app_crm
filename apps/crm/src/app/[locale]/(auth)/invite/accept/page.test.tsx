@@ -280,6 +280,9 @@ describe("employee invitation states", () => {
       .toBeInTheDocument();
     expect(screen.getByText(/Coastal Demo Cleaning/)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument();
+    // Naming the problem is not enough — the seven-day invitation has to stay reachable
+    // without an admin, or this is a politer dead end.
+    expect(screen.getByRole("button", { name: "Send me a new link" })).toBeInTheDocument();
   });
 
   it("still asks an existing account to sign in, which is the one case that works", async () => {

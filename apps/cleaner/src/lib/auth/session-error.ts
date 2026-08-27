@@ -14,3 +14,9 @@ export function isStaleSessionError(error: SupabaseAuthError): boolean {
   if (!error || isMissingSessionError(error)) return false;
   return /refresh token/i.test(error.message ?? "");
 }
+
+/** Auth and PostgREST use different error objects for the same expired browser session. */
+export function isSessionError(error: SupabaseAuthError): boolean {
+  if (isMissingSessionError(error) || isStaleSessionError(error)) return true;
+  return /(?:jwt.*(?:expired|invalid)|invalid.*jwt)/i.test(error?.message ?? "");
+}

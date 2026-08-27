@@ -68,4 +68,38 @@ describe("CLE-25 cleaner service worker", () => {
     expect(worker.focus).toHaveBeenCalledOnce();
     expect(worker.openWindow).not.toHaveBeenCalled();
   });
+
+  it("opens the offers route when an offer push is tapped", async () => {
+    // push-dispatch does not yet emit offer_received; this covers routing, not end-to-end delivery.
+    const worker = await loadServiceWorker();
+    const pushWaits: Promise<unknown>[] = [];
+    worker.listeners.get("push")?.({
+      data: {
+        json: () => ({
+          type: "offer_received",
+          jobId: "job-1",
+          title: "New work offer",
+          body: "Palm Grove Practice, Robina",
+          url: "/offers",
+        }),
+      },
+      waitUntil: (promise: Promise<unknown>) => pushWaits.push(promise),
+    });
+    await Promise.all(pushWaits);
+
+    const clickWaits: Promise<unknown>[] = [];
+    const close = vi.fn();
+    worker.listeners.get("notificationclick")?.({
+      notification: { close, data: { url: "/offers" } },
+      waitUntil: (promise: Promise<unknown>) => clickWaits.push(promise),
+    });
+    await Promise.all(clickWaits);
+
+    expect(worker.showNotification).toHaveBeenCalledWith(
+      "New work offer",
+      expect.objectContaining({ data: { url: "/offers" } }),
+    );
+    expect(close).toHaveBeenCalledOnce();
+    expect(worker.openWindow).toHaveBeenCalledWith("https://cleaner.example.test/offers");
+  });
 });

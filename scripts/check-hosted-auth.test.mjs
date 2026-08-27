@@ -5,6 +5,8 @@ import {
   buildExpectations,
   checkHostedAuth,
   findAuthDrift,
+  matchesRedirectPattern,
+  requiredRedirectUrls,
 } from "./check-hosted-auth.mjs";
 
 // Hosted auth used to drift silently from the repository: `otp_expiry` said seven days in
@@ -12,12 +14,7 @@ import {
 // employee invitation died an hour after an e-mail promising it seven days. Nothing in the
 // release noticed. These tests pin the comparison, not the network.
 
-const productionConfirmUrls = [
-  "https://crm.thecleancrew.app/en-AU/auth/confirm",
-  "https://crm.thecleancrew.app/pt-BR/auth/confirm",
-  "https://cleaner.thecleancrew.app/en-AU/auth/confirm",
-  "https://cleaner.thecleancrew.app/pt-BR/auth/confirm",
-];
+const productionConfirmUrls = requiredRedirectUrls();
 
 
 /** A config.toml slice with the sections the expectations are derived from. */
@@ -45,9 +42,8 @@ function healthyConfig(overrides = {}) {
     disable_signup: false,
     site_url: "https://cleaner.thecleancrew.app",
     uri_allow_list: [
-      "https://crm.thecleancrew.app",
-      "https://cleaner.thecleancrew.app",
-      ...productionConfirmUrls,
+      "https://crm.thecleancrew.app/**",
+      "https://cleaner.thecleancrew.app/**",
     ].join(","),
     mailer_subjects_invite: "invite subject from config.toml",
     mailer_subjects_recovery: "recovery subject from config.toml",
@@ -62,9 +58,9 @@ const expectations = [
   { key: "site_url", expected: "https://cleaner.thecleancrew.app", why: "production origin" },
   {
     key: "uri_allow_list",
-    match: "contains",
+    match: "permits",
     expected: productionConfirmUrls,
-    why: "auth e-mail links land on these",
+    why: "a refused redirect is replaced by site_url",
   },
   {
     key: "mailer_subjects_invite",
@@ -109,9 +105,9 @@ test("an allow-list stripped back to localhost is caught", () => {
 
   assert.equal(drift.length, 1);
   assert.equal(drift[0].key, "uri_allow_list");
-  // Naming what is absent is the difference between a usable failure and a puzzle.
-  assert.match(drift[0].actual, /missing/i);
-  for (const url of productionConfirmUrls) assert.match(drift[0].actual, new RegExp(url));
+  // Naming what was refused is the difference between a usable failure and a puzzle.
+  assert.match(drift[0].actual, /refuses/i);
+  assert.match(drift[0].actual, /auth\/confirm/);
 });
 
 test("an allow-list carrying extra development origins still passes", () => {
@@ -268,4 +264,95 @@ test("buildExpectations refuses a config.toml missing a derived subject", () => 
     () => buildExpectations({ configToml: withoutSubject }),
     /auth\.email\.template\.recovery/,
   );
+});
+
+// An employee invitation on 2026-08-27 rendered as
+// `https://cleaner.thecleancrew.app&token_hash=...` — no path, no `?`, and the wrong app.
+// The CRM had asked to send the invitee to
+// `https://crm.thecleancrew.app/en-AU/auth/confirm?employeeInvitation=<uuid>`; the hosted
+// allow-list carried that path without a query string, so Auth refused the redirect and
+// substituted `site_url`. The invite template joins with `&` because the redirect is
+// supposed to carry a query, which turned a wrong link into an invalid one.
+//
+// Containment cannot catch that: every literal entry was present. The allow-list has to be
+// checked by whether it actually permits the URL the CRM asks for.
+
+test("a glob matches within a path segment but does not cross one", () => {
+  assert.equal(matchesRedirectPattern("https://a.test/*", "https://a.test/one"), true);
+  assert.equal(matchesRedirectPattern("https://a.test/*", "https://a.test/one/two"), false);
+  assert.equal(matchesRedirectPattern("https://a.test/**", "https://a.test/one/two"), true);
+});
+
+test("an entry without a wildcard does not permit the same path carrying a query", () => {
+  // This is the exact production state that broke the invitation.
+  assert.equal(
+    matchesRedirectPattern(
+      "https://crm.thecleancrew.app/en-AU/auth/confirm",
+      "https://crm.thecleancrew.app/en-AU/auth/confirm?employeeInvitation=abc",
+    ),
+    false,
+  );
+});
+
+test("a wildcard entry permits the redirect the CRM actually asks for", () => {
+  assert.equal(
+    matchesRedirectPattern(
+      "https://crm.thecleancrew.app/**",
+      "https://crm.thecleancrew.app/en-AU/auth/confirm?employeeInvitation=abc",
+    ),
+    true,
+  );
+});
+
+test("the redirects the apps request are stated, both locales and both apps", () => {
+  const required = requiredRedirectUrls();
+
+  assert.ok(required.length >= 4);
+  for (const locale of ["en-AU", "pt-BR"]) {
+    assert.ok(
+      required.some((url) => url.includes(`/${locale}/auth/confirm?employeeInvitation=`)),
+      `${locale} employee confirm redirect must be required`,
+    );
+  }
+  assert.ok(
+    required.some((url) => url.startsWith("https://crm.thecleancrew.app/")),
+    "employee invitations land on the CRM, not the cleaner app",
+  );
+});
+
+test("an allow-list that refuses a required redirect is drift", () => {
+  const productionAsItBroke = [
+    "https://crm.thecleancrew.app",
+    "https://cleaner.thecleancrew.app",
+    "https://crm.thecleancrew.app/en-AU/auth/confirm",
+    "https://crm.thecleancrew.app/pt-BR/auth/confirm",
+    "https://cleaner.thecleancrew.app/en-AU/auth/confirm",
+    "https://cleaner.thecleancrew.app/pt-BR/auth/confirm",
+  ].join(",");
+
+  const drift = findAuthDrift(
+    buildExpectations({ configToml: configToml() }),
+    healthyConfig({ uri_allow_list: productionAsItBroke }),
+  );
+
+  const entry = drift.find((item) => item.key === "uri_allow_list");
+  assert.ok(entry, "an allow-list that refuses the CRM's redirect must be reported");
+  // Auth does not report a refusal — it silently sends the invitee to site_url — so the
+  // message has to name what was refused.
+  assert.match(entry.actual, /employeeInvitation/);
+});
+
+test("an allow-list with the wildcard entries reports no drift", () => {
+  const fixed = [
+    "https://crm.thecleancrew.app/**",
+    "https://cleaner.thecleancrew.app/**",
+    "http://localhost:3000",
+  ].join(",");
+
+  const drift = findAuthDrift(
+    buildExpectations({ configToml: configToml() }),
+    healthyConfig({ uri_allow_list: fixed }),
+  );
+
+  assert.deepEqual(drift.filter((item) => item.key === "uri_allow_list"), []);
 });

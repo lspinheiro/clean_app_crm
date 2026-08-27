@@ -15,7 +15,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(19);
+select plan(20);
 
 -- ---------------------------------------------------------------------------
 -- Shape and reach
@@ -139,12 +139,29 @@ select set_config('request.jwt.claim.role', 'anon', true);
 -- ---------------------------------------------------------------------------
 
 select results_eq(
-  $$select state, company_name, role::text, account_existed
+  $$select state, company_name, role::text
       from public.employee_invitation_preview(
         '91000000-0000-4000-8000-000000000201'
       )$$,
-  $$values ('pending'::text, 'CLE-91 Preview Company'::text, 'staff'::text, false)$$,
-  'a live invitation names the company, the role, and whether the account already existed'
+  $$values ('pending'::text, 'CLE-91 Preview Company'::text, 'staff'::text)$$,
+  'a live invitation names the company and the role'
+);
+
+-- Whether an address already has an account is not the holder's business. The id is held by
+-- the admin too and travels in a forwardable e-mail, so reflecting account existence would
+-- let anyone holding a link test whether a colleague has a Clean Crew login. The server
+-- still needs the answer to choose which e-mail to send; it just does not say so out loud.
+select is(
+  (
+    select count(*)::integer
+    from pg_catalog.pg_proc proc
+    cross join lateral pg_catalog.unnest(proc.proargnames) as argument(name)
+    where proc.proname = 'employee_invitation_preview'
+      and proc.pronamespace = 'public'::regnamespace
+      and argument.name = 'account_existed'
+  ),
+  0,
+  'the anonymous preview does not disclose whether the invitee already had an account'
 );
 
 select is(

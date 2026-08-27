@@ -552,6 +552,14 @@ code is held only by the invitee, while an invitation id is also held by the adm
 in a forwardable e-mail, so holding it does not prove you are the invitee. That is what lets
 the page say "this invitation is for somebody else" without saying who.
 
+**Amended 2026-08-27 after review.** The preview first reported whether the address already
+had an account, and the page turned that into visibly different journeys. The same reasoning
+that masks the address applies to that bit: anyone holding the link could test whether a
+colleague has a Clean Crew login, which is the account enumeration OWASP's authentication
+guidance exists to prevent. It is gone from the anonymous contract, and one continuation is
+shown to every unauthenticated visitor. The server still needs the answer to choose which
+e-mail to send; `claim_employee_invitation_link` reports it to `service_role` alone.
+
 Considered option: widen `get_employee_invitation_context` to answer without a session —
 rejected because its whole value is that it answers only for the invitee, and the page needs
 both answers to tell a wrong account from a dead invitation.
@@ -570,6 +578,23 @@ to `service_role` alone: an `anon` grant would let anyone holding a link id drai
 allowance shared with every other auth e-mail the product sends. A refusal returns no address
 and no reason, and the action answers the same way either way, so holding a link id cannot be
 used to discover which invitations are live.
+
+**Amended 2026-08-27 after review.** Two corrections, both from the same wrong premise —
+that a confirmed account can sign in.
+
+Following an invite link confirms the address, and an e-mail scanner following it for the
+invitee does the same, but the password is only set later inside acceptance. A scanner-
+confirmed invitee therefore holds credentials nobody has seen, and treating "confirmed" as
+"has a login" stranded exactly the person this feature exists for. That case now receives a
+recovery e-mail. The interstitial that would stop the token being spent by a GET in the first
+place — Supabase's own recommendation for e-mail prefetching — is not built yet and is the
+root fix rather than this escape hatch.
+
+The claim also wrote `last_link_sent_at` before the provider had accepted anything, so a
+rejected send told the invitee a link was on the way and then blocked the retry that would
+have worked. `release_employee_invitation_link_claim` gives the minute back on a definite
+rejection; the reservation still holds for the duration of the send, so the race the lock
+exists for is unaffected.
 
 ### 25. Auth redirects carry no query string (2026-08-27)
 

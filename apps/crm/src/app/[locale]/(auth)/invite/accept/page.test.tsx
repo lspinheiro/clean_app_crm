@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -154,14 +154,16 @@ describe("first-admin acceptance page", () => {
     });
   });
 
-  it("asks an unauthenticated existing account to sign in and preserves the invitation target", async () => {
+  it("offers the same continuation to an unauthenticated visitor whatever the address", async () => {
+    // This used to send an address that already had an account to the sign-in page, which
+    // disclosed account existence to anyone holding the link. One neutral screen now; the
+    // returnTo contract it exercised is still covered by actions/auth.test.ts.
     mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
     mocks.rpc.mockImplementation((name: string) =>
       Promise.resolve(
         name === "employee_invitation_preview"
           ? {
             data: [{
-              account_existed: true,
               company_name: "Coastal Demo Cleaning",
               invitee_hint: "c***@example.test",
               role: "staff",
@@ -181,12 +183,15 @@ describe("first-admin acceptance page", () => {
       }),
     );
 
-    expect(screen.getByRole("heading", { name: "Sign in to accept your invitation" }))
-      .toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
-      "href",
-      "/login?returnTo=%2Finvite%2Faccept%3FemployeeInvitation%3D83000000-0000-4000-8000-000000000101",
-    );
+    expect(screen.getByRole("button", { name: "Send me a new link" })).toBeInTheDocument();
+    // Sign-in is offered to everybody rather than withheld. Showing it only to addresses
+    // that already had an account was the disclosure; showing it to nobody would strand
+    // somebody who knows their password behind a recovery e-mail they do not need.
+    expect(screen.getByRole("link", { name: "Sign in" }))
+      .toHaveAttribute(
+        "href",
+        `/login?returnTo=%2Finvite%2Faccept%3FemployeeInvitation%3D83000000-0000-4000-8000-000000000101`,
+      );
   });
 });
 
@@ -199,7 +204,6 @@ describe("first-admin acceptance page", () => {
 const INVITATION_ID = "83000000-0000-4000-8000-000000000101";
 
 type PreviewRow = {
-  account_existed: boolean | null;
   company_name: string | null;
   invitee_hint: string | null;
   role: string | null;
@@ -218,7 +222,6 @@ type ContextRow = {
 
 function previewRow(overrides: Partial<PreviewRow> = {}): PreviewRow {
   return {
-    account_existed: false,
     company_name: "Coastal Demo Cleaning",
     invitee_hint: "a***@example.test",
     role: "staff",
@@ -266,40 +269,38 @@ describe("employee invitation states", () => {
     expect(screen.getByRole("button", { name: "Use another account" })).toBeInTheDocument();
   });
 
-  it("tells a brand-new invitee the link was already opened instead of asking them to sign in", async () => {
-    // The CRM has no sign-up, no magic link and no password reset, so "Sign in" is a dead end
-    // for an account whose password was generated and never shown to anyone.
+  it("offers one continuation to anyone arriving without a session", async () => {
+    // The page used to branch on whether the address already had an account, which let
+    // anyone holding the link test that. One neutral continuation for everybody: the server
+    // decides whether to re-invite or send a recovery e-mail, and never says which.
     mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
-    mocks.rpc.mockImplementation(
-      routeRpc({ preview: previewRow({ account_existed: false }) }),
-    );
+    mocks.rpc.mockImplementation(routeRpc({ preview: previewRow() }));
 
     render(await renderAccept());
 
     expect(screen.getByRole("heading", { name: "This link has already been opened" }))
       .toBeInTheDocument();
     expect(screen.getByText(/Coastal Demo Cleaning/)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument();
     // Naming the problem is not enough — the seven-day invitation has to stay reachable
     // without an admin, or this is a politer dead end.
     expect(screen.getByRole("button", { name: "Send me a new link" })).toBeInTheDocument();
   });
 
-  it("still asks an existing account to sign in, which is the one case that works", async () => {
+  it("renders the same screen whoever the invitee is", async () => {
+    // Two invitations that differ only in whether the address already had an account must be
+    // indistinguishable from outside.
     mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    mocks.rpc.mockImplementation(routeRpc({ preview: previewRow() }));
+    const { container: first } = render(await renderAccept());
+    const firstHtml = first.innerHTML;
+
+    cleanup();
     mocks.rpc.mockImplementation(
-      routeRpc({ preview: previewRow({ account_existed: true }) }),
+      routeRpc({ preview: previewRow({ invitee_hint: "a***@example.test" }) }),
     );
+    const { container: second } = render(await renderAccept());
 
-    render(await renderAccept());
-
-    expect(screen.getByRole("heading", { name: "Sign in to accept your invitation" }))
-      .toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Sign in" }))
-      .toHaveAttribute(
-        "href",
-        `/login?returnTo=%2Finvite%2Faccept%3FemployeeInvitation%3D${INVITATION_ID}`,
-      );
+    expect(second.innerHTML).toBe(firstHtml);
   });
 
   it.each([

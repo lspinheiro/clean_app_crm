@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
   inviteUserByEmail: vi.fn(),
+  resetPasswordForEmail: vi.fn(),
   revalidateLocalizedPath: vi.fn(),
   requireCompanyOwner: vi.fn(),
   rpc: vi.fn(),
@@ -328,7 +329,10 @@ describe("requesting a fresh invitation link", () => {
     // The invitee has no session, so the action reaches the database with the service role
     // rather than through requireCompanyOwner.
     mocks.createAdminClient.mockReturnValue({
-      auth: { admin: { inviteUserByEmail: mocks.inviteUserByEmail } },
+      auth: {
+        admin: { inviteUserByEmail: mocks.inviteUserByEmail },
+        resetPasswordForEmail: mocks.resetPasswordForEmail,
+      },
       rpc: mocks.rpc,
     });
     mocks.inviteUserByEmail.mockResolvedValue({ data: { user: { id: "new-user" } }, error: null });
@@ -389,8 +393,11 @@ describe("requesting a fresh invitation link", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it("does not re-invite an account that already has a usable login", async () => {
-    // `inviteUserByEmail` rejects a registered address, and a confirmed invitee can sign in.
+  it("recovers an account a scanner confirmed, which has no password anyone has seen", async () => {
+    // The premise this replaces was wrong: a confirmed invitee cannot necessarily sign in.
+    // Following an invite link confirms the address, and an e-mail scanner following it for
+    // them does the same — but the password is only set later, inside acceptance. Treating
+    // "confirmed" as "has a login" left exactly the person this feature exists for stranded.
     mocks.rpc.mockResolvedValueOnce({
       data: [{
         account_confirmed: true,
@@ -400,8 +407,61 @@ describe("requesting a fresh invitation link", () => {
       }],
       error: null,
     });
+    mocks.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
 
     await expect(requestEmployeeInvitationLinkAction(invitationId)).resolves.toEqual({ ok: true });
+
+    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith(
+      "invitee@example.test",
+      expect.objectContaining({
+        redirectTo: `https://crm.example.test/en-AU/auth/confirm/${invitationId}`,
+      }),
+    );
+    // `inviteUserByEmail` rejects an address that is already registered.
     expect(mocks.inviteUserByEmail).not.toHaveBeenCalled();
+  });
+
+  it("gives the minute back when the provider refuses the message", async () => {
+    // Claiming reserves the minute before the provider has accepted anything. Without a
+    // release, a rejected send tells the invitee a link is on the way and then blocks the
+    // retry that would have worked.
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: [{
+          account_confirmed: false,
+          claimed: true,
+          invitee_email: "invitee@example.test",
+          locale: "en-AU",
+        }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: null });
+    mocks.inviteUserByEmail.mockResolvedValue({
+      data: { user: null },
+      error: { message: "mailbox unavailable", status: 400 },
+    });
+
+    await expect(requestEmployeeInvitationLinkAction(invitationId)).resolves.toEqual({ ok: true });
+
+    expect(mocks.rpc).toHaveBeenNthCalledWith(2, "release_employee_invitation_link_claim", {
+      target_invitation_id: invitationId,
+    });
+  });
+
+  it("keeps the reservation when the message was accepted", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: [{
+        account_confirmed: false,
+        claimed: true,
+        invitee_email: "invitee@example.test",
+        locale: "en-AU",
+      }],
+      error: null,
+    });
+    mocks.inviteUserByEmail.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+
+    await expect(requestEmployeeInvitationLinkAction(invitationId)).resolves.toEqual({ ok: true });
+
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
   });
 });

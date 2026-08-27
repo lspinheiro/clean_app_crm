@@ -262,29 +262,37 @@ export async function requestEmployeeInvitationLinkAction(
     return { ok: true };
   }
 
-  // A confirmed account already has a way in, and `inviteUserByEmail` rejects a registered
-  // address. Recovering one needs the confirmation redirect to carry no query string, which
-  // is the next slice; until then this stops at the account that can already sign in.
-  if (claim.account_confirmed) return { ok: true };
+  const redirectTo = confirmationUrl(appUrl, claim.locale, parsed.data);
 
   try {
-    const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-      claim.invitee_email,
-      {
+    // "Confirmed" does not mean "can sign in". Following an invite link confirms the address,
+    // and an e-mail scanner following it for the invitee does the same — but the password is
+    // only set later, inside acceptance. Re-inviting such an address is refused as already
+    // registered, so recovery is the only way back in for the person this feature exists for.
+    //
+    // Which e-mail goes out is decided here and never reflected in the response, so holding a
+    // link id cannot be used to learn whether an address already has an account.
+    const { error: deliveryError } = claim.account_confirmed
+      ? await admin.auth.resetPasswordForEmail(claim.invitee_email, { redirectTo })
+      : await admin.auth.admin.inviteUserByEmail(claim.invitee_email, {
         data: {
           company_name: "",
           invitation_kind: "employee",
           preferred_locale: claim.locale,
         },
-        redirectTo: confirmationUrl(appUrl, claim.locale, parsed.data),
-      },
-    );
-    if (inviteError) throw new DeliveryRejected(inviteError);
+        redirectTo,
+      });
+    if (deliveryError) throw new DeliveryRejected(deliveryError);
   } catch (cause) {
     const reason = cause instanceof DeliveryRejected ? cause.cause : cause;
     console.error("Employee invitation link could not be re-sent", {
       invitationId: parsed.data,
       reason,
+    });
+    // The claim reserved the next minute before the provider had accepted anything. Giving it
+    // back stops a rejected send from blocking the retry that would have worked.
+    await admin.rpc("release_employee_invitation_link_claim", {
+      target_invitation_id: parsed.data,
     });
   }
 

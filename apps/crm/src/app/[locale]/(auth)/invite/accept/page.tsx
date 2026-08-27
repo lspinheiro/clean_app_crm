@@ -23,7 +23,6 @@ type FirstAdminAcceptancePageProps = {
  * null unless the invitation can still be used.
  */
 type EmployeeInvitationPreview = {
-  account_existed: boolean | null;
   company_name: string | null;
   invitee_hint: string | null;
   role: "owner" | "staff" | null;
@@ -136,34 +135,31 @@ export default async function FirstAdminAcceptancePage({
     }
 
     if (userError || !user?.email) {
-      // Only an account that already existed has a password to sign in with. Telling a brand
-      // new invitee to "use your existing login" is the dead end this replaces.
-      if (!preview.account_existed) {
-        return notice(
-          employeeT("linkUsedTitle"),
-          employeeT("linkUsedDescription", {
-            companyName: preview.company_name ?? "",
-          }),
+      // One continuation for everybody. Branching on whether the address already had an
+      // account would let anyone holding this link test that — the id is held by the admin
+      // too and travels in a forwardable e-mail. The server decides whether to re-invite or
+      // send a recovery e-mail and never reflects which.
+      const returnTo = `/invite/accept?employeeInvitation=${employeeInvitation.data}`;
+      return notice(
+        employeeT("linkUsedTitle"),
+        employeeT("linkUsedDescription", {
+          companyName: preview.company_name ?? "",
+        }),
+        <>
           <RequestNewLink
             invitationId={employeeInvitation.data}
             inviteeHint={preview.invitee_hint}
-          />,
-        );
-      }
-
-      const returnTo = `/invite/accept?employeeInvitation=${employeeInvitation.data}`;
-      return (
-        <AuthShell>
-          <p className="eyebrow">{employeeT("eyebrow")}</p>
-          <h1>{employeeT("signInTitle")}</h1>
-          <p className="auth-panel__intro">{employeeT("signInDescription")}</p>
+          />
+          {/* Shown to everybody, so it discloses nothing. Offering it only to addresses that
+              already had an account was the leak; withholding it from everyone would strand
+              somebody who knows their password behind a recovery e-mail they do not need. */}
           <Link
-            className="button"
+            className="button button--secondary"
             href={`/login?returnTo=${encodeURIComponent(returnTo)}`}
           >
             {employeeT("signIn")}
           </Link>
-        </AuthShell>
+        </>,
       );
     }
 

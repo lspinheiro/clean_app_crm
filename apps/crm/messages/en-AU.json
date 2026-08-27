@@ -216,9 +216,6 @@
     "confirmPassword": "Confirm password",
     "accept": "Accept invitation",
     "accepting": "Accepting invitation…",
-    "signInTitle": "Sign in to accept your invitation",
-    "signInDescription": "Use your existing The Clean Crew login. Your cleaner account and company access will stay together.",
-    "signIn": "Sign in",
     "unavailableTitle": "This invitation is not available",
     "unavailableDescription": "The invitation is invalid, expired, revoked, already accepted, or belongs to another account.",
     "backToLogin": "Back to sign in",
@@ -240,7 +237,8 @@
     "requestLink": "Send me a new link",
     "requestLinkSending": "Sending…",
     "requestLinkSent": "Check your inbox. If this invitation is still open, a new link is on its way to {invitee}.",
-    "requestLinkFailed": "We could not send a new link just now. Wait a minute and try again."
+    "requestLinkFailed": "We could not send a new link just now. Wait a minute and try again.",
+    "signIn": "Sign in"
   },
   "EmployeeManagement": {
     "title": "Company access",

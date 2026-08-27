@@ -1630,7 +1630,6 @@ export type Database = {
       employee_invitation_preview: {
         Args: { target_invitation_id: string }
         Returns: {
-          account_existed: boolean
           company_name: string
           invitee_hint: string
           role: Database["public"]["Enums"]["employee_role"]
@@ -1886,6 +1885,10 @@ export type Database = {
       }
       mark_job_application_not_selected: {
         Args: { target_cleaner_id: string; target_job_id: string }
+        Returns: undefined
+      }
+      release_employee_invitation_link_claim: {
+        Args: { target_invitation_id: string }
         Returns: undefined
       }
       remove_employee: {

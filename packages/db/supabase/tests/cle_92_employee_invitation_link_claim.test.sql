@@ -12,7 +12,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(15);
+select plan(20);
 
 select has_function(
   'public',
@@ -227,6 +227,55 @@ select is(
   ),
   1,
   'a refusal is still one row, so the caller never has to handle an empty result'
+);
+
+-- ---------------------------------------------------------------------------
+-- A claim that never reached the provider must not block the next attempt
+-- ---------------------------------------------------------------------------
+
+select has_function(
+  'public',
+  'release_employee_invitation_link_claim',
+  array['uuid'],
+  'a claim can be released when the e-mail was never accepted'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.release_employee_invitation_link_claim(uuid)',
+    'EXECUTE'
+  ),
+  'releasing a claim is not something an anonymous caller may do'
+);
+
+-- Claiming reserves the minute before the provider has accepted anything. If the send is
+-- rejected, the invitee would otherwise be told a link is on the way, given no retry, and
+-- locked out for sixty seconds by a message that never left the building.
+select lives_ok(
+  $$select public.release_employee_invitation_link_claim(
+      '92000000-0000-4000-8000-000000000201'
+    )$$,
+  'a rejected send releases the reservation it made'
+);
+
+select is(
+  (
+    select last_link_sent_at from public.employee_invitations
+    where id = '92000000-0000-4000-8000-000000000201'
+  ),
+  null,
+  'the invitation forgets a send that never happened'
+);
+
+select is(
+  (
+    select claimed from public.claim_employee_invitation_link(
+      '92000000-0000-4000-8000-000000000201'
+    )
+  ),
+  true,
+  'so the invitee can ask again immediately rather than waiting out a phantom minute'
 );
 
 reset role;

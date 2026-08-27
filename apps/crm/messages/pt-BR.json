@@ -216,9 +216,6 @@
     "confirmPassword": "Confirmar senha",
     "accept": "Aceitar convite",
     "accepting": "Aceitando convite…",
-    "signInTitle": "Entre para aceitar seu convite",
-    "signInDescription": "Use seu acesso atual da The Clean Crew. Sua conta de profissional e o acesso à empresa ficarão juntos.",
-    "signIn": "Entrar",
     "unavailableTitle": "Este convite não está disponível",
     "unavailableDescription": "O convite é inválido, expirou, foi revogado, já foi aceito ou pertence a outra conta.",
     "backToLogin": "Voltar para entrar",
@@ -240,7 +237,8 @@
     "requestLink": "Enviar um novo link",
     "requestLinkSending": "Enviando…",
     "requestLinkSent": "Confira sua caixa de entrada. Se este convite continuar aberto, um novo link está a caminho de {invitee}.",
-    "requestLinkFailed": "Não foi possível enviar um novo link agora. Espere um minuto e tente novamente."
+    "requestLinkFailed": "Não foi possível enviar um novo link agora. Espere um minuto e tente novamente.",
+    "signIn": "Entrar"
   },
   "EmployeeManagement": {
     "title": "Acesso à empresa",

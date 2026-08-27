@@ -16,15 +16,8 @@ const configPath = fileURLToPath(
   new URL("../packages/db/supabase/config.toml", import.meta.url),
 );
 
-/** The origin auth e-mails link back to, and the paths those links land on. */
+/** The origin auth e-mails fall back to when a redirect is refused. */
 const productionSiteUrl = "https://cleaner.thecleancrew.app";
-const productionConfirmUrls = [
-  "https://crm.thecleancrew.app/en-AU/auth/confirm",
-  "https://crm.thecleancrew.app/pt-BR/auth/confirm",
-  "https://cleaner.thecleancrew.app/en-AU/auth/confirm",
-  "https://cleaner.thecleancrew.app/pt-BR/auth/confirm",
-];
-
 /**
  * Reads a `key = value` line out of one config.toml section, stopping at the next section
  * so a key repeated under a later heading cannot be picked up by mistake.
@@ -41,6 +34,52 @@ function readQuoted(configToml, section, key) {
   const raw = readConfigValue(configToml, section, key);
   if (raw === undefined) return undefined;
   return raw.replace(/^"|"$/g, "").replaceAll('\\"', '"');
+}
+
+/**
+ * Supabase matches a redirect against the allow-list as a glob over the whole URL, query
+ * string included: `*` stays inside one path segment, `**` crosses them, `?` is a single
+ * character. A refused redirect is not reported to the caller — Auth quietly substitutes
+ * `site_url` — so this has to be checked here rather than observed in production.
+ */
+export function matchesRedirectPattern(pattern, url) {
+  const source = pattern
+    .split("")
+    .reduce((parts, character, index, characters) => {
+      if (character === "*" && characters[index - 1] === "*") return parts;
+      if (character === "*") {
+        parts.push(characters[index + 1] === "*" ? "[\\s\\S]*" : "[^/]*");
+        return parts;
+      }
+      if (character === "?") {
+        parts.push("[\\s\\S]");
+        return parts;
+      }
+      parts.push(character.replaceAll(/[.+^${}()|[\]\\]/g, "\\$&"));
+      return parts;
+    }, [])
+    .join("");
+
+  return new RegExp(`^${source}$`).test(url);
+}
+
+/**
+ * The redirects the apps actually ask Auth for. The employee one carries a query string,
+ * which is what a literal allow-list entry silently refuses — the invitation e-mail then
+ * renders `site_url` with `&token_hash=` appended and reaches the invitee malformed.
+ */
+export function requiredRedirectUrls() {
+  const sampleInvitation = "00000000-0000-4000-8000-000000000000";
+  const locales = ["en-AU", "pt-BR"];
+
+  return [
+    ...locales.map(
+      (locale) =>
+        `https://crm.thecleancrew.app/${locale}/auth/confirm?employeeInvitation=${sampleInvitation}`,
+    ),
+    ...locales.map((locale) => `https://crm.thecleancrew.app/${locale}/auth/confirm`),
+    ...locales.map((locale) => `https://cleaner.thecleancrew.app/${locale}/auth/confirm`),
+  ];
 }
 
 /**
@@ -88,9 +127,9 @@ export function buildExpectations({ configToml } = {}) {
     },
     {
       key: "uri_allow_list",
-      match: "contains",
-      expected: productionConfirmUrls,
-      why: "an auth e-mail link is refused unless its landing path is allowed",
+      match: "permits",
+      expected: requiredRedirectUrls(),
+      why: "a refused redirect is replaced by site_url, which sends the invitee to the wrong app with a malformed link",
     },
     {
       key: "mailer_subjects_invite",
@@ -115,14 +154,17 @@ export function findAuthDrift(expectations, actual) {
   for (const expectation of expectations) {
     const observed = actual?.[expectation.key];
 
-    if (expectation.match === "contains") {
-      const present = String(observed ?? "").split(",").map((entry) => entry.trim());
-      const missing = expectation.expected.filter((entry) => !present.includes(entry));
-      if (missing.length > 0) {
+    if (expectation.match === "permits") {
+      const patterns = String(observed ?? "").split(",").map((entry) => entry.trim())
+        .filter(Boolean);
+      const refused = expectation.expected.filter(
+        (url) => !patterns.some((pattern) => matchesRedirectPattern(pattern, url)),
+      );
+      if (refused.length > 0) {
         drift.push({
           key: expectation.key,
-          expected: expectation.expected.join(", "),
-          actual: `missing ${missing.join(", ")}`,
+          expected: `patterns permitting ${refused.length} refused redirect(s)`,
+          actual: `refuses ${refused.join(", ")}`,
           why: expectation.why,
         });
       }

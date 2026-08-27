@@ -133,6 +133,27 @@ jobs:
             fi
           done
 
+      # Hosted auth is dashboard-managed: config.toml's [auth] block describes a developer
+      # machine and nothing in this release pushes it. That gap hid a real fault —
+      # `otp_expiry` said seven days in the repository from 2026-08-20 while the project ran
+      # the 3600-second default, so every employee invitation died an hour after an e-mail
+      # promising a week, and the first report came from an invitee.
+      #
+      # This reads and compares; it never writes. `supabase config push` was tried and
+      # rejected: on CLI 2.114.0 it ignored the `[remotes]` overrides and set site_url to
+      # 127.0.0.1, replaced the redirect allow-list, turned `mailer_autoconfirm` on, and
+      # then failed on storage settings this tier does not carry.
+      #
+      # It runs before anything is applied, so a project that has drifted is fixed rather
+      # than deployed onto.
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Check hosted auth configuration
+        run: node scripts/check-hosted-auth.mjs
+
       - name: Link hosted project
         run: >-
           supabase link

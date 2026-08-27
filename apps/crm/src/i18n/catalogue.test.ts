@@ -99,6 +99,7 @@ describe("CRM message catalogues", () => {
       "Jobs.sendOfferTo",
       "Jobs.revokeOfferTo",
       "Jobs.jobActions",
+      "Roster.offered",
     ];
 
     for (const key of requiredKeys) {

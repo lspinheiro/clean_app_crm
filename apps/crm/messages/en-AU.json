@@ -124,6 +124,7 @@
     "bySite": "By site",
     "weekOf": "Week of {range}",
     "gap": "GAP",
+    "offered": "OFFERED",
     "slotOf": "slot {slot} of {crewSize}",
     "noCleanersAssigned": "No cleaners assigned",
     "cleanerCount": "{count, plural, one {# cleaner} other {# cleaners}}",

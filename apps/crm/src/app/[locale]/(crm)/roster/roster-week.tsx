@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import {
@@ -30,6 +30,7 @@ type RosterEntryMessageKey =
   | "cleanerCount"
   | "gap"
   | "noCleanersAssigned"
+  | "offered"
   | "slotOf";
 
 type Translator = (
@@ -63,6 +64,22 @@ function RosterEntry({
         <small className="tabular-numerals">
           {view === "cleaner" ? `${formatRosterTime(item.scheduledStart, locale)} · ` : null}
           {t("slotOf", { slot: item.crewSlot, crewSize: item.crewSize })}
+        </small>
+      </div>
+    );
+  }
+
+  if (item.kind === "offered") {
+    return (
+      <div
+        className="roster-entry roster-entry--offered"
+        data-job-id={item.jobId}
+        data-testid="roster-offered"
+      >
+        <strong><Clock3 aria-hidden="true" size={14} /> {t("offered")}</strong>
+        <span>{view === "site" ? item.cleanerName : item.siteName}</span>
+        <small className="tabular-numerals">
+          {formatRosterTime(item.scheduledStart, locale)}
         </small>
       </div>
     );

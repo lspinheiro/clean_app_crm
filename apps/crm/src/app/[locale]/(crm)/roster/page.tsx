@@ -15,6 +15,7 @@ import type {
   RosterAssignment,
   RosterCleaner,
   RosterJob,
+  RosterOffer,
   RosterSite,
   RosterVacancy,
 } from "@/features/roster/types";
@@ -48,6 +49,22 @@ type AssignmentQueryRow = {
   cleaner_id: string;
   slot_number: number;
   jobs: { site_id: string };
+};
+
+type OfferQueryRow = {
+  id: string;
+  job_id: string | null;
+  cleaner_id: string;
+  jobs: { scheduled_start: string };
+};
+
+type SeriesCleanerQueryRow = {
+  recurring_assignment_id: string;
+  cleaner_id: string;
+  slot_number: number;
+  recurring_assignments: {
+    sites: { clients: { company_id: string } };
+  };
 };
 
 type CountedResult<T> = {
@@ -95,7 +112,13 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
   const days = buildRosterDays(weekStart, locale);
   const { startsAt, endsAt } = getRosterWeekBounds(weekStart);
 
-  const [sitesResult, membersResult, vacanciesResult] = await Promise.all([
+  const [
+    sitesResult,
+    membersResult,
+    vacanciesResult,
+    offersResult,
+    seriesCleanersResult,
+  ] = await Promise.all([
     supabase
       .from("sites")
       .select("id, name, clients!inner(name)", { count: "exact" })
@@ -122,17 +145,46 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
       .order("scheduled_start")
       .order("job_id")
       .order("crew_slot"),
+    supabase
+      .from("offers")
+      .select("id, job_id, cleaner_id, jobs!inner(scheduled_start)", { count: "exact" })
+      .eq("company_id", company.id)
+      .eq("status", "pending")
+      .gte("jobs.scheduled_start", startsAt)
+      .lt("jobs.scheduled_start", endsAt)
+      .order("created_at")
+      .order("id")
+      .overrideTypes<OfferQueryRow[], { merge: false }>(),
+    supabase
+      .from("recurring_assignment_cleaners")
+      .select(
+        "recurring_assignment_id, cleaner_id, slot_number, recurring_assignments!inner(sites!inner(clients!inner(company_id)))",
+        { count: "exact" },
+      )
+      .is("accepted_at", null)
+      .eq("recurring_assignments.sites.clients.company_id", company.id)
+      .order("recurring_assignment_id")
+      .order("slot_number")
+      .overrideTypes<SeriesCleanerQueryRow[], { merge: false }>(),
   ]);
   const siteRows = requireCompleteRows("company site", sitesResult);
   const memberRows = requireCompleteRows("active cleaner membership", membersResult);
   const vacancyRows = requireCompleteRows("weekly vacancy", vacanciesResult);
+  const offerRows = requireCompleteRows("pending company offer", offersResult);
+  const seriesCleanerRows = requireCompleteRows(
+    "unaccepted recurring cleaner",
+    seriesCleanersResult,
+  );
 
   const siteIds = siteRows.map((site) => site.id);
   const [jobsResult, assignmentsResult] = await Promise.all([
     siteIds.length
       ? supabase
         .from("jobs")
-        .select("id, site_id, scheduled_start, crew_size, status", { count: "exact" })
+        .select(
+          "id, site_id, scheduled_start, crew_size, status, recurring_assignment_id",
+          { count: "exact" },
+        )
         .in("site_id", siteIds)
         .gte("scheduled_start", startsAt)
         .lt("scheduled_start", endsAt)
@@ -166,8 +218,37 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
       siteName,
       scheduledStart: job.scheduled_start,
       crewSize: job.crew_size,
+      recurringAssignmentId: job.recurring_assignment_id ?? null,
     };
   });
+  const jobsById = new Map(jobs.map((job) => [job.id, job]));
+  const jobsByRecurringAssignment = new Map<string, RosterJob[]>();
+  for (const job of jobs) {
+    if (!job.recurringAssignmentId) continue;
+    const seriesJobs = jobsByRecurringAssignment.get(job.recurringAssignmentId) ?? [];
+    seriesJobs.push(job);
+    jobsByRecurringAssignment.set(job.recurringAssignmentId, seriesJobs);
+  }
+  const offers: RosterOffer[] = [];
+  for (const offer of offerRows) {
+    if (!offer.job_id || !jobsById.has(offer.job_id)) continue;
+    offers.push({
+      key: `offer:${offer.id}`,
+      jobId: offer.job_id,
+      cleanerId: offer.cleaner_id,
+    });
+  }
+  for (const namedCleaner of seriesCleanerRows) {
+    for (
+      const job of jobsByRecurringAssignment.get(namedCleaner.recurring_assignment_id) ?? []
+    ) {
+      offers.push({
+        key: `series:${namedCleaner.recurring_assignment_id}:${namedCleaner.slot_number}:${job.id}`,
+        jobId: job.id,
+        cleanerId: namedCleaner.cleaner_id,
+      });
+    }
+  }
   const assignments: RosterAssignment[] = assignmentRows.map((assignment) => ({
     jobId: assignment.job_id,
     cleanerId: assignment.cleaner_id,
@@ -211,6 +292,7 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
     cleaners,
     jobs,
     assignments,
+    offers,
     vacancies,
     labels: {
       unavailableCleaner: t("unavailableCleaner"),

@@ -6,6 +6,7 @@ import type {
   RosterCleaner,
   RosterDay,
   RosterJob,
+  RosterOffer,
   RosterRow,
   RosterSite,
   RosterVacancy,
@@ -17,6 +18,7 @@ type BuildCleanerRosterInput = {
   cleaners: RosterCleaner[];
   jobs: RosterJob[];
   assignments: RosterAssignment[];
+  offers?: RosterOffer[];
   vacancies: RosterVacancy[];
   labels?: {
     unavailableCleaner: string;
@@ -33,11 +35,17 @@ function emptyCells(days: RosterDay[]) {
 }
 
 function sortCells(row: RosterRow) {
+  const kindOrder: Record<RosterCellItem["kind"], number> = {
+    job: 0,
+    offered: 1,
+    gap: 2,
+  };
   for (const items of Object.values(row.cells)) {
     items.sort((left, right) => {
       const scheduleOrder = left.scheduledStart.localeCompare(right.scheduledStart);
-      const kindOrder = Number(left.kind === "gap") - Number(right.kind === "gap");
-      return scheduleOrder || kindOrder || left.key.localeCompare(right.key);
+      return scheduleOrder
+        || kindOrder[left.kind] - kindOrder[right.kind]
+        || left.key.localeCompare(right.key);
     });
   }
   return row;
@@ -46,6 +54,7 @@ function sortCells(row: RosterRow) {
 function visibleCleanerNames(
   cleaners: RosterCleaner[],
   assignments: RosterAssignment[],
+  offers: RosterOffer[],
   jobsById: Map<string, RosterJob>,
   unavailableCleaner: string,
 ) {
@@ -54,6 +63,14 @@ function visibleCleanerNames(
     if (!cleanersById.has(assignment.cleanerId) && jobsById.has(assignment.jobId)) {
       cleanersById.set(assignment.cleanerId, {
         id: assignment.cleanerId,
+        name: unavailableCleaner,
+      });
+    }
+  }
+  for (const offer of offers) {
+    if (!cleanersById.has(offer.cleanerId) && jobsById.has(offer.jobId)) {
+      cleanersById.set(offer.cleanerId, {
+        id: offer.cleanerId,
         name: unavailableCleaner,
       });
     }
@@ -102,6 +119,7 @@ export function buildCleanerRoster({
   cleaners,
   jobs,
   assignments,
+  offers = [],
   vacancies,
   labels = {
     unavailableCleaner: "Unavailable cleaner",
@@ -113,6 +131,7 @@ export function buildCleanerRoster({
   const cleanersById = visibleCleanerNames(
     cleaners,
     assignments,
+    offers,
     jobsById,
     labels.unavailableCleaner,
   );
@@ -149,6 +168,23 @@ export function buildCleanerRoster({
         cleanersById,
         labels.unavailableCleaner,
       ),
+    });
+  }
+
+  for (const offer of offers) {
+    const job = jobsById.get(offer.jobId);
+    const row = rowsByCleanerId.get(offer.cleanerId);
+    if (!job || !row) continue;
+    const dateKey = getRosterDateKey(job.scheduledStart);
+    if (!visibleDates.has(dateKey)) continue;
+    row.cells[dateKey]?.push({
+      kind: "offered",
+      key: offer.key,
+      jobId: job.id,
+      siteName: job.siteName,
+      scheduledStart: job.scheduledStart,
+      crewSize: job.crewSize,
+      cleanerName: cleanersById.get(offer.cleanerId)?.name ?? labels.unavailableCleaner,
     });
   }
 
@@ -189,6 +225,7 @@ export function buildSiteRoster({
   sites,
   jobs,
   assignments,
+  offers = [],
   vacancies,
   labels = {
     unavailableCleaner: "Unavailable cleaner",
@@ -200,6 +237,7 @@ export function buildSiteRoster({
   const cleanersById = visibleCleanerNames(
     cleaners,
     assignments,
+    offers,
     jobsById,
     labels.unavailableCleaner,
   );
@@ -233,6 +271,24 @@ export function buildSiteRoster({
         cleanersById,
         labels.unavailableCleaner,
       ),
+    });
+  }
+
+  for (const offer of offers) {
+    const job = jobsById.get(offer.jobId);
+    if (!job) continue;
+    const row = rowsBySiteId.get(job.siteId);
+    if (!row) throw new Error(`Roster offer ${offer.key} has no visible site row.`);
+    const dateKey = getRosterDateKey(job.scheduledStart);
+    if (!visibleDates.has(dateKey)) continue;
+    row.cells[dateKey]?.push({
+      kind: "offered",
+      key: offer.key,
+      jobId: job.id,
+      siteName: job.siteName,
+      scheduledStart: job.scheduledStart,
+      crewSize: job.crewSize,
+      cleanerName: cleanersById.get(offer.cleanerId)?.name ?? labels.unavailableCleaner,
     });
   }
 

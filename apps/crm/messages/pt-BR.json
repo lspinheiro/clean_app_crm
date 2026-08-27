@@ -124,6 +124,7 @@
     "bySite": "Por local",
     "weekOf": "Semana de {range}",
     "gap": "VAGA",
+    "offered": "OFERTADO",
     "slotOf": "posição {slot} de {crewSize}",
     "noCleanersAssigned": "Nenhum profissional alocado",
     "cleanerCount": "{count, plural, =0 {Nenhum profissional} one {# profissional} other {# profissionais}}",

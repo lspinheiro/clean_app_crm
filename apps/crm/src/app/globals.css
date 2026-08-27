@@ -4999,6 +4999,18 @@ button.company-switcher__company:hover {
   letter-spacing: 0.03em;
 }
 
+.roster-entry--offered {
+  background: var(--color-warning-container);
+}
+
+.roster-entry--offered strong {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-on-warning-container);
+  letter-spacing: 0.03em;
+}
+
 .roster-no-work {
   position: relative;
   display: block;

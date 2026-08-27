@@ -68,11 +68,11 @@
     "switchToCompany": "Switch to {companyName}",
     "signOut": "Sign out",
     "companyLogo": "{companyName} logo",
-    "brandLabel": "The Clean Crew home"
-    ,"notifications": "Notifications"
-    ,"notificationsUnread": "Notifications, {count} unread"
-    ,"newApplication": "New application for {siteName}"
-    ,"noNotifications": "No new applications yet."
+    "brandLabel": "The Clean Crew home",
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications, {count} unread",
+    "newApplication": "New application for {siteName}",
+    "noNotifications": "No new applications yet."
   },
   "CompanySwitcher": {
     "label": "Current company",
@@ -221,7 +221,22 @@
     "signIn": "Sign in",
     "unavailableTitle": "This invitation is not available",
     "unavailableDescription": "The invitation is invalid, expired, revoked, already accepted, or belongs to another account.",
-    "backToLogin": "Back to sign in"
+    "backToLogin": "Back to sign in",
+    "wrongAccountTitle": "You're signed in as a different account",
+    "wrongAccountDescription": "This invitation is for {invitee}. You're signed in as {signedIn}.",
+    "useAnotherAccount": "Use another account",
+    "checkAccountTitle": "We could not open this invitation for your account",
+    "checkAccountDescription": "Confirm your e-mail address, then open the link again.",
+    "linkUsedTitle": "This link has already been opened",
+    "linkUsedDescription": "Invitation links work once, and an e-mail scanner may have opened it before you did. Ask {companyName} to send a new one.",
+    "expiredTitle": "This invitation has expired",
+    "expiredDescription": "Invitations last seven days. Ask the company to send a new one.",
+    "revokedTitle": "This invitation was withdrawn",
+    "revokedDescription": "The company cancelled it, or replaced it with a newer invitation.",
+    "acceptedTitle": "This invitation was already accepted",
+    "acceptedDescription": "Sign in to reach the company.",
+    "unknownTitle": "We could not find this invitation",
+    "unknownDescription": "Check the link in your e-mail, or ask the company to send a new one."
   },
   "EmployeeManagement": {
     "title": "Company access",
@@ -320,119 +335,119 @@
     "createDescription": "Start with the site defaults, then tailor the schedule, crew, and agreed amounts.",
     "setupSiteTitle": "Set up a client site first",
     "setupSiteDescription": "A job needs a site and an active service before it can be saved.",
-    "openClients": "Open clients & sites"
-    ,"noDefaults": "No defaults are set for {siteName}. Add the job details below."
-    ,"defaultsLoaded": "Defaults loaded from {siteName}. You can edit them for this job."
-    ,"step1": "Step 1"
-    ,"chooseSiteTitle": "Choose the site"
-    ,"chooseSiteDescription": "The client sets the available sites. Site defaults are a starting point only."
-    ,"client": "Client"
-    ,"chooseClient": "Choose a client"
-    ,"site": "Site"
-    ,"chooseSite": "Choose a site"
-    ,"step2": "Step 2"
-    ,"scheduleTitle": "Set the service and schedule"
-    ,"brisbaneTimes": "Times are entered and displayed in Australia/Brisbane."
-    ,"service": "Service"
-    ,"chooseService": "Choose a service"
-    ,"date": "Job date"
-    ,"detailDate": "Date"
-    ,"startTime": "Start time"
-    ,"duration": "Duration (hours)"
-    ,"detailDuration": "Duration"
-    ,"statusDraft": "Draft"
-    ,"statusPosted": "Posted"
-    ,"statusAssigned": "Assigned"
-    ,"statusOnTheWay": "On the way"
-    ,"statusInProgress": "In progress"
-    ,"statusCompleted": "Completed"
-    ,"statusCancelled": "Cancelled"
-    ,"step3": "Step 3"
-    ,"commercialTitle": "Set crew and commercial details"
-    ,"commercialDescription": "Cleaner pay is agreed per slot. Client charge and notes stay admin-only."
-    ,"crewSize": "Crew size"
-    ,"cleanerPayPerSlot": "Cleaner pay per slot (AUD)"
-    ,"clientCharge": "Client charge (AUD, admin only)"
-    ,"internalNotes": "Internal notes (admin only)"
-    ,"notesPlaceholder": "Add operational context for company admins"
-    ,"draftHint": "Drafts stay private. Posting creates one vacancy per open crew slot."
-    ,"saveDraft": "Save draft"
-    ,"saving": "Saving…"
-    ,"post": "Post to cleaners"
-    ,"posting": "Posting…"
-    ,"saveFailed": "The job could not be saved. Please try again."
-    ,"applicationApplied": "Applied"
-    ,"applicationAssigned": "Assigned"
-    ,"applicationNotSelected": "Not selected"
-    ,"applicationWithdrawn": "Withdrawn"
-    ,"preferredCandidate": "{cleanerName} — preferred #{rank}"
-    ,"slotAssigned": "Assigned"
-    ,"slotOpen": "Open"
-    ,"slotClosed": "Closed"
-    ,"previouslyAssigned": "Previously assigned to {cleanerName}"
-    ,"chooseApplicant": "Choose an applicant or cleaner"
-    ,"noActiveAssignment": "No active assignment"
-    ,"detailEyebrow": "Job detail"
-    ,"cancelJob": "Cancel job"
-    ,"overview": "Overview"
-    ,"scheduleAndSite": "Schedule and site"
-    ,"start": "Start"
-    ,"siteAddress": "Site address"
-    ,"accessNotes": "Access notes"
-    ,"noAccessNotes": "No access notes recorded."
-    ,"adminOnly": "Admin only"
-    ,"commercialDetail": "Commercial detail"
-    ,"cleanerPayPerSlotLabel": "Cleaner pay per slot"
-    ,"clientChargeLabel": "Client charge"
-    ,"notRecorded": "Not recorded"
-    ,"internalNotesLabel": "Internal notes"
-    ,"noInternalNotes": "No internal notes recorded."
-    ,"crew": "Crew"
-    ,"crewSlots": "Crew slots"
-    ,"crewSlot": "Crew slot {slot}"
-    ,"cleanerForSlot": "Cleaner for slot {slot}"
-    ,"chooseCleaner": "Choose a cleaner"
-    ,"applicantsGroup": "Applicants"
-    ,"cleanersGroup": "Cleaners"
-    ,"assignSelected": "Assign {cleanerName} to slot {slot}"
-    ,"assignSlot": "Assign cleaner to slot {slot}"
-    ,"assigning": "Assigning…"
-    ,"assign": "Assign"
-    ,"noCleanerCandidates": "No active cleaners are available to assign."
-    ,"assignmentNotConfirmed": "The assignment could not be confirmed. Review the refreshed crew slots before trying again."
-    ,"cancellationNotConfirmed": "The cancellation could not be confirmed. Review the refreshed job before trying again."
-    ,"cleanerResponse": "Cleaner response"
-    ,"applicants": "Applicants"
-    ,"applicantsDescription": "Site preferences set the order; status text records the outcome."
-    ,"jobApplicants": "Job applicants"
-    ,"preferredRank": "Preferred #{rank}"
-    ,"noApplications": "No applications yet."
-    ,"applications": "Applications"
-    ,"applicationsSummary": "{openSlots, plural, one {# open slot} other {# open slots}} · {count, plural, one {# awaiting review} other {# awaiting review}}"
-    ,"awaitingReview": "Awaiting review"
-    ,"resolvedResponses": "Resolved responses"
-    ,"approvalAssignsImmediately": "Approval assigns {cleanerName} immediately to the selected crew slot."
-    ,"crewSlotForApplicant": "Crew slot for {cleanerName}"
-    ,"slotOption": "Slot {slot}"
-    ,"approveApplicantForSlot": "Approve {cleanerName} for slot {slot}"
-    ,"markNotSelected": "Mark {cleanerName} not selected"
-    ,"restoreApplication": "Restore {cleanerName}"
-    ,"approvingApplicant": "Approving {cleanerName}…"
-    ,"markingNotSelected": "Marking {cleanerName} not selected…"
-    ,"restoringApplication": "Restoring {cleanerName}…"
-    ,"reviewingApplication": "Updating…"
-    ,"applicationReviewNotConfirmed": "The application update could not be confirmed. Review the refreshed response before trying again."
-    ,"appliedAt": "Applied {time}"
-    ,"noAwaitingApplications": "No applications are awaiting review."
-    ,"assignDirectly": "Assign a cleaner directly"
-    ,"directAssignmentDescription": "Use this separate path for an active pool cleaner who did not apply."
-    ,"jobActions": "Job actions"
-    ,"closeOpenSlots": "Close every open slot"
-    ,"cancelQuestion": "Cancel this job?"
-    ,"cancelDescription": "Active assignments will be released, vacancies will close, and affected cleaners will see the cancellation."
-    ,"keepJob": "Keep job"
-    ,"cancelling": "Cancelling…"
-    ,"confirmCancellation": "Confirm cancellation"
+    "openClients": "Open clients & sites",
+    "noDefaults": "No defaults are set for {siteName}. Add the job details below.",
+    "defaultsLoaded": "Defaults loaded from {siteName}. You can edit them for this job.",
+    "step1": "Step 1",
+    "chooseSiteTitle": "Choose the site",
+    "chooseSiteDescription": "The client sets the available sites. Site defaults are a starting point only.",
+    "client": "Client",
+    "chooseClient": "Choose a client",
+    "site": "Site",
+    "chooseSite": "Choose a site",
+    "step2": "Step 2",
+    "scheduleTitle": "Set the service and schedule",
+    "brisbaneTimes": "Times are entered and displayed in Australia/Brisbane.",
+    "service": "Service",
+    "chooseService": "Choose a service",
+    "date": "Job date",
+    "detailDate": "Date",
+    "startTime": "Start time",
+    "duration": "Duration (hours)",
+    "detailDuration": "Duration",
+    "statusDraft": "Draft",
+    "statusPosted": "Posted",
+    "statusAssigned": "Assigned",
+    "statusOnTheWay": "On the way",
+    "statusInProgress": "In progress",
+    "statusCompleted": "Completed",
+    "statusCancelled": "Cancelled",
+    "step3": "Step 3",
+    "commercialTitle": "Set crew and commercial details",
+    "commercialDescription": "Cleaner pay is agreed per slot. Client charge and notes stay admin-only.",
+    "crewSize": "Crew size",
+    "cleanerPayPerSlot": "Cleaner pay per slot (AUD)",
+    "clientCharge": "Client charge (AUD, admin only)",
+    "internalNotes": "Internal notes (admin only)",
+    "notesPlaceholder": "Add operational context for company admins",
+    "draftHint": "Drafts stay private. Posting creates one vacancy per open crew slot.",
+    "saveDraft": "Save draft",
+    "saving": "Saving…",
+    "post": "Post to cleaners",
+    "posting": "Posting…",
+    "saveFailed": "The job could not be saved. Please try again.",
+    "applicationApplied": "Applied",
+    "applicationAssigned": "Assigned",
+    "applicationNotSelected": "Not selected",
+    "applicationWithdrawn": "Withdrawn",
+    "preferredCandidate": "{cleanerName} — preferred #{rank}",
+    "slotAssigned": "Assigned",
+    "slotOpen": "Open",
+    "slotClosed": "Closed",
+    "previouslyAssigned": "Previously assigned to {cleanerName}",
+    "chooseApplicant": "Choose an applicant or cleaner",
+    "noActiveAssignment": "No active assignment",
+    "detailEyebrow": "Job detail",
+    "cancelJob": "Cancel job",
+    "overview": "Overview",
+    "scheduleAndSite": "Schedule and site",
+    "start": "Start",
+    "siteAddress": "Site address",
+    "accessNotes": "Access notes",
+    "noAccessNotes": "No access notes recorded.",
+    "adminOnly": "Admin only",
+    "commercialDetail": "Commercial detail",
+    "cleanerPayPerSlotLabel": "Cleaner pay per slot",
+    "clientChargeLabel": "Client charge",
+    "notRecorded": "Not recorded",
+    "internalNotesLabel": "Internal notes",
+    "noInternalNotes": "No internal notes recorded.",
+    "crew": "Crew",
+    "crewSlots": "Crew slots",
+    "crewSlot": "Crew slot {slot}",
+    "cleanerForSlot": "Cleaner for slot {slot}",
+    "chooseCleaner": "Choose a cleaner",
+    "applicantsGroup": "Applicants",
+    "cleanersGroup": "Cleaners",
+    "assignSelected": "Assign {cleanerName} to slot {slot}",
+    "assignSlot": "Assign cleaner to slot {slot}",
+    "assigning": "Assigning…",
+    "assign": "Assign",
+    "noCleanerCandidates": "No active cleaners are available to assign.",
+    "assignmentNotConfirmed": "The assignment could not be confirmed. Review the refreshed crew slots before trying again.",
+    "cancellationNotConfirmed": "The cancellation could not be confirmed. Review the refreshed job before trying again.",
+    "cleanerResponse": "Cleaner response",
+    "applicants": "Applicants",
+    "applicantsDescription": "Site preferences set the order; status text records the outcome.",
+    "jobApplicants": "Job applicants",
+    "preferredRank": "Preferred #{rank}",
+    "noApplications": "No applications yet.",
+    "applications": "Applications",
+    "applicationsSummary": "{openSlots, plural, one {# open slot} other {# open slots}} · {count, plural, one {# awaiting review} other {# awaiting review}}",
+    "awaitingReview": "Awaiting review",
+    "resolvedResponses": "Resolved responses",
+    "approvalAssignsImmediately": "Approval assigns {cleanerName} immediately to the selected crew slot.",
+    "crewSlotForApplicant": "Crew slot for {cleanerName}",
+    "slotOption": "Slot {slot}",
+    "approveApplicantForSlot": "Approve {cleanerName} for slot {slot}",
+    "markNotSelected": "Mark {cleanerName} not selected",
+    "restoreApplication": "Restore {cleanerName}",
+    "approvingApplicant": "Approving {cleanerName}…",
+    "markingNotSelected": "Marking {cleanerName} not selected…",
+    "restoringApplication": "Restoring {cleanerName}…",
+    "reviewingApplication": "Updating…",
+    "applicationReviewNotConfirmed": "The application update could not be confirmed. Review the refreshed response before trying again.",
+    "appliedAt": "Applied {time}",
+    "noAwaitingApplications": "No applications are awaiting review.",
+    "assignDirectly": "Assign a cleaner directly",
+    "directAssignmentDescription": "Use this separate path for an active pool cleaner who did not apply.",
+    "jobActions": "Job actions",
+    "closeOpenSlots": "Close every open slot",
+    "cancelQuestion": "Cancel this job?",
+    "cancelDescription": "Active assignments will be released, vacancies will close, and affected cleaners will see the cancellation.",
+    "keepJob": "Keep job",
+    "cancelling": "Cancelling…",
+    "confirmCancellation": "Confirm cancellation"
   },
   "Clients": {
     "eyebrow": "Company records",

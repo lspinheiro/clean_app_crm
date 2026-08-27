@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { BrandBubbles } from "@/components/brand-bubbles";
 import { FirstAdminAcceptanceForm } from "./accept-form";
 import { EmployeeAcceptance } from "./employee-acceptance";
+import { UseAnotherAccount } from "./use-another-account";
 import { employeeInvitationIdSchema } from "@/features/employee-invitations/schema";
 import { defaultLocale, isAppLocale } from "@/i18n/config";
 import { Link, redirect } from "@/i18n/navigation";
@@ -15,6 +16,24 @@ type FirstAdminAcceptancePageProps = {
     error?: string | string[];
   }>;
 };
+
+/**
+ * What `employee_invitation_preview` answers without a session. Everything but `state` is
+ * null unless the invitation can still be used.
+ */
+type EmployeeInvitationPreview = {
+  account_existed: boolean | null;
+  company_name: string | null;
+  invitee_hint: string | null;
+  role: "owner" | "staff" | null;
+  state: string;
+};
+
+/** Matches the masking the preview applies, so the two can be compared. */
+function maskEmail(email: string) {
+  const [local, domain] = email.split("@");
+  return `${local.slice(0, 1)}***@${domain ?? ""}`;
+}
 
 type EmployeeInvitationContext = {
   account_existed_at_invitation: boolean;
@@ -75,19 +94,58 @@ export default async function FirstAdminAcceptancePage({
   } = await supabase.auth.getUser();
 
   if (employeeInvitation.success) {
-    if (userError || !user?.email) {
-      if (query.error === "invalid") {
-        return (
-          <AuthShell>
-            <p className="eyebrow">{employeeT("eyebrow")}</p>
-            <h1>{employeeT("unavailableTitle")}</h1>
-            <p className="auth-panel__intro">{employeeT("unavailableDescription")}</p>
+    // The preview answers without a session, which is the only reason each state below can
+    // name itself. `get_employee_invitation_context` returns zero rows for "not signed in",
+    // "signed in as somebody else", "revoked" and "expired" alike.
+    const { data: previewRows } = await supabase.rpc("employee_invitation_preview", {
+      target_invitation_id: employeeInvitation.data,
+    });
+    const preview = (previewRows?.[0] ?? { state: "unknown" }) as EmployeeInvitationPreview;
+
+    function notice(title: string, description: string, action?: React.ReactNode) {
+      return (
+        <AuthShell>
+          <p className="eyebrow">{employeeT("eyebrow")}</p>
+          <h1>{title}</h1>
+          <p className="auth-panel__intro">{description}</p>
+          {action ?? (
             <Link className="button button--secondary" href="/login">
               {employeeT("backToLogin")}
             </Link>
-          </AuthShell>
+          )}
+        </AuthShell>
+      );
+    }
+
+    // Already accepted and signed in means they simply followed an old link; send them on
+    // rather than telling them something they cannot act on.
+    if (preview.state === "accepted") {
+      if (!userError && user?.email) return redirect({ href: "/roster", locale });
+      return notice(employeeT("acceptedTitle"), employeeT("acceptedDescription"));
+    }
+
+    if (preview.state === "expired") {
+      return notice(employeeT("expiredTitle"), employeeT("expiredDescription"));
+    }
+    if (preview.state === "revoked") {
+      return notice(employeeT("revokedTitle"), employeeT("revokedDescription"));
+    }
+    if (preview.state !== "pending") {
+      return notice(employeeT("unknownTitle"), employeeT("unknownDescription"));
+    }
+
+    if (userError || !user?.email) {
+      // Only an account that already existed has a password to sign in with. Telling a brand
+      // new invitee to "use your existing login" is the dead end this replaces.
+      if (!preview.account_existed) {
+        return notice(
+          employeeT("linkUsedTitle"),
+          employeeT("linkUsedDescription", {
+            companyName: preview.company_name ?? "",
+          }),
         );
       }
+
       const returnTo = `/invite/accept?employeeInvitation=${employeeInvitation.data}`;
       return (
         <AuthShell>
@@ -110,20 +168,21 @@ export default async function FirstAdminAcceptancePage({
     });
     if (!error && data?.[0]) employeeContext = data[0];
 
-    if (employeeContext?.invitation_status === "accepted") {
-      return redirect({ href: "/roster", locale });
-    }
-    if (!employeeContext || employeeContext.invitation_status !== "pending") {
-      return (
-        <AuthShell>
-          <p className="eyebrow">{employeeT("eyebrow")}</p>
-          <h1>{employeeT("unavailableTitle")}</h1>
-          <p className="auth-panel__intro">{employeeT("unavailableDescription")}</p>
-          <Link className="button button--secondary" href="/login">
-            {employeeT("backToLogin")}
-          </Link>
-        </AuthShell>
-      );
+    if (!employeeContext) {
+      // The invitation is live and somebody is signed in, so the context RPC refused for one
+      // of two reasons: a different account, or an unconfirmed address. Masking collapses
+      // distinct addresses, so claim a mismatch only when the hints actually differ.
+      if (preview.invitee_hint && preview.invitee_hint !== maskEmail(user.email)) {
+        return notice(
+          employeeT("wrongAccountTitle"),
+          employeeT("wrongAccountDescription", {
+            invitee: preview.invitee_hint,
+            signedIn: user.email,
+          }),
+          <UseAnotherAccount />,
+        );
+      }
+      return notice(employeeT("checkAccountTitle"), employeeT("checkAccountDescription"));
     }
 
     return (

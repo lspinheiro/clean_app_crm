@@ -408,6 +408,60 @@ describe("CLE-55 roster offered projection", () => {
     ]);
   });
 
+  it("does not show a series cleaner as offered when they are already assigned to the job", async () => {
+    const page = await renderPage(immediateSupabase({
+      jobs: {
+        data: [{
+          id: "job-series",
+          site_id: "site-1",
+          scheduled_start: "2026-08-10T00:00:00Z",
+          crew_size: 3,
+          status: "assigned",
+          recurring_assignment_id: "series-1",
+        }],
+        count: 1,
+      },
+      job_assignments: {
+        data: [{ job_id: "job-series", cleaner_id: "cleaner-1", slot_number: 1 }],
+        count: 1,
+      },
+      recurring_assignment_cleaners: {
+        data: [{
+          recurring_assignment_id: "series-1",
+          cleaner_id: "cleaner-1",
+          slot_number: 2,
+          recurring_assignments: {
+            sites: { clients: { company_id: "company-1" } },
+          },
+        }],
+        count: 1,
+      },
+      vacancies: {
+        data: [{
+          job_id: "job-series",
+          site_id: "site-1",
+          site_name: "Harbour Tower",
+          scheduled_start: "2026-08-10T00:00:00Z",
+          crew_slot: 3,
+          crew_size: 3,
+        }],
+        count: 1,
+      },
+    }));
+
+    const cleanerRow = page.props.model.rows.find(
+      (row: { label: string }) => row.label === "Ana Costa",
+    );
+
+    expect(page.props.model.vacancyCount).toBe(1);
+    expect(page.props.model.rows[0].cells["2026-08-10"]).toEqual([
+      expect.objectContaining({ kind: "gap", jobId: "job-series" }),
+    ]);
+    expect(cleanerRow.cells["2026-08-10"]).toEqual([
+      expect.objectContaining({ kind: "job", jobId: "job-series" }),
+    ]);
+  });
+
   it("rebuilds an unaccepted series as assigned or vacant from current rows on the next load", async () => {
     const job = {
       id: "job-series",

@@ -134,6 +134,10 @@ select function_privs_are(
   'anonymous callers cannot create offers'
 );
 
+-- These guard cases exercise the internal assignment helper after the public grant checks.
+-- The transaction-local grant is rolled back and cannot restore the production capability.
+grant execute on function public.assign_job_slot(uuid, integer, uuid) to authenticated;
+
 insert into public.companies (id, name, abn, status)
 values
   ('51000000-0000-4000-8000-000000000010', 'CLE-51 Offers Company', '51000000001', 'approved'),

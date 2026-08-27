@@ -87,12 +87,6 @@ export const oneOffJobSchema = z
     postNow: value.mode === "post",
   }));
 
-export const assignJobSlotSchema = z.object({
-  jobId: z.string().uuid(),
-  slotNumber: z.coerce.number<number>().int().min(1),
-  cleanerId: z.string().uuid(),
-});
-
 export const jobOfferSchema = z.object({
   jobId: z.string().uuid(),
   cleanerId: z.string().uuid(),

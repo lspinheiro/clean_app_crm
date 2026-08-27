@@ -167,7 +167,7 @@ select ok(
       'public.post_job(uuid)',
       'EXECUTE'
     )
-    and has_function_privilege(
+    and not has_function_privilege(
       'authenticated',
       'public.assign_job_slot(uuid,integer,uuid)',
       'EXECUTE'
@@ -187,7 +187,7 @@ select ok(
       'public.get_cleaner_job_access(uuid)',
       'EXECUTE'
     ),
-  'authenticated callers can execute every narrow loop RPC'
+  'authenticated callers execute public loop RPCs but not the internal assignment helper'
 );
 select ok(
   not has_function_privilege('anon', 'public.apply_to_job(uuid)', 'EXECUTE')
@@ -211,6 +211,11 @@ select ok(
     ),
   'anonymous callers cannot execute loop RPCs'
 );
+
+-- The rest of this legacy suite tests the helper's validation and lifecycle mechanics.
+-- This transaction-local grant is rolled back and does not change the public capability.
+grant execute on function public.assign_job_slot(uuid, integer, uuid) to authenticated;
+
 select hasnt_column(
   'public', 'cleaner_job_board', 'address',
   'the board never exposes a full address'

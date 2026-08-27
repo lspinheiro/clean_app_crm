@@ -42,6 +42,12 @@ create temporary table cle_52_rule_ids (
 ) on commit drop;
 grant select, insert on table cle_52_rule_ids to authenticated;
 
+create temporary table cle_52_job_ids (
+  label text primary key,
+  job_id uuid not null
+) on commit drop;
+grant select on table cle_52_job_ids to authenticated;
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
@@ -544,6 +550,223 @@ select is(
   0,
   'rule edit removal also removes the named-cleaner row'
 );
+
+-- A named cleaner who takes a board vacancy must not remain a projected reservation.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+insert into cle_52_rule_ids
+select 'assigned_named', public.create_recurring_assignment(
+  '10000000-0000-4000-8000-000000000403',
+  '30000000-0000-4000-8000-000000000002',
+  'weekly', 5::smallint, '2026-09-04', '11:00', 60, 9000, 3,
+  array[
+    '10000000-0000-4000-8000-000000000002'::uuid,
+    '10000000-0000-4000-8000-000000000003'::uuid
+  ]
+);
+reset role;
+
+insert into cle_52_job_ids
+select 'assigned_named', job.id
+from public.jobs job
+where job.recurring_assignment_id = (
+  select rule_id from cle_52_rule_ids where label = 'assigned_named'
+)
+order by job.service_date
+limit 1;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000002', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select lives_ok(
+  $$select public.accept_offer(
+    (
+      select offer_id from public.cleaner_offers
+      where recurring_assignment_id = (
+        select rule_id from cle_52_rule_ids where label = 'assigned_named'
+      )
+    )
+  )$$,
+  'the first named cleaner accepts the crew-three series'
+);
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000003', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select is(
+  (
+    select count(*)::integer
+    from public.cleaner_job_board
+    where job_id = (
+      select job_id from cle_52_job_ids where label = 'assigned_named'
+    )
+  ),
+  1,
+  'the unconsented named cleaner can see the genuinely open board vacancy'
+);
+select lives_ok(
+  $$select public.apply_to_job(
+    (
+      select job_id from cle_52_job_ids where label = 'assigned_named'
+    )
+  )$$,
+  'the unconsented named cleaner can apply for that board vacancy'
+);
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select lives_ok(
+  $$select public.approve_job_application(
+    (
+      select job_id from cle_52_job_ids where label = 'assigned_named'
+    ),
+    (
+      select vacancy.crew_slot
+      from public.vacancies vacancy
+      where vacancy.job_id = (
+        select job_id from cle_52_job_ids where label = 'assigned_named'
+      )
+      order by vacancy.crew_slot
+      limit 1
+    ),
+    '10000000-0000-4000-8000-000000000003'
+  )$$,
+  'the admin approves the named cleaner into the visible open slot'
+);
+reset role;
+
+select results_eq(
+  $$select job.status::text,
+           count(assignment.id)::integer,
+           (select count(*)::integer
+              from public.vacancies vacancy
+             where vacancy.job_id = job.id)
+      from public.jobs job
+      left join public.job_assignments assignment
+        on assignment.job_id = job.id
+       and assignment.unassigned_at is null
+     where job.id = (
+       select job_id from cle_52_job_ids where label = 'assigned_named'
+     )
+     group by job.id, job.status$$,
+  $$values ('posted'::text, 2, 1)$$,
+  'an assigned named cleaner no longer hides the remaining uncovered slot from vacancies'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000004', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select is(
+  (
+    select count(*)::integer
+    from public.cleaner_job_board
+    where job_id = (
+      select job_id from cle_52_job_ids where label = 'assigned_named'
+    )
+  ),
+  1,
+  'another cleaner sees the remaining uncovered slot on the board'
+);
+reset role;
+
+-- A job offer and an unconsented named row for one cleaner reserve one crew place.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+insert into cle_52_rule_ids
+select 'double_reserved', public.create_recurring_assignment(
+  '10000000-0000-4000-8000-000000000403',
+  '30000000-0000-4000-8000-000000000002',
+  'weekly', 5::smallint, '2026-09-04', '13:00', 60, 9000, 3,
+  array[
+    '10000000-0000-4000-8000-000000000002'::uuid,
+    '10000000-0000-4000-8000-000000000003'::uuid
+  ]
+);
+reset role;
+
+insert into cle_52_job_ids
+select 'double_reserved', job.id
+from public.jobs job
+where job.recurring_assignment_id = (
+  select rule_id from cle_52_rule_ids where label = 'double_reserved'
+)
+order by job.service_date
+limit 1;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000002', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select lives_ok(
+  $$select public.accept_offer(
+    (
+      select offer_id from public.cleaner_offers
+      where recurring_assignment_id = (
+        select rule_id from cle_52_rule_ids where label = 'double_reserved'
+      )
+    )
+  )$$,
+  'the first named cleaner accepts the double-reservation series'
+);
+reset role;
+
+select is(
+  (
+    select count(*)::integer
+    from public.vacancies vacancy
+    where vacancy.job_id = (
+      select job_id from cle_52_job_ids where label = 'double_reserved'
+    )
+  ),
+  1,
+  'one unconsented named cleaner reserves one of the two open slots'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select lives_ok(
+  $$select public.offer_job(
+    (
+      select job_id from cle_52_job_ids where label = 'double_reserved'
+    ),
+    '10000000-0000-4000-8000-000000000003'
+  )$$,
+  'the admin can send a job offer to the same unconsented named cleaner'
+);
+reset role;
+
+select is(
+  (
+    select count(*)::integer
+    from public.vacancies vacancy
+    where vacancy.job_id = (
+      select job_id from cle_52_job_ids where label = 'double_reserved'
+    )
+  ),
+  1,
+  'duplicate reservation sources for one cleaner still leave the true vacancy visible'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000004', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select is(
+  (
+    select count(*)::integer
+    from public.cleaner_job_board
+    where job_id = (
+      select job_id from cle_52_job_ids where label = 'double_reserved'
+    )
+  ),
+  1,
+  'duplicate reservation sources do not hide the true vacancy from another cleaner'
+);
+reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);

@@ -11,7 +11,7 @@ vi.mock("@/lib/auth/session", () => ({
   requireCompanyAdmin: mocks.requireCompanyAdmin,
 }));
 
-import { assignJobSlot, cancelJob, createOneOffJob } from "./jobs";
+import { cancelJob, createOneOffJob } from "./jobs";
 import * as jobActions from "./jobs";
 
 const jobId = "23000000-0000-4000-8000-000000000501";
@@ -34,14 +34,6 @@ function validFormData() {
   formData.set("crewSize", "2");
   formData.set("notes", "  Focus on the kitchen  ");
   formData.set("mode", "post");
-  return formData;
-}
-
-function validAssignmentFormData() {
-  const formData = new FormData();
-  formData.set("jobId", jobId);
-  formData.set("slotNumber", "2");
-  formData.set("cleanerId", "10000000-0000-4000-8000-000000000003");
   return formData;
 }
 
@@ -202,81 +194,6 @@ describe("CLE-22 job dispatch actions", () => {
     mocks.requireCompanyAdmin.mockResolvedValue({
       supabase: { rpc: mocks.rpc },
     });
-  });
-
-  it("assigns the chosen cleaner to the exact crew slot and refreshes every consumer", async () => {
-    mocks.rpc.mockResolvedValue({
-      data: "49000000-0000-4000-8000-000000000701",
-      error: null,
-      status: 200,
-    });
-
-    await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
-      ok: true,
-      formError: null,
-    });
-
-    expect(mocks.rpc).toHaveBeenCalledWith("assign_job_slot", {
-      target_job_id: jobId,
-      target_slot_number: 2,
-      target_cleaner_id: "10000000-0000-4000-8000-000000000003",
-    });
-    expectLocalizedRevalidation(`/jobs/${jobId}`);
-    expectLocalizedRevalidation("/jobs");
-    expectLocalizedRevalidation("/roster");
-  });
-
-  it("rejects invalid assignment payloads before authentication", async () => {
-    const formData = validAssignmentFormData();
-    formData.set("slotNumber", "0");
-
-    await expect(assignJobSlot(formData)).resolves.toMatchObject({
-      ok: false,
-      formError: "user.validAssignment",
-    });
-    expect(mocks.requireCompanyAdmin).not.toHaveBeenCalled();
-    expect(mocks.rpc).not.toHaveBeenCalled();
-  });
-
-  it("shows only the safe availability domain error", async () => {
-    mocks.rpc.mockResolvedValue({
-      data: null,
-      error: { message: "Cleaner is unavailable for this time" },
-      status: 400,
-    });
-
-    await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
-      ok: false,
-      formError: "user.cleanerUnavailable",
-    });
-  });
-
-  it("refreshes stale assignment state without exposing database details", async () => {
-    mocks.rpc.mockResolvedValue({
-      data: null,
-      error: { message: "Crew slot is already assigned" },
-      status: 409,
-    });
-
-    await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
-      ok: false,
-      formError: "user.jobChanged",
-    });
-    expectLocalizedRevalidation(`/jobs/${jobId}`);
-  });
-
-  it("maps the pending-offer assignment guard to its verbatim UI message", async () => {
-    mocks.rpc.mockResolvedValue({
-      data: null,
-      error: { message: "Revoke the pending offer first" },
-      status: 400,
-    });
-
-    await expect(assignJobSlot(validAssignmentFormData())).resolves.toEqual({
-      ok: false,
-      formError: "user.revokePendingOfferFirst",
-    });
-    expectLocalizedRevalidation(`/jobs/${jobId}`);
   });
 
   it("cancels through the loop RPC and refreshes vacancies and roster state", async () => {

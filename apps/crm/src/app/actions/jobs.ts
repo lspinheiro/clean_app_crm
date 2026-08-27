@@ -3,7 +3,6 @@
 import {
   applicationReviewIdentitySchema,
   approveJobApplicationSchema,
-  assignJobSlotSchema,
   firstJobFieldErrors,
   jobIdSchema,
   oneOffJobSchema,
@@ -114,90 +113,6 @@ export async function createOneOffJob(
     formError: null,
     jobId: data,
   };
-}
-
-export async function assignJobSlot(
-  formData: FormData,
-): Promise<JobOperationResult> {
-  const parsed = assignJobSlotSchema.safeParse({
-    jobId: String(formData.get("jobId") ?? ""),
-    slotNumber: String(formData.get("slotNumber") ?? ""),
-    cleanerId: String(formData.get("cleanerId") ?? ""),
-  });
-  if (!parsed.success) {
-    return {
-      ok: false,
-      formError: userMessage("validAssignment"),
-    };
-  }
-
-  const { supabase } = await requireCompanyAdmin();
-  let data: string | null;
-  let error: { message: string } | null;
-  let status: number | undefined;
-  try {
-    ({ data, error, status } = await supabase.rpc("assign_job_slot", {
-      target_job_id: parsed.data.jobId,
-      target_slot_number: parsed.data.slotNumber,
-      target_cleaner_id: parsed.data.cleanerId,
-    }));
-  } catch {
-    revalidateJobConsumers(parsed.data.jobId);
-    return {
-      ok: false,
-      formError:
-        userMessage("assignmentUnconfirmed"),
-    };
-  }
-
-  revalidateJobConsumers(parsed.data.jobId);
-  if (error) {
-    if (error.message === "Cleaner is unavailable for this time") {
-      return {
-        ok: false,
-        formError: userMessage("cleanerUnavailable"),
-      };
-    }
-    if (error.message === "Revoke the pending offer first") {
-      return {
-        ok: false,
-        formError: userMessage("revokePendingOfferFirst"),
-      };
-    }
-    if (
-      error.message === "Crew slot is already assigned" ||
-      error.message === "Cleaner already has a slot on this job" ||
-      error.message === "Job is not open for assignment"
-    ) {
-      return {
-        ok: false,
-        formError:
-          userMessage("jobChanged"),
-      };
-    }
-    if (status === 0) {
-      return {
-        ok: false,
-        formError:
-          userMessage("assignmentUnconfirmed"),
-      };
-    }
-    return {
-      ok: false,
-      formError:
-        userMessage("cleanerAssignFailed"),
-    };
-  }
-
-  if (!data) {
-    return {
-      ok: false,
-      formError:
-        userMessage("assignmentUnconfirmed"),
-    };
-  }
-
-  return { ok: true, formError: null };
 }
 
 export async function approveJobApplication(

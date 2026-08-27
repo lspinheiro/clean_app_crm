@@ -229,6 +229,9 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
     seriesJobs.push(job);
     jobsByRecurringAssignment.set(job.recurringAssignmentId, seriesJobs);
   }
+  const activeAssignmentKeys = new Set(
+    assignmentRows.map((assignment) => `${assignment.job_id}:${assignment.cleaner_id}`),
+  );
   const offers: RosterOffer[] = [];
   for (const offer of offerRows) {
     if (!offer.job_id || !jobsById.has(offer.job_id)) continue;
@@ -242,6 +245,7 @@ export default async function RosterPage({ searchParams }: RosterPageProps) {
     for (
       const job of jobsByRecurringAssignment.get(namedCleaner.recurring_assignment_id) ?? []
     ) {
+      if (activeAssignmentKeys.has(`${job.id}:${namedCleaner.cleaner_id}`)) continue;
       offers.push({
         key: `series:${namedCleaner.recurring_assignment_id}:${namedCleaner.slot_number}:${job.id}`,
         jobId: job.id,

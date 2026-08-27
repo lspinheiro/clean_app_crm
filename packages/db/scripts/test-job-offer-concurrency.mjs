@@ -156,6 +156,13 @@ try {
     ),
   ).split("\n").at(-1);
 
+  runSql(
+    asAuthenticated(
+      cleanerBId,
+      `select public.apply_to_job('${acceptAssignJobId}');`,
+    ),
+  );
+
   const acceptAssignResults = await Promise.allSettled([
     runSqlConcurrently(
       asAuthenticated(
@@ -166,7 +173,7 @@ try {
     runSqlConcurrently(
       asAuthenticated(
         adminId,
-        `select public.assign_job_slot('${acceptAssignJobId}', 1, '${cleanerBId}');`,
+        `select public.approve_job_application('${acceptAssignJobId}', 1, '${cleanerBId}');`,
       ),
     ),
   ]);

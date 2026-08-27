@@ -535,6 +535,56 @@ queries always uses the resolved active company. RLS remains the enforcement lay
 the active-company value is a convenience, not an authority: a request scoped to a
 company where the caller holds no active employee membership returns nothing.
 
+### 23. An invitation is readable before the invitee has an account (2026-08-27)
+
+Three people hit dead ends on one employee invitation. `get_employee_invitation_context`
+requires a confirmed session whose e-mail matches the invitation and returns zero rows
+otherwise, so "not signed in", "signed in as somebody else", "revoked" and "expired" were one
+indistinguishable empty result — and the acceptance page had one message for all four. Worse,
+a brand-new invitee was sent to sign in: the CRM has no sign-up, no magic link and no password
+reset, and their account carries a generated password nobody ever saw.
+
+`employee_invitation_preview` is `anon`-callable and follows `cleaner_invite_preview` with the
+disclosure rule its entropy migration set (decision 11's neighbourhood): the state is always
+readable, the tenant is named only for an invitation that can still be used. The invitee's
+address is masked even then, which is stricter than the cleaner preview — a cleaner's invite
+code is held only by the invitee, while an invitation id is also held by the admin and travels
+in a forwardable e-mail, so holding it does not prove you are the invitee. That is what lets
+the page say "this invitation is for somebody else" without saying who.
+
+Considered option: widen `get_employee_invitation_context` to answer without a session —
+rejected because its whole value is that it answers only for the invitee, and the page needs
+both answers to tell a wrong account from a dead invitation.
+
+### 24. The seven-day invitation stays usable for seven days (2026-08-27)
+
+The record lives seven days; the auth token in the e-mail is single-use and dies on the first
+GET, so a link scanner, a prefetch or a reload spends it. `prepare_employee_invitation` refuses
+while an invitation is open, leaving revoke-and-reinvite as the only recourse — which mints a
+new id and orphans the link already in the invitee's inbox.
+
+`claim_employee_invitation_link` re-sends the invitation that already exists. It is one
+statement, so the row is the lock and two taps cannot both send, and it carries the project's
+own sixty-second `smtp_max_frequency` rather than trusting an unauthenticated caller. Granted
+to `service_role` alone: an `anon` grant would let anyone holding a link id drain an e-mail
+allowance shared with every other auth e-mail the product sends. A refusal returns no address
+and no reason, and the action answers the same way either way, so holding a link id cannot be
+used to discover which invitations are live.
+
+### 25. Auth redirects carry no query string (2026-08-27)
+
+The employee confirmation redirect carried `?employeeInvitation=`, which forced the employee
+branch of `invite.html` to join the token with `&` while every other branch used `?`. A
+literal allow-list entry does not permit a query string, so Auth refused the redirect and
+substituted `site_url` — and the invitee received
+`https://cleaner.thecleancrew.app&token_hash=…`: wrong app, no path, not a valid URL.
+
+The invitation id moved into the path (`/{locale}/auth/confirm/{id}`), so no auth redirect
+carries a query and every template joins with `?`. This also unblocks `recovery.html`, which
+cannot branch on invitation kind because `resetPasswordForEmail` takes no `data`. The hosted
+allow-list gained wildcard entries the same day, and `scripts/check-hosted-auth.mjs` now fails
+a release when the allow-list stops permitting the redirects the apps actually ask for.
+
 ### 22. Additional company creation is an account-level atomic bootstrap (2026-08-21)
 
 Delivers PRD decision #21 / S35. An authenticated account that already holds any active

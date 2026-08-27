@@ -117,8 +117,9 @@ describe("CLE-83 employee invitation actions", () => {
         invitation_kind: "employee",
         preferred_locale: "en-AU",
       },
-      redirectTo:
-        `https://crm.example.test/en-AU/auth/confirm?employeeInvitation=${invitationId}`,
+      // In the path, not a query: a redirect with no query cannot be joined with the wrong
+      // separator, which is how an invitation reached an invitee as `site_url&token_hash=…`.
+      redirectTo: `https://crm.example.test/en-AU/auth/confirm/${invitationId}`,
     });
     expect(mocks.sendResendEmailBatches).not.toHaveBeenCalled();
   });

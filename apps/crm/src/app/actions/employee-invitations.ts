@@ -48,10 +48,18 @@ function invitationUrl(appUrl: string, locale: "en-AU" | "pt-BR", invitationId: 
   return url.toString();
 }
 
+/**
+ * The invitation rides in the path, so this redirect carries no query string. Auth templates
+ * can then all join the token with `?`. While it was a query parameter the employee branch of
+ * the invite template had to use `&`, and a redirect Auth refused — substituting `site_url` —
+ * reached the invitee as `https://cleaner.thecleancrew.app&token_hash=…`: no path, wrong app,
+ * and not a valid URL.
+ */
 function confirmationUrl(appUrl: string, locale: "en-AU" | "pt-BR", invitationId: string) {
-  const url = new URL(`/${locale}/auth/confirm`, normaliseCleanerAppUrl(appUrl));
-  url.searchParams.set("employeeInvitation", invitationId);
-  return url.toString();
+  return new URL(
+    `/${locale}/auth/confirm/${invitationId}`,
+    normaliseCleanerAppUrl(appUrl),
+  ).toString();
 }
 
 /** Carries the provider's reason to the handler without putting it in front of the owner. */

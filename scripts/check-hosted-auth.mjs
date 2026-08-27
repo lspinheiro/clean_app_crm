@@ -114,6 +114,12 @@ export function buildExpectations({ configToml } = {}) {
       why: "the invitation e-mail promises seven days; a shorter token kills the link first",
     },
     {
+      key: "rate_limit_email_sent",
+      match: "atLeast",
+      expected: 10,
+      why: "custom SMTP is configured; the built-in default of 2 an hour starves invitations",
+    },
+    {
       key: "mailer_autoconfirm",
       expected: false,
       why: "an invitee must prove they own the address before the account is confirmed",
@@ -156,6 +162,20 @@ export function findAuthDrift(expectations, actual) {
 
   for (const expectation of expectations) {
     const observed = actual?.[expectation.key];
+
+    // A floor rather than an exact value: how much e-mail the project may send is an
+    // operations choice, but leaving it at the built-in default starves the invitation flow.
+    if (expectation.match === "atLeast") {
+      if (typeof observed !== "number" || observed < expectation.expected) {
+        drift.push({
+          key: expectation.key,
+          expected: `at least ${expectation.expected}`,
+          actual: observed === undefined ? "(absent)" : String(observed),
+          why: expectation.why,
+        });
+      }
+      continue;
+    }
 
     if (expectation.match === "permits") {
       const patterns = String(observed ?? "").split(",").map((entry) => entry.trim())

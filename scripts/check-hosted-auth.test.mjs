@@ -45,6 +45,7 @@ function healthyConfig(overrides = {}) {
       "https://crm.thecleancrew.app/**",
       "https://cleaner.thecleancrew.app/**",
     ].join(","),
+    rate_limit_email_sent: 30,
     mailer_subjects_invite: "invite subject from config.toml",
     mailer_subjects_recovery: "recovery subject from config.toml",
     ...overrides,
@@ -53,6 +54,12 @@ function healthyConfig(overrides = {}) {
 
 const expectations = [
   { key: "mailer_otp_exp", expected: 604800, why: "the e-mail promises seven days" },
+  {
+    key: "rate_limit_email_sent",
+    match: "atLeast",
+    expected: 10,
+    why: "custom SMTP is configured; the built-in default starves invitations",
+  },
   { key: "mailer_autoconfirm", expected: false, why: "an invitee must confirm" },
   { key: "disable_signup", expected: false, why: "CL-1 registers cleaners" },
   { key: "site_url", expected: "https://cleaner.thecleancrew.app", why: "production origin" },
@@ -355,4 +362,22 @@ test("an allow-list with the wildcard entries reports no drift", () => {
   );
 
   assert.deepEqual(drift.filter((item) => item.key === "uri_allow_list"), []);
+});
+
+// Custom SMTP (smtp.resend.com) is configured while `rate_limit_email_sent` sat at 2 — the
+// built-in-service default, and a per-hour figure for the whole project. Two auth e-mails an
+// hour is the best explanation for an invitation revoked 46 ms after it was created on
+// 2026-08-25, and it makes the self-service "send me a new link" button unusable.
+
+test("an e-mail allowance left at the built-in default is caught", () => {
+  const drift = findAuthDrift(expectations, healthyConfig({ rate_limit_email_sent: 2 }));
+
+  assert.deepEqual(drift.map((entry) => entry.key), ["rate_limit_email_sent"]);
+  assert.match(drift[0].actual, /2/);
+});
+
+test("a generous e-mail allowance is not drift", () => {
+  // The exact figure is an operations choice; only the floor is the repository's business.
+  assert.deepEqual(findAuthDrift(expectations, healthyConfig({ rate_limit_email_sent: 100 })), []);
+  assert.deepEqual(findAuthDrift(expectations, healthyConfig({ rate_limit_email_sent: 10 })), []);
 });

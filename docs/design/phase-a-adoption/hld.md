@@ -652,6 +652,73 @@ working across the deploy. After `supabase config push` overwrote nine hosted au
 Considered option: verify on the GET but only for requests that look like a browser — rejected
 because it is a guess about the client, and the scanners that matter render pages.
 
+### 27. Delivery follows whether the invitee can sign in (2026-08-28)
+
+Decision 24's amendment rejected the premise that a confirmed address means a usable login, and
+fixed `claim_employee_invitation_link`. It left the same premise standing in
+`prepare_employee_invitation`, whose `account_existed` was still nothing more than
+`email_confirmed_at is not null` — so the initial send kept the bug the re-send had lost. A real
+invitee hit it on 2026-08-28: their address had been confirmed by opening a link during
+debugging, no password had ever been chosen, and the invitation arrived as "Sign in and accept",
+pointing at a login that does not exist.
+
+The acceptance form reads the same flag to decide whether to ask for a password, so reaching the
+form by any other route would have produced a member who could use one session and was locked
+out when it expired.
+
+Two facts, kept separate because they answer different questions:
+
+- **`account_existed`** — confirmed *and* holding a password. What acceptance wants: false means
+  ask for one.
+- **`auth_user_exists`** — an auth record exists at all. What delivery wants:
+  `inviteUserByEmail` is refused for a registered address, so an account without a password can
+  only be reached by recovery.
+
+Delivery is therefore three ways rather than two: no record at all is invited, a record without
+a password is recovered, and a real login is sent the Resend sign-in link. Non-accepted
+invitations are backfilled, since one already in flight would otherwise still skip the password.
+
+The acceptance screen's copy went with it. "This link has already been opened — invitation links
+work once, and an e-mail scanner may have opened it before you did" was shown to people whose
+link carried no token at all: the Resend sign-in mail goes straight to `/invite/accept` and never
+passes through `/auth/confirm`, so nothing was ever spent. It now says what is actually true —
+sign in, or send yourself a new link.
+
+Considered option: keep one flag and treat "registered" as "can sign in" — rejected because that
+is the original error, stated once more.
+
+### 28. A replaced invitation is its own state (2026-08-28)
+
+Re-inviting an address whose invitation had lapsed stamps `superseded_at` on the old row and
+issues a new one. Four readers then described that one row four different ways:
+`employee_invitation_states` called it *expired*, `employee_invitation_preview` called it
+*revoked*, `get_employee_invitation_context` ignored the mark and also said *expired*, and
+`accept_employee_invitation` refused on a mark neither reader mentioned.
+
+Both readings are wrong in the same way. *Expired* tells an owner nobody acted, when they
+themselves acted — they sent the replacement. *Withdrawn* tells the invitee the company changed
+its mind, when a fresh link is already in their inbox. The replacement is the fact, and it is the
+only one that tells either side what to do next, so it becomes the state: **replaced**.
+
+This revises decision 23's note that superseded is "indistinguishable from revoked" from the
+holder's side and that saying otherwise would invent a state the page must explain. The page now
+explains it, because the explanation is the useful part. Disclosure is unchanged: *replaced* is
+returned by the branch that already returned *revoked*, still naming no company, role or address.
+
+Two structural consequences, because the drift is what allowed the disagreement:
+
+- **One expression, not four copies.** `employee_invitation_lifecycle_state` holds the CASE and
+  every reader calls it.
+- **The mark outranks the clock.** Superseding only ever lands on a lapsed row today, so
+  *replaced* and *expired* coincide — but move a superseded row's expiry forward and the old
+  ordering flipped two readers to *pending* while acceptance kept refusing. Revocation carried
+  the same hole: it tested the clock and two stamps but not the mark, so an owner could withdraw
+  a row their own list called replaced. Both guards are now "anything but pending is refused".
+
+Considered option: fold *replaced* into *expired* everywhere, which is the smaller change and
+true by construction today. Rejected because it keeps the misleading half of both readings and
+survives only as long as nothing moves an expiry.
+
 ### 22. Additional company creation is an account-level atomic bootstrap (2026-08-21)
 
 Delivers PRD decision #21 / S35. An authenticated account that already holds any active

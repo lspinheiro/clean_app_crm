@@ -5,11 +5,13 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { acceptEmployeeInvitationAction } from "@/app/actions/employee-invitations";
 import { initialEmployeeInvitationState } from "@/features/employee-invitations/state";
+import { roleAccessMessageKey } from "@/features/settings/role-access";
 import type { AppLocale } from "@/i18n/config";
 import { localiseUserMessage } from "@/i18n/user-message";
 
 type EmployeeAcceptanceProps = {
   accountExisted: boolean;
+  cleanerMembershipActive: boolean;
   companyName: string;
   defaultLocale: AppLocale;
   invitationId: string;
@@ -23,6 +25,7 @@ function FieldError({ id, message }: { id: string; message: string | undefined }
 
 export function EmployeeAcceptance({
   accountExisted,
+  cleanerMembershipActive,
   companyName,
   defaultLocale,
   invitationId,
@@ -30,6 +33,7 @@ export function EmployeeAcceptance({
   role,
 }: EmployeeAcceptanceProps) {
   const t = useTranslations("EmployeeInvitationAcceptance");
+  const roleT = useTranslations("RoleAccess");
   const locale = useLocale();
   const [state, action, pending] = useActionState(
     acceptEmployeeInvitationAction,
@@ -38,6 +42,7 @@ export function EmployeeAcceptance({
   const errors = state.ok === false ? {
     confirmPassword: localiseUserMessage(state.fieldErrors.confirmPassword, locale) ?? undefined,
     fullName: localiseUserMessage(state.fieldErrors.fullName, locale) ?? undefined,
+    locale: localiseUserMessage(state.fieldErrors.locale, locale) ?? undefined,
     password: localiseUserMessage(state.fieldErrors.password, locale) ?? undefined,
   } : {};
   const formError = state.ok === false
@@ -48,10 +53,36 @@ export function EmployeeAcceptance({
     <>
       <p className="eyebrow">{t("eyebrow")}</p>
       <h1>{t("title", { companyName })}</h1>
-      <p className="auth-panel__intro">{t("intro", { role: t(role) })}</p>
+      <p
+        className={
+          cleanerMembershipActive
+            ? "auth-panel__intro auth-panel__intro--tight"
+            : "auth-panel__intro"
+        }
+      >
+        {t("intro", { role: t(role) })}
+      </p>
+      {/* CLE-102. Somebody who already cleans for this company is not joining it — they are
+          gaining a second role on the account they already sign in with. Said here rather than
+          on the anonymous preview, which anybody holding the link can reach. */}
+      {cleanerMembershipActive ? (
+        <p className="employee-invitation-recognition">
+          {t("existingCleaner", { companyName, role: t(role) })}
+        </p>
+      ) : null}
       <dl className="employee-invitation-summary">
         <div><dt>{t("email")}</dt><dd>{inviteeEmail}</dd></div>
-        <div><dt>{t("role")}</dt><dd>{t(role)}</dd></div>
+        <div>
+          <dt>{t("role")}</dt>
+          {/* The same sentence the inviter chose this role by: accepting used to mean agreeing
+              to an access level named in one word and explained nowhere. */}
+          <dd>
+            <span>{t(role)}</span>
+            <span className="employee-invitation-summary__access">
+              {roleT(roleAccessMessageKey(role))}
+            </span>
+          </dd>
+        </div>
       </dl>
       <form action={action} className="auth-form form-stack" noValidate>
         <input name="invitationId" type="hidden" value={invitationId} />
@@ -72,10 +103,17 @@ export function EmployeeAcceptance({
             </div>
             <div className="field">
               <label htmlFor="employee-locale">{t("language")}</label>
-              <select defaultValue={defaultLocale} id="employee-locale" name="locale">
+              <select
+                aria-describedby={errors.locale ? "employee-locale-error" : undefined}
+                aria-invalid={Boolean(errors.locale)}
+                defaultValue={defaultLocale}
+                id="employee-locale"
+                name="locale"
+              >
                 <option value="en-AU">English (Australia)</option>
                 <option value="pt-BR">Português (Brasil)</option>
               </select>
+              <FieldError id="employee-locale-error" message={errors.locale} />
             </div>
             <div className="field">
               <label htmlFor="employee-password">{t("password")}</label>

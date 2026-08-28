@@ -22,10 +22,17 @@ export function RequestNewLink({ invitationId, inviteeHint }: RequestNewLinkProp
 
   async function requestLink() {
     setState("sending");
-    const result = await requestEmployeeInvitationLinkAction(invitationId);
-    // The action answers the same way whether or not it sent, so that holding a link id
-    // cannot be used to discover which invitations are live.
-    setState(result.ok ? "sent" : "failed");
+    try {
+      const result = await requestEmployeeInvitationLinkAction(invitationId);
+      // The action answers the same way whether or not it sent, so that holding a link id
+      // cannot be used to discover which invitations are live.
+      setState(result.ok ? "sent" : "failed");
+    } catch {
+      // The only failure the answer can carry is the answer never arriving: a server action
+      // that cannot reach the server rejects. Unhandled, that rejection left the button on
+      // "Sending…" for good — the one state the reader could not act on or escape.
+      setState("failed");
+    }
   }
 
   if (state === "sent") {

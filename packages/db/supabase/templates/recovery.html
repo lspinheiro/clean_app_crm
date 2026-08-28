@@ -1,7 +1,26 @@
 <!doctype html>
 <html lang="en">
   <body>
-    {{ if eq .Data.preferred_locale "pt-BR" }}
+    {{/*
+      Recovery is the one template whose reader is not always ours: any password reset renders
+      it, and an account that never came from an invitation carries none of these keys. `eq` on
+      a key that is not there fails the whole render, and a template that does not render is an
+      e-mail that never arrives — so every comparison here goes through `printf`, which turns a
+      missing key into text that simply matches nothing.
+    */}}
+    {{ if eq (printf "%v" .Data.invitation_kind) "employee" }}
+      {{ if eq (printf "%v" .Data.preferred_locale) "pt-BR" }}
+        <h1>Entre para a equipe da {{ .Data.company_name }}</h1>
+        {{ if .Data.inviter_name }}<p>{{ .Data.inviter_name }} convidou você para trabalhar na empresa pelo CRM da The Clean Crew.</p>{{ else }}<p>Um proprietário convidou você para trabalhar na empresa pelo CRM da The Clean Crew.</p>{{ end }}
+        <p><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery">Configurar conta e aceitar convite</a></p>
+        <p>O convite vence em 7 dias. Se você não esperava este convite, ignore este e-mail.</p>
+      {{ else }}
+        <h1>Join the {{ .Data.company_name }} team</h1>
+        {{ if .Data.inviter_name }}<p>{{ .Data.inviter_name }} invited you to work with the company in The Clean Crew CRM.</p>{{ else }}<p>An owner invited you to work with the company in The Clean Crew CRM.</p>{{ end }}
+        <p><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery">Set up your account and accept</a></p>
+        <p>The invitation expires in 7 days. If you did not expect this invitation, ignore this e-mail.</p>
+      {{ end }}
+    {{ else if eq (printf "%v" .Data.preferred_locale) "pt-BR" }}
       <h1>Continue o cadastro da sua empresa</h1>
       <p>Seu convite da The Clean Crew foi renovado.</p>
       <p><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery">Continuar cadastro</a></p>

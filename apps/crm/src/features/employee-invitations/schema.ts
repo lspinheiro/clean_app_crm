@@ -3,13 +3,17 @@ import { z } from "zod";
 import { userMessage } from "@/i18n/user-message";
 
 export const employeeInvitationIdSchema = z.uuid();
+export const employeeInvitationRoleSchema = z.enum(
+  ["owner", "staff"],
+  userMessage("employeeRoleInvalid"),
+);
 
 export const employeeInvitationListRowsSchema = z.array(z.object({
   created_at: z.iso.datetime({ offset: true }),
   email: z.email(),
   id: employeeInvitationIdSchema,
-  invitation_state: z.enum(["accepted", "expired", "pending", "revoked"]),
-  role: z.enum(["owner", "staff"]),
+  invitation_state: z.enum(["accepted", "expired", "pending", "replaced", "revoked"]),
+  role: employeeInvitationRoleSchema,
 }));
 
 export const employeeInvitationInputSchema = z.object({
@@ -17,7 +21,7 @@ export const employeeInvitationInputSchema = z.object({
     z.email(userMessage("employeeEmailInvalid")).max(320, userMessage("employeeEmailInvalid")),
   ),
   locale: z.enum(["en-AU", "pt-BR"]),
-  role: z.enum(["owner", "staff"], userMessage("employeeRoleInvalid")),
+  role: employeeInvitationRoleSchema,
 });
 
 export const newEmployeeAccountSchema = z.object({
@@ -25,7 +29,9 @@ export const newEmployeeAccountSchema = z.object({
   fullName: z.string().trim()
     .min(1, userMessage("employeeFullNameRequired"))
     .max(120, userMessage("employeeFullNameRequired")),
-  locale: z.enum(["en-AU", "pt-BR"]),
+  // Every other field here carries a sentence of its own. Without one this error localised to
+  // the generic fallback, which names neither the field nor what to do about it.
+  locale: z.enum(["en-AU", "pt-BR"], userMessage("supportedLanguageRequired")),
   password: z.string()
     .min(8, userMessage("employeePasswordLength"))
     .max(72, userMessage("employeePasswordLength")),

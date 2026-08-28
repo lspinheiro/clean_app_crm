@@ -22,18 +22,46 @@ import { sendResendEmailBatches } from "@/lib/resend";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 const preparedInvitationSchema = z.object({
+  /** A usable login exists: the address is confirmed and a password is set. */
   account_existed: z.boolean(),
+  /** Some auth record exists, with or without a password. Not the same question. */
+  auth_user_exists: z.boolean(),
   invitation_expires_at: z.iso.datetime({ offset: true }),
   invitation_id: z.uuid(),
 });
 
+/**
+ * What an invitation e-mail has to say, read from the invitation row rather than from a session:
+ * the re-send runs for an invitee who has none. `invitee_user_id` is null until the address is
+ * registered, and the delivery branch already knows which of those it is.
+ */
+const invitationDeliverySchema = z.object({
+  company_name: z.string().min(1),
+  invitee_user_id: z.uuid().nullable(),
+  inviter_name: z.string().min(1),
+});
+
 const invitationContextSchema = z.object({
   account_existed_at_invitation: z.boolean(),
-  invitation_status: z.literal("pending"),
+  // Every lifecycle state is read, not only 'pending'. Accepting the literal and nothing else
+  // turned "this expired ten minutes ago" into a parse failure, and a parse failure into the one
+  // sentence that fits any of them — which is the sentence that tells the invitee nothing.
+  invitation_status: z.enum(["accepted", "expired", "pending", "replaced", "revoked"]),
   locale: z.enum(["en-AU", "pt-BR"]),
   profile_full_name: z.string(),
   profile_locale: z.enum(["en-AU", "pt-BR"]).nullable(),
 });
+
+/**
+ * The form is drawn from a reading taken when the page loaded, and any of these can happen
+ * between that reading and the submit. Naming the state is the difference between "ask the
+ * company for a new invitation" and "open the newer e-mail you already have".
+ */
+const lapsedInvitationMessages = {
+  expired: userMessage("employeeInvitationExpired"),
+  replaced: userMessage("employeeInvitationReplaced"),
+  revoked: userMessage("employeeInvitationRevoked"),
+} as const;
 
 function failure(
   formError: string | null,
@@ -79,24 +107,54 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
+/**
+ * A subject is one line by definition, and both names it carries are text somebody typed. A
+ * line break in one of them would end the header early and start whatever follows as its own.
+ */
+function oneLine(value: string) {
+  return value.replaceAll(/[\s\p{Cc}\p{Cf}]+/gu, " ").trim();
+}
+
 function existingAccountMessage(input: {
   companyName: string;
   invitationUrl: string;
+  inviterName: string;
   locale: "en-AU" | "pt-BR";
 }) {
-  const companyName = escapeHtml(input.companyName);
+  const company = oneLine(input.companyName);
+  const inviter = oneLine(input.inviterName);
+  const companyName = escapeHtml(company);
+  const inviterName = escapeHtml(inviter);
   const url = escapeHtml(input.invitationUrl);
   if (input.locale === "pt-BR") {
     return {
-      html: `<p>${companyName} convidou você para a equipe.</p><p><a href="${url}">Entre e aceite o convite</a>.</p><p>O convite vence em 7 dias. Se você não esperava esta mensagem, ignore-a.</p>`,
-      subject: `Convite para a equipe da ${input.companyName}`,
-      text: `${input.companyName} convidou você para a equipe. Entre e aceite o convite: ${input.invitationUrl}\n\nO convite vence em 7 dias. Se você não esperava esta mensagem, ignore-a.`,
+      html: `<p>${inviterName} convidou você para a equipe da ${companyName}.</p><p><a href="${url}">Entre e aceite o convite</a>.</p><p>O convite vence em 7 dias. Se você não esperava esta mensagem, ignore-a.</p>`,
+      subject: `${inviter} convidou você para a equipe da ${company}`,
+      text: `${inviter} convidou você para a equipe da ${company}. Entre e aceite o convite: ${input.invitationUrl}\n\nO convite vence em 7 dias. Se você não esperava esta mensagem, ignore-a.`,
     };
   }
   return {
-    html: `<p>${companyName} invited you to join its team.</p><p><a href="${url}">Sign in and accept the invitation</a>.</p><p>The invitation expires in 7 days. If you did not expect this message, ignore it.</p>`,
-    subject: `Invitation to join ${input.companyName}`,
-    text: `${input.companyName} invited you to join its team. Sign in and accept the invitation: ${input.invitationUrl}\n\nThe invitation expires in 7 days. If you did not expect this message, ignore it.`,
+    html: `<p>${inviterName} invited you to join the ${companyName} team.</p><p><a href="${url}">Sign in and accept the invitation</a>.</p><p>The invitation expires in 7 days. If you did not expect this message, ignore it.</p>`,
+    subject: `${inviter} invited you to join ${company}`,
+    text: `${inviter} invited you to join the ${company} team. Sign in and accept the invitation: ${input.invitationUrl}\n\nThe invitation expires in 7 days. If you did not expect this message, ignore it.`,
+  };
+}
+
+/**
+ * What both Auth templates read. `inviteUserByEmail` carries it as `data`; a recovery e-mail has
+ * no per-send payload at all — `.Data` there is the account's own metadata — so the same object
+ * has to be written onto the account before recovery is asked for.
+ */
+function invitationMetadata(input: {
+  companyName: string;
+  inviterName: string;
+  locale: "en-AU" | "pt-BR";
+}) {
+  return {
+    company_name: input.companyName,
+    invitation_kind: "employee",
+    inviter_name: input.inviterName,
+    preferred_locale: input.locale,
   };
 }
 
@@ -110,6 +168,86 @@ function isEmailRateLimit(cause: unknown): boolean {
   const status = Reflect.get(cause, "status");
   const code = Reflect.get(cause, "code");
   return status === 429 || code === "over_email_send_rate_limit";
+}
+
+/**
+ * Auth refuses a password change that changes nothing, as 422 `same_password`. On the retry that
+ * follows a failed membership step that is not a rejection — it is the confirmation that the
+ * password being submitted is already this account's, which is all this step ever had to achieve.
+ *
+ * Safe against the CLE-94 lockout, and only because of where the check sits in Auth: it compares
+ * against a stored hash and is skipped entirely when there is none, so `same_password` cannot be
+ * returned for an account that has no password. Treating it as "already done" therefore never
+ * lets a membership be created for an account that cannot sign in.
+ */
+function isPasswordAlreadySet(cause: unknown): boolean {
+  if (typeof cause !== "object" || cause === null) return false;
+  return Reflect.get(cause, "code") === "same_password";
+}
+
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+/**
+ * The company and the person who sent the invitation, plus the account to describe when the
+ * e-mail Auth will send is a recovery. Null when the row could not be read — what that costs
+ * differs by caller, so the decision is left to them.
+ */
+async function readInvitationDelivery(admin: AdminClient, invitationId: string) {
+  try {
+    const { data, error } = await admin.rpc("employee_invitation_delivery_details", {
+      target_invitation_id: invitationId,
+    });
+    const result = invitationDeliverySchema.safeParse(data?.[0]);
+    if (error || !result.success) {
+      console.error("Employee invitation delivery details could not be read", {
+        invitationId,
+        reason: error ?? result.error,
+      });
+      return null;
+    }
+    return result.data;
+  } catch (cause) {
+    console.error("Employee invitation delivery details could not be read", {
+      invitationId,
+      reason: cause,
+    });
+    return null;
+  }
+}
+
+/**
+ * Writes onto the account what the recovery template reads back out of it. Best effort, and
+ * deliberately so: a recovery e-mail that names nobody is still the only way this invitee gets
+ * in, so a metadata write that fails must not stop the send.
+ */
+async function describeInvitationOnAccount(
+  admin: AdminClient,
+  userId: string,
+  metadata: ReturnType<typeof invitationMetadata>,
+) {
+  try {
+    const { error } = await admin.auth.admin.updateUserById(userId, { user_metadata: metadata });
+    if (error) throw error;
+  } catch (cause) {
+    console.error("Employee invitation could not be described on the account", {
+      reason: cause,
+      userId,
+    });
+  }
+}
+
+/** Hands back the minute a claim reserved. The invitee's answer never depends on the outcome. */
+async function releaseLinkClaim(admin: AdminClient, invitationId: string) {
+  try {
+    await admin.rpc("release_employee_invitation_link_claim", {
+      target_invitation_id: invitationId,
+    });
+  } catch (cause) {
+    console.error("Employee invitation link claim could not be released", {
+      invitationId,
+      reason: cause,
+    });
+  }
 }
 
 async function revokeFailedDelivery(
@@ -150,7 +288,7 @@ export async function inviteEmployeeAction(
     });
   }
 
-  const { company, supabase, user } = await requireCompanyOwner();
+  const { company, profile, supabase, user } = await requireCompanyOwner();
   let prepared: z.infer<typeof preparedInvitationSchema>;
   try {
     const { data, error } = await supabase.rpc("prepare_employee_invitation", {
@@ -185,6 +323,7 @@ export async function inviteEmployeeAction(
       const message = existingAccountMessage({
         companyName: company.name,
         invitationUrl: link,
+        inviterName: profile.full_name,
         locale: parsed.data.locale,
       });
       const outcomes = await sendResendEmailBatches({
@@ -192,6 +331,7 @@ export async function inviteEmployeeAction(
         attemptNumber: 0,
         batchId: prepared.invitation_id,
         from: `The Clean Crew <${configuration.fromEmail}>`,
+        idempotencyNamespace: "employee-invitation",
         messages: [{
           ...message,
           recipientId: prepared.invitation_id,
@@ -200,14 +340,40 @@ export async function inviteEmployeeAction(
         replyTo: configuration.replyTo,
       });
       if (outcomes[0]?.status !== "accepted") throw new DeliveryRejected(outcomes[0]);
+    } else if (prepared.auth_user_exists) {
+      // Registered but with no password — the state an invite link leaves behind when a scanner
+      // follows it, which confirms the address while the password is still only set inside
+      // acceptance. `inviteUserByEmail` refuses an address that is already registered, and
+      // "sign in and accept" points at a login that does not exist, so recovery is the only
+      // way to reach this person. Same reasoning as `requestEmployeeInvitationLinkAction`.
+      const admin = createAdminClient();
+      // Recovery has nowhere to put a payload: the template reads the account's own metadata.
+      // Only the account's id has to be looked up — the company and the inviter are the owner
+      // who is standing here.
+      const delivery = await readInvitationDelivery(admin, prepared.invitation_id);
+      if (delivery?.invitee_user_id) {
+        await describeInvitationOnAccount(
+          admin,
+          delivery.invitee_user_id,
+          invitationMetadata({
+            companyName: company.name,
+            inviterName: profile.full_name,
+            locale: parsed.data.locale,
+          }),
+        );
+      }
+      const { error } = await admin.auth.resetPasswordForEmail(parsed.data.email, {
+        redirectTo: confirmationUrl(appUrl, parsed.data.locale, prepared.invitation_id),
+      });
+      if (error) throw new DeliveryRejected(error);
     } else {
       const admin = createAdminClient();
       const { data, error } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-        data: {
-          company_name: company.name,
-          invitation_kind: "employee",
-          preferred_locale: parsed.data.locale,
-        },
+        data: invitationMetadata({
+          companyName: company.name,
+          inviterName: profile.full_name,
+          locale: parsed.data.locale,
+        }),
         redirectTo: confirmationUrl(appUrl, parsed.data.locale, prepared.invitation_id),
       });
       if (error || !data.user) throw new DeliveryRejected(error);
@@ -222,10 +388,24 @@ export async function inviteEmployeeAction(
       invitationId: prepared.invitation_id,
       reason,
     });
-    await revokeFailedDelivery(supabase, company.id, prepared.invitation_id);
+    const withdrawn = await revokeFailedDelivery(supabase, company.id, prepared.invitation_id);
+    // Either outcome leaves the owner's list wrong: it was drawn before this invitation
+    // existed, so it shows neither the withdrawal nor the row they now have to revoke by hand.
+    revalidateLocalizedPath("/settings");
     // The provider's text can name the address or the mailbox, so it stays in the log.
+    const rateLimited = isEmailRateLimit(reason);
+    if (!withdrawn) {
+      // Silence here is what made the 2026-08-25 invitation invisible: pending in the database,
+      // absent from the list, and holding the address against the next attempt. The owner is
+      // the only one who can clear it, so they have to be told it is theirs to clear.
+      return failure(userMessage(
+        rateLimited
+          ? "employeeInvitationRateLimitedStillOpen"
+          : "employeeInvitationDeliveryFailedStillOpen",
+      ));
+    }
     return failure(userMessage(
-      isEmailRateLimit(reason)
+      rateLimited
         ? "employeeInvitationRateLimited"
         : "employeeInvitationDeliveryFailed",
     ));
@@ -264,6 +444,22 @@ export async function requestEmployeeInvitationLinkAction(
 
   const redirectTo = confirmationUrl(appUrl, claim.locale, parsed.data);
 
+  // Nobody is signed in here, so the company and the inviter come from the invitation row.
+  // Before they did, this path passed `company_name: ""`, and the invitation the invitee had
+  // just asked for arrived as "Join the  team" — from no company, and from nobody.
+  const delivery = await readInvitationDelivery(admin, parsed.data);
+  if (!delivery) {
+    // An unnameable invitation is not worth sending, and the claim has already reserved the
+    // minute. Handing it back lets the next tap send the e-mail this one could not.
+    await releaseLinkClaim(admin, parsed.data);
+    return { ok: true };
+  }
+  const metadata = invitationMetadata({
+    companyName: delivery.company_name,
+    inviterName: delivery.inviter_name,
+    locale: claim.locale,
+  });
+
   try {
     // "Confirmed" does not mean "can sign in". Following an invite link confirms the address,
     // and an e-mail scanner following it for the invitee does the same — but the password is
@@ -272,17 +468,23 @@ export async function requestEmployeeInvitationLinkAction(
     //
     // Which e-mail goes out is decided here and never reflected in the response, so holding a
     // link id cannot be used to learn whether an address already has an account.
-    const { error: deliveryError } = claim.account_confirmed
-      ? await admin.auth.resetPasswordForEmail(claim.invitee_email, { redirectTo })
-      : await admin.auth.admin.inviteUserByEmail(claim.invitee_email, {
-        data: {
-          company_name: "",
-          invitation_kind: "employee",
-          preferred_locale: claim.locale,
-        },
-        redirectTo,
-      });
-    if (deliveryError) throw new DeliveryRejected(deliveryError);
+    if (claim.account_confirmed) {
+      // Recovery carries no payload, so what its template says is whatever the account holds.
+      if (delivery.invitee_user_id) {
+        await describeInvitationOnAccount(admin, delivery.invitee_user_id, metadata);
+      }
+      const { error: deliveryError } = await admin.auth.resetPasswordForEmail(
+        claim.invitee_email,
+        { redirectTo },
+      );
+      if (deliveryError) throw new DeliveryRejected(deliveryError);
+    } else {
+      const { error: deliveryError } = await admin.auth.admin.inviteUserByEmail(
+        claim.invitee_email,
+        { data: metadata, redirectTo },
+      );
+      if (deliveryError) throw new DeliveryRejected(deliveryError);
+    }
   } catch (cause) {
     const reason = cause instanceof DeliveryRejected ? cause.cause : cause;
     console.error("Employee invitation link could not be re-sent", {
@@ -291,9 +493,7 @@ export async function requestEmployeeInvitationLinkAction(
     });
     // The claim reserved the next minute before the provider had accepted anything. Giving it
     // back stops a rejected send from blocking the retry that would have worked.
-    await admin.rpc("release_employee_invitation_link_claim", {
-      target_invitation_id: parsed.data,
-    });
+    await releaseLinkClaim(admin, parsed.data);
   }
 
   return { ok: true };
@@ -319,6 +519,32 @@ export async function revokeEmployeeInvitationAction(
   return { ok: true };
 }
 
+/**
+ * The end of acceptance, reached both by completing it and by finding it already complete. A
+ * retry after a lost answer has to land in the same place succeeding first time would have.
+ */
+async function enterCompany(targetLocale: "en-AU" | "pt-BR"): Promise<never> {
+  const cookieStore = await cookies();
+  cookieStore.set(localeCookieName, targetLocale, {
+    maxAge: localeCookieMaxAgeSeconds,
+    path: "/",
+    sameSite: "lax",
+  });
+  return redirect({ href: "/roster", locale: targetLocale });
+}
+
+/**
+ * Two steps that cannot be made one: the password is saved through Auth, the membership through
+ * a Postgres RPC, and no transaction spans them. So neither step may be a point of no return.
+ * The password step is idempotent — re-submitting the password it already saved counts as done —
+ * and the membership RPC is atomic in the database, leaving nothing behind when it fails. What
+ * remains is to say which of the two got as far as it did, so that pressing accept again is
+ * visibly the whole of what is left.
+ *
+ * Order is fixed by CLE-94 and cannot be swapped to make the failure cheaper: a membership
+ * created before the password exists is a member who can use this one session and is locked out
+ * of every one after it.
+ */
 export async function acceptEmployeeInvitationAction(
   _previous: EmployeeInvitationActionResult,
   formData: FormData,
@@ -343,6 +569,17 @@ export async function acceptEmployeeInvitationAction(
     return failure(userMessage("employeeInvitationUnavailable"));
   }
 
+  // Read before anything is written, so a submit against an invitation that has already lapsed
+  // cannot change this account's password on its way to being refused.
+  if (context.invitation_status === "accepted") {
+    // The membership landed; only its answer went missing. This account already holds it, so
+    // the invitee belongs in the company rather than in front of a refusal.
+    return enterCompany(context.profile_locale ?? context.locale);
+  }
+  if (context.invitation_status !== "pending") {
+    return failure(lapsedInvitationMessages[context.invitation_status]);
+  }
+
   let fullName = context.profile_full_name;
   let targetLocale = context.profile_locale ?? context.locale;
   if (!context.account_existed_at_invitation) {
@@ -364,10 +601,18 @@ export async function acceptEmployeeInvitationAction(
     fullName = account.data.fullName;
     targetLocale = account.data.locale;
     const { error } = await supabase.auth.updateUser({ password: account.data.password });
-    if (error) return failure(userMessage("employeeInvitationPasswordRejected"), {
-      password: userMessage("employeeInvitationPasswordRejected"),
-    });
+    // "Choose another password and try again" was the wall the invitee hit on every retry: the
+    // password had been saved by the attempt whose membership step failed, so re-submitting it
+    // came back as `same_password`, and the advice was to abandon the one password that worked.
+    if (error && !isPasswordAlreadySet(error)) {
+      return failure(userMessage("employeeInvitationPasswordRejected"), {
+        password: userMessage("employeeInvitationPasswordRejected"),
+      });
+    }
   }
+
+  // Whether the password step ran or was already satisfied, this account can sign in from here.
+  const passwordSaved = !context.account_existed_at_invitation;
 
   try {
     const { data, error } = await supabase.rpc("accept_employee_invitation", {
@@ -375,16 +620,21 @@ export async function acceptEmployeeInvitationAction(
       target_invitation_id: invitationId.data,
       target_locale: targetLocale,
     });
-    if (error || !data) return failure(userMessage("employeeInvitationUnavailable"));
-  } catch {
-    return failure(userMessage("employeeInvitationUnavailable"));
+    if (error || !data) throw error ?? new Error("Employee membership was not created");
+  } catch (cause) {
+    // The RPC is one transaction, so a failure leaves no membership and no acceptance mark: the
+    // invitation is still open and pressing accept again is the whole of what is left. Saying
+    // "no longer available" claimed the opposite, and left the password it had just saved
+    // unmentioned — the two facts that together made the page a dead end.
+    console.error("Employee invitation acceptance did not complete", {
+      invitationId: invitationId.data,
+      passwordSaved,
+      reason: cause,
+    });
+    return failure(userMessage(
+      passwordSaved ? "employeeInvitationPasswordSaved" : "employeeInvitationNotCompleted",
+    ));
   }
 
-  const cookieStore = await cookies();
-  cookieStore.set(localeCookieName, targetLocale, {
-    maxAge: localeCookieMaxAgeSeconds,
-    path: "/",
-    sameSite: "lax",
-  });
-  return redirect({ href: "/roster", locale: targetLocale });
+  return enterCompany(targetLocale);
 }

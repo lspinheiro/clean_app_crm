@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(45);
+select plan(46);
 
 select has_table(
   'public',
@@ -14,7 +14,7 @@ select has_column(
   'public',
   'employee_invitations',
   'superseded_at',
-  'expired invitations can be superseded without changing their displayed lifecycle state'
+  'a lapsed invitation records the newer one that took its place'
 );
 
 select columns_are(
@@ -341,8 +341,11 @@ select results_eq(
   $$select invitation_state::text collate "C"
     from public.employee_invitation_states
     where id = '83000000-0000-4000-8000-000000000702'$$,
-  $$values ('expired'::text collate "C")$$,
-  'a superseded lapsed invitation remains visible as expired'
+  -- CLE-97: this row used to read 'expired', which told the owner nobody had acted on an
+  -- invitation they had just replaced themselves — and disagreed with the invitee's page,
+  -- which called the same row withdrawn.
+  $$values ('replaced'::text collate "C")$$,
+  'a superseded lapsed invitation is shown as replaced, not as expired'
 );
 
 select results_eq(
@@ -493,6 +496,20 @@ select is(
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '83000000-0000-4000-8000-000000000003', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
+
+-- CLE-96. Acceptance saves the password through Auth and the membership through this RPC, and
+-- nothing spans the two — so the answer to a completed acceptance can be lost while the
+-- membership stands. The invitee then submits the same form again, and what they are told next
+-- is decided entirely by this reading. It has to keep naming the invitation 'accepted' for its
+-- own accepter, or the retry meets a refusal instead of the company they already belong to.
+select results_eq(
+  $$select invitation_status::text collate "C"
+    from public.get_employee_invitation_context(
+      '83000000-0000-4000-8000-000000000700'
+    )$$,
+  $$values ('accepted'::text collate "C")$$,
+  'an accepted invitation still reads as accepted for the account that accepted it'
+);
 
 select throws_ok(
   $$select public.accept_employee_invitation(

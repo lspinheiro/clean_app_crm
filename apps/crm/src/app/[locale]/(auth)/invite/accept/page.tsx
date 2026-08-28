@@ -43,6 +43,11 @@ function maskEmail(email: string) {
 
 type EmployeeInvitationContext = {
   account_existed_at_invitation: boolean;
+  /**
+   * Whether the signed-in invitee already holds an active cleaner membership with the inviting
+   * company. Session-gated on purpose: the anonymous preview never carries it.
+   */
+  cleaner_membership_active: boolean;
   company_name: string;
   invitation_id: string;
   invitation_status: string;
@@ -107,6 +112,15 @@ export default async function FirstAdminAcceptancePage({
     cookieStore.get(pendingConfirmationCookieName)?.value,
   );
 
+  // `/auth/confirm` marks a link that reached it carrying no usable token — truncated in
+  // transit, or opened without one. The marker used to arrive and stop here, so somebody who
+  // had just followed a link from their inbox was shown a screen that never mentioned it.
+  //
+  // A parked token outranks the marker: it is the token of an earlier hop, pressing Continue
+  // still works, and claiming a broken link there would be false.
+  const requestedError = Array.isArray(query.error) ? query.error[0] : query.error;
+  const linkInvalid = requestedError === "invalid" && !pendingConfirmation;
+
   if (employeeInvitation.success) {
     // The preview answers without a session, which is the only reason each state below can
     // name itself. `get_employee_invitation_context` returns zero rows for "not signed in",
@@ -116,11 +130,17 @@ export default async function FirstAdminAcceptancePage({
     });
     const preview = (previewRows?.[0] ?? { state: "unknown" }) as EmployeeInvitationPreview;
 
-    function notice(title: string, description: string, action?: React.ReactNode) {
+    function notice(
+      title: string,
+      description: string,
+      action?: React.ReactNode,
+      alert?: string,
+    ) {
       return (
         <AuthShell>
           <p className="eyebrow">{employeeT("eyebrow")}</p>
           <h1>{title}</h1>
+          {alert ? <p className="form-error" role="alert">{alert}</p> : null}
           <p className="auth-panel__intro">{description}</p>
           {action ?? (
             <Link className="button button--secondary" href="/login">
@@ -143,6 +163,12 @@ export default async function FirstAdminAcceptancePage({
     }
     if (preview.state === "revoked") {
       return notice(employeeT("revokedTitle"), employeeT("revokedDescription"));
+    }
+    // A newer invitation took this one's place, which is the one fact that tells this holder
+    // what to do: read the most recent e-mail. It used to arrive as "withdrawn" here and as
+    // "Expired" on the owner's list; one word now covers both.
+    if (preview.state === "replaced") {
+      return notice(employeeT("replacedTitle"), employeeT("replacedDescription"));
     }
     if (preview.state !== "pending") {
       return notice(employeeT("unknownTitle"), employeeT("unknownDescription"));
@@ -195,6 +221,9 @@ export default async function FirstAdminAcceptancePage({
             {employeeT("signIn")}
           </Link>
         </>,
+        // The screen a broken link lands on while the invitation itself is still live. Both
+        // ways out are already here; what was missing was saying why they are needed.
+        linkInvalid ? employeeT("linkInvalid") : undefined,
       );
     }
 
@@ -231,6 +260,7 @@ export default async function FirstAdminAcceptancePage({
       <AuthShell>
         <EmployeeAcceptance
           accountExisted={employeeContext.account_existed_at_invitation}
+          cleanerMembershipActive={employeeContext.cleaner_membership_active}
           companyName={employeeContext.company_name}
           defaultLocale={employeeContext.locale}
           invitationId={employeeContext.invitation_id}
@@ -272,6 +302,7 @@ export default async function FirstAdminAcceptancePage({
       <AuthShell>
         <p className="eyebrow">{t("eyebrow")}</p>
         <h1>{t("unavailableTitle")}</h1>
+        {linkInvalid ? <p className="form-error" role="alert">{t("linkInvalid")}</p> : null}
         <p className="auth-panel__intro">{t("unavailableDescription")}</p>
         <Link className="button button--secondary" href="/login">
           {t("backToLogin")}

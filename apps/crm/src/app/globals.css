@@ -1407,10 +1407,27 @@ button.company-switcher__company:hover {
 }
 
 .employee-invitation-form__access-help {
+  display: grid;
+  gap: 6px;
   grid-column: 1 / -1;
   margin: 0;
   color: var(--color-gray-600);
   font-size: 12px;
+}
+
+.employee-invitation-form__access-help > div {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.employee-invitation-form__access-help dt {
+  color: var(--color-text-secondary);
+  font-weight: 700;
+}
+
+.employee-invitation-form__access-help dd {
+  margin: 0;
 }
 
 .employee-invitation-list {
@@ -1519,6 +1536,13 @@ button.company-switcher__company:hover {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.employee-invitation-summary__access {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
 }
 
 .identity-grid {

@@ -295,11 +295,14 @@
     "email": "E-mail",
     "emailPlaceholder": "funcionario@exemplo.com",
     "role": "Acesso à empresa",
-    "accessHelp": "Proprietários editam os dados da empresa e gerenciam funcionários. Funcionários gerenciam as próprias configurações e cuidam do trabalho diário.",
     "owner": "Proprietário",
     "staff": "Funcionário",
     "send": "Enviar convite",
     "sending": "Enviando convite…",
+    "confirmOwnerTitle": "Convidar {email} como proprietário?",
+    "confirmOwnerDescription": "O acesso de proprietário entrega o controle total da empresa: dados da empresa, funcionários e convites. Você pode revogar o convite antes que ele seja aceito, mas não é possível cancelar o e-mail já enviado.",
+    "confirmOwnerSend": "Enviar convite de proprietário",
+    "cancel": "Cancelar",
     "listLabel": "Convites de funcionários",
     "empty": "Nenhum convite de funcionário ainda.",
     "pending": "Pendente",
@@ -310,6 +313,10 @@
     "revoke": "Revogar",
     "revoking": "Revogando…",
     "revokeFor": "Revogar convite de {email}"
+  },
+  "RoleAccess": {
+    "ownerAccess": "Proprietários podem editar os dados da empresa, convidar e gerenciar funcionários e cuidar do trabalho diário.",
+    "staffAccess": "Funcionários podem gerenciar as próprias configurações e cuidar do trabalho diário, mas não podem editar os dados da empresa nem gerenciar funcionários."
   },
   "Settings": {
     "eyebrow": "Cadastro da empresa",

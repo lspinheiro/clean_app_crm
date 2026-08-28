@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { acceptEmployeeInvitationAction } from "@/app/actions/employee-invitations";
 import { initialEmployeeInvitationState } from "@/features/employee-invitations/state";
+import { roleAccessMessageKey } from "@/features/settings/role-access";
 import type { AppLocale } from "@/i18n/config";
 import { localiseUserMessage } from "@/i18n/user-message";
 
@@ -30,6 +31,7 @@ export function EmployeeAcceptance({
   role,
 }: EmployeeAcceptanceProps) {
   const t = useTranslations("EmployeeInvitationAcceptance");
+  const roleT = useTranslations("RoleAccess");
   const locale = useLocale();
   const [state, action, pending] = useActionState(
     acceptEmployeeInvitationAction,
@@ -52,7 +54,17 @@ export function EmployeeAcceptance({
       <p className="auth-panel__intro">{t("intro", { role: t(role) })}</p>
       <dl className="employee-invitation-summary">
         <div><dt>{t("email")}</dt><dd>{inviteeEmail}</dd></div>
-        <div><dt>{t("role")}</dt><dd>{t(role)}</dd></div>
+        <div>
+          <dt>{t("role")}</dt>
+          {/* The same sentence the inviter chose this role by: accepting used to mean agreeing
+              to an access level named in one word and explained nowhere. */}
+          <dd>
+            <span>{t(role)}</span>
+            <span className="employee-invitation-summary__access">
+              {roleT(roleAccessMessageKey(role))}
+            </span>
+          </dd>
+        </div>
       </dl>
       <form action={action} className="auth-form form-stack" noValidate>
         <input name="invitationId" type="hidden" value={invitationId} />

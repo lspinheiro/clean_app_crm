@@ -295,11 +295,14 @@
     "email": "Email",
     "emailPlaceholder": "employee@example.com",
     "role": "Company access",
-    "accessHelp": "Owners edit company details and manage employees. Staff manage their own settings and run day-to-day work.",
     "owner": "Owner",
     "staff": "Staff",
     "send": "Send invitation",
     "sending": "Sending invitation…",
+    "confirmOwnerTitle": "Invite {email} as an owner?",
+    "confirmOwnerDescription": "Owner access hands over full control of the company: company details, employees and invitations. You can revoke the invitation before it is accepted, but the e-mail cannot be un-sent.",
+    "confirmOwnerSend": "Send owner invitation",
+    "cancel": "Cancel",
     "listLabel": "Employee invitations",
     "empty": "No employee invitations yet.",
     "pending": "Pending",
@@ -310,6 +313,10 @@
     "revoke": "Revoke",
     "revoking": "Revoking…",
     "revokeFor": "Revoke {email}"
+  },
+  "RoleAccess": {
+    "ownerAccess": "Owners can edit company details, invite and manage employees, and run day-to-day work.",
+    "staffAccess": "Staff can manage their own settings and run day-to-day work, but cannot edit company details or manage employees."
   },
   "Settings": {
     "eyebrow": "Company record",

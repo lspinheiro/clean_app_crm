@@ -14,7 +14,7 @@ import { EmployeeAcceptance } from "./employee-acceptance";
 
 const INVITATION_ID = "83000000-0000-4000-8000-000000000101";
 
-function renderAcceptance() {
+function renderAcceptance(role: "owner" | "staff" = "staff") {
   return render(
     <EmployeeAcceptance
       accountExisted={false}
@@ -22,7 +22,7 @@ function renderAcceptance() {
       defaultLocale="en-AU"
       invitationId={INVITATION_ID}
       inviteeEmail="invitee@example.test"
-      role="staff"
+      role={role}
     />,
   );
 }
@@ -72,5 +72,42 @@ describe("EmployeeAcceptance", () => {
       .toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Language" }))
       .not.toHaveAttribute("aria-invalid", "true");
+  });
+});
+
+// CLE-101. The invitee was shown a role name and nothing else, so accepting meant agreeing to
+// an access level they could not read. The line is the same one the inviter chose it by.
+describe("CLE-101 the offered role is explained before it is accepted", () => {
+  it("says what a staff invitation can do", () => {
+    renderAcceptance("staff");
+
+    expect(screen.getByText(
+      "Staff can manage their own settings and run day-to-day work, but cannot edit company "
+      + "details or manage employees.",
+    )).toBeInTheDocument();
+    // The role name keeps an element of its own, so it still reads — and still matches — on
+    // its own rather than running into the sentence beside it.
+    expect(screen.getByText("Staff", { exact: true })).toBeInTheDocument();
+  });
+
+  it("says what an owner invitation can do", () => {
+    renderAcceptance("owner");
+
+    expect(screen.getByText(
+      "Owners can edit company details, invite and manage employees, and run day-to-day work.",
+    )).toBeInTheDocument();
+  });
+
+  it("says what the offered role can do in Portuguese", () => {
+    (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__ = "pt-BR";
+
+    renderAcceptance("owner");
+
+    expect(screen.getByText(
+      "Proprietários podem editar os dados da empresa, convidar e gerenciar funcionários e "
+      + "cuidar do trabalho diário.",
+    )).toBeInTheDocument();
+
+    delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
   });
 });

@@ -387,6 +387,11 @@ describe("employee invitation states", () => {
     expect(screen.getByRole("heading", { name: "Join Coastal Demo Cleaning" }))
       .toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Accept invitation" })).toBeInTheDocument();
+    // CLE-101. The offered role arrives with the same sentence the inviter chose it by.
+    expect(screen.getByText(
+      "Staff can manage their own settings and run day-to-day work, but cannot edit company "
+      + "details or manage employees.",
+    )).toBeInTheDocument();
   });
 
   it("does not claim a wrong account when the addresses agree but the context refuses", async () => {

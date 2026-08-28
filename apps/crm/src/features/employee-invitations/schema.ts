@@ -3,13 +3,17 @@ import { z } from "zod";
 import { userMessage } from "@/i18n/user-message";
 
 export const employeeInvitationIdSchema = z.uuid();
+export const employeeInvitationRoleSchema = z.enum(
+  ["owner", "staff"],
+  userMessage("employeeRoleInvalid"),
+);
 
 export const employeeInvitationListRowsSchema = z.array(z.object({
   created_at: z.iso.datetime({ offset: true }),
   email: z.email(),
   id: employeeInvitationIdSchema,
   invitation_state: z.enum(["accepted", "expired", "pending", "replaced", "revoked"]),
-  role: z.enum(["owner", "staff"]),
+  role: employeeInvitationRoleSchema,
 }));
 
 export const employeeInvitationInputSchema = z.object({
@@ -17,7 +21,7 @@ export const employeeInvitationInputSchema = z.object({
     z.email(userMessage("employeeEmailInvalid")).max(320, userMessage("employeeEmailInvalid")),
   ),
   locale: z.enum(["en-AU", "pt-BR"]),
-  role: z.enum(["owner", "staff"], userMessage("employeeRoleInvalid")),
+  role: employeeInvitationRoleSchema,
 });
 
 export const newEmployeeAccountSchema = z.object({

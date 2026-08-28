@@ -107,6 +107,15 @@ export default async function FirstAdminAcceptancePage({
     cookieStore.get(pendingConfirmationCookieName)?.value,
   );
 
+  // `/auth/confirm` marks a link that reached it carrying no usable token — truncated in
+  // transit, or opened without one. The marker used to arrive and stop here, so somebody who
+  // had just followed a link from their inbox was shown a screen that never mentioned it.
+  //
+  // A parked token outranks the marker: it is the token of an earlier hop, pressing Continue
+  // still works, and claiming a broken link there would be false.
+  const requestedError = Array.isArray(query.error) ? query.error[0] : query.error;
+  const linkInvalid = requestedError === "invalid" && !pendingConfirmation;
+
   if (employeeInvitation.success) {
     // The preview answers without a session, which is the only reason each state below can
     // name itself. `get_employee_invitation_context` returns zero rows for "not signed in",
@@ -116,11 +125,17 @@ export default async function FirstAdminAcceptancePage({
     });
     const preview = (previewRows?.[0] ?? { state: "unknown" }) as EmployeeInvitationPreview;
 
-    function notice(title: string, description: string, action?: React.ReactNode) {
+    function notice(
+      title: string,
+      description: string,
+      action?: React.ReactNode,
+      alert?: string,
+    ) {
       return (
         <AuthShell>
           <p className="eyebrow">{employeeT("eyebrow")}</p>
           <h1>{title}</h1>
+          {alert ? <p className="form-error" role="alert">{alert}</p> : null}
           <p className="auth-panel__intro">{description}</p>
           {action ?? (
             <Link className="button button--secondary" href="/login">
@@ -201,6 +216,9 @@ export default async function FirstAdminAcceptancePage({
             {employeeT("signIn")}
           </Link>
         </>,
+        // The screen a broken link lands on while the invitation itself is still live. Both
+        // ways out are already here; what was missing was saying why they are needed.
+        linkInvalid ? employeeT("linkInvalid") : undefined,
       );
     }
 
@@ -278,6 +296,7 @@ export default async function FirstAdminAcceptancePage({
       <AuthShell>
         <p className="eyebrow">{t("eyebrow")}</p>
         <h1>{t("unavailableTitle")}</h1>
+        {linkInvalid ? <p className="form-error" role="alert">{t("linkInvalid")}</p> : null}
         <p className="auth-panel__intro">{t("unavailableDescription")}</p>
         <Link className="button button--secondary" href="/login">
           {t("backToLogin")}

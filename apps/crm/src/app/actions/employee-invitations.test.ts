@@ -435,6 +435,30 @@ describe("CLE-83 employee invitation actions", () => {
       target_locale: "en-AU",
     });
   });
+
+  // CLE-99. The language error was collected and had no sentence of its own, so it localised
+  // to the generic fallback — next to a field the form never marked. Nothing was saved and
+  // nothing said why.
+  it("names the language field when the posted language is not one we ship", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: [newAccountContext()], error: null });
+    const formData = acceptanceForm();
+    formData.set("locale", "de-DE");
+
+    const result = await acceptEmployeeInvitationAction(initialEmployeeInvitationState, formData);
+
+    expect(result).toMatchObject({
+      fieldErrors: { locale: "user.supportedLanguageRequired" },
+      ok: false,
+    });
+    // Read before anything is written: a refused language must not cost a password change.
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    for (const locale of ["en-AU", "pt-BR"] as const) {
+      const localised = localiseUserMessage("user.supportedLanguageRequired", locale);
+      expect(localised?.trim(), `supportedLanguageRequired in ${locale}`).toBeTruthy();
+      expect(localised, `supportedLanguageRequired in ${locale}`)
+        .not.toBe(localiseUserMessage("user.notAKey", locale));
+    }
+  });
 });
 
 // CLE-96. Acceptance is two steps that cannot be made one: the password is saved through Auth,

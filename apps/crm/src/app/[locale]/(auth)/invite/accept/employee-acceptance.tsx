@@ -38,6 +38,7 @@ export function EmployeeAcceptance({
   const errors = state.ok === false ? {
     confirmPassword: localiseUserMessage(state.fieldErrors.confirmPassword, locale) ?? undefined,
     fullName: localiseUserMessage(state.fieldErrors.fullName, locale) ?? undefined,
+    locale: localiseUserMessage(state.fieldErrors.locale, locale) ?? undefined,
     password: localiseUserMessage(state.fieldErrors.password, locale) ?? undefined,
   } : {};
   const formError = state.ok === false
@@ -72,10 +73,17 @@ export function EmployeeAcceptance({
             </div>
             <div className="field">
               <label htmlFor="employee-locale">{t("language")}</label>
-              <select defaultValue={defaultLocale} id="employee-locale" name="locale">
+              <select
+                aria-describedby={errors.locale ? "employee-locale-error" : undefined}
+                aria-invalid={Boolean(errors.locale)}
+                defaultValue={defaultLocale}
+                id="employee-locale"
+                name="locale"
+              >
                 <option value="en-AU">English (Australia)</option>
                 <option value="pt-BR">Português (Brasil)</option>
               </select>
+              <FieldError id="employee-locale-error" message={errors.locale} />
             </div>
             <div className="field">
               <label htmlFor="employee-password">{t("password")}</label>

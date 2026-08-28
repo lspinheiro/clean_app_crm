@@ -1,5 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   continueConfirmation: vi.fn(),
@@ -503,5 +503,92 @@ describe("first-admin invitation with a parked confirmation", () => {
 
     expect(screen.getByRole("heading", { name: "This invitation is not available" }))
       .toBeInTheDocument();
+  });
+});
+
+// CLE-99. The confirmation route marks a link that carried no usable token — truncated in
+// transit, or opened without one — and the page read the marker's absence as easily as its
+// presence, which is to say not at all. The reader was left with a screen that never named
+// the thing they had just done.
+describe("a confirmation link that carried no usable token", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.cookies.mockResolvedValue({ get: mocks.cookieGet });
+    parkToken();
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    mocks.createClient.mockResolvedValue({ auth: { getUser: mocks.getUser }, rpc: mocks.rpc });
+  });
+
+  afterEach(() => {
+    delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
+  });
+
+  it("names the broken link on the employee invitation screen", async () => {
+    mocks.rpc.mockImplementation(routeRpc({ preview: previewRow() }));
+
+    render(
+      await FirstAdminAcceptancePage({
+        searchParams: Promise.resolve({
+          employeeInvitation: INVITATION_ID,
+          error: "invalid",
+        }),
+      }),
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "That link did not work. Open the link in your e-mail again, or send yourself a new one.",
+    );
+    // Naming it is only half of it — the remedy has to still be on the screen.
+    expect(screen.getByRole("button", { name: "Send me a new link" })).toBeInTheDocument();
+  });
+
+  it("names the broken link in Brazilian Portuguese", async () => {
+    (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__ = "pt-BR";
+    mocks.rpc.mockImplementation(routeRpc({ preview: previewRow() }));
+
+    render(
+      await FirstAdminAcceptancePage({
+        searchParams: Promise.resolve({
+          employeeInvitation: INVITATION_ID,
+          error: "invalid",
+        }),
+      }),
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Esse link não funcionou. Abra o link do seu e-mail novamente ou envie um novo para você.",
+    );
+  });
+
+  it("names the broken link on the founder invitation screen", async () => {
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
+
+    render(
+      await FirstAdminAcceptancePage({ searchParams: Promise.resolve({ error: "invalid" }) }),
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "That link did not work. Open the link in your e-mail again, or ask the founding team for a new one.",
+    );
+  });
+
+  it("stays quiet about the link while a parked token still works", async () => {
+    // The marker describes the fetch that carried no token, not the one already parked from
+    // an earlier hop. Pressing Continue is still the whole of what this reader has to do, so
+    // announcing a broken link here would be false.
+    mocks.rpc.mockImplementation(routeRpc({ preview: previewRow() }));
+    parkToken("invite:safe-hash");
+
+    render(
+      await FirstAdminAcceptancePage({
+        searchParams: Promise.resolve({
+          employeeInvitation: INVITATION_ID,
+          error: "invalid",
+        }),
+      }),
+    );
+
+    expect(screen.getByRole("button", { name: "Continue" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

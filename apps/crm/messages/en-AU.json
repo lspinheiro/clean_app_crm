@@ -204,7 +204,8 @@
     "continueDescription": "The Clean Crew founding team invited you. Press continue to open it — we wait for you, so that an e-mail scanner opening the link cannot use it before you do.",
     "continue": "Continue",
     "continuing": "Opening…",
-    "continueFailed": "This link no longer works. Ask the founding team for a new one."
+    "continueFailed": "This link no longer works. Ask the founding team for a new one.",
+    "linkInvalid": "That link did not work. Open the link in your e-mail again, or ask the founding team for a new one."
   },
   "EmployeeInvitationAcceptance": {
     "eyebrow": "Employee invitation",
@@ -244,13 +245,14 @@
     "requestLink": "Send me a new link",
     "requestLinkSending": "Sending…",
     "requestLinkSent": "Check your inbox. If this invitation is still open, a new link is on its way to {invitee}.",
-    "requestLinkFailed": "We could not send a new link just now. Wait a minute and try again.",
+    "requestLinkFailed": "We could not complete that request. Check your connection and try again.",
     "signIn": "Sign in",
     "continueTitle": "Continue to your invitation",
     "continueDescription": "{companyName} invited you. Press continue to open it — we wait for you, so that an e-mail scanner opening the link cannot use it before you do.",
     "continue": "Continue",
     "continuing": "Opening…",
-    "continueFailed": "This link no longer works. Send yourself a new one."
+    "continueFailed": "This link no longer works. Send yourself a new one.",
+    "linkInvalid": "That link did not work. Open the link in your e-mail again, or send yourself a new one."
   },
   "EmployeeManagement": {
     "title": "Company access",

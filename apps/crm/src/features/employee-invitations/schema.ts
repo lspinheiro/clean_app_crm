@@ -25,7 +25,9 @@ export const newEmployeeAccountSchema = z.object({
   fullName: z.string().trim()
     .min(1, userMessage("employeeFullNameRequired"))
     .max(120, userMessage("employeeFullNameRequired")),
-  locale: z.enum(["en-AU", "pt-BR"]),
+  // Every other field here carries a sentence of its own. Without one this error localised to
+  // the generic fallback, which names neither the field nor what to do about it.
+  locale: z.enum(["en-AU", "pt-BR"], userMessage("supportedLanguageRequired")),
   password: z.string()
     .min(8, userMessage("employeePasswordLength"))
     .max(72, userMessage("employeePasswordLength")),

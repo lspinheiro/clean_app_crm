@@ -204,7 +204,8 @@
     "continueDescription": "A equipe fundadora da The Clean Crew convidou você. Aperte continuar para abrir — esperamos por você, para que um verificador de e-mails que abra o link não possa usá-lo antes de você.",
     "continue": "Continuar",
     "continuing": "Abrindo…",
-    "continueFailed": "Este link não funciona mais. Peça um novo à equipe fundadora."
+    "continueFailed": "Este link não funciona mais. Peça um novo à equipe fundadora.",
+    "linkInvalid": "Esse link não funcionou. Abra o link do seu e-mail novamente ou peça um novo à equipe fundadora."
   },
   "EmployeeInvitationAcceptance": {
     "eyebrow": "Convite de funcionário",
@@ -244,13 +245,14 @@
     "requestLink": "Enviar um novo link",
     "requestLinkSending": "Enviando…",
     "requestLinkSent": "Confira sua caixa de entrada. Se este convite continuar aberto, um novo link está a caminho de {invitee}.",
-    "requestLinkFailed": "Não foi possível enviar um novo link agora. Espere um minuto e tente novamente.",
+    "requestLinkFailed": "Não foi possível concluir a solicitação. Verifique sua conexão e tente novamente.",
     "signIn": "Entrar",
     "continueTitle": "Continue para o seu convite",
     "continueDescription": "{companyName} convidou você. Aperte continuar para abrir — esperamos por você, para que um verificador de e-mails que abra o link não possa usá-lo antes de você.",
     "continue": "Continuar",
     "continuing": "Abrindo…",
-    "continueFailed": "Este link não funciona mais. Envie um novo para você."
+    "continueFailed": "Este link não funciona mais. Envie um novo para você.",
+    "linkInvalid": "Esse link não funcionou. Abra o link do seu e-mail novamente ou envie um novo para você."
   },
   "EmployeeManagement": {
     "title": "Acesso à empresa",

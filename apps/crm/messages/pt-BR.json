@@ -211,6 +211,7 @@
     "eyebrow": "Convite de funcionário",
     "title": "Entre para a {companyName}",
     "intro": "Aceite este convite para entrar como {role}.",
+    "existingCleaner": "Você já faz limpezas para a {companyName}. Aceitar adiciona a função {role} a esta mesma conta, e seu trabalho de limpeza não muda.",
     "email": "E-mail convidado",
     "role": "Função",
     "owner": "Proprietário",

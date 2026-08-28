@@ -43,6 +43,11 @@ function maskEmail(email: string) {
 
 type EmployeeInvitationContext = {
   account_existed_at_invitation: boolean;
+  /**
+   * Whether the signed-in invitee already holds an active cleaner membership with the inviting
+   * company. Session-gated on purpose: the anonymous preview never carries it.
+   */
+  cleaner_membership_active: boolean;
   company_name: string;
   invitation_id: string;
   invitation_status: string;
@@ -255,6 +260,7 @@ export default async function FirstAdminAcceptancePage({
       <AuthShell>
         <EmployeeAcceptance
           accountExisted={employeeContext.account_existed_at_invitation}
+          cleanerMembershipActive={employeeContext.cleaner_membership_active}
           companyName={employeeContext.company_name}
           defaultLocale={employeeContext.locale}
           invitationId={employeeContext.invitation_id}

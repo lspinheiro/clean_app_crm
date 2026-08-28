@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   acceptEmployeeInvitationAction: vi.fn(),
@@ -14,10 +14,14 @@ import { EmployeeAcceptance } from "./employee-acceptance";
 
 const INVITATION_ID = "83000000-0000-4000-8000-000000000101";
 
-function renderAcceptance(role: "owner" | "staff" = "staff") {
+function renderAcceptance(
+  role: "owner" | "staff" = "staff",
+  { cleanerMembershipActive = false } = {},
+) {
   return render(
     <EmployeeAcceptance
       accountExisted={false}
+      cleanerMembershipActive={cleanerMembershipActive}
       companyName="Coastal Demo Cleaning"
       defaultLocale="en-AU"
       invitationId={INVITATION_ID}
@@ -109,5 +113,48 @@ describe("CLE-101 the offered role is explained before it is accepted", () => {
     )).toBeInTheDocument();
 
     delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
+  });
+});
+
+// CLE-102. The same person can clean for a company and be invited onto its office side under
+// one sign-in address. Read as a generic join, the screen implies a second account.
+describe("CLE-102 an invitee the company already works with", () => {
+  afterEach(() => {
+    delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
+  });
+
+  it("names the role being added to the account they already clean with", () => {
+    renderAcceptance("staff", { cleanerMembershipActive: true });
+
+    expect(screen.getByText(
+      "You already clean for Coastal Demo Cleaning. Accepting adds the Staff role to this "
+      + "same account, and your cleaning work does not change.",
+    )).toBeInTheDocument();
+  });
+
+  it("names an owner invitation by the role it actually grants", () => {
+    renderAcceptance("owner", { cleanerMembershipActive: true });
+
+    expect(screen.getByText(
+      "You already clean for Coastal Demo Cleaning. Accepting adds the Owner role to this "
+      + "same account, and your cleaning work does not change.",
+    )).toBeInTheDocument();
+  });
+
+  it("says it in Portuguese", () => {
+    (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__ = "pt-BR";
+
+    renderAcceptance("staff", { cleanerMembershipActive: true });
+
+    expect(screen.getByText(
+      "Você já faz limpezas para a Coastal Demo Cleaning. Aceitar adiciona a função "
+      + "Funcionário a esta mesma conta, e seu trabalho de limpeza não muda.",
+    )).toBeInTheDocument();
+  });
+
+  it("stays silent for an invitee who does not clean for the company", () => {
+    renderAcceptance("staff");
+
+    expect(screen.queryByText(/You already clean for/)).not.toBeInTheDocument();
   });
 });

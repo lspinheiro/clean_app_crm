@@ -11,6 +11,7 @@ import { localiseUserMessage } from "@/i18n/user-message";
 
 type EmployeeAcceptanceProps = {
   accountExisted: boolean;
+  cleanerMembershipActive: boolean;
   companyName: string;
   defaultLocale: AppLocale;
   invitationId: string;
@@ -24,6 +25,7 @@ function FieldError({ id, message }: { id: string; message: string | undefined }
 
 export function EmployeeAcceptance({
   accountExisted,
+  cleanerMembershipActive,
   companyName,
   defaultLocale,
   invitationId,
@@ -51,7 +53,23 @@ export function EmployeeAcceptance({
     <>
       <p className="eyebrow">{t("eyebrow")}</p>
       <h1>{t("title", { companyName })}</h1>
-      <p className="auth-panel__intro">{t("intro", { role: t(role) })}</p>
+      <p
+        className={
+          cleanerMembershipActive
+            ? "auth-panel__intro auth-panel__intro--tight"
+            : "auth-panel__intro"
+        }
+      >
+        {t("intro", { role: t(role) })}
+      </p>
+      {/* CLE-102. Somebody who already cleans for this company is not joining it — they are
+          gaining a second role on the account they already sign in with. Said here rather than
+          on the anonymous preview, which anybody holding the link can reach. */}
+      {cleanerMembershipActive ? (
+        <p className="employee-invitation-recognition">
+          {t("existingCleaner", { companyName, role: t(role) })}
+        </p>
+      ) : null}
       <dl className="employee-invitation-summary">
         <div><dt>{t("email")}</dt><dd>{inviteeEmail}</dd></div>
         <div>

@@ -231,6 +231,7 @@ type PreviewRow = {
 
 type ContextRow = {
   account_existed_at_invitation: boolean;
+  cleaner_membership_active: boolean;
   company_name: string;
   invitation_id: string;
   invitation_status: string;
@@ -238,6 +239,20 @@ type ContextRow = {
   locale: string;
   role: string;
 };
+
+function contextRow(overrides: Partial<ContextRow> = {}): ContextRow {
+  return {
+    account_existed_at_invitation: true,
+    cleaner_membership_active: false,
+    company_name: "Coastal Demo Cleaning",
+    invitation_id: INVITATION_ID,
+    invitation_status: "pending",
+    invitee_email: "invitee@example.test",
+    locale: "en-AU",
+    role: "staff",
+    ...overrides,
+  };
+}
 
 function previewRow(overrides: Partial<PreviewRow> = {}): PreviewRow {
   return {
@@ -368,18 +383,7 @@ describe("employee invitation states", () => {
       error: null,
     });
     mocks.rpc.mockImplementation(
-      routeRpc({
-        preview: previewRow(),
-        context: {
-          account_existed_at_invitation: true,
-          company_name: "Coastal Demo Cleaning",
-          invitation_id: INVITATION_ID,
-          invitation_status: "pending",
-          invitee_email: "invitee@example.test",
-          locale: "en-AU",
-          role: "staff",
-        },
-      }),
+      routeRpc({ preview: previewRow(), context: contextRow() }),
     );
 
     render(await renderAccept());
@@ -475,6 +479,68 @@ describe("employee invitation states", () => {
     expect(screen.getByRole("heading", { name: "Open your invitation" }))
       .toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send me a new link" })).toBeInTheDocument();
+  });
+});
+
+// CLE-102. A company can invite one of its own cleaners onto the office side under the same
+// sign-in address. The page read like a generic join, so the one thing that person needed to
+// know — that this is an addition to the account they already have, not a second life — was
+// the one thing it never said.
+describe("CLE-102 an invitee who already cleans for the company", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.cookies.mockResolvedValue({ get: mocks.cookieGet });
+    parkToken();
+    mocks.createClient.mockResolvedValue({ auth: { getUser: mocks.getUser }, rpc: mocks.rpc });
+    mocks.getUser.mockResolvedValue({
+      data: { user: { email: "invitee@example.test", id: "invitee-1" } },
+      error: null,
+    });
+  });
+
+  it("says the role joins the account they already clean with", async () => {
+    mocks.rpc.mockImplementation(
+      routeRpc({
+        preview: previewRow(),
+        context: contextRow({ cleaner_membership_active: true }),
+      }),
+    );
+
+    render(await renderAccept());
+
+    expect(screen.getByText(
+      "You already clean for Coastal Demo Cleaning. Accepting adds the Staff role to this "
+      + "same account, and your cleaning work does not change.",
+    )).toBeInTheDocument();
+    // The acceptance form is still the point of the screen; recognition is context, not a
+    // detour into a different flow.
+    expect(screen.getByRole("button", { name: "Accept invitation" })).toBeInTheDocument();
+  });
+
+  it("keeps the plain wording for an invitee who does not clean for the company", async () => {
+    mocks.rpc.mockImplementation(
+      routeRpc({
+        preview: previewRow(),
+        context: contextRow({ cleaner_membership_active: false }),
+      }),
+    );
+
+    render(await renderAccept());
+
+    expect(screen.getByRole("heading", { name: "Join Coastal Demo Cleaning" }))
+      .toBeInTheDocument();
+    expect(screen.queryByText(/You already clean for/)).not.toBeInTheDocument();
+  });
+
+  it("never says it on the screen shown before anyone signs in", async () => {
+    // The preview answers without a session and is reachable by anyone holding the link, so
+    // it must not disclose that this address cleans for this company.
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    mocks.rpc.mockImplementation(routeRpc({ preview: previewRow() }));
+
+    render(await renderAccept());
+
+    expect(screen.queryByText(/You already clean for/)).not.toBeInTheDocument();
   });
 });
 

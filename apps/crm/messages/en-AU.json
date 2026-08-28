@@ -211,6 +211,7 @@
     "eyebrow": "Employee invitation",
     "title": "Join {companyName}",
     "intro": "Accept this invitation to join as {role}.",
+    "existingCleaner": "You already clean for {companyName}. Accepting adds the {role} role to this same account, and your cleaning work does not change.",
     "email": "Invited email",
     "role": "Role",
     "owner": "Owner",

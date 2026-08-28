@@ -1754,6 +1754,7 @@ export type Database = {
         Args: { target_invitation_id: string }
         Returns: {
           account_existed_at_invitation: boolean
+          cleaner_membership_active: boolean
           company_name: string
           expires_at: string
           invitation_id: string

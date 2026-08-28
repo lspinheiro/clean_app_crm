@@ -1717,6 +1717,14 @@ export type Database = {
         Args: { target_endpoint: string }
         Returns: undefined
       }
+      employee_invitation_delivery_details: {
+        Args: { target_invitation_id: string }
+        Returns: {
+          company_name: string
+          invitee_user_id: string
+          inviter_name: string
+        }[]
+      }
       employee_invitation_preview: {
         Args: { target_invitation_id: string }
         Returns: {

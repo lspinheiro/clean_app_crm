@@ -1725,6 +1725,15 @@ export type Database = {
           inviter_name: string
         }[]
       }
+      employee_invitation_lifecycle_state: {
+        Args: {
+          accepted_at: string
+          expires_at: string
+          revoked_at: string
+          superseded_at: string
+        }
+        Returns: string
+      }
       employee_invitation_preview: {
         Args: { target_invitation_id: string }
         Returns: {

@@ -236,10 +236,24 @@ export async function inviteEmployeeAction(
       invitationId: prepared.invitation_id,
       reason,
     });
-    await revokeFailedDelivery(supabase, company.id, prepared.invitation_id);
+    const withdrawn = await revokeFailedDelivery(supabase, company.id, prepared.invitation_id);
+    // Either outcome leaves the owner's list wrong: it was drawn before this invitation
+    // existed, so it shows neither the withdrawal nor the row they now have to revoke by hand.
+    revalidateLocalizedPath("/settings");
     // The provider's text can name the address or the mailbox, so it stays in the log.
+    const rateLimited = isEmailRateLimit(reason);
+    if (!withdrawn) {
+      // Silence here is what made the 2026-08-25 invitation invisible: pending in the database,
+      // absent from the list, and holding the address against the next attempt. The owner is
+      // the only one who can clear it, so they have to be told it is theirs to clear.
+      return failure(userMessage(
+        rateLimited
+          ? "employeeInvitationRateLimitedStillOpen"
+          : "employeeInvitationDeliveryFailedStillOpen",
+      ));
+    }
     return failure(userMessage(
-      isEmailRateLimit(reason)
+      rateLimited
         ? "employeeInvitationRateLimited"
         : "employeeInvitationDeliveryFailed",
     ));

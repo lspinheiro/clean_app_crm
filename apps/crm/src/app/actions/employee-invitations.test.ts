@@ -210,6 +210,64 @@ describe("CLE-83 employee invitation actions", () => {
       target_company_id: companyId,
       target_invitation_id: invitationId,
     });
+    // The owner is looking at a list drawn before the invitation existed. Without this the
+    // withdrawal is real but invisible, and the same address cannot be invited again.
+    expect(mocks.revalidateLocalizedPath).toHaveBeenCalledWith("/settings");
+  });
+
+  // CLE-95. The withdrawal is the only thing keeping a rejected send from leaving an invitation
+  // nobody can see: it is pending in the database, absent from the list the owner is looking at,
+  // and it blocks the next invitation to that address. When the withdrawal itself fails, saying
+  // "check the address and try again" sends the owner into exactly that wall.
+  it("tells the owner the invitation is still open when the withdrawal also fails", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: [{
+          account_existed: false,
+          auth_user_exists: false,
+          invitation_expires_at: "2026-08-27T00:00:00.000Z",
+          invitation_id: invitationId,
+        }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: { message: "revoke rejected" } });
+    mocks.inviteUserByEmail.mockResolvedValue({ data: { user: null }, error: { message: "raw" } });
+
+    await expect(inviteEmployeeAction(invitationForm())).resolves.toMatchObject({
+      formError: "user.employeeInvitationDeliveryFailedStillOpen",
+      ok: false,
+    });
+    // The list has to come back, or the message names a row the owner cannot see or revoke.
+    expect(mocks.revalidateLocalizedPath).toHaveBeenCalledWith("/settings");
+
+    consoleError.mockRestore();
+  });
+
+  it("keeps the rate-limit reason while saying the invitation is still open", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: [{
+          account_existed: false,
+          auth_user_exists: false,
+          invitation_expires_at: "2026-08-27T00:00:00.000Z",
+          invitation_id: invitationId,
+        }],
+        error: null,
+      })
+      .mockRejectedValueOnce(new Error("revoke threw"));
+    mocks.inviteUserByEmail.mockResolvedValue({
+      data: { user: null },
+      error: { code: "over_email_send_rate_limit", message: "email rate limit exceeded", status: 429 },
+    });
+
+    await expect(inviteEmployeeAction(invitationForm())).resolves.toMatchObject({
+      formError: "user.employeeInvitationRateLimitedStillOpen",
+      ok: false,
+    });
+
+    consoleError.mockRestore();
   });
 
   it("tells the owner to wait when the e-mail provider is rate limiting, and says why in the log", async () => {

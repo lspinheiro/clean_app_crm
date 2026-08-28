@@ -80,10 +80,11 @@ export function EmployeeInvitations({ invitations }: EmployeeInvitationsProps) {
     startTransition(async () => {
       const nextResult = await inviteEmployeeAction(formData);
       setResult(localiseResult(nextResult, locale));
-      if (nextResult.ok) {
-        form.reset();
-        router.refresh();
-      }
+      if (nextResult.ok) form.reset();
+      // A rejected send still moves invitation state — withdrawn, or left open for the owner to
+      // revoke — and a form error is what the action returns once it has reached the database.
+      // A rejected field never got that far, so there is nothing to read back.
+      if (nextResult.ok || nextResult.formError) router.refresh();
     });
   }
 

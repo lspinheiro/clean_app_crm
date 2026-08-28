@@ -199,7 +199,12 @@
     "backToLogin": "Voltar para entrar",
     "formUnavailable": "Este convite não está mais disponível. Peça ajuda à equipe fundadora.",
     "duplicateAbn": "Este ABN já pertence a uma empresa. Escolha outro ABN.",
-    "passwordRejected": "Não foi possível salvar a senha. Escolha outra senha e tente novamente."
+    "passwordRejected": "Não foi possível salvar a senha. Escolha outra senha e tente novamente.",
+    "continueTitle": "Continue para o seu convite",
+    "continueDescription": "A equipe fundadora da The Clean Crew convidou você. Aperte continuar para abrir — esperamos por você, para que um verificador de e-mails que abra o link não possa usá-lo antes de você.",
+    "continue": "Continuar",
+    "continuing": "Abrindo…",
+    "continueFailed": "Este link não funciona mais. Peça um novo à equipe fundadora."
   },
   "EmployeeInvitationAcceptance": {
     "eyebrow": "Convite de funcionário",
@@ -238,7 +243,12 @@
     "requestLinkSending": "Enviando…",
     "requestLinkSent": "Confira sua caixa de entrada. Se este convite continuar aberto, um novo link está a caminho de {invitee}.",
     "requestLinkFailed": "Não foi possível enviar um novo link agora. Espere um minuto e tente novamente.",
-    "signIn": "Entrar"
+    "signIn": "Entrar",
+    "continueTitle": "Continue para o seu convite",
+    "continueDescription": "{companyName} convidou você. Aperte continuar para abrir — esperamos por você, para que um verificador de e-mails que abra o link não possa usá-lo antes de você.",
+    "continue": "Continuar",
+    "continuing": "Abrindo…",
+    "continueFailed": "Este link não funciona mais. Envie um novo para você."
   },
   "EmployeeManagement": {
     "title": "Acesso à empresa",

@@ -2,6 +2,9 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  continueConfirmation: vi.fn(),
+  cookieGet: vi.fn(),
+  cookies: vi.fn(),
   createClient: vi.fn(),
   getUser: vi.fn(),
   refresh: vi.fn(),
@@ -13,6 +16,10 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 vi.mock("@/lib/supabase/browser", () => ({
   createClient: () => ({ auth: { signOut: mocks.signOut } }),
 }));
+vi.mock("next/headers", () => ({ cookies: mocks.cookies }));
+vi.mock("@/app/actions/auth-confirmation", () => ({
+  continuePendingConfirmationAction: mocks.continueConfirmation,
+}));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: mocks.refresh }),
   usePathname: () => "/en-AU/invite/accept",
@@ -20,9 +27,21 @@ vi.mock("next/navigation", () => ({
 
 import FirstAdminAcceptancePage from "./page";
 
+/**
+ * What the confirmation route leaves behind for a person to spend. Absent by default: most of
+ * these journeys are somebody arriving without one.
+ */
+function parkToken(value?: string) {
+  mocks.cookieGet.mockImplementation((name: string) =>
+    name === "crm_pending_confirmation" && value !== undefined ? { name, value } : undefined,
+  );
+}
+
 describe("first-admin acceptance page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.cookies.mockResolvedValue({ get: mocks.cookieGet });
+    parkToken();
     mocks.getUser.mockResolvedValue({
       data: { user: { email: "admin@example.test", id: "user-1" } },
       error: null,
@@ -249,6 +268,8 @@ function renderAccept() {
 describe("employee invitation states", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.cookies.mockResolvedValue({ get: mocks.cookieGet });
+    parkToken();
     mocks.createClient.mockResolvedValue({ auth: { getUser: mocks.getUser }, rpc: mocks.rpc });
   });
 
@@ -380,5 +401,102 @@ describe("employee invitation states", () => {
     expect(
       screen.getByRole("heading", { name: "We could not open this invitation for your account" }),
     ).toBeInTheDocument();
+  });
+
+  // The link no longer spends itself, so an unspent token is the ordinary case: the invitee
+  // has arrived and nothing has happened yet. Offering "send me a new link" here would ask
+  // somebody holding a perfectly good token to wait for another e-mail.
+  it("offers Continue to a visitor whose token is still unspent", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    mocks.rpc.mockImplementation(routeRpc({ preview: previewRow() }));
+    parkToken("invite:safe-hash");
+
+    render(await renderAccept());
+
+    expect(screen.getByRole("button", { name: "Continue" })).toBeInTheDocument();
+    expect(screen.getByText(/Coastal Demo Cleaning/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Send me a new link" }))
+      .not.toBeInTheDocument();
+  });
+
+  // Exchanging the token replaces whoever is signed in with the invitee, which is what the
+  // founder asked for after opening an invitee's link on a machine already signed in as
+  // somebody else: detect it, drop it, carry on — without a separate sign-out step.
+  it("offers Continue rather than a sign-out when the wrong account holds an unspent token", async () => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: { email: "owner@example.test", id: "owner-1" } },
+      error: null,
+    });
+    mocks.rpc.mockImplementation(routeRpc({ preview: previewRow() }));
+    parkToken("invite:safe-hash");
+
+    render(await renderAccept());
+
+    expect(screen.getByRole("button", { name: "Continue" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["expired", "This invitation has expired"],
+    ["revoked", "This invitation was withdrawn"],
+  ])("does not offer Continue for a %s invitation", async (state, heading) => {
+    // The preview is read before anything is spent, so a token parked against a dead
+    // invitation is simply never exchanged.
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    mocks.rpc.mockImplementation(
+      routeRpc({
+        preview: previewRow({ state, company_name: null, invitee_hint: null, role: null }),
+      }),
+    );
+    parkToken("invite:safe-hash");
+
+    render(await renderAccept());
+
+    expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Continue" })).not.toBeInTheDocument();
+  });
+
+  it("falls back to a new link once the parked token is gone", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    mocks.rpc.mockImplementation(routeRpc({ preview: previewRow() }));
+    parkToken();
+
+    render(await renderAccept());
+
+    expect(screen.getByRole("heading", { name: "This link has already been opened" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send me a new link" })).toBeInTheDocument();
+  });
+});
+
+// The founder invitation shares the confirmation route, so it inherits both the problem and
+// the fix. It has no invitation id and no session, so it cannot name the company — but
+// "press Continue" is still the whole of what the reader has to do.
+describe("first-admin invitation with a parked confirmation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.cookies.mockResolvedValue({ get: mocks.cookieGet });
+    mocks.createClient.mockResolvedValue({ auth: { getUser: mocks.getUser }, rpc: mocks.rpc });
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
+  });
+
+  it("offers Continue instead of an unavailable invitation", async () => {
+    parkToken("invite:safe-hash");
+
+    render(
+      await FirstAdminAcceptancePage({ searchParams: Promise.resolve({ error: "invalid" }) }),
+    );
+
+    expect(screen.getByRole("button", { name: "Continue" })).toBeInTheDocument();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("keeps the unavailable state when nothing is parked", async () => {
+    parkToken();
+
+    render(await FirstAdminAcceptancePage({ searchParams: Promise.resolve({}) }));
+
+    expect(screen.getByRole("heading", { name: "This invitation is not available" }))
+      .toBeInTheDocument();
   });
 });

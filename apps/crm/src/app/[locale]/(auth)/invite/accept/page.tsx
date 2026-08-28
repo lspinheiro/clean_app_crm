@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { BrandBubbles } from "@/components/brand-bubbles";
 import { FirstAdminAcceptanceForm } from "./accept-form";
+import { ContinueConfirmation } from "./continue-confirmation";
 import { EmployeeAcceptance } from "./employee-acceptance";
 import { RequestNewLink } from "./request-new-link";
 import { UseAnotherAccount } from "./use-another-account";
 import { employeeInvitationIdSchema } from "@/features/employee-invitations/schema";
 import { defaultLocale, isAppLocale } from "@/i18n/config";
 import { Link, redirect } from "@/i18n/navigation";
+import {
+  decodePendingConfirmation,
+  pendingConfirmationCookieName,
+} from "@/lib/auth/pending-confirmation";
 import { createClient } from "@/lib/supabase/server";
 
 type FirstAdminAcceptancePageProps = {
@@ -93,6 +99,14 @@ export default async function FirstAdminAcceptancePage({
     error: userError,
   } = await supabase.auth.getUser();
 
+  // The confirmation link parks its token instead of spending it, so an unspent one means the
+  // invitee has arrived and nothing has happened yet. Its presence is what separates "you got
+  // here first" from "something opened this before you did".
+  const cookieStore = await cookies();
+  const pendingConfirmation = decodePendingConfirmation(
+    cookieStore.get(pendingConfirmationCookieName)?.value,
+  );
+
   if (employeeInvitation.success) {
     // The preview answers without a session, which is the only reason each state below can
     // name itself. `get_employee_invitation_context` returns zero rows for "not signed in",
@@ -134,6 +148,27 @@ export default async function FirstAdminAcceptancePage({
       return notice(employeeT("unknownTitle"), employeeT("unknownDescription"));
     }
 
+    // Bound outside the closure: narrowing from `employeeInvitation.success` does not reach
+    // into a hoisted function declaration.
+    const invitationId = employeeInvitation.data;
+
+    function continueNotice() {
+      return notice(
+        employeeT("continueTitle"),
+        employeeT("continueDescription", { companyName: preview.company_name ?? "" }),
+        <ContinueConfirmation
+          failedLabel={employeeT("continueFailed")}
+          fallback={
+            <RequestNewLink invitationId={invitationId} inviteeHint={preview.invitee_hint} />
+          }
+          label={employeeT("continue")}
+          workingLabel={employeeT("continuing")}
+        />,
+      );
+    }
+
+    if (pendingConfirmation && (userError || !user?.email)) return continueNotice();
+
     if (userError || !user?.email) {
       // One continuation for everybody. Branching on whether the address already had an
       // account would let anyone holding this link test that — the id is held by the admin
@@ -170,6 +205,12 @@ export default async function FirstAdminAcceptancePage({
     if (!error && data?.[0]) employeeContext = data[0];
 
     if (!employeeContext) {
+      // Both reasons the context RPC refuses — a different account, and an address that is not
+      // confirmed — are what exchanging the token fixes: it replaces the session with the
+      // invitee's and confirms the address on the way. Offering the button beats asking for a
+      // sign-out, and beats telling somebody to open a link they are already looking at.
+      if (pendingConfirmation) return continueNotice();
+
       // The invitation is live and somebody is signed in, so the context RPC refused for one
       // of two reasons: a different account, or an unconfirmed address. Masking collapses
       // distinct addresses, so claim a mismatch only when the hints actually differ.
@@ -210,6 +251,23 @@ export default async function FirstAdminAcceptancePage({
   }
 
   if (!context || context.invitation_status !== "pending") {
+    // The founder invitation shares the confirmation route, so it inherits the fix. With no
+    // session there is no company to name, but pressing Continue is still the whole of it.
+    if (pendingConfirmation) {
+      return (
+        <AuthShell>
+          <p className="eyebrow">{t("eyebrow")}</p>
+          <h1>{t("continueTitle")}</h1>
+          <p className="auth-panel__intro">{t("continueDescription")}</p>
+          <ContinueConfirmation
+            failedLabel={t("continueFailed")}
+            label={t("continue")}
+            workingLabel={t("continuing")}
+          />
+        </AuthShell>
+      );
+    }
+
     return (
       <AuthShell>
         <p className="eyebrow">{t("eyebrow")}</p>

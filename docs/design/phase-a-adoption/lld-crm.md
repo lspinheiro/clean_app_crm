@@ -39,8 +39,11 @@ invitation. A provider error calls `revoke_first_admin_invitation`. The command 
 `SUPABASE_SECRET_KEY` or the legacy `SUPABASE_SERVICE_ROLE_KEY`.
 
 The public `/{locale}/auth/confirm` route accepts a Supabase `invite` or `recovery` token
-hash. It calls `verifyOtp` and redirects to `/{locale}/invite/accept`. A stale error query
-does not override a valid session. The acceptance page calls
+hash. It stores the token in a short-lived `HttpOnly` cookie and redirects to
+`/{locale}/invite/accept`; it does not exchange it. The acceptance page offers **Continue**,
+and only that server action calls `verifyOtp`. Fetching the link therefore changes nothing,
+which is what stops an e-mail scanner spending a single-use token (HLD decision 26). A stale
+error query does not override a valid session. The acceptance page calls
 `get_first_admin_invitation_context` for the session e-mail. Its server action validates
 the password and company fields, updates the Auth password, and calls
 `accept_first_admin_invitation`. Success redirects to the guarded `/onboarding` handoff.
@@ -61,7 +64,7 @@ flowchart LR
         RBELL["layout header:<br/>bell (new)"]
     end
     subgraph publicRoutes["public locale routes"]
-        RCONF["auth/confirm<br/>token verification"]
+        RCONF["auth/confirm<br/>token hand-off"]
         RACCEPT["invite/accept<br/>first-admin form"]
     end
     FCLI["scripts/invite-first-admin.mjs"]

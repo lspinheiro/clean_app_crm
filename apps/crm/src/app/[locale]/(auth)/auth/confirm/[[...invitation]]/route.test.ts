@@ -10,6 +10,9 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 
 import { GET } from "./route";
 
+/** The wire name the acceptance page and the continuation action both read. */
+const pendingCookie = "crm_pending_confirmation";
+
 describe("first-admin Auth confirmation route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -17,13 +20,55 @@ describe("first-admin Auth confirmation route", () => {
     mocks.createClient.mockResolvedValue({ auth: { verifyOtp: mocks.verifyOtp } });
   });
 
-  it("exchanges only an invite token hash and continues to the locale acceptance page", async () => {
+  // Until 2026-08-28 this route called `verifyOtp` on the GET, so fetching the URL spent the
+  // single-use token and confirmed the account. An Outlook or Mimecast scanner, a corporate
+  // mail gateway, a prefetch or a reload all fetch it, which is how three people reached a
+  // dead end on one invitation. A GET must not mutate; the invitee presses Continue.
+  it("does not spend the token while the link is being fetched", async () => {
     const response = await GET(
       new NextRequest("https://crm.example.test/en-AU/auth/confirm?token_hash=safe-hash&type=invite"),
       { params: Promise.resolve({ invitation: undefined, locale: "en-AU" }) },
     );
 
-    expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "safe-hash", type: "invite" });
+    expect(mocks.verifyOtp).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe("/en-AU/invite/accept");
+  });
+
+  it("parks the token for a human to spend", async () => {
+    const response = await GET(
+      new NextRequest("https://crm.example.test/en-AU/auth/confirm?token_hash=safe-hash&type=invite"),
+      { params: Promise.resolve({ invitation: undefined, locale: "en-AU" }) },
+    );
+
+    expect(response.cookies.get(pendingCookie)?.value).toBe("invite:safe-hash");
+    const header = response.headers.get("set-cookie") ?? "";
+    // Out of reach of scripts, and not sent on a cross-site POST — the exchange is a same-site
+    // server action and nothing else should be able to trigger it.
+    expect(header).toContain("HttpOnly");
+    expect(header).toContain("SameSite=lax");
+    expect(header).toContain("Path=/");
+  });
+
+  it("parks a recovery token the same way", async () => {
+    const response = await GET(
+      new NextRequest("https://crm.example.test/pt-BR/auth/confirm?token_hash=safe-hash&type=recovery"),
+      { params: Promise.resolve({ invitation: undefined, locale: "pt-BR" }) },
+    );
+
+    expect(mocks.verifyOtp).not.toHaveBeenCalled();
+    expect(response.cookies.get(pendingCookie)?.value).toBe("recovery:safe-hash");
+    expect(response.headers.get("location")).toBe("/pt-BR/invite/accept");
+  });
+
+  // Only the exchange can tell a live token from a dead one, and the exchange no longer happens
+  // here. Refusing to park what looks wrong would put the dead end back where it was.
+  it("parks a token it cannot judge", async () => {
+    const response = await GET(
+      new NextRequest("https://crm.example.test/en-AU/auth/confirm?token_hash=bad-hash&type=invite"),
+      { params: Promise.resolve({ invitation: undefined, locale: "en-AU" }) },
+    );
+
+    expect(response.cookies.get(pendingCookie)?.value).toBe("invite:bad-hash");
     expect(response.headers.get("location")).toBe("/en-AU/invite/accept");
   });
 
@@ -45,7 +90,7 @@ describe("first-admin Auth confirmation route", () => {
       },
     );
 
-    expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "safe-hash", type: "invite" });
+    expect(response.cookies.get(pendingCookie)?.value).toBe("invite:safe-hash");
     expect(response.headers.get("location")).toBe(
       "/en-AU/invite/accept?employeeInvitation=83000000-0000-4000-8000-000000000101",
     );
@@ -64,47 +109,37 @@ describe("first-admin Auth confirmation route", () => {
     expect(response.headers.get("location")).toBe("/en-AU/invite/accept");
   });
 
-  it("exchanges a recovery token for a renewed first-admin invitation", async () => {
-    const response = await GET(
-      new NextRequest("https://crm.example.test/pt-BR/auth/confirm?token_hash=safe-hash&type=recovery"),
-      { params: Promise.resolve({ invitation: undefined, locale: "pt-BR" }) },
-    );
-
-    expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "safe-hash", type: "recovery" });
-    expect(response.headers.get("location")).toBe("/pt-BR/invite/accept");
-  });
-
-  it("keeps the browser on its incoming origin after setting the Auth session", async () => {
+  it("keeps the browser on its incoming origin", async () => {
     const response = await GET(
       new NextRequest("http://127.0.0.1:3000/pt-BR/auth/confirm?token_hash=safe-hash&type=recovery"),
       { params: Promise.resolve({ invitation: undefined, locale: "pt-BR" }) },
     );
 
     expect(response.headers.get("location")).toBe("/pt-BR/invite/accept");
+    // A `Secure` cookie is dropped over plain http, which would break local development and
+    // every acceptance run with it.
+    expect(response.headers.get("set-cookie") ?? "").not.toContain("Secure");
   });
 
-  it("does not exchange another token type", async () => {
+  it("does not park another token type", async () => {
     const response = await GET(
       new NextRequest("https://crm.example.test/pt-BR/auth/confirm?token_hash=safe-hash&type=magiclink"),
       { params: Promise.resolve({ invitation: undefined, locale: "pt-BR" }) },
     );
 
-    expect(mocks.verifyOtp).not.toHaveBeenCalled();
+    expect(response.cookies.get(pendingCookie)).toBeUndefined();
     expect(response.headers.get("location")).toBe(
       "/pt-BR/invite/accept?error=invalid",
     );
   });
 
-  it("maps a failed token exchange to the same safe unavailable state", async () => {
-    mocks.verifyOtp.mockResolvedValue({ data: { session: null }, error: { message: "raw detail" } });
-
+  it("does not park a request that carries no token", async () => {
     const response = await GET(
-      new NextRequest("https://crm.example.test/en-AU/auth/confirm?token_hash=bad-hash&type=invite"),
+      new NextRequest("https://crm.example.test/en-AU/auth/confirm?type=invite"),
       { params: Promise.resolve({ invitation: undefined, locale: "en-AU" }) },
     );
 
-    expect(response.headers.get("location")).toBe(
-      "/en-AU/invite/accept?error=invalid",
-    );
+    expect(response.cookies.get(pendingCookie)).toBeUndefined();
+    expect(response.headers.get("location")).toBe("/en-AU/invite/accept?error=invalid");
   });
 });

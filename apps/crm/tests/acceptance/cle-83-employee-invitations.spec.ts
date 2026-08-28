@@ -145,4 +145,43 @@ test.describe("@CLE-83 owner employee invitations", () => {
       .toBeVisible();
     await expect(page.getByRole("button", { name: "Accept invitation" })).toHaveCount(0);
   });
+
+  // The confirmation link used to exchange its token on the GET, so whatever fetched it first
+  // used it up — and an invitation e-mail is fetched by scanners, gateways, prefetches and
+  // reloads long before the invitee reads it. `pending.employee@example.test` stays pending
+  // for the whole run, so these can visit its link without racing the acceptance journeys.
+  const pendingInvitation = "83000000-0000-4000-8000-000000000205";
+  const confirmationLink =
+    `/en-AU/auth/confirm/${pendingInvitation}?token_hash=not-a-real-token&type=invite`;
+
+  test("a scanner opening the link first does not break it", async ({ page, request }) => {
+    // A separate cookie jar with no browser behind it: an e-mail scanner, near enough.
+    const scanned = await request.get(confirmationLink, { maxRedirects: 0 });
+    expect(scanned.status()).toBe(307);
+
+    await page.goto(confirmationLink);
+
+    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send me a new link" })).toHaveCount(0);
+  });
+
+  test("reloading the link does not use it up", async ({ page }) => {
+    await page.goto(confirmationLink);
+    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
+
+    await page.goto(confirmationLink);
+
+    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
+  });
+
+  test("pressing continue is what spends the link", async ({ page }) => {
+    await page.goto(confirmationLink);
+
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    // The token is fabricated, so the exchange fails — which is the point: the failure lands on
+    // the press, not on the visit, and the way back in is offered right there.
+    await expect(page.getByRole("button", { name: "Send me a new link" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Continue" })).toHaveCount(0);
+  });
 });

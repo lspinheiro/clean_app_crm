@@ -1481,6 +1481,14 @@ button.company-switcher__company:hover {
   color: var(--color-on-danger-container);
 }
 
+/* Replaced is neither a warning nor a fault — the owner re-invited on purpose, and a live
+   invitation for the same address sits above it in the list. Informational, so it reads as
+   history rather than as something to fix. */
+.invitation-state--replaced {
+  background: var(--color-accent-container);
+  color: var(--color-on-accent-container);
+}
+
 .employee-invitation-row__action {
   width: 104px;
   padding-inline: 12px;

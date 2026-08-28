@@ -14,7 +14,7 @@ select has_column(
   'public',
   'employee_invitations',
   'superseded_at',
-  'expired invitations can be superseded without changing their displayed lifecycle state'
+  'a lapsed invitation records the newer one that took its place'
 );
 
 select columns_are(
@@ -341,8 +341,11 @@ select results_eq(
   $$select invitation_state::text collate "C"
     from public.employee_invitation_states
     where id = '83000000-0000-4000-8000-000000000702'$$,
-  $$values ('expired'::text collate "C")$$,
-  'a superseded lapsed invitation remains visible as expired'
+  -- CLE-97: this row used to read 'expired', which told the owner nobody had acted on an
+  -- invitation they had just replaced themselves — and disagreed with the invitee's page,
+  -- which called the same row withdrawn.
+  $$values ('replaced'::text collate "C")$$,
+  'a superseded lapsed invitation is shown as replaced, not as expired'
 );
 
 select results_eq(

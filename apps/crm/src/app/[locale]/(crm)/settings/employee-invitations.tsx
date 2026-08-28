@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle2, CircleX, Clock3 } from "lucide-react";
+import { Ban, CheckCircle2, CircleX, Clock3, RefreshCw } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useState, useTransition } from "react";
 
@@ -17,7 +17,7 @@ export type EmployeeInvitationListItem = {
   email: string;
   id: string;
   role: "owner" | "staff";
-  state: "accepted" | "expired" | "pending" | "revoked";
+  state: "accepted" | "expired" | "pending" | "replaced" | "revoked";
 };
 
 type EmployeeInvitationsProps = {
@@ -34,6 +34,7 @@ function InvitationStateIcon({ state }: { state: EmployeeInvitationListItem["sta
   const props = { "aria-hidden": true as const, size: 13, strokeWidth: 2.4 };
   if (state === "accepted") return <CheckCircle2 {...props} />;
   if (state === "expired") return <CircleX {...props} />;
+  if (state === "replaced") return <RefreshCw {...props} />;
   if (state === "revoked") return <Ban {...props} />;
   return <Clock3 {...props} />;
 }

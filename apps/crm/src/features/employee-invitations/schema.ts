@@ -8,7 +8,7 @@ export const employeeInvitationListRowsSchema = z.array(z.object({
   created_at: z.iso.datetime({ offset: true }),
   email: z.email(),
   id: employeeInvitationIdSchema,
-  invitation_state: z.enum(["accepted", "expired", "pending", "revoked"]),
+  invitation_state: z.enum(["accepted", "expired", "pending", "replaced", "revoked"]),
   role: z.enum(["owner", "staff"]),
 }));
 

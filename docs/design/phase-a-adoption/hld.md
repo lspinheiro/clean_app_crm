@@ -687,6 +687,38 @@ sign in, or send yourself a new link.
 Considered option: keep one flag and treat "registered" as "can sign in" — rejected because that
 is the original error, stated once more.
 
+### 28. A replaced invitation is its own state (2026-08-28)
+
+Re-inviting an address whose invitation had lapsed stamps `superseded_at` on the old row and
+issues a new one. Four readers then described that one row four different ways:
+`employee_invitation_states` called it *expired*, `employee_invitation_preview` called it
+*revoked*, `get_employee_invitation_context` ignored the mark and also said *expired*, and
+`accept_employee_invitation` refused on a mark neither reader mentioned.
+
+Both readings are wrong in the same way. *Expired* tells an owner nobody acted, when they
+themselves acted — they sent the replacement. *Withdrawn* tells the invitee the company changed
+its mind, when a fresh link is already in their inbox. The replacement is the fact, and it is the
+only one that tells either side what to do next, so it becomes the state: **replaced**.
+
+This revises decision 23's note that superseded is "indistinguishable from revoked" from the
+holder's side and that saying otherwise would invent a state the page must explain. The page now
+explains it, because the explanation is the useful part. Disclosure is unchanged: *replaced* is
+returned by the branch that already returned *revoked*, still naming no company, role or address.
+
+Two structural consequences, because the drift is what allowed the disagreement:
+
+- **One expression, not four copies.** `employee_invitation_lifecycle_state` holds the CASE and
+  every reader calls it.
+- **The mark outranks the clock.** Superseding only ever lands on a lapsed row today, so
+  *replaced* and *expired* coincide — but move a superseded row's expiry forward and the old
+  ordering flipped two readers to *pending* while acceptance kept refusing. Revocation carried
+  the same hole: it tested the clock and two stamps but not the mark, so an owner could withdraw
+  a row their own list called replaced. Both guards are now "anything but pending is refused".
+
+Considered option: fold *replaced* into *expired* everywhere, which is the smaller change and
+true by construction today. Rejected because it keeps the misleading half of both readings and
+survives only as long as nothing moves an expiry.
+
 ### 22. Additional company creation is an account-level atomic bootstrap (2026-08-21)
 
 Delivers PRD decision #21 / S35. An authenticated account that already holds any active

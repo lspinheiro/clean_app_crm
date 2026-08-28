@@ -144,6 +144,12 @@ export default async function FirstAdminAcceptancePage({
     if (preview.state === "revoked") {
       return notice(employeeT("revokedTitle"), employeeT("revokedDescription"));
     }
+    // A newer invitation took this one's place, which is the one fact that tells this holder
+    // what to do: read the most recent e-mail. It used to arrive as "withdrawn" here and as
+    // "Expired" on the owner's list; one word now covers both.
+    if (preview.state === "replaced") {
+      return notice(employeeT("replacedTitle"), employeeT("replacedDescription"));
+    }
     if (preview.state !== "pending") {
       return notice(employeeT("unknownTitle"), employeeT("unknownDescription"));
     }

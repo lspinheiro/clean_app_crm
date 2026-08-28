@@ -327,6 +327,10 @@ describe("employee invitation states", () => {
   it.each([
     ["expired", "This invitation has expired"],
     ["revoked", "This invitation was withdrawn"],
+    // CLE-97: a replaced invitation used to be folded into "withdrawn" here and into
+    // "Expired" on the owner's list. Neither is the advice this holder needs — a newer
+    // invitation is already in their inbox.
+    ["replaced", "This invitation was replaced"],
     ["accepted", "This invitation was already accepted"],
     ["unknown", "We could not find this invitation"],
   ])("says exactly what happened when the invitation is %s", async (state, heading) => {
@@ -438,6 +442,7 @@ describe("employee invitation states", () => {
   it.each([
     ["expired", "This invitation has expired"],
     ["revoked", "This invitation was withdrawn"],
+    ["replaced", "This invitation was replaced"],
   ])("does not offer Continue for a %s invitation", async (state, heading) => {
     // The preview is read before anything is spent, so a token parked against a dead
     // invitation is simply never exchanged.

@@ -100,7 +100,7 @@ describe("company settings language control", () => {
     expect(screen.getByRole("combobox", { name: "Language" })).toHaveValue("pt-BR");
   });
 
-  it("shows role selection and all four employee invitation states to an owner", async () => {
+  it("shows role selection and every employee invitation state to an owner", async () => {
     mocks.requireCompanyAdmin.mockResolvedValue(companyContext({
       invitations: [{
         accepted_at: null,
@@ -141,6 +141,19 @@ describe("company settings language control", () => {
         invitation_state: "revoked",
         revoked_at: "2026-08-18T00:00:00.000Z",
         role: "owner",
+      },
+      {
+        // CLE-97: re-inviting a lapsed address leaves the old row behind. Calling it Expired
+        // said nobody acted, when the owner did — they sent a newer invitation — and it
+        // disagreed with the invitee's page, which called the same row withdrawn.
+        accepted_at: null,
+        created_at: "2026-08-02T00:00:00.000Z",
+        email: "expired@example.test",
+        expires_at: "2026-08-09T00:00:00.000Z",
+        id: "83000000-0000-4000-8000-000000000105",
+        invitation_state: "replaced",
+        revoked_at: null,
+        role: "staff",
       }],
     }));
     mocks.getCompanyLogoUrl.mockResolvedValue(null);
@@ -151,7 +164,7 @@ describe("company settings language control", () => {
     expect(screen.getByRole("combobox", { name: "Company access" })).toHaveValue("staff");
     expect(screen.getByRole("option", { name: "Owner" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Staff" })).toBeInTheDocument();
-    for (const state of ["Pending", "Accepted", "Expired", "Revoked"]) {
+    for (const state of ["Pending", "Accepted", "Expired", "Revoked", "Replaced"]) {
       expect(screen.getByText(state, { exact: true })).toBeInTheDocument();
     }
     expect(screen.getByRole("button", { name: "Revoke pending@example.test" }))

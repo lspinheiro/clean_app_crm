@@ -22,7 +22,10 @@ import { sendResendEmailBatches } from "@/lib/resend";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 const preparedInvitationSchema = z.object({
+  /** A usable login exists: the address is confirmed and a password is set. */
   account_existed: z.boolean(),
+  /** Some auth record exists, with or without a password. Not the same question. */
+  auth_user_exists: z.boolean(),
   invitation_expires_at: z.iso.datetime({ offset: true }),
   invitation_id: z.uuid(),
 });
@@ -200,6 +203,17 @@ export async function inviteEmployeeAction(
         replyTo: configuration.replyTo,
       });
       if (outcomes[0]?.status !== "accepted") throw new DeliveryRejected(outcomes[0]);
+    } else if (prepared.auth_user_exists) {
+      // Registered but with no password — the state an invite link leaves behind when a scanner
+      // follows it, which confirms the address while the password is still only set inside
+      // acceptance. `inviteUserByEmail` refuses an address that is already registered, and
+      // "sign in and accept" points at a login that does not exist, so recovery is the only
+      // way to reach this person. Same reasoning as `requestEmployeeInvitationLinkAction`.
+      const admin = createAdminClient();
+      const { error } = await admin.auth.resetPasswordForEmail(parsed.data.email, {
+        redirectTo: confirmationUrl(appUrl, parsed.data.locale, prepared.invitation_id),
+      });
+      if (error) throw new DeliveryRejected(error);
     } else {
       const admin = createAdminClient();
       const { data, error } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {

@@ -74,7 +74,10 @@ describe("CLE-83 employee invitation actions", () => {
       rpc: mocks.rpc,
     });
     mocks.createAdminClient.mockReturnValue({
-      auth: { admin: { inviteUserByEmail: mocks.inviteUserByEmail } },
+      auth: {
+        admin: { inviteUserByEmail: mocks.inviteUserByEmail },
+        resetPasswordForEmail: mocks.resetPasswordForEmail,
+      },
     });
     mocks.inviteUserByEmail.mockResolvedValue({ data: { user: { id: "new-user" } }, error: null });
     mocks.sendResendEmailBatches.mockResolvedValue([{
@@ -97,6 +100,7 @@ describe("CLE-83 employee invitation actions", () => {
     mocks.rpc.mockResolvedValueOnce({
       data: [{
         account_existed: false,
+        auth_user_exists: false,
         invitation_expires_at: "2026-08-27T00:00:00.000Z",
         invitation_id: invitationId,
       }],
@@ -125,10 +129,44 @@ describe("CLE-83 employee invitation actions", () => {
     expect(mocks.sendResendEmailBatches).not.toHaveBeenCalled();
   });
 
+  // The case that stranded a real invitee on 2026-08-28. Following an invite link confirms the
+  // address — a scanner does it just as well as a person — while the password is only ever set
+  // inside acceptance. Treating "confirmed" as "can sign in" sent "Sign in and accept the
+  // invitation" to a login that does not exist, and `inviteUserByEmail` refuses an address that
+  // is already registered, so neither existing branch could reach them.
+  it("recovers an account that is registered but has no password", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: [{
+        account_existed: false,
+        auth_user_exists: true,
+        invitation_expires_at: "2026-08-27T00:00:00.000Z",
+        invitation_id: invitationId,
+      }],
+      error: null,
+    });
+    mocks.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
+
+    await expect(inviteEmployeeAction(invitationForm("confirmed.no.password@example.test")))
+      .resolves.toEqual({ ok: true });
+
+    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith(
+      "confirmed.no.password@example.test",
+      { redirectTo: `https://crm.example.test/en-AU/auth/confirm/${invitationId}` },
+    );
+    // Re-inviting is refused for a registered address, and a sign-in link points at a password
+    // nobody has ever chosen.
+    expect(mocks.inviteUserByEmail).not.toHaveBeenCalled();
+    expect(mocks.sendResendEmailBatches).not.toHaveBeenCalled();
+    // The invitation stays open: recovery lands on the acceptance form, which now asks for a
+    // password because `account_existed` is false.
+    expect(mocks.rpc).not.toHaveBeenCalledWith("revoke_employee_invitation", expect.anything());
+  });
+
   it("sends an existing account a sign-in link without creating another Auth user", async () => {
     mocks.rpc.mockResolvedValueOnce({
       data: [{
         account_existed: true,
+        auth_user_exists: true,
         invitation_expires_at: "2026-08-27T00:00:00.000Z",
         invitation_id: invitationId,
       }],
@@ -155,6 +193,7 @@ describe("CLE-83 employee invitation actions", () => {
       .mockResolvedValueOnce({
         data: [{
           account_existed: false,
+          auth_user_exists: false,
           invitation_expires_at: "2026-08-27T00:00:00.000Z",
           invitation_id: invitationId,
         }],
@@ -186,6 +225,7 @@ describe("CLE-83 employee invitation actions", () => {
       .mockResolvedValueOnce({
         data: [{
           account_existed: false,
+          auth_user_exists: false,
           invitation_expires_at: "2026-08-27T00:00:00.000Z",
           invitation_id: invitationId,
         }],
@@ -215,6 +255,7 @@ describe("CLE-83 employee invitation actions", () => {
       .mockResolvedValueOnce({
         data: [{
           account_existed: false,
+          auth_user_exists: false,
           invitation_expires_at: "2026-08-27T00:00:00.000Z",
           invitation_id: invitationId,
         }],

@@ -652,6 +652,41 @@ working across the deploy. After `supabase config push` overwrote nine hosted au
 Considered option: verify on the GET but only for requests that look like a browser — rejected
 because it is a guess about the client, and the scanners that matter render pages.
 
+### 27. Delivery follows whether the invitee can sign in (2026-08-28)
+
+Decision 24's amendment rejected the premise that a confirmed address means a usable login, and
+fixed `claim_employee_invitation_link`. It left the same premise standing in
+`prepare_employee_invitation`, whose `account_existed` was still nothing more than
+`email_confirmed_at is not null` — so the initial send kept the bug the re-send had lost. A real
+invitee hit it on 2026-08-28: their address had been confirmed by opening a link during
+debugging, no password had ever been chosen, and the invitation arrived as "Sign in and accept",
+pointing at a login that does not exist.
+
+The acceptance form reads the same flag to decide whether to ask for a password, so reaching the
+form by any other route would have produced a member who could use one session and was locked
+out when it expired.
+
+Two facts, kept separate because they answer different questions:
+
+- **`account_existed`** — confirmed *and* holding a password. What acceptance wants: false means
+  ask for one.
+- **`auth_user_exists`** — an auth record exists at all. What delivery wants:
+  `inviteUserByEmail` is refused for a registered address, so an account without a password can
+  only be reached by recovery.
+
+Delivery is therefore three ways rather than two: no record at all is invited, a record without
+a password is recovered, and a real login is sent the Resend sign-in link. Non-accepted
+invitations are backfilled, since one already in flight would otherwise still skip the password.
+
+The acceptance screen's copy went with it. "This link has already been opened — invitation links
+work once, and an e-mail scanner may have opened it before you did" was shown to people whose
+link carried no token at all: the Resend sign-in mail goes straight to `/invite/accept` and never
+passes through `/auth/confirm`, so nothing was ever spent. It now says what is actually true —
+sign in, or send yourself a new link.
+
+Considered option: keep one flag and treat "registered" as "can sign in" — rejected because that
+is the original error, stated once more.
+
 ### 22. Additional company creation is an account-level atomic bootstrap (2026-08-21)
 
 Delivers PRD decision #21 / S35. An authenticated account that already holds any active

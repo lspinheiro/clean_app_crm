@@ -299,7 +299,7 @@ describe("employee invitation states", () => {
 
     render(await renderAccept());
 
-    expect(screen.getByRole("heading", { name: "This link has already been opened" }))
+    expect(screen.getByRole("heading", { name: "Open your invitation" }))
       .toBeInTheDocument();
     expect(screen.getByText(/Coastal Demo Cleaning/)).toBeInTheDocument();
     // Naming the problem is not enough — the seven-day invitation has to stay reachable
@@ -462,7 +462,7 @@ describe("employee invitation states", () => {
 
     render(await renderAccept());
 
-    expect(screen.getByRole("heading", { name: "This link has already been opened" }))
+    expect(screen.getByRole("heading", { name: "Open your invitation" }))
       .toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send me a new link" })).toBeInTheDocument();
   });

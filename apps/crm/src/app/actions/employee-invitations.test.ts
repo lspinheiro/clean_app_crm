@@ -25,6 +25,7 @@ vi.mock("@/lib/resend", () => ({ sendResendEmailBatches: mocks.sendResendEmailBa
 vi.mock("@/i18n/revalidate", () => ({ revalidateLocalizedPath: mocks.revalidateLocalizedPath }));
 
 import { initialEmployeeInvitationState } from "@/features/employee-invitations/state";
+import { localiseUserMessage } from "@/i18n/user-message";
 import {
   acceptEmployeeInvitationAction,
   inviteEmployeeAction,
@@ -43,6 +44,27 @@ function invitationForm(email = "new.employee@example.test") {
   formData.set("locale", "en-AU");
   formData.set("role", "staff");
   return formData;
+}
+
+/** What the acceptance form posts for an invitee who still has to choose a password. */
+function acceptanceForm(password = "safe-local-password") {
+  const formData = new FormData();
+  formData.set("confirmPassword", password);
+  formData.set("fullName", "New Employee");
+  formData.set("invitationId", invitationId);
+  formData.set("locale", "en-AU");
+  formData.set("password", password);
+  return formData;
+}
+
+function newAccountContext(invitationStatus = "pending") {
+  return {
+    account_existed_at_invitation: false,
+    invitation_status: invitationStatus,
+    locale: "en-AU",
+    profile_full_name: "New cleaner",
+    profile_locale: null,
+  };
 }
 
 describe("CLE-83 employee invitation actions", () => {
@@ -412,6 +434,185 @@ describe("CLE-83 employee invitation actions", () => {
       target_invitation_id: invitationId,
       target_locale: "en-AU",
     });
+  });
+});
+
+// CLE-96. Acceptance is two steps that cannot be made one: the password is saved through Auth,
+// the membership through a Postgres RPC. When the second step failed the first had already
+// happened, and the answer named neither fact — so the invitee was left holding a password they
+// were not told about, outside a company they had not joined.
+describe("retrying employee acceptance after a failure", () => {
+  // `clearAllMocks` empties the call log but not the `mockResolvedValueOnce` queue, so a run
+  // that stops early leaves its unconsumed answers for whatever test comes next. Draining both
+  // ends keeps a red test here from failing tests elsewhere in the file.
+  function drainQueuedAnswers() {
+    mocks.rpc.mockReset();
+    mocks.updateUser.mockReset();
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    drainQueuedAnswers();
+    mocks.cookies.mockResolvedValue({ set: mocks.cookieSet });
+    mocks.createClient.mockResolvedValue({
+      auth: { updateUser: mocks.updateUser },
+      rpc: mocks.rpc,
+    });
+    mocks.updateUser.mockResolvedValue({ data: { user: { id: "user-1" } }, error: null });
+  });
+
+  afterEach(drainQueuedAnswers);
+
+  // The retry that had nowhere to go. The first attempt saved the password, so re-submitting the
+  // same one is refused by GoTrue as `same_password` — which reached the invitee as "choose
+  // another password", advice to abandon the password that had in fact been saved. GoTrue only
+  // reaches that check when a password is already stored, so the refusal is the confirmation
+  // that this step is already done, and the membership CLE-94 forbids creating without one is
+  // safe to create.
+  it("completes acceptance when the retry re-submits the password already saved", async () => {
+    mocks.rpc
+      .mockResolvedValueOnce({ data: [newAccountContext()], error: null })
+      .mockResolvedValueOnce({ data: companyId, error: null });
+    mocks.updateUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: {
+        code: "same_password",
+        message: "New password should be different from the old password.",
+        status: 422,
+      },
+    });
+
+    await expect(acceptEmployeeInvitationAction(initialEmployeeInvitationState, acceptanceForm()))
+      .rejects.toThrow("NEXT_REDIRECT:/en-AU/roster");
+
+    expect(mocks.rpc).toHaveBeenNthCalledWith(2, "accept_employee_invitation", {
+      full_name: "New Employee",
+      target_invitation_id: invitationId,
+      target_locale: "en-AU",
+    });
+  });
+
+  // A password that Auth genuinely refuses must still stop the flow dead. Creating the membership
+  // here is the CLE-94 lockout: a member who can use this one session and nothing after it.
+  it("never creates the membership when the password itself was rejected", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: [newAccountContext()], error: null });
+    mocks.updateUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: { code: "weak_password", message: "Password is too weak", status: 422 },
+    });
+
+    await expect(acceptEmployeeInvitationAction(initialEmployeeInvitationState, acceptanceForm()))
+      .resolves.toMatchObject({
+        fieldErrors: { password: "user.employeeInvitationPasswordRejected" },
+        ok: false,
+      });
+
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("says the password was saved when the membership step fails", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.rpc
+      .mockResolvedValueOnce({ data: [newAccountContext()], error: null })
+      .mockResolvedValueOnce({ data: null, error: { message: "deadlock detected" } });
+
+    const result = await acceptEmployeeInvitationAction(
+      initialEmployeeInvitationState,
+      acceptanceForm(),
+    );
+
+    // "No longer available" was false — the invitation is open, and pressing accept again is the
+    // whole of what is left to do.
+    expect(result).toMatchObject({
+      formError: "user.employeeInvitationPasswordSaved",
+      ok: false,
+    });
+
+    consoleError.mockRestore();
+  });
+
+  it("asks an existing account to accept again when the membership step fails", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: [{
+          account_existed_at_invitation: true,
+          invitation_status: "pending",
+          locale: "en-AU",
+          profile_full_name: "Ana Cleaner",
+          profile_locale: "en-AU",
+        }],
+        error: null,
+      })
+      .mockRejectedValueOnce(new Error("connection reset"));
+    const formData = new FormData();
+    formData.set("invitationId", invitationId);
+
+    await expect(acceptEmployeeInvitationAction(initialEmployeeInvitationState, formData))
+      .resolves.toMatchObject({
+        formError: "user.employeeInvitationNotCompleted",
+        ok: false,
+      });
+    // Nothing was changed on the way to failing, so the message must not claim otherwise.
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
+  });
+
+  // The form is drawn from a reading taken when the page loaded. Everything below can happen
+  // between that reading and the submit, and every one of them arrived as the same sentence.
+  it.each([
+    ["expired", "user.employeeInvitationExpired"],
+    ["replaced", "user.employeeInvitationReplaced"],
+    ["revoked", "user.employeeInvitationRevoked"],
+  ])("names an invitation that became %s while the page was open", async (status, message) => {
+    mocks.rpc.mockResolvedValueOnce({ data: [newAccountContext(status)], error: null });
+
+    await expect(acceptEmployeeInvitationAction(initialEmployeeInvitationState, acceptanceForm()))
+      .resolves.toMatchObject({ formError: message, ok: false });
+
+    // A dead invitation may not change this account's password on its way to being refused.
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  // The other half of a lost answer: the membership landed and the reply did not. Retrying then
+  // has to reach the same place succeeding first time would have, not a refusal.
+  it("sends an invitee whose membership already landed on to the roster", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: [{
+        account_existed_at_invitation: false,
+        invitation_status: "accepted",
+        locale: "en-AU",
+        profile_full_name: "New Employee",
+        profile_locale: "pt-BR",
+      }],
+      error: null,
+    });
+
+    await expect(acceptEmployeeInvitationAction(initialEmployeeInvitationState, acceptanceForm()))
+      .rejects.toThrow("NEXT_REDIRECT:/pt-BR/roster");
+
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("ships every acceptance answer in both languages", () => {
+    for (const message of [
+      "user.employeeInvitationExpired",
+      "user.employeeInvitationNotCompleted",
+      "user.employeeInvitationPasswordSaved",
+      "user.employeeInvitationReplaced",
+      "user.employeeInvitationRevoked",
+    ]) {
+      for (const locale of ["en-AU", "pt-BR"] as const) {
+        const localised = localiseUserMessage(message, locale);
+        expect(localised?.trim(), `${message} in ${locale}`).toBeTruthy();
+        // An absent key falls back to the generic sentence, which is the thing being replaced.
+        expect(localised, `${message} in ${locale}`)
+          .not.toBe(localiseUserMessage("user.notAKey", locale));
+      }
+    }
   });
 });
 

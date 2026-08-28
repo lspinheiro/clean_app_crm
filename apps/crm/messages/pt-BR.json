@@ -902,7 +902,12 @@
     "logoUploadFailed": "Não foi possível enviar o logotipo. Os dados da empresa não foram alterados.",
     "generic": "Não foi possível concluir esta ação. Tente novamente.",
     "employeeInvitationRateLimited": "Muitos e-mails de convite foram enviados agora. Espere um minuto e envie novamente.",
-    "employeeInvitationRateLimitedStillOpen": "Muitos e-mails de convite foram enviados agora, e este convite continua aberto. Revogue-o na lista abaixo, espere um minuto e envie novamente."
+    "employeeInvitationRateLimitedStillOpen": "Muitos e-mails de convite foram enviados agora, e este convite continua aberto. Revogue-o na lista abaixo, espere um minuto e envie novamente.",
+    "employeeInvitationExpired": "Este convite venceu enquanto esta página estava aberta. Peça à empresa para enviar outro.",
+    "employeeInvitationRevoked": "Este convite foi retirado enquanto esta página estava aberta. Peça à empresa para enviar outro.",
+    "employeeInvitationReplaced": "Um convite mais recente substituiu este enquanto esta página estava aberta. Abra o e-mail de convite mais recente e aceite por lá.",
+    "employeeInvitationNotCompleted": "Não foi possível concluir a entrada na equipe, e nada foi alterado. Aceite o convite novamente.",
+    "employeeInvitationPasswordSaved": "Sua senha foi salva, mas não foi possível concluir a entrada na equipe. Informe a mesma senha e aceite o convite novamente."
   },
   "Services": {
     "office-clean": "Limpeza de escritório",

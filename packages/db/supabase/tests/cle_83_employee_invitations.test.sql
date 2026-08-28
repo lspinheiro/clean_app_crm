@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(45);
+select plan(46);
 
 select has_table(
   'public',
@@ -496,6 +496,20 @@ select is(
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '83000000-0000-4000-8000-000000000003', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
+
+-- CLE-96. Acceptance saves the password through Auth and the membership through this RPC, and
+-- nothing spans the two — so the answer to a completed acceptance can be lost while the
+-- membership stands. The invitee then submits the same form again, and what they are told next
+-- is decided entirely by this reading. It has to keep naming the invitation 'accepted' for its
+-- own accepter, or the retry meets a refusal instead of the company they already belong to.
+select results_eq(
+  $$select invitation_status::text collate "C"
+    from public.get_employee_invitation_context(
+      '83000000-0000-4000-8000-000000000700'
+    )$$,
+  $$values ('accepted'::text collate "C")$$,
+  'an accepted invitation still reads as accepted for the account that accepted it'
+);
 
 select throws_ok(
   $$select public.accept_employee_invitation(

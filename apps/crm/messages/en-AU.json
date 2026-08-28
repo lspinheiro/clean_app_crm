@@ -902,7 +902,12 @@
     "logoUploadFailed": "The logo could not be uploaded. Your company details were not changed.",
     "generic": "This action could not be completed. Please try again.",
     "employeeInvitationRateLimited": "Too many invitation e-mails have gone out just now. Wait a minute and send it again.",
-    "employeeInvitationRateLimitedStillOpen": "Too many invitation e-mails have gone out just now, and this invitation is still open. Revoke it in the list below, then wait a minute and send it again."
+    "employeeInvitationRateLimitedStillOpen": "Too many invitation e-mails have gone out just now, and this invitation is still open. Revoke it in the list below, then wait a minute and send it again.",
+    "employeeInvitationExpired": "This invitation expired while this page was open. Ask the company to send a new one.",
+    "employeeInvitationRevoked": "This invitation was withdrawn while this page was open. Ask the company to send a new one.",
+    "employeeInvitationReplaced": "A newer invitation replaced this one while this page was open. Open the most recent invitation e-mail and accept from there.",
+    "employeeInvitationNotCompleted": "Joining the team did not finish, and nothing was changed. Accept the invitation again.",
+    "employeeInvitationPasswordSaved": "Your password is saved, but joining the team did not finish. Enter the same password and accept the invitation again."
   },
   "Services": {
     "office-clean": "Office clean",

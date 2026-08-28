@@ -32,11 +32,25 @@ const preparedInvitationSchema = z.object({
 
 const invitationContextSchema = z.object({
   account_existed_at_invitation: z.boolean(),
-  invitation_status: z.literal("pending"),
+  // Every lifecycle state is read, not only 'pending'. Accepting the literal and nothing else
+  // turned "this expired ten minutes ago" into a parse failure, and a parse failure into the one
+  // sentence that fits any of them — which is the sentence that tells the invitee nothing.
+  invitation_status: z.enum(["accepted", "expired", "pending", "replaced", "revoked"]),
   locale: z.enum(["en-AU", "pt-BR"]),
   profile_full_name: z.string(),
   profile_locale: z.enum(["en-AU", "pt-BR"]).nullable(),
 });
+
+/**
+ * The form is drawn from a reading taken when the page loaded, and any of these can happen
+ * between that reading and the submit. Naming the state is the difference between "ask the
+ * company for a new invitation" and "open the newer e-mail you already have".
+ */
+const lapsedInvitationMessages = {
+  expired: userMessage("employeeInvitationExpired"),
+  replaced: userMessage("employeeInvitationReplaced"),
+  revoked: userMessage("employeeInvitationRevoked"),
+} as const;
 
 function failure(
   formError: string | null,
@@ -113,6 +127,21 @@ function isEmailRateLimit(cause: unknown): boolean {
   const status = Reflect.get(cause, "status");
   const code = Reflect.get(cause, "code");
   return status === 429 || code === "over_email_send_rate_limit";
+}
+
+/**
+ * Auth refuses a password change that changes nothing, as 422 `same_password`. On the retry that
+ * follows a failed membership step that is not a rejection — it is the confirmation that the
+ * password being submitted is already this account's, which is all this step ever had to achieve.
+ *
+ * Safe against the CLE-94 lockout, and only because of where the check sits in Auth: it compares
+ * against a stored hash and is skipped entirely when there is none, so `same_password` cannot be
+ * returned for an account that has no password. Treating it as "already done" therefore never
+ * lets a membership be created for an account that cannot sign in.
+ */
+function isPasswordAlreadySet(cause: unknown): boolean {
+  if (typeof cause !== "object" || cause === null) return false;
+  return Reflect.get(cause, "code") === "same_password";
 }
 
 async function revokeFailedDelivery(
@@ -347,6 +376,32 @@ export async function revokeEmployeeInvitationAction(
   return { ok: true };
 }
 
+/**
+ * The end of acceptance, reached both by completing it and by finding it already complete. A
+ * retry after a lost answer has to land in the same place succeeding first time would have.
+ */
+async function enterCompany(targetLocale: "en-AU" | "pt-BR"): Promise<never> {
+  const cookieStore = await cookies();
+  cookieStore.set(localeCookieName, targetLocale, {
+    maxAge: localeCookieMaxAgeSeconds,
+    path: "/",
+    sameSite: "lax",
+  });
+  return redirect({ href: "/roster", locale: targetLocale });
+}
+
+/**
+ * Two steps that cannot be made one: the password is saved through Auth, the membership through
+ * a Postgres RPC, and no transaction spans them. So neither step may be a point of no return.
+ * The password step is idempotent — re-submitting the password it already saved counts as done —
+ * and the membership RPC is atomic in the database, leaving nothing behind when it fails. What
+ * remains is to say which of the two got as far as it did, so that pressing accept again is
+ * visibly the whole of what is left.
+ *
+ * Order is fixed by CLE-94 and cannot be swapped to make the failure cheaper: a membership
+ * created before the password exists is a member who can use this one session and is locked out
+ * of every one after it.
+ */
 export async function acceptEmployeeInvitationAction(
   _previous: EmployeeInvitationActionResult,
   formData: FormData,
@@ -371,6 +426,17 @@ export async function acceptEmployeeInvitationAction(
     return failure(userMessage("employeeInvitationUnavailable"));
   }
 
+  // Read before anything is written, so a submit against an invitation that has already lapsed
+  // cannot change this account's password on its way to being refused.
+  if (context.invitation_status === "accepted") {
+    // The membership landed; only its answer went missing. This account already holds it, so
+    // the invitee belongs in the company rather than in front of a refusal.
+    return enterCompany(context.profile_locale ?? context.locale);
+  }
+  if (context.invitation_status !== "pending") {
+    return failure(lapsedInvitationMessages[context.invitation_status]);
+  }
+
   let fullName = context.profile_full_name;
   let targetLocale = context.profile_locale ?? context.locale;
   if (!context.account_existed_at_invitation) {
@@ -392,10 +458,18 @@ export async function acceptEmployeeInvitationAction(
     fullName = account.data.fullName;
     targetLocale = account.data.locale;
     const { error } = await supabase.auth.updateUser({ password: account.data.password });
-    if (error) return failure(userMessage("employeeInvitationPasswordRejected"), {
-      password: userMessage("employeeInvitationPasswordRejected"),
-    });
+    // "Choose another password and try again" was the wall the invitee hit on every retry: the
+    // password had been saved by the attempt whose membership step failed, so re-submitting it
+    // came back as `same_password`, and the advice was to abandon the one password that worked.
+    if (error && !isPasswordAlreadySet(error)) {
+      return failure(userMessage("employeeInvitationPasswordRejected"), {
+        password: userMessage("employeeInvitationPasswordRejected"),
+      });
+    }
   }
+
+  // Whether the password step ran or was already satisfied, this account can sign in from here.
+  const passwordSaved = !context.account_existed_at_invitation;
 
   try {
     const { data, error } = await supabase.rpc("accept_employee_invitation", {
@@ -403,16 +477,21 @@ export async function acceptEmployeeInvitationAction(
       target_invitation_id: invitationId.data,
       target_locale: targetLocale,
     });
-    if (error || !data) return failure(userMessage("employeeInvitationUnavailable"));
-  } catch {
-    return failure(userMessage("employeeInvitationUnavailable"));
+    if (error || !data) throw error ?? new Error("Employee membership was not created");
+  } catch (cause) {
+    // The RPC is one transaction, so a failure leaves no membership and no acceptance mark: the
+    // invitation is still open and pressing accept again is the whole of what is left. Saying
+    // "no longer available" claimed the opposite, and left the password it had just saved
+    // unmentioned — the two facts that together made the page a dead end.
+    console.error("Employee invitation acceptance did not complete", {
+      invitationId: invitationId.data,
+      passwordSaved,
+      reason: cause,
+    });
+    return failure(userMessage(
+      passwordSaved ? "employeeInvitationPasswordSaved" : "employeeInvitationNotCompleted",
+    ));
   }
 
-  const cookieStore = await cookies();
-  cookieStore.set(localeCookieName, targetLocale, {
-    maxAge: localeCookieMaxAgeSeconds,
-    path: "/",
-    sameSite: "lax",
-  });
-  return redirect({ href: "/roster", locale: targetLocale });
+  return enterCompany(targetLocale);
 }

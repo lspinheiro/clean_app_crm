@@ -199,7 +199,12 @@
     "backToLogin": "Back to sign in",
     "formUnavailable": "This invitation is no longer available. Ask the founding team for help.",
     "duplicateAbn": "This ABN already belongs to a company. Choose another ABN.",
-    "passwordRejected": "The password could not be saved. Choose another password and try again."
+    "passwordRejected": "The password could not be saved. Choose another password and try again.",
+    "continueTitle": "Continue to your invitation",
+    "continueDescription": "The Clean Crew founding team invited you. Press continue to open it — we wait for you, so that an e-mail scanner opening the link cannot use it before you do.",
+    "continue": "Continue",
+    "continuing": "Opening…",
+    "continueFailed": "This link no longer works. Ask the founding team for a new one."
   },
   "EmployeeInvitationAcceptance": {
     "eyebrow": "Employee invitation",
@@ -238,7 +243,12 @@
     "requestLinkSending": "Sending…",
     "requestLinkSent": "Check your inbox. If this invitation is still open, a new link is on its way to {invitee}.",
     "requestLinkFailed": "We could not send a new link just now. Wait a minute and try again.",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "continueTitle": "Continue to your invitation",
+    "continueDescription": "{companyName} invited you. Press continue to open it — we wait for you, so that an e-mail scanner opening the link cannot use it before you do.",
+    "continue": "Continue",
+    "continuing": "Opening…",
+    "continueFailed": "This link no longer works. Send yourself a new one."
   },
   "EmployeeManagement": {
     "title": "Company access",

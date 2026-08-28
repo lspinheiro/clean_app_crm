@@ -586,9 +586,10 @@ Following an invite link confirms the address, and an e-mail scanner following i
 invitee does the same, but the password is only set later inside acceptance. A scanner-
 confirmed invitee therefore holds credentials nobody has seen, and treating "confirmed" as
 "has a login" stranded exactly the person this feature exists for. That case now receives a
-recovery e-mail. The interstitial that would stop the token being spent by a GET in the first
-place — Supabase's own recommendation for e-mail prefetching — is not built yet and is the
-root fix rather than this escape hatch.
+recovery e-mail. The interstitial that stops the token being spent by a GET in the first place
+is the root fix rather than this escape hatch; it landed the next day as decision 26, which
+demotes claiming to what it should always have been — the way back from a token that is
+genuinely spent, not the answer to every visit.
 
 The claim also wrote `last_link_sent_at` before the provider had accepted anything, so a
 rejected send told the invitee a link was on the way and then blocked the retry that would
@@ -609,6 +610,47 @@ carries a query and every template joins with `?`. This also unblocks `recovery.
 cannot branch on invitation kind because `resetPasswordForEmail` takes no `data`. The hosted
 allow-list gained wildcard entries the same day, and `scripts/check-hosted-auth.mjs` now fails
 a release when the allow-list stops permitting the redirects the apps actually ask for.
+
+### 26. Nothing is spent until a human presses Continue (2026-08-28)
+
+The confirmation route exchanged the token on the GET, so *fetching* the link was the act that
+used it. An invitation e-mail is fetched by things that are not the invitee — Outlook and
+Mimecast scanners, corporate mail gateways, browser prefetches, a reload, the invitee
+forwarding the message to themselves — and every one of them destroyed the invitation before
+the invitee saw a screen. Decision 24's claim made that recoverable; it did not stop it
+happening, and the replacement e-mail was exactly as spendable as the first.
+
+`/{locale}/auth/confirm` now validates the token and parks it in an `HttpOnly`, `SameSite=Lax`
+cookie, then redirects exactly as before. The acceptance page offers **Continue**, and only
+that server action calls `verifyOtp`. A GET no longer mutates. A scanner cannot reach the
+exchange: it is a POST behind a same-origin server action, and it refuses without the cookie
+its own GET set.
+
+Three consequences beyond scanners, all of which were separate dead ends:
+
+- **The link in the inbox becomes idempotent.** It can be opened again tomorrow, on another
+  device, after the browser was closed. The seven-day record is finally usable for seven days,
+  which is what decision 24 set out to achieve and could only approximate.
+- **A scanner no longer confirms the account.** Confirmation happens inside `verifyOtp`, so a
+  fetch used to flip the invitee to "confirmed" while the password was still the generated one
+  nobody had seen — the trap decision 24 was amended for. It cannot arise now.
+- **Arriving signed in as somebody else resolves itself.** Exchanging the token replaces the
+  session with the invitee's, so Continue is offered instead of asking for a sign-out. The
+  same button answers an unconfirmed address, which is the other reason
+  `get_employee_invitation_context` refuses.
+
+The cookie rather than a hidden form field, because the redirect already strips the token from
+the address bar: after the first hop nothing sensitive is on screen or in history. It lives
+thirty minutes, which is not a deadline on the invitation — the link no longer spends anything,
+so opening it again simply parks a fresh one.
+
+Deliberately app-only: no migration, no RPC, no grant, no template, no Auth setting, and the
+URL is byte-identical, so `uri_allow_list` is untouched and links already in inboxes keep
+working across the deploy. After `supabase config push` overwrote nine hosted auth settings on
+2026-08-26, a fix that needs no hosted change is worth more than a tidier one that does.
+
+Considered option: verify on the GET but only for requests that look like a browser — rejected
+because it is a guess about the client, and the scanners that matter render pages.
 
 ### 22. Additional company creation is an account-level atomic bootstrap (2026-08-21)
 

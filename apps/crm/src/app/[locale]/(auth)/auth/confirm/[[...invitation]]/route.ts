@@ -2,7 +2,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { defaultLocale, isAppLocale } from "@/i18n/config";
-import { createClient } from "@/lib/supabase/server";
+import {
+  encodePendingConfirmation,
+  pendingConfirmationCookieName,
+  pendingConfirmationMaxAgeSeconds,
+} from "@/lib/auth/pending-confirmation";
 
 type ConfirmationRouteContext = {
   /**
@@ -29,6 +33,19 @@ function acceptanceRedirect(locale: string, invalid = false, employeeInvitation?
   });
 }
 
+/**
+ * Parks the token the e-mail carried; it is spent by `continuePendingConfirmationAction` when
+ * somebody presses Continue.
+ *
+ * This handler used to call `verifyOtp`, which made fetching the link the act that used it.
+ * Everything that fetches a link on the invitee's behalf therefore destroyed the invitation
+ * before the invitee saw it, and confirmed the account while it was at it — leaving an address
+ * that could not be re-invited and a password nobody had ever chosen. A GET does not mutate
+ * now; it hands over.
+ *
+ * The URL is unchanged, so every link already in an inbox keeps working and the hosted
+ * redirect allow-list is untouched.
+ */
 export async function GET(request: NextRequest, context: ConfirmationRouteContext) {
   const { invitation, locale: requestedLocale } = await context.params;
   const locale = isAppLocale(requestedLocale) ? requestedLocale : defaultLocale;
@@ -44,11 +61,22 @@ export async function GET(request: NextRequest, context: ConfirmationRouteContex
     return acceptanceRedirect(locale, true, employeeInvitation);
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
-    token_hash: tokenHash,
-    type,
-  });
+  const response = acceptanceRedirect(locale, false, employeeInvitation);
+  response.cookies.set(
+    pendingConfirmationCookieName,
+    encodePendingConfirmation({ tokenHash, type }),
+    {
+      httpOnly: true,
+      maxAge: pendingConfirmationMaxAgeSeconds,
+      path: "/",
+      sameSite: "lax",
+      // Derived from the request rather than the build: a `Secure` cookie is dropped over
+      // plain http, which is every local run and every acceptance test.
+      secure: request.nextUrl.protocol === "https:",
+    },
+  );
 
-  return acceptanceRedirect(locale, Boolean(error), employeeInvitation);
+  // The redirect drops the query, so the token is gone from the address bar and from history
+  // after this hop. A live one was pasted into a chat twice while this flow was being debugged.
+  return response;
 }

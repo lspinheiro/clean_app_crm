@@ -24,6 +24,7 @@ describe("CLE-79 Resend batch adapter", () => {
       batchId: "batch-id",
       fetcher,
       from: "Coastal Cleaning via The Clean Crew <invite@example.com>",
+      idempotencyNamespace: "cleaner-invite",
       messages: messages(101),
       replyTo: "admin@example.com",
     });
@@ -36,6 +37,29 @@ describe("CLE-79 Resend batch adapter", () => {
       "cleaner-invite/batch-id/attempt/0/chunk/1",
     ]);
     expect(outcome.filter((item) => item.status === "accepted")).toHaveLength(101);
+  });
+
+  // The namespace used to be the literal `cleaner-invite`, whoever was sending. Employee
+  // invitations borrowed it, so two unrelated sends collided whenever their batch ids matched —
+  // and Resend replays the first send's answer for a repeated key rather than sending again.
+  it("namespaces the idempotency key by the caller rather than by the cleaner invite", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ data: [{ id: "id-0" }] }), { status: 200 }),
+    );
+
+    await sendResendEmailBatches({
+      apiKey: "server-secret",
+      attemptNumber: 0,
+      batchId: "batch-id",
+      fetcher,
+      from: "The Clean Crew <invite@example.com>",
+      idempotencyNamespace: "employee-invitation",
+      messages: messages(1),
+      replyTo: "admin@example.com",
+    });
+
+    expect(fetcher.mock.calls[0][1].headers["Idempotency-Key"])
+      .toBe("employee-invitation/batch-id/attempt/0/chunk/0");
   });
 
   it("honours Retry-After and retries a rate-limited chunk with the same key", async () => {
@@ -56,6 +80,7 @@ describe("CLE-79 Resend batch adapter", () => {
       batchId: "batch-id",
       fetcher,
       from: "Company via The Clean Crew <invite@example.com>",
+      idempotencyNamespace: "cleaner-invite",
       messages: messages(101),
       replyTo: "admin@example.com",
       wait,
@@ -93,6 +118,7 @@ describe("CLE-79 Resend batch adapter", () => {
       batchId: "batch-id",
       fetcher,
       from: "Company via The Clean Crew <invite@example.com>",
+      idempotencyNamespace: "cleaner-invite",
       messages: messages(101),
       replyTo: "admin@example.com",
       wait,
@@ -108,6 +134,7 @@ describe("CLE-79 Resend batch adapter", () => {
       batchId: "batch-id",
       fetcher: vi.fn().mockRejectedValue(new Error("socket secret")),
       from: "Company via The Clean Crew <invite@example.com>",
+      idempotencyNamespace: "cleaner-invite",
       messages: messages(1),
       replyTo: "admin@example.com",
     });
@@ -117,6 +144,7 @@ describe("CLE-79 Resend batch adapter", () => {
       batchId: "batch-id",
       fetcher: vi.fn().mockResolvedValue(new Response("{}", { status: 200 })),
       from: "Company via The Clean Crew <invite@example.com>",
+      idempotencyNamespace: "cleaner-invite",
       messages: messages(1),
       replyTo: "admin@example.com",
     });

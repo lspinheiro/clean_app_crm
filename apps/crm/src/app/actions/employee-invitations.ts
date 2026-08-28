@@ -331,6 +331,7 @@ export async function inviteEmployeeAction(
         attemptNumber: 0,
         batchId: prepared.invitation_id,
         from: `The Clean Crew <${configuration.fromEmail}>`,
+        idempotencyNamespace: "employee-invitation",
         messages: [{
           ...message,
           recipientId: prepared.invitation_id,

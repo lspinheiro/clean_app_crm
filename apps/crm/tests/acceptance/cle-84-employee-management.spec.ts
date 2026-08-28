@@ -1,10 +1,17 @@
 import { expect, test } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
-import { z } from "zod";
 
-import type { Database } from "@clean-app/db";
+import {
+  createAccounts,
+  demoPassword,
+  insertCompany,
+  insertInvitations,
+  insertMemberships,
+  openSettings,
+  removeAccounts,
+  removeCompany,
+  signIn,
+} from "./support/invitations";
 
-const demoPassword = "local-demo-only";
 const companyId = "84000000-0000-4000-8000-000000000030";
 const fixtureAccounts = [
   {
@@ -23,60 +30,31 @@ const fixtureAccounts = [
     role: "staff" as const,
   },
 ];
-const localEnvironment = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url(),
-  SUPABASE_SECRET_KEY: z.string().min(1),
-}).parse(process.env);
-const admin = createClient<Database>(
-  localEnvironment.NEXT_PUBLIC_SUPABASE_URL,
-  localEnvironment.SUPABASE_SECRET_KEY,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
-
 async function removeFixtureData() {
-  const { error: companyError } = await admin
-    .from("companies")
-    .delete()
-    .eq("id", companyId);
-  if (companyError) throw companyError;
-
-  const { data, error: listError } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 1_000,
-  });
-  if (listError) throw listError;
-  const fixtureEmails = new Set(fixtureAccounts.map((account) => account.email));
-  for (const user of data.users) {
-    if (!user.email || !fixtureEmails.has(user.email)) continue;
-    const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
-    if (deleteError) throw deleteError;
-  }
+  // The company first: memberships and invitations cascade with it, and
+  // `invited_by_profile_id` is `on delete restrict`.
+  await removeCompany(companyId);
+  await removeAccounts(fixtureAccounts.map((account) => account.email));
 }
 
 test.beforeAll(async () => {
   await removeFixtureData();
-  const profileIds: string[] = [];
-  for (const account of fixtureAccounts) {
-    const { data, error } = await admin.auth.admin.createUser({
+  const profileIds = await createAccounts(
+    fixtureAccounts.map((account) => ({
       email: account.email,
-      email_confirm: true,
+      fullName: account.fullName,
       password: demoPassword,
-      user_metadata: { full_name: account.fullName },
-    });
-    if (error) throw error;
-    if (!data.user) throw new Error(`Could not create ${account.email}`);
-    profileIds.push(data.user.id);
-  }
+    })),
+  );
 
-  const { error: companyError } = await admin.from("companies").insert({
+  await insertCompany({
     abn: "84111111111",
     id: companyId,
     name: "CLE-84 Demo Cleaning",
     status: "approved",
   });
-  if (companyError) throw companyError;
 
-  const memberships = fixtureAccounts.map((account, index) => {
+  await insertMemberships(fixtureAccounts.map((account, index) => {
     const profileId = profileIds[index];
     if (!profileId) throw new Error(`Missing profile for ${account.email}`);
     return {
@@ -85,13 +63,11 @@ test.beforeAll(async () => {
       profile_id: profileId,
       role: account.role,
     };
-  });
-  const { error: membershipError } = await admin.from("employee_memberships").insert(memberships);
-  if (membershipError) throw membershipError;
+  }));
 
   const inviterProfileId = profileIds[0];
   if (!inviterProfileId) throw new Error("Missing CLE-84 invitation owner");
-  const { error: invitationError } = await admin.from("employee_invitations").insert({
+  await insertInvitations([{
     account_existed_at_invitation: false,
     company_id: companyId,
     email: "invited.cle84@example.test",
@@ -99,24 +75,10 @@ test.beforeAll(async () => {
     invited_by_profile_id: inviterProfileId,
     locale: "en-AU",
     role: "staff",
-  });
-  if (invitationError) throw invitationError;
+  }]);
 });
 
 test.afterAll(removeFixtureData);
-
-async function signIn(page: import("@playwright/test").Page, email: string) {
-  await page.goto("/en-AU/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(demoPassword);
-  await page.getByRole("button", { name: "Sign in" }).click();
-}
-
-async function openSettings(page: import("@playwright/test").Page) {
-  await page.getByRole("button", { name: "Account menu" }).click();
-  await page.getByRole("link", { name: "Settings" }).click();
-  await expect(page).toHaveURL(/\/en-AU\/settings$/);
-}
 
 test.describe("@CLE-84 owner employee management", () => {
   test("an owner sees employees and invitations, changes a role, removes an employee and then themselves", async ({

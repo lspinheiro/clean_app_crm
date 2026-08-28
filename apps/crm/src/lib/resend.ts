@@ -27,6 +27,13 @@ type SendResendEmailBatchesInput = {
   batchId: string;
   fetcher?: typeof fetch;
   from: string;
+  /**
+   * What the caller is sending, and the first segment of every idempotency key this send
+   * writes. Batch ids are only unique within the feature that mints them, so two features
+   * sharing a namespace can collide — and Resend answers a repeated key with the first send's
+   * result instead of sending again, which loses the second message silently.
+   */
+  idempotencyNamespace: string;
   messages: ResendEmailMessage[];
   replyTo: string;
   wait?: (milliseconds: number) => Promise<void>;
@@ -89,6 +96,7 @@ export async function sendResendEmailBatches({
   batchId,
   fetcher = fetch,
   from,
+  idempotencyNamespace,
   messages,
   replyTo,
   wait = waitFor,
@@ -112,7 +120,8 @@ export async function sendResendEmailBatches({
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "Idempotency-Key": `cleaner-invite/${batchId}/attempt/${attemptNumber}/chunk/${chunkIndex}`,
+        "Idempotency-Key":
+          `${idempotencyNamespace}/${batchId}/attempt/${attemptNumber}/chunk/${chunkIndex}`,
       },
       method: "POST",
     } satisfies RequestInit;

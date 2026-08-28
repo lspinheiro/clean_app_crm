@@ -1,21 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const demoPassword = "local-demo-only";
-
-async function signIn(page: import("@playwright/test").Page, email: string) {
-  await page.goto("/en-AU/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(demoPassword);
-  await page.getByRole("button", { name: "Sign in" }).click();
-}
-
-async function signOut(page: import("@playwright/test").Page) {
-  const signOutButton = page.getByRole("button", { name: "Sign out" });
-  if (!(await signOutButton.isVisible())) {
-    await page.getByRole("button", { name: "Account menu" }).click();
-  }
-  await signOutButton.click();
-}
+import { demoPassword, signIn, signOut } from "./support/invitations";
 
 test.describe("@CLE-83 owner employee invitations", () => {
   test("an owner chooses a role and sees every invitation state without resend or bulk controls", async ({

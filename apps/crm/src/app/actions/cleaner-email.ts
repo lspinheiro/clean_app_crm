@@ -208,6 +208,7 @@ async function deliverPreparedRecipients(
     attemptNumber: first.attempt_number,
     batchId: first.batch_id,
     from: senderAddress(companyName, configuration.fromEmail),
+    idempotencyNamespace: "cleaner-invite",
     messages: pending.map((recipient) => ({
       ...message,
       recipientId: recipient.recipient_id,

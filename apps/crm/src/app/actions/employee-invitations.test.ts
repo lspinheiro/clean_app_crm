@@ -271,6 +271,11 @@ describe("CLE-83 employee invitation actions", () => {
     expect(mocks.sendResendEmailBatches).toHaveBeenCalledWith(expect.objectContaining({
       apiKey: "resend-secret",
       batchId: invitationId,
+      // Its own idempotency namespace. Employee invitations used to be sent under the cleaner
+      // invite's, so a cleaner batch and an employee invitation that happened to share a batch
+      // id also shared a key — and Resend answers a repeated key with the first send's result
+      // instead of sending again.
+      idempotencyNamespace: "employee-invitation",
       messages: [expect.objectContaining({
         recipientId: invitationId,
         to: "cleaner@example.test",

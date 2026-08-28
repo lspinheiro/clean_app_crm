@@ -143,7 +143,6 @@ describe("first-admin acceptance page", () => {
       if (name === "employee_invitation_preview") {
         return Promise.resolve({
           data: [{
-            account_existed: true,
             company_name: "Coastal Demo Cleaning",
             invitee_hint: "c***@example.test",
             role: "staff",

@@ -283,25 +283,47 @@ select lives_ok(
   $$select public.post_job('88000000-0000-4000-8000-000000000502')$$,
   'the single-slot job is posted to both cleaners'
 );
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000002', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select public.apply_to_job('88000000-0000-4000-8000-000000000502');
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
 select lives_ok(
-  $$select public.assign_job_slot(
+  $$select public.approve_job_application(
       '88000000-0000-4000-8000-000000000502',
       1,
       '10000000-0000-4000-8000-000000000002'
     )$$,
-  'filling the only slot assigns the first cleaner and fully crews the job'
+  'approving the application assigns the first cleaner and fully crews the job'
 );
 select lives_ok(
   $$select public.post_job('88000000-0000-4000-8000-000000000503')$$,
   'the job that will be cancelled is posted to both cleaners'
 );
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000002', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select public.apply_to_job('88000000-0000-4000-8000-000000000503');
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
 select lives_ok(
-  $$select public.assign_job_slot(
+  $$select public.approve_job_application(
       '88000000-0000-4000-8000-000000000503',
       1,
       '10000000-0000-4000-8000-000000000002'
     )$$,
-  'the first cleaner is assigned before the cancellation'
+  'the first cleaner application is approved before the cancellation'
 );
 select lives_ok(
   $$select public.cancel_job('88000000-0000-4000-8000-000000000503')$$,
@@ -338,7 +360,9 @@ select results_eq(
      group by notification.recipient_id
      order by notification.recipient_id$$,
   $$values
-    ('10000000-0000-4000-8000-000000000001'::uuid, 1),
+    -- The owner count includes both application_received records raised by the
+    -- consented apply/approve path for the single-slot fixtures.
+    ('10000000-0000-4000-8000-000000000001'::uuid, 3),
     ('10000000-0000-4000-8000-000000000002'::uuid, 8),
     ('10000000-0000-4000-8000-000000000003'::uuid, 3)$$,
   'the fixture flow leaves durable news for the owner and for both cleaners'

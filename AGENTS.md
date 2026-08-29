@@ -134,10 +134,12 @@ Context-file conventions (impeccable resolves from app root up, never `docs/`):
 ## Release framing
 
 User journeys (PRODUCT.md §3) are the roadmap unit: a build cycle implements journeys end-to-end
-and releases them to the test cohort. Current stage is the **internal alpha** (PRODUCT.md §3.4):
-the six-item
-build delta listed in this repo's README, on top of what the prototype already proves. Do not pull
-MVP/P1 features (share links, vetting, reviews, messaging, AI, WhatsApp) into alpha work.
+and releases them to the test cohort. Current stage is the **internal alpha** (PRODUCT.md §3.4) —
+the product-market-fit validation stage. Its backlog is not a fixed list: each build cycle's PRD
+under `docs/design/` defines what that cycle ships, ordered by the §3.2 delivery phases (the
+cycle in design is Phase B, `docs/design/chat-and-profile/` — in-app chat and the cleaner
+profile). Do not pull MVP/P1 features (share links, vetting, structured reviews, AI, WhatsApp)
+into a cycle unless the founders direct it.
 
 ## Stage discipline — build fast, never invent requirements
 

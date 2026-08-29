@@ -32,19 +32,29 @@ type NotificationBellProps = {
 
 type BellState =
   | { status: "loading" }
-  | { status: "ready"; items: CleanerNotification[] }
+  | { status: "ready"; items: CleanerNotification[]; unreadIds: string[] }
   | { status: "error" };
 
 async function loadNotifications(): Promise<BellState> {
-  const { data, error } = await getSupabaseClient()
-    .from("cleaner_notifications")
-    .select(notificationColumns)
-    .order("created_at", { ascending: false })
-    .limit(listLimit);
-  if (error) return { status: "error" };
+  const supabase = getSupabaseClient();
+  const [history, unread] = await Promise.all([
+    supabase
+      .from("cleaner_notifications")
+      .select(notificationColumns)
+      .order("created_at", { ascending: false })
+      .limit(listLimit),
+    supabase
+      .from("cleaner_notifications")
+      .select("notification_id")
+      .is("read_at", null),
+  ]);
+  if (history.error || unread.error) return { status: "error" };
   return {
     status: "ready",
-    items: toCleanerNotifications((data ?? []) as CleanerNotificationRow[]),
+    items: toCleanerNotifications((history.data ?? []) as CleanerNotificationRow[]),
+    unreadIds: (unread.data ?? []).flatMap((row) =>
+      row.notification_id ? [row.notification_id] : []
+    ),
   };
 }
 
@@ -131,10 +141,10 @@ export function NotificationBell({ profileId }: NotificationBellProps) {
   const items = useMemo(() => (bell.status === "ready" ? bell.items : []), [bell]);
   const unreadIds = useMemo(
     () =>
-      items
-        .filter((item) => item.readAt === null && !locallyReadIds.has(item.notificationId))
-        .map((item) => item.notificationId),
-    [items, locallyReadIds],
+      bell.status === "ready"
+        ? bell.unreadIds.filter((notificationId) => !locallyReadIds.has(notificationId))
+        : [],
+    [bell, locallyReadIds],
   );
 
   async function markUnreadAsRead() {
@@ -172,7 +182,11 @@ export function NotificationBell({ profileId }: NotificationBellProps) {
         <div className="notification-menu__heading">
           <strong>{t("title")}</strong>
         </div>
-        {bell.status === "error" ? (
+        {bell.status === "loading" ? (
+          <p className="notification-menu__empty" role="status">
+            {commonT("loading")}
+          </p>
+        ) : bell.status === "error" ? (
           <div className="notification-menu__empty" role="alert">
             <p>{t("loadError")}</p>
             <button

@@ -52,6 +52,11 @@ function renderLayout(locale: "en-AU" | "pt-BR" = "en-AU") {
 
 let harness: ReturnType<typeof createSupabaseHarness<CleanerNotificationRow>>;
 
+async function answerBellLoad(rows: CleanerNotificationRow[]) {
+  await harness.answerRead(0, rows);
+  await harness.answerRead(1, rows.filter((candidate) => candidate.read_at === null));
+}
+
 function unreadNews(): CleanerNotificationRow {
   return {
     notification_id: "notification-1",
@@ -179,7 +184,7 @@ describe("CLE-26 the cleaner app navigation", () => {
 describe("CLE-90 the shell carries the bell", () => {
   it("puts the cleaner's own news in the header", async () => {
     renderLayout();
-    await harness.answerRead(0, [unreadNews()]);
+    await answerBellLoad([unreadNews()]);
 
     expect(harness.from).toHaveBeenCalledWith("cleaner_notifications");
     expect(
@@ -189,7 +194,7 @@ describe("CLE-90 the shell carries the bell", () => {
 
   it("watches for news addressed to the signed-in cleaner", async () => {
     renderLayout();
-    await harness.answerRead(0, []);
+    await answerBellLoad([]);
 
     // The filter is the only thing that proves the shell handed the bell the signed-in
     // cleaner rather than a hardcoded or absent identity.

@@ -22,6 +22,7 @@ export type ReadCall<Row> = ReturnType<typeof deferred<ReadResult<Row>>> & {
   columns: string;
   order: { column: string; options: Record<string, unknown> | undefined } | null;
   limit: number | null;
+  is: { column: string; value: unknown } | null;
 };
 
 /** One `update` chain: what it wrote, and which rows it narrowed to. */
@@ -39,6 +40,7 @@ export type UpdateCall = {
 type ReadBuilder<Row> = Promise<ReadResult<Row>> & {
   order: (column: string, options?: Record<string, unknown>) => ReadBuilder<Row>;
   limit: (count: number) => ReadBuilder<Row>;
+  is: (column: string, value: unknown) => ReadBuilder<Row>;
 };
 
 type UpdateBuilder = Promise<WriteResult> & {
@@ -73,6 +75,7 @@ export function createSupabaseHarness<Row>() {
       columns,
       order: null as ReadCall<Row>["order"],
       limit: null as number | null,
+      is: null as ReadCall<Row>["is"],
     });
     reads.push(call);
 
@@ -83,6 +86,10 @@ export function createSupabaseHarness<Row>() {
       },
       limit(count: number) {
         call.limit = count;
+        return builder;
+      },
+      is(column: string, value: unknown) {
+        call.is = { column, value };
         return builder;
       },
     });

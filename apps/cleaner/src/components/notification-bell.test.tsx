@@ -1,4 +1,4 @@
-import { act, screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -105,6 +105,14 @@ const paid = row({
   site_name: "Marina Offices",
 });
 
+const twentyOneUnread = Array.from({ length: 21 }, (_, index) =>
+  row({
+    notification_id: `notification-${index + 1}`,
+    job_id: `job-${index + 1}`,
+    created_at: `2026-08-25T00:${String(59 - index).padStart(2, "0")}:00+00:00`,
+  })
+);
+
 /** The same row as the database returns it once the bell has been opened. */
 function seen(candidate: CleanerNotificationRow): CleanerNotificationRow {
   return { ...candidate, read_at: "2026-08-25T01:00:00+00:00" };
@@ -124,10 +132,23 @@ beforeEach(() => {
   mocks.channel.subscribe.mockReturnValue(mocks.channel);
 });
 
+async function answerBellLoad(
+  loadIndex: number,
+  rows: CleanerNotificationRow[] | null,
+  error: { message: string } | null = null,
+  unreadRows: CleanerNotificationRow[] | null = rows?.filter(
+    (candidate) => candidate.read_at === null,
+  ) ?? null,
+) {
+  const firstReadIndex = loadIndex * 2;
+  await harness.answerRead(firstReadIndex, rows, error);
+  await harness.answerRead(firstReadIndex + 1, unreadRows, error);
+}
+
 describe("CLE-90 a job arrives while the app is open", () => {
   it("raises the count with no refresh when a company gives her a job", async () => {
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, [assigned]);
+    await answerBellLoad(0, [assigned]);
 
     expect(screen.getByRole("button", { name: "Notifications, 1 unread" }))
       .toHaveTextContent("1");
@@ -135,7 +156,7 @@ describe("CLE-90 a job arrives while the app is open", () => {
     await act(async () => {
       mocks.realtime?.({ eventType: "INSERT" });
     });
-    await harness.answerRead(1, [posted, assigned]);
+    await answerBellLoad(1, [posted, assigned]);
 
     expect(screen.getByRole("button", { name: "Notifications, 2 unread" }))
       .toHaveTextContent("2");
@@ -144,7 +165,7 @@ describe("CLE-90 a job arrives while the app is open", () => {
 
   it("listens only for her own notifications and lets the channel go on unmount", async () => {
     const view = render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, []);
+    await answerBellLoad(0, []);
 
     expect(mocks.channel.on).toHaveBeenCalledWith(
       "postgres_changes",
@@ -169,7 +190,7 @@ describe("CLE-90 what the panel lists", () => {
     const user = userEvent.setup();
     render(<NotificationBell profileId={CLEANER_ID} />);
     // Answered oldest-first on purpose: the order she sees is the bell's to guarantee.
-    await harness.answerRead(0, [assigned, posted]);
+    await answerBellLoad(0, [assigned, posted]);
 
     await user.click(screen.getByRole("button", { name: "Notifications, 2 unread" }));
     await harness.answerUpdate(0, { error: null });
@@ -192,7 +213,7 @@ describe("CLE-90 what the panel lists", () => {
 
   it("asks the cleaner view for only the columns the panel shows", async () => {
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, []);
+    await answerBellLoad(0, []);
 
     expect(harness.from).toHaveBeenCalledWith("cleaner_notifications");
     const read = harness.reads[0];
@@ -212,7 +233,7 @@ describe("CLE-90 what the panel lists", () => {
       access_notes: "Side gate, key in lockbox",
     };
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, [leaked]);
+    await answerBellLoad(0, [leaked]);
 
     await user.click(screen.getByRole("button", { name: "Notifications, 1 unread" }));
     await harness.answerUpdate(0, { error: null });
@@ -226,7 +247,7 @@ describe("CLE-90 what the panel lists", () => {
   it("offers a way to try again when her news cannot be read", async () => {
     const user = userEvent.setup();
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, null, { message: "network down" });
+    await answerBellLoad(0, null, { message: "network down" });
 
     // A silent empty bell would read as "no news", which is a different and wrong claim.
     const trigger = screen.getByRole("button", { name: "Notifications" });
@@ -239,21 +260,33 @@ describe("CLE-90 what the panel lists", () => {
     // The words are worth nothing without a control behind them: pressing it must issue a
     // second read and recover the bell.
     await user.click(screen.getByRole("button", { name: "Try again" }));
-    await harness.answerRead(1, [assigned]);
+    await answerBellLoad(1, [assigned]);
 
     expect(screen.getByRole("button", { name: "Notifications, 1 unread" }))
       .toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("shows loading rather than no news while the initial read is pending", async () => {
+    const user = userEvent.setup();
+    render(<NotificationBell profileId={CLEANER_ID} />);
+
+    await user.click(screen.getByRole("button", { name: "Notifications" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Loading…");
+    expect(screen.queryByText("No news yet.")).not.toBeInTheDocument();
+
+    await answerBellLoad(0, []);
+  });
+
   it("keeps the news it already has when a later read fails", async () => {
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, [posted, assigned]);
+    await answerBellLoad(0, [posted, assigned]);
 
     await act(async () => {
       mocks.realtime?.({ eventType: "INSERT" });
     });
-    await harness.answerRead(1, null, { message: "network down" });
+    await answerBellLoad(1, null, { message: "network down" });
 
     // Blanking the badge here would tell her there is no unread news while the database
     // still holds two, at the exact moment something changed.
@@ -269,8 +302,8 @@ describe("CLE-90 what the panel lists", () => {
     await act(async () => {
       mocks.realtime?.({ eventType: "INSERT" });
     });
-    await harness.answerRead(1, [posted, assigned]);
-    await harness.answerRead(0, [assigned]);
+    await answerBellLoad(1, [posted, assigned]);
+    await answerBellLoad(0, [assigned]);
 
     // The newer answer stands; the stale mount read must not paint a pre-insert snapshot.
     expect(screen.getByRole("button", { name: "Notifications, 2 unread" }))
@@ -279,10 +312,32 @@ describe("CLE-90 what the panel lists", () => {
 });
 
 describe("CLE-90 opening the bell clears the count", () => {
+  it("counts and clears unread news outside the twenty-item history window", async () => {
+    const user = userEvent.setup();
+    render(<NotificationBell profileId={CLEANER_ID} />);
+
+    await waitFor(() => expect(harness.reads).toHaveLength(2));
+    expect(harness.reads[1]?.columns).toBe("notification_id");
+    expect(harness.reads[1]?.is).toEqual({ column: "read_at", value: null });
+    await answerBellLoad(0, twentyOneUnread.slice(0, 20), null, twentyOneUnread);
+
+    const trigger = screen.getByRole("button", { name: "Notifications, 21 unread" });
+    expect(trigger).toHaveTextContent("9+");
+    await user.click(trigger);
+    await harness.answerUpdate(0, { error: null });
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(20);
+    expect(harness.updates[0]?.in).toEqual({
+      column: "id",
+      values: twentyOneUnread.map((candidate) => candidate.notification_id),
+    });
+    expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
+  });
+
   it("marks every unread row read in the database and drops the badge", async () => {
     const user = userEvent.setup();
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, [posted, assigned]);
+    await answerBellLoad(0, [posted, assigned]);
 
     await user.click(screen.getByRole("button", { name: "Notifications, 2 unread" }));
     await harness.answerUpdate(0, { error: null });
@@ -303,18 +358,18 @@ describe("CLE-90 opening the bell clears the count", () => {
   it("still shows nothing unread when she reopens the app", async () => {
     const user = userEvent.setup();
     const view = render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, [posted, assigned]);
+    await answerBellLoad(0, [posted, assigned]);
 
     await user.click(screen.getByRole("button", { name: "Notifications, 2 unread" }));
     await harness.answerUpdate(0, { error: null });
 
     // The write is the durable part. Re-reading to learn what it just wrote costs a round
     // trip on a phone and races the realtime re-read.
-    expect(harness.reads).toHaveLength(1);
+    expect(harness.reads).toHaveLength(2);
 
     view.unmount();
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(1, [seen(posted), seen(assigned)]);
+    await answerBellLoad(1, [seen(posted), seen(assigned)]);
 
     const reopened = screen.getByRole("button", { name: "Notifications" });
     expect(reopened.textContent ?? "").not.toMatch(/\d/);
@@ -323,7 +378,7 @@ describe("CLE-90 opening the bell clears the count", () => {
   it("keeps the count when the database refuses to mark them read", async () => {
     const user = userEvent.setup();
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, [posted, assigned]);
+    await answerBellLoad(0, [posted, assigned]);
 
     await user.click(screen.getByRole("button", { name: "Notifications, 2 unread" }));
     await harness.answerUpdate(0, { error: { message: "permission denied" } });
@@ -338,7 +393,7 @@ describe("CLE-90 where an item takes her", () => {
   it("opens the job board for a new job and My jobs for every other item", async () => {
     const user = userEvent.setup();
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, [
+    await answerBellLoad(0, [
       seen(posted),
       seen(assigned),
       seen(cancelled),
@@ -367,7 +422,7 @@ describe("CLE-90 an empty bell", () => {
   it("says there is no news instead of opening an empty panel", async () => {
     const user = userEvent.setup();
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, []);
+    await answerBellLoad(0, []);
 
     await user.click(screen.getByRole("button", { name: "Notifications" }));
 
@@ -380,7 +435,7 @@ describe("CLE-90 the same bell in Portuguese", () => {
   it("says every word of the panel in Portuguese", async () => {
     const user = userEvent.setup();
     render(<NotificationBell profileId={CLEANER_ID} />, { locale: "pt-BR" });
-    await harness.answerRead(0, [posted, assigned]);
+    await answerBellLoad(0, [posted, assigned]);
 
     await user.click(screen.getByRole("button", { name: "Notificações, 2 não lidas" }));
     await harness.answerUpdate(0, { error: null });
@@ -399,7 +454,7 @@ describe("CLE-90 the same bell in Portuguese", () => {
 
   it("counts a single unread item with the Portuguese singular", async () => {
     render(<NotificationBell profileId={CLEANER_ID} />, { locale: "pt-BR" });
-    await harness.answerRead(0, [assigned]);
+    await answerBellLoad(0, [assigned]);
 
     expect(screen.getByRole("button", { name: "Notificações, 1 não lida" }))
       .toBeInTheDocument();
@@ -408,7 +463,7 @@ describe("CLE-90 the same bell in Portuguese", () => {
   it("says there is no news in Portuguese", async () => {
     const user = userEvent.setup();
     render(<NotificationBell profileId={CLEANER_ID} />, { locale: "pt-BR" });
-    await harness.answerRead(0, []);
+    await answerBellLoad(0, []);
 
     await user.click(screen.getByRole("button", { name: "Notificações" }));
 
@@ -420,7 +475,7 @@ describe("CLE-90 the bell on a keyboard", () => {
   it("takes focus, closes on Escape, and hands focus back", async () => {
     const user = userEvent.setup();
     render(<NotificationBell profileId={CLEANER_ID} />);
-    await harness.answerRead(0, [seen(posted)]);
+    await answerBellLoad(0, [seen(posted)]);
 
     const trigger = screen.getByRole("button", { name: "Notifications" });
     const menu = trigger.closest("details");

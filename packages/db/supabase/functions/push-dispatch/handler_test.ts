@@ -31,12 +31,13 @@ const subscription: StoredPushSubscription = {
   auth: "browser-auth-key",
 };
 
-const safeJob: BoardVisibleJob = {
+const safeJob = {
   serviceName: "Office clean",
+  serviceSlug: "office-clean",
   siteName: "Palm Grove Practice",
   suburb: "Robina",
   scheduledStart: "2099-09-01T08:00:00+10:00",
-};
+} satisfies BoardVisibleJob & { serviceSlug: string };
 
 // 22:30 UTC on 1 September is 08:30 on 2 September in Queensland, so a payload formatted in UTC
 // reports both the wrong clock and the wrong calendar day.
@@ -88,6 +89,15 @@ class FakeStore implements DispatchStore {
   deleteSubscription(subscriptionId: string): Promise<void> {
     this.deleted.push(subscriptionId);
     return Promise.resolve();
+  }
+}
+
+class FailedLocaleStore extends FakeStore {
+  override getRecipientLocale(
+    profileId: string,
+  ): Promise<RecipientLocale | null> {
+    this.localeLookups.push(profileId);
+    return Promise.reject(new Error("profile locale unavailable"));
   }
 }
 
@@ -247,7 +257,7 @@ Deno.test("a cleaner who chose Portuguese gets a Portuguese job_assigned message
     jobId,
     title: "Serviço atribuído",
     body:
-      "Office clean · Palm Grove Practice, Robina · 1 de set. de 2099, 08:00",
+      "Limpeza de escritório · Palm Grove Practice, Robina · 1 de set. de 2099, 08:00",
     url: "/my-jobs",
   });
   assert.deepEqual(store.localeLookups, [recipientId]);
@@ -266,7 +276,7 @@ Deno.test("a cleaner who chose Portuguese gets a Portuguese job_posted message",
     jobId,
     title: "Novo serviço disponível",
     body:
-      "Office clean · Palm Grove Practice, Robina · 1 de set. de 2099, 08:00",
+      "Limpeza de escritório · Palm Grove Practice, Robina · 1 de set. de 2099, 08:00",
     url: "/board",
   });
 });
@@ -284,7 +294,7 @@ Deno.test("a cleaner who chose Portuguese gets a Portuguese job_cancelled messag
     jobId,
     title: "Serviço cancelado",
     body:
-      "Office clean · Palm Grove Practice, Robina · 1 de set. de 2099, 08:00",
+      "Limpeza de escritório · Palm Grove Practice, Robina · 1 de set. de 2099, 08:00",
     url: "/my-jobs",
   });
 });
@@ -347,8 +357,33 @@ Deno.test("the start time is Queensland time in every language", async () => {
   );
   assert.equal(
     portuguese.sender.sent[0]?.message.body,
-    "Office clean · Palm Grove Practice, Robina · 2 de set. de 2099, 08:30",
+    "Limpeza de escritório · Palm Grove Practice, Robina · 2 de set. de 2099, 08:30",
   );
+});
+
+Deno.test("a failed locale lookup falls back to English and still delivers", async () => {
+  const store = new FailedLocaleStore();
+  const sender = new FakeSender();
+  const errors: unknown[][] = [];
+  const handler = createPushDispatchHandler({
+    store,
+    sender,
+    secret,
+    logger: { error: (...values) => errors.push(values) },
+  });
+
+  const response = await handler(webhookRequest("job_assigned"));
+
+  assert.deepEqual(await response.json(), { delivered: 1 });
+  assert.deepEqual(store.localeLookups, [recipientId]);
+  assert.equal(sender.sent.length, 1);
+  assert.equal(sender.sent[0]?.message.title, "Job assigned");
+  assert.equal(
+    sender.sent[0]?.message.body,
+    "Office clean · Palm Grove Practice, Robina · 1 Sept 2099, 8:00 am",
+  );
+  assert.equal(errors.length, 1);
+  assert.match(String(errors[0]?.[0]), /locale/i);
 });
 
 Deno.test("a Portuguese payload still omits private job fields", async () => {

@@ -96,7 +96,7 @@ class SupabaseDispatchStore implements DispatchStore {
         .maybeSingle(),
       this.client
         .from("service_catalogue")
-        .select("name")
+        .select("name, slug")
         .eq("id", job.service_id)
         .maybeSingle(),
     ]);
@@ -106,6 +106,7 @@ class SupabaseDispatchStore implements DispatchStore {
 
     return {
       serviceName: service.name,
+      serviceSlug: service.slug,
       siteName: site.name,
       suburb: site.suburb,
       scheduledStart: job.scheduled_start,

@@ -19,6 +19,7 @@ export type RecipientLocale = "en-AU" | "pt-BR";
 
 export type BoardVisibleJob = {
   serviceName: string;
+  serviceSlug: string | null;
   siteName: string;
   suburb: string;
   scheduledStart: string;
@@ -92,8 +93,48 @@ const notificationTitle: Record<
 
 const defaultLocale: RecipientLocale = "en-AU";
 
+const knownServiceSlugs = [
+  "office-clean",
+  "standard-clean",
+  "deep-clean",
+  "end-of-lease-clean",
+] as const;
+
+type KnownServiceSlug = (typeof knownServiceSlugs)[number];
+
+const serviceLabel: Record<
+  RecipientLocale,
+  Record<KnownServiceSlug, string>
+> = {
+  "en-AU": {
+    "office-clean": "Office clean",
+    "standard-clean": "Standard clean",
+    "deep-clean": "Deep clean",
+    "end-of-lease-clean": "End-of-lease clean",
+  },
+  "pt-BR": {
+    "office-clean": "Limpeza de escritório",
+    "standard-clean": "Limpeza padrão",
+    "deep-clean": "Limpeza pesada",
+    "end-of-lease-clean": "Limpeza de fim de locação",
+  },
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isKnownServiceSlug(value: string | null): value is KnownServiceSlug {
+  return value !== null && knownServiceSlugs.some((slug) => slug === value);
+}
+
+function localisedServiceLabel(
+  job: BoardVisibleJob,
+  locale: RecipientLocale,
+): string {
+  return isKnownServiceSlug(job.serviceSlug)
+    ? serviceLabel[locale][job.serviceSlug]
+    : job.serviceName;
 }
 
 function parseWebhookPayload(value: unknown): WebhookPayload | null {
@@ -145,7 +186,7 @@ function buildMessage(
     type,
     jobId,
     title: notificationTitle[locale][type],
-    body: `${job.serviceName} · ${job.siteName}, ${job.suburb} · ${
+    body: `${localisedServiceLabel(job, locale)} · ${job.siteName}, ${job.suburb} · ${
       formatScheduledStart(job.scheduledStart, locale)
     }`,
     url: notificationDestination[type],
@@ -217,7 +258,14 @@ export function createPushDispatchHandler(dependencies: HandlerDependencies) {
         store.getBoardVisibleJob(notification.jobId),
         // The notification row names the recipient, so a forged payload cannot choose
         // somebody else's language any more than it can choose their subscriptions.
-        store.getRecipientLocale(notification.recipientId),
+        store.getRecipientLocale(notification.recipientId).catch((error) => {
+          logger.error(
+            "Could not load push recipient locale; falling back to English",
+            notification.recipientId,
+            error,
+          );
+          return null;
+        }),
       ]);
       if (!job || subscriptions.length === 0) {
         return Response.json({ delivered: 0 });

@@ -466,8 +466,6 @@
     "applicationReviewNotConfirmed": "The application update could not be confirmed. Review the refreshed response before trying again.",
     "appliedAt": "Applied {time}",
     "noAwaitingApplications": "No applications are awaiting review.",
-    "assignDirectly": "Assign a cleaner directly",
-    "directAssignmentDescription": "Use this separate path for an active pool cleaner who did not apply.",
     "directedOffers": "Directed offers",
     "directedOffersDescription": "Send this job to one eligible cleaner for acceptance.",
     "cleanerToOffer": "Cleaner to offer this job",

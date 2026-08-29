@@ -466,8 +466,6 @@
     "applicationReviewNotConfirmed": "Não foi possível confirmar a atualização da candidatura. Revise a resposta atualizada antes de tentar novamente.",
     "appliedAt": "Candidatura em {time}",
     "noAwaitingApplications": "Nenhuma candidatura aguarda análise.",
-    "assignDirectly": "Alocar um profissional diretamente",
-    "directAssignmentDescription": "Use este caminho separado para um profissional ativo que não se candidatou.",
     "directedOffers": "Ofertas direcionadas",
     "directedOffersDescription": "Envie este serviço a um profissional elegível para aceite.",
     "cleanerToOffer": "Profissional que receberá a oferta",

@@ -11,8 +11,15 @@ export type StoredNotification = {
   type: string;
 };
 
+/**
+ * Mirrors the nullable `profiles.preferred_locale` column (enum `public.app_locale`). A
+ * cleaner who has never chosen reads English, the same default the apps use.
+ */
+export type RecipientLocale = "en-AU" | "pt-BR";
+
 export type BoardVisibleJob = {
   serviceName: string;
+  serviceSlug: string | null;
   siteName: string;
   suburb: string;
   scheduledStart: string;
@@ -30,6 +37,7 @@ export interface DispatchStore {
   getNotification(notificationId: string): Promise<StoredNotification | null>;
   listSubscriptions(profileId: string): Promise<StoredPushSubscription[]>;
   getBoardVisibleJob(jobId: string): Promise<BoardVisibleJob | null>;
+  getRecipientLocale(profileId: string): Promise<RecipientLocale | null>;
   deleteSubscription(subscriptionId: string): Promise<void>;
 }
 
@@ -59,17 +67,74 @@ type WebhookPayload = {
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const notificationPresentation: Record<
-  DeliveredNotificationType,
-  Pick<PushMessage, "title" | "url">
+const notificationDestination: Record<DeliveredNotificationType, PushMessage["url"]> = {
+  job_assigned: "/my-jobs",
+  job_posted: "/board",
+  job_cancelled: "/my-jobs",
+};
+
+// Deno cannot reach the apps' next-intl catalogues, so the handful of push titles are
+// restated here — the same trade the auth e-mail templates make for their subjects.
+const notificationTitle: Record<
+  RecipientLocale,
+  Record<DeliveredNotificationType, string>
 > = {
-  job_assigned: { title: "Job assigned", url: "/my-jobs" },
-  job_posted: { title: "New job available", url: "/board" },
-  job_cancelled: { title: "Job cancelled", url: "/my-jobs" },
+  "en-AU": {
+    job_assigned: "Job assigned",
+    job_posted: "New job available",
+    job_cancelled: "Job cancelled",
+  },
+  "pt-BR": {
+    job_assigned: "Serviço atribuído",
+    job_posted: "Novo serviço disponível",
+    job_cancelled: "Serviço cancelado",
+  },
+};
+
+const defaultLocale: RecipientLocale = "en-AU";
+
+const knownServiceSlugs = [
+  "office-clean",
+  "standard-clean",
+  "deep-clean",
+  "end-of-lease-clean",
+] as const;
+
+type KnownServiceSlug = (typeof knownServiceSlugs)[number];
+
+const serviceLabel: Record<
+  RecipientLocale,
+  Record<KnownServiceSlug, string>
+> = {
+  "en-AU": {
+    "office-clean": "Office clean",
+    "standard-clean": "Standard clean",
+    "deep-clean": "Deep clean",
+    "end-of-lease-clean": "End-of-lease clean",
+  },
+  "pt-BR": {
+    "office-clean": "Limpeza de escritório",
+    "standard-clean": "Limpeza padrão",
+    "deep-clean": "Limpeza pesada",
+    "end-of-lease-clean": "Limpeza de fim de locação",
+  },
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isKnownServiceSlug(value: string | null): value is KnownServiceSlug {
+  return value !== null && knownServiceSlugs.some((slug) => slug === value);
+}
+
+function localisedServiceLabel(
+  job: BoardVisibleJob,
+  locale: RecipientLocale,
+): string {
+  return isKnownServiceSlug(job.serviceSlug)
+    ? serviceLabel[locale][job.serviceSlug]
+    : job.serviceName;
 }
 
 function parseWebhookPayload(value: unknown): WebhookPayload | null {
@@ -95,11 +160,14 @@ function parseWebhookPayload(value: unknown): WebhookPayload | null {
 }
 
 function isDeliveredType(type: string): type is DeliveredNotificationType {
-  return Object.hasOwn(notificationPresentation, type);
+  return Object.hasOwn(notificationDestination, type);
 }
 
-function formatScheduledStart(value: string): string {
-  return new Intl.DateTimeFormat("en-AU", {
+function formatScheduledStart(value: string, locale: RecipientLocale): string {
+  // The work happens in Queensland whatever language describes it, so the zone is pinned
+  // while the language varies. Dropping it would read the deploying machine's zone and
+  // shift every near-midnight job by a day.
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "Australia/Brisbane",
@@ -112,16 +180,16 @@ function buildMessage(
   type: DeliveredNotificationType,
   jobId: string,
   job: BoardVisibleJob,
+  locale: RecipientLocale,
 ): PushMessage {
-  const presentation = notificationPresentation[type];
   return {
     type,
     jobId,
-    title: presentation.title,
-    body: `${job.serviceName} · ${job.siteName}, ${job.suburb} · ${
-      formatScheduledStart(job.scheduledStart)
+    title: notificationTitle[locale][type],
+    body: `${localisedServiceLabel(job, locale)} · ${job.siteName}, ${job.suburb} · ${
+      formatScheduledStart(job.scheduledStart, locale)
     }`,
-    url: presentation.url,
+    url: notificationDestination[type],
   };
 }
 
@@ -185,15 +253,30 @@ export function createPushDispatchHandler(dependencies: HandlerDependencies) {
         return Response.json({ delivered: 0, ignored: true });
       }
 
-      const [subscriptions, job] = await Promise.all([
+      const [subscriptions, job, locale] = await Promise.all([
         store.listSubscriptions(notification.recipientId),
         store.getBoardVisibleJob(notification.jobId),
+        // The notification row names the recipient, so a forged payload cannot choose
+        // somebody else's language any more than it can choose their subscriptions.
+        store.getRecipientLocale(notification.recipientId).catch((error) => {
+          logger.error(
+            "Could not load push recipient locale; falling back to English",
+            notification.recipientId,
+            error,
+          );
+          return null;
+        }),
       ]);
       if (!job || subscriptions.length === 0) {
         return Response.json({ delivered: 0 });
       }
 
-      const message = buildMessage(notification.type, notification.jobId, job);
+      const message = buildMessage(
+        notification.type,
+        notification.jobId,
+        job,
+        locale ?? defaultLocale,
+      );
       let delivered = 0;
       for (const subscription of subscriptions) {
         try {

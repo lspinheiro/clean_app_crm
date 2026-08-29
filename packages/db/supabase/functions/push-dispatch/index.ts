@@ -11,6 +11,7 @@ import {
   type DispatchStore,
   type PushMessage,
   type PushSender,
+  type RecipientLocale,
   type StoredNotification,
   type StoredPushSubscription,
 } from "./handler.ts";
@@ -68,6 +69,16 @@ class SupabaseDispatchStore implements DispatchStore {
     return data ?? [];
   }
 
+  async getRecipientLocale(profileId: string): Promise<RecipientLocale | null> {
+    const { data, error } = await this.client
+      .from("profiles")
+      .select("preferred_locale")
+      .eq("id", profileId)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.preferred_locale ?? null;
+  }
+
   async getBoardVisibleJob(jobId: string): Promise<BoardVisibleJob | null> {
     const { data: job, error: jobError } = await this.client
       .from("jobs")
@@ -85,7 +96,7 @@ class SupabaseDispatchStore implements DispatchStore {
         .maybeSingle(),
       this.client
         .from("service_catalogue")
-        .select("name")
+        .select("name, slug")
         .eq("id", job.service_id)
         .maybeSingle(),
     ]);
@@ -95,6 +106,7 @@ class SupabaseDispatchStore implements DispatchStore {
 
     return {
       serviceName: service.name,
+      serviceSlug: service.slug,
       siteName: site.name,
       suburb: site.suburb,
       scheduledStart: job.scheduled_start,

@@ -29,6 +29,16 @@
     "myJobs": "My jobs",
     "profile": "Profile"
   },
+  "Notifications": {
+    "title": "Notifications",
+    "unread": "Notifications, {count, plural, one {# unread} other {# unread}}",
+    "loadError": "We could not load your news.",
+    "empty": "No news yet.",
+    "jobPosted": "New job on the board",
+    "jobAssigned": "You were given a job",
+    "jobCancelled": "A job was cancelled",
+    "paymentMarkedPaid": "A job was marked paid"
+  },
   "PushOptIn": {
     "title": "Get job updates",
     "body": "Turn on notifications so companies can tell you when a job is posted, assigned, or cancelled.",

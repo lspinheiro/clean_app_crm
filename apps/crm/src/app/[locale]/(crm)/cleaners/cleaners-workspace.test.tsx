@@ -1,14 +1,24 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  rotateCleanerInvite: vi.fn(),
+  revokePosting: vi.fn(),
+  retryFailedCleanerInviteEmails: vi.fn(),
+  sendCleanerInviteEmails: vi.fn(),
 }));
 
-vi.mock("@/app/actions/cleaners", () => ({
-  rotateCleanerInvite: mocks.rotateCleanerInvite,
+vi.mock("@/app/actions/postings", () => ({
+  revokePosting: mocks.revokePosting,
+}));
+vi.mock("@/app/actions/cleaner-email", () => ({
+  retryFailedCleanerInviteEmails: mocks.retryFailedCleanerInviteEmails,
+  sendCleanerInviteEmails: mocks.sendCleanerInviteEmails,
 }));
 vi.mock("@/i18n/navigation", () => ({
+  Link: ({ href, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+    <a href={href} {...props} />
+  ),
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 
@@ -17,12 +27,33 @@ import { CleanersWorkspace } from "./cleaners-workspace";
 const baseProps = {
   cleanerAppUrl: "https://cleaner.example.test",
   companyName: "Coastal Demo Cleaning",
-  initialInviteId: "10000000-0000-4000-8000-000000000201",
   members: [],
+  postings: [
+    {
+      applicationCount: 3,
+      closingReason: null,
+      code: "AB12CD34EF56GH78",
+      createdAt: "2026-08-30T01:00:00Z",
+      id: "59000000-0000-4000-8000-000000000501",
+      intent: "one_time" as const,
+      publicDescription: "Cover one hotel clean.",
+      state: "active" as const,
+    },
+    {
+      applicationCount: 8,
+      closingReason: "cap_reached" as const,
+      code: "ZX98YU76TS54RQ32",
+      createdAt: "2026-08-29T01:00:00Z",
+      id: "59000000-0000-4000-8000-000000000502",
+      intent: "regular" as const,
+      publicDescription: "Join a regular hotel roster.",
+      state: "closed" as const,
+    },
+  ],
 };
 
 beforeEach(() => {
-  mocks.rotateCleanerInvite.mockReset();
+  vi.clearAllMocks();
   HTMLDialogElement.prototype.showModal = vi.fn(function showModal(this: HTMLDialogElement) {
     this.setAttribute("open", "");
   });
@@ -35,119 +66,161 @@ afterEach(() => {
   delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
 });
 
-describe("Cleaner staff invitation workspace", () => {
-  it("keeps WhatsApp sharing unavailable without an active invite", () => {
-    render(<CleanersWorkspace {...baseProps} initialCode={null} />);
+describe("CLE-60 posting workspace", () => {
+  it("lists posting intent, lifecycle, closing reason, and application count", () => {
+    render(<CleanersWorkspace {...baseProps} />);
 
-    expect(
-      screen.getByRole("button", { name: "Share on WhatsApp" }),
-    ).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Create invitation" })).toBeEnabled();
+    const activePosting = screen.getByRole("listitem", { name: "Cover one hotel clean." });
+    expect(activePosting).toHaveTextContent("One-time opportunity");
+    expect(activePosting).toHaveTextContent("Active");
+    expect(activePosting).toHaveTextContent("3 applications");
+
+    const closedPosting = screen.getByRole("listitem", { name: "Join a regular hotel roster." });
+    expect(closedPosting).toHaveTextContent("Regular opportunity");
+    expect(closedPosting).toHaveTextContent("Closed · Application cap reached");
+    expect(closedPosting).toHaveTextContent("8 applications");
+  });
+
+  it("revokes an active posting from the list and exposes no regenerate action", async () => {
+    mocks.revokePosting.mockResolvedValueOnce({ ok: true });
+    render(<CleanersWorkspace {...baseProps} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Revoke Cover one hotel clean." }));
+
+    await waitFor(() => expect(mocks.revokePosting).toHaveBeenCalledWith(
+      "59000000-0000-4000-8000-000000000501",
+    ));
+    expect(screen.queryByRole("button", { name: /regenerate|replace/i })).not.toBeInTheDocument();
+  });
+
+  it("starts intent-first creation in the shared composer", () => {
+    render(<CleanersWorkspace {...baseProps} />);
+
+    expect(screen.getByRole("link", { name: "Create posting" })).toHaveAttribute(
+      "href",
+      "/cleaners/postings/new",
+    );
+  });
+
+  it("opens the S30 send list only for the selected active posting", () => {
+    render(<CleanersWorkspace {...baseProps} />);
+
+    expect(screen.getByRole("button", {
+      name: "Send Cover one hotel clean. by email",
+    })).toBeEnabled();
+    expect(screen.queryByRole("button", {
+      name: "Send Join a regular hotel roster. by email",
+    })).not.toBeInTheDocument();
   });
 
   it.each([
     {
-      expectedMessage:
-        "Join Coastal Demo Cleaning's Cleaner staff: https://cleaner.example.test/join?code=AB12CD34EF56GH78\nInvite code: AB12CD34EF56GH78",
-      label: "Share on WhatsApp",
+      expectedMessage: "Coastal Demo Cleaning has shared: Expression of interest — https://cleaner.example.test/join?code=AB12CD34EF56GH78",
+      intent: "expression_of_interest" as const,
       locale: "en-AU",
     },
     {
-      expectedMessage:
-        "Entre para a equipe de limpeza da empresa Coastal Demo Cleaning: https://cleaner.example.test/join?code=AB12CD34EF56GH78\nCódigo de convite: AB12CD34EF56GH78",
-      label: "Compartilhar no WhatsApp",
+      expectedMessage: "Coastal Demo Cleaning has shared: One-time opportunity — https://cleaner.example.test/join?code=AB12CD34EF56GH78",
+      intent: "one_time" as const,
+      locale: "en-AU",
+    },
+    {
+      expectedMessage: "Coastal Demo Cleaning has shared: Regular opportunity — https://cleaner.example.test/join?code=AB12CD34EF56GH78",
+      intent: "regular" as const,
+      locale: "en-AU",
+    },
+    {
+      expectedMessage: "Coastal Demo Cleaning compartilhou: Manifestação de interesse — https://cleaner.example.test/join?code=AB12CD34EF56GH78",
+      intent: "expression_of_interest" as const,
       locale: "pt-BR",
     },
-  ])("opens the localized $locale message from an explicit click", ({
+    {
+      expectedMessage: "Coastal Demo Cleaning compartilhou: Oportunidade avulsa — https://cleaner.example.test/join?code=AB12CD34EF56GH78",
+      intent: "one_time" as const,
+      locale: "pt-BR",
+    },
+    {
+      expectedMessage: "Coastal Demo Cleaning compartilhou: Oportunidade regular — https://cleaner.example.test/join?code=AB12CD34EF56GH78",
+      intent: "regular" as const,
+      locale: "pt-BR",
+    },
+  ])("opens grammatical $locale WhatsApp copy for $intent", ({
     expectedMessage,
-    label,
+    intent,
     locale,
   }) => {
     (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__ = locale;
-    const openWindow = vi.spyOn(window, "open").mockImplementation(() => null);
-    render(<CleanersWorkspace {...baseProps} initialCode="AB12CD34EF56GH78" />);
-
-    fireEvent.click(screen.getByRole("button", { name: label }));
-
-    expect(openWindow).toHaveBeenCalledOnce();
-    const [rawUrl, target, features] = openWindow.mock.calls[0];
-    expect(rawUrl).toBe(
-      `https://wa.me/?text=${encodeURIComponent(expectedMessage)}`,
-    );
-    expect(target).toBe("_blank");
-    expect(features).toBe("noopener,noreferrer");
-  });
-
-  it("protects replacement behind invite details and a confirmation dialog", async () => {
-    mocks.rotateCleanerInvite.mockResolvedValueOnce({
-      code: "ZX98YU76TS54RQ32",
-      inviteId: "10000000-0000-4000-8000-000000000202",
-      ok: true,
-    });
-    render(<CleanersWorkspace {...baseProps} initialCode="AB12CD34EF56GH78" />);
-
-    expect(screen.getByText("Invitation active")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Replace invitation" })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Invite details" }));
-    fireEvent.click(screen.getByRole("button", { name: "Replace invitation" }));
-
-    expect(mocks.rotateCleanerInvite).not.toHaveBeenCalled();
-    expect(
-      screen.getByRole("dialog", { name: "Replace the active invitation?" }),
-    ).toBeVisible();
-
-    fireEvent.click(screen.getByRole("button", { name: "Confirm replacement" }));
-    await waitFor(() => expect(mocks.rotateCleanerInvite).toHaveBeenCalledOnce());
-    expect((await screen.findAllByText("ZX98YU76TS54RQ32")).length).toBeGreaterThan(0);
-  });
-
-  it("keeps the open invite details showing the code the refreshed page reports", () => {
-    const { rerender } = render(
-      <CleanersWorkspace {...baseProps} initialCode="AB12CD34EF56GH78" />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Invite details" }));
-    expect(screen.getByRole("link", { name: "Cleaner signup link" })).toHaveAttribute(
-      "href",
-      "https://cleaner.example.test/join?code=AB12CD34EF56GH78",
-    );
-
-    // A rotation ends in router.refresh(), so the server re-renders this workspace with
-    // the replacement invite. The admin rotated the code in order to hand it out, so the
-    // details must stay open and must show the code the server now reports.
-    rerender(
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    render(
       <CleanersWorkspace
         {...baseProps}
-        initialCode="ZX98YU76TS54RQ32"
-        initialInviteId="10000000-0000-4000-8000-000000000202"
+        postings={[{ ...baseProps.postings[0], intent }]}
       />,
     );
 
-    expect(screen.getByRole("link", { name: "Cleaner signup link" })).toHaveAttribute(
-      "href",
-      "https://cleaner.example.test/join?code=ZX98YU76TS54RQ32",
+    fireEvent.click(screen.getByRole("button", {
+      name: locale === "en-AU"
+        ? "Share Cover one hotel clean. on WhatsApp"
+        : "Compartilhar Cover one hotel clean. no WhatsApp",
+    }));
+
+    expect(open).toHaveBeenCalledWith(
+      `https://wa.me/?text=${encodeURIComponent(expectedMessage)}`,
+      "_blank",
+      "noopener,noreferrer",
     );
   });
-});
 
-describe("CLE-79 bulk cleaner invitation by email", () => {
-  it("offers manual and CSV email invitation inputs when an active invite exists", () => {
-    render(<CleanersWorkspace {...baseProps} initialCode="AB12CD34EF56GH78" />);
+  it("copies the selected posting link and confirms the action", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    render(<CleanersWorkspace {...baseProps} />);
 
-    expect(
-      screen.getByRole("button", { name: "Send by email" }),
-    ).toBeEnabled();
-    expect(
-      screen.getByText("Send the same active invitation to one or more existing cleaners."),
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Copy link for Cover one hotel clean." }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(
+      "https://cleaner.example.test/join?code=AB12CD34EF56GH78",
+    ));
+    expect(screen.getByRole("status")).toHaveTextContent("Posting link copied.");
   });
 
-  it("keeps email invitation unavailable without an active invite", () => {
-    render(<CleanersWorkspace {...baseProps} initialCode={null} />);
+  it("resets the e-mail flow when the admin closes one posting and selects another", async () => {
+    mocks.sendCleanerInviteEmails.mockResolvedValueOnce({
+      accepted: [],
+      batchId: "10000000-0000-4000-8000-000000000401",
+      failed: [{ email: "ana@example.com", failureReason: "provider_rejected", name: null }],
+      ok: true,
+    });
+    const user = userEvent.setup();
+    const secondPosting = {
+      ...baseProps.postings[1],
+      closingReason: null,
+      state: "active" as const,
+    };
+    render(<CleanersWorkspace {...baseProps} postings={[baseProps.postings[0], secondPosting]} />);
 
-    expect(
-      screen.getByRole("button", { name: "Send by email" }),
-    ).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Send Cover one hotel clean. by email" }));
+    await user.click(screen.getByRole("button", { name: "Send by email" }));
+    await user.type(screen.getByLabelText("Email address 1"), "ana@example.com");
+    await user.click(screen.getByRole("checkbox", {
+      name: "I confirm that these recipients are existing workers who expect this posting.",
+    }));
+    await user.click(screen.getByRole("button", { name: "Send posting to 1 recipient" }));
+    expect(await screen.findByRole("button", { name: "Retry failed only" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Send Cover one hotel clean. by email" }));
+    await user.click(screen.getByRole("button", {
+      name: "Send Join a regular hotel roster. by email",
+    }));
+    expect(screen.queryByRole("region", { name: "Posting email results" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Send by email" }));
+    expect(screen.getByLabelText("Email address 1")).toHaveValue("");
+    await user.type(screen.getByLabelText("Email address 1"), "bruno@example.com");
+    expect(screen.getByRole("checkbox", {
+      name: "I confirm that these recipients are existing workers who expect this posting.",
+    })).not.toBeChecked();
   });
 });

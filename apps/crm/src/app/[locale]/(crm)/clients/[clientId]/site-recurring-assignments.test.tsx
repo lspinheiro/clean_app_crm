@@ -108,6 +108,10 @@ describe("CLE-14 recurring assignment site surface", () => {
 
     expect(screen.getByText("Every Mon")).toBeInTheDocument();
     expect(screen.getByText(/Cleaner A \+ 1 open/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Post Every Mon publicly" })).toHaveAttribute(
+      "href",
+      `/cleaners/postings/new?intent=regular&recurringAssignmentId=${assignments[0].id}`,
+    );
 
     await user.click(screen.getByRole("switch", { name: "Deactivate Every Mon" }));
 

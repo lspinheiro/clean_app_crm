@@ -16,8 +16,9 @@ import { CleanerEmailInvite } from "./cleaner-email-invite";
 
 const props = {
   companyName: "Coastal Demo Cleaning",
-  inviteId: "10000000-0000-4000-8000-000000000201",
   joinUrl: "https://cleaner.example.test/join?code=AB12CD34EF56GH78",
+  postingId: "59000000-0000-4000-8000-000000000501",
+  postingIntent: "one_time" as const,
 };
 const retryKey = "10000000-0000-4000-8000-000000000302";
 
@@ -32,7 +33,7 @@ async function openAndUpload(csv: string) {
   return user;
 }
 
-describe("CLE-79 cleaner email invitation UI", () => {
+describe("CLE-60 posting email UI", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     mocks.retryFailedCleanerInviteEmails.mockReset();
@@ -54,20 +55,20 @@ describe("CLE-79 cleaner email invitation UI", () => {
     expect(within(table).getAllByRole("row")).toHaveLength(4);
     expect(screen.getByText("2 unique recipients")).toBeInTheDocument();
     expect(screen.getByText("1 duplicate skipped")).toBeInTheDocument();
-    expect(screen.getByText("Join Coastal Demo Cleaning's Cleaner staff")).toBeInTheDocument();
-    const sendButton = screen.getByRole("button", { name: "Send 2 invitations" });
+    expect(screen.getByText("Cleaning opportunity with Coastal Demo Cleaning")).toBeInTheDocument();
+    const sendButton = screen.getByRole("button", { name: "Send posting to 2 recipients" });
     expect(sendButton).toBeDisabled();
     expect(mocks.sendCleanerInviteEmails).not.toHaveBeenCalled();
 
-    await user.selectOptions(screen.getByLabelText("Invitation language"), "pt-BR");
+    await user.selectOptions(screen.getByLabelText("Posting language"), "pt-BR");
     expect(
       screen.getByText(
-        "Entre para a equipe de limpeza da empresa Coastal Demo Cleaning",
+        "Oportunidade de trabalho com Coastal Demo Cleaning",
       ),
     ).toBeInTheDocument();
     await user.click(
       screen.getByRole("checkbox", {
-        name: "I confirm that these recipients are existing workers who expect this invitation.",
+        name: "I confirm that these recipients are existing workers who expect this posting.",
       }),
     );
     expect(sendButton).toBeEnabled();
@@ -81,9 +82,7 @@ describe("CLE-79 cleaner email invitation UI", () => {
       ],
       batchId: "10000000-0000-4000-8000-000000000402",
       failed: [],
-      newlyQueued: 2,
       ok: true,
-      reusedExisting: false,
     });
     const user = userEvent.setup();
     render(<CleanerEmailInvite {...props} />);
@@ -91,22 +90,22 @@ describe("CLE-79 cleaner email invitation UI", () => {
     await user.click(screen.getByRole("button", { name: "Send by email" }));
 
     const form = screen.getByRole("form", { name: "Email recipients" });
-    expect(within(form).getByRole("button", { name: "Send invitations" })).toBeDisabled();
+    expect(within(form).getByRole("button", { name: "Send posting" })).toBeDisabled();
     await user.type(within(form).getByLabelText("Email address 1"), "ana@example.com");
     await user.click(within(form).getByRole("button", { name: "Add another email" }));
     await user.type(within(form).getByLabelText("Email address 2"), "bruno@example.com");
     await user.click(
       within(form).getByRole("checkbox", {
-        name: "I confirm that these recipients are existing workers who expect this invitation.",
+        name: "I confirm that these recipients are existing workers who expect this posting.",
       }),
     );
-    await user.click(within(form).getByRole("button", { name: "Send 2 invitations" }));
+    await user.click(within(form).getByRole("button", { name: "Send posting to 2 recipients" }));
 
     await waitFor(() => {
       expect(mocks.sendCleanerInviteEmails).toHaveBeenCalledWith({
         authorityConfirmed: true,
-        inviteId: props.inviteId,
         locale: "en-AU",
+        postingId: props.postingId,
         recipients: [
           { email: "ana@example.com", name: null },
           { email: "bruno@example.com", name: null },
@@ -132,7 +131,7 @@ describe("CLE-79 cleaner email invitation UI", () => {
     expect(
       within(form).getByText("This email address has already been added."),
     ).toBeInTheDocument();
-    expect(within(form).getByRole("button", { name: "Send 1 invitation" })).toBeDisabled();
+    expect(within(form).getByRole("button", { name: "Send posting to 1 recipient" })).toBeDisabled();
     expect(mocks.sendCleanerInviteEmails).not.toHaveBeenCalled();
   });
 
@@ -146,7 +145,7 @@ describe("CLE-79 cleaner email invitation UI", () => {
     const form = screen.getByRole("form", { name: "Destinatários dos convites" });
     expect(within(form).getByLabelText("Endereço de e-mail 1")).toBeInTheDocument();
     expect(within(form).getByRole("button", { name: "Adicionar outro e-mail" })).toBeEnabled();
-    expect(within(form).getByRole("button", { name: "Enviar convites" })).toBeDisabled();
+    expect(within(form).getByRole("button", { name: "Enviar anúncio" })).toBeDisabled();
   });
 
   it("shows partial outcomes and retries only the failed batch recipients", async () => {
@@ -154,39 +153,32 @@ describe("CLE-79 cleaner email invitation UI", () => {
       accepted: [{ email: "ana@example.com", failureReason: null, name: "Ana" }],
       batchId: "10000000-0000-4000-8000-000000000401",
       failed: [{ email: "bruno@example.com", failureReason: "provider_rejected", name: "Bruno" }],
-      newlyQueued: 1,
       ok: true,
-      reusedExisting: false,
     });
     mocks.retryFailedCleanerInviteEmails.mockResolvedValueOnce({
-      accepted: [
-        { email: "ana@example.com", failureReason: null, name: "Ana" },
-        { email: "bruno@example.com", failureReason: null, name: "Bruno" },
-      ],
+      accepted: [{ email: "bruno@example.com", failureReason: null, name: "Bruno" }],
       batchId: "10000000-0000-4000-8000-000000000401",
       failed: [],
-      newlyQueued: 1,
       ok: true,
-      reusedExisting: false,
     });
     const user = await openAndUpload(
       "email,name\nana@example.com,Ana\nbruno@example.com,Bruno\n",
     );
     await user.click(
       screen.getByRole("checkbox", {
-        name: "I confirm that these recipients are existing workers who expect this invitation.",
+        name: "I confirm that these recipients are existing workers who expect this posting.",
       }),
     );
-    await user.click(screen.getByRole("button", { name: "Send 2 invitations" }));
+    await user.click(screen.getByRole("button", { name: "Send posting to 2 recipients" }));
 
-    const results = await screen.findByRole("region", { name: "Email invitation results" });
-    expect(within(results).getByText("1 queued now")).toBeInTheDocument();
+    const results = await screen.findByRole("region", { name: "Posting email results" });
+    expect(within(results).getByText("1 accepted by the email provider")).toBeInTheDocument();
     expect(within(results).getByText("1 failed")).toBeInTheDocument();
     expect(within(results).getByText("bruno@example.com")).toBeInTheDocument();
     expect(mocks.sendCleanerInviteEmails).toHaveBeenCalledWith({
       authorityConfirmed: true,
-      inviteId: props.inviteId,
       locale: "en-AU",
+      postingId: props.postingId,
       recipients: [
         { email: "ana@example.com", name: "Ana" },
         { email: "bruno@example.com", name: "Bruno" },
@@ -196,22 +188,23 @@ describe("CLE-79 cleaner email invitation UI", () => {
     await user.click(within(results).getByRole("button", { name: "Retry failed only" }));
     await waitFor(() => {
       expect(mocks.retryFailedCleanerInviteEmails).toHaveBeenCalledWith({
-        batchId: "10000000-0000-4000-8000-000000000401",
+        authorityConfirmed: true,
+        locale: "en-AU",
+        postingId: props.postingId,
+        recipients: [{ email: "bruno@example.com", name: "Bruno" }],
         retryKey,
       });
     });
-    expect(await screen.findByText("1 previously queued")).toBeInTheDocument();
+    expect(await screen.findByText("2 accepted by the email provider")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Retry failed only" })).not.toBeInTheDocument();
   });
 
-  it("makes an idempotent repeat explicit when no new email is sent", async () => {
+  it("does not claim a deterministic provider response was newly queued", async () => {
     mocks.sendCleanerInviteEmails.mockResolvedValueOnce({
       accepted: [{ email: "ana@example.com", failureReason: null, name: "Ana" }],
       batchId: "10000000-0000-4000-8000-000000000401",
       failed: [],
-      newlyQueued: 0,
       ok: true,
-      reusedExisting: true,
     });
     const user = userEvent.setup();
     render(<CleanerEmailInvite {...props} />);
@@ -220,61 +213,14 @@ describe("CLE-79 cleaner email invitation UI", () => {
     await user.type(screen.getByLabelText("Email address 1"), "ana@example.com");
     await user.click(
       screen.getByRole("checkbox", {
-        name: "I confirm that these recipients are existing workers who expect this invitation.",
+        name: "I confirm that these recipients are existing workers who expect this posting.",
       }),
     );
-    await user.click(screen.getByRole("button", { name: "Send 1 invitation" }));
+    await user.click(screen.getByRole("button", { name: "Send posting to 1 recipient" }));
 
-    const results = await screen.findByRole("region", { name: "Email invitation results" });
-    expect(within(results).getByText("No new email was sent.")).toBeInTheDocument();
-    expect(within(results).getByText("1 previously queued")).toBeInTheDocument();
-  });
-
-  it("clears delivery results when the active invitation is replaced", async () => {
-    mocks.sendCleanerInviteEmails.mockResolvedValueOnce({
-      accepted: [],
-      batchId: "10000000-0000-4000-8000-000000000401",
-      failed: [{ email: "ana@example.com", failureReason: "provider_rejected", name: null }],
-      newlyQueued: 0,
-      ok: true,
-      reusedExisting: false,
-    });
-    const user = userEvent.setup();
-    const { rerender } = render(<CleanerEmailInvite {...props} key={props.inviteId} />);
-
-    await user.click(screen.getByRole("button", { name: "Send by email" }));
-    await user.type(screen.getByLabelText("Email address 1"), "ana@example.com");
-    await user.click(
-      screen.getByRole("checkbox", {
-        name: "I confirm that these recipients are existing workers who expect this invitation.",
-      }),
-    );
-    await user.click(screen.getByRole("button", { name: "Send 1 invitation" }));
-    expect(
-      await screen.findByRole("button", { name: "Retry failed only" }),
-    ).toBeInTheDocument();
-
-    rerender(
-      <CleanerEmailInvite
-        {...props}
-        inviteId="10000000-0000-4000-8000-000000000202"
-        joinUrl="https://cleaner.example.test/join?code=ZX98YU76TS54RQ32"
-        key="10000000-0000-4000-8000-000000000202"
-      />,
-    );
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("region", { name: "Email invitation results" }),
-      ).not.toBeInTheDocument();
-    });
-    await user.click(screen.getByRole("button", { name: "Send by email" }));
-    expect(screen.getByLabelText("Email address 1")).toHaveValue("");
-    await user.type(screen.getByLabelText("Email address 1"), "ana@example.com");
-    expect(
-      screen.getByRole("checkbox", {
-        name: "I confirm that these recipients are existing workers who expect this invitation.",
-      }),
-    ).not.toBeChecked();
+    const results = await screen.findByRole("region", { name: "Posting email results" });
+    expect(within(results).getByText("1 accepted by the email provider")).toBeInTheDocument();
+    expect(within(results).queryByText(/queued now/i)).not.toBeInTheDocument();
+    expect(within(results).getByText("0 failed")).toBeInTheDocument();
   });
 });

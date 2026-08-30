@@ -396,6 +396,15 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
             })}</span>
           </p>
         </div>
+        <div className="job-detail-header__actions">
+        {canAssign && openSlots.length > 0 ? (
+          <Link
+            className="button button--secondary"
+            href={`/cleaners/postings/new?intent=one_time&jobId=${job.id}`}
+          >
+            {t("postPublicly")}
+          </Link>
+        ) : null}
         {canCancel ? (
           <details className="job-detail-actions" ref={jobActionsMenu}>
             <summary
@@ -420,6 +429,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
             </div>
           </details>
         ) : null}
+        </div>
       </header>
 
       {cancelError && canCancel ? (

@@ -191,6 +191,10 @@ describe("CLE-22 job detail workspace", () => {
     expect(screen.getByText("Duration", { selector: "dt" })).toBeInTheDocument();
     expect(screen.queryByText("Job date", { selector: "dt" })).not.toBeInTheDocument();
     expect(screen.queryByText("Duration (hours)", { selector: "dt" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Post publicly" })).toHaveAttribute(
+      "href",
+      `/cleaners/postings/new?intent=one_time&jobId=${job.id}`,
+    );
 
     const slotOne = screen.getByRole("article", { name: "Crew slot 1" });
     expect(within(slotOne).getByText("Assigned")).toBeInTheDocument();

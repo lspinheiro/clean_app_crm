@@ -29,12 +29,12 @@ export function localiseUserMessage(
 export function localiseFieldErrors(
   fieldErrors: Record<string, string | undefined>,
   locale: AppLocale,
-) {
+): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(fieldErrors).map(([field, message]) => [
-      field,
-      localiseUserMessage(message, locale),
-    ]),
+    Object.entries(fieldErrors).flatMap(([field, message]) => {
+      const localisedMessage = localiseUserMessage(message, locale);
+      return localisedMessage ? [[field, localisedMessage]] : [];
+    }),
   );
 }
 

@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import * as inviteHelpers from "./invite";
 import {
   buildCleanerJoinUrl,
-  buildInviteMessage,
   buildWhatsAppShareUrl,
   formatJoinedDate,
-  isInviteActive,
   normaliseCleanerAppUrl,
 } from "./invite";
 
@@ -23,34 +22,6 @@ describe("cleaner invite content", () => {
     expect(buildCleanerJoinUrl("https://cleaner.example.test/base", "AB12CD34EF56GH78")).toBe(
       "https://cleaner.example.test/join?code=AB12CD34EF56GH78",
     );
-  });
-
-  it("keeps the full signup URL and readable code in one link-first message", () => {
-    expect(
-      buildInviteMessage(
-        "Coastal Demo Cleaning",
-        "http://127.0.0.1:3001/join?code=CLEAN1DEMOJOIN99",
-        "CLEAN1DEMOJOIN99",
-        ({ companyName, joinUrl, code }) =>
-          `Join ${companyName}'s Cleaner staff: ${joinUrl}\nInvite code: ${code}`,
-      ),
-    ).toBe(
-      "Join Coastal Demo Cleaning's Cleaner staff: http://127.0.0.1:3001/join?code=CLEAN1DEMOJOIN99\nInvite code: CLEAN1DEMOJOIN99",
-    );
-  });
-
-  it("gets outbound invite copy from the active catalogue", () => {
-    const formatter = buildInviteMessage as unknown as (
-      companyName: string,
-      joinUrl: string,
-      code: string,
-      translate: (values: { companyName: string; joinUrl: string; code: string }) => string,
-    ) => string;
-
-    expect(
-      formatter("Coastal", "https://cleaner.test/join", "CLEAN1DEMOJOIN99", (values) =>
-        `catalogue:${values.companyName}:${values.code}`),
-    ).toBe("catalogue:Coastal:CLEAN1DEMOJOIN99");
   });
 
   it("rejects malformed codes at the display boundary", () => {
@@ -74,12 +45,9 @@ describe("cleaner invite content", () => {
     );
   });
 
-  it("treats only unexpired, unrevoked-query results as active", () => {
-    const now = new Date("2026-08-09T12:00:00+10:00");
-    expect(isInviteActive(null, now)).toBe(true);
-    expect(isInviteActive("2026-08-09T12:01:00+10:00", now)).toBe(true);
-    expect(isInviteActive("2026-08-09T12:00:00+10:00", now)).toBe(false);
-    expect(isInviteActive("2026-08-09T11:59:00+10:00", now)).toBe(false);
+  it("does not retain helpers for the retired rotating invitation model", () => {
+    expect(inviteHelpers).not.toHaveProperty("buildInviteMessage");
+    expect(inviteHelpers).not.toHaveProperty("isInviteActive");
   });
 
   it("formats joined dates in the product timezone", () => {

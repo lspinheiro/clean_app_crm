@@ -21,7 +21,7 @@ import {
 import type { RecurringAssignmentSummary } from "@/features/recurring-assignments/types";
 import { formatAud, formatDuration } from "@/features/site-defaults/format";
 import type { AppLocale } from "@/i18n/config";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { localiseMutationResult, localiseUserMessage } from "@/i18n/user-message";
 import { reloadCurrentPage } from "@/lib/reload-page";
 
@@ -277,6 +277,15 @@ export function SiteRecurringAssignments({
                   ) : null}
                 </div>
                 <div className="recurring-actions">
+                  {rule.active && rule.namedCleaners.length < rule.crewSize ? (
+                    <Link
+                      aria-label={t("postPublicly", { recurrence })}
+                      className="button button--secondary button--small"
+                      href={`/cleaners/postings/new?intent=regular&recurringAssignmentId=${rule.id}`}
+                    >
+                      {t("postPublicly", { recurrence })}
+                    </Link>
+                  ) : null}
                   <button
                     aria-checked={rule.active}
                     aria-label={t(rule.active ? "deactivate" : "activate", { recurrence })}

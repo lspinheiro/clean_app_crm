@@ -23,24 +23,8 @@ export function normaliseCleanerAppUrl(cleanerAppUrl: string) {
   return baseUrl.origin;
 }
 
-export function buildInviteMessage(
-  companyName: string,
-  joinUrl: string,
-  code: string,
-  translate: (values: { companyName: string; joinUrl: string; code: string }) => string,
-) {
-  assertInviteCode(code);
-  return translate({ companyName, joinUrl, code });
-}
-
 export function buildWhatsAppShareUrl(inviteMessage: string) {
   return `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`;
-}
-
-export function isInviteActive(expiresAt: string | null, now = new Date()) {
-  if (!expiresAt) return true;
-  const expiry = Date.parse(expiresAt);
-  return Number.isFinite(expiry) && expiry > now.getTime();
 }
 
 export function formatJoinedDate(joinedAt: string, locale = "en-AU") {

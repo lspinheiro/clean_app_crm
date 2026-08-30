@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { Briefcase, ClipboardCheck, UserRound } from "lucide-react";
+import { Briefcase, ClipboardCheck, Inbox, UserRound } from "lucide-react";
 
 import { BrandBubbles } from "@/components/brand-bubbles";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -16,6 +16,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 
 const tabs = [
   { href: "/board", icon: Briefcase, label: "board" },
+  { href: "/offers", icon: Inbox, label: "offers" },
   { href: "/my-jobs", icon: ClipboardCheck, label: "myJobs" },
   { href: "/profile", icon: UserRound, label: "profile" },
 ] as const;

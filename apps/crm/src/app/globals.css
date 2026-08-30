@@ -3317,6 +3317,56 @@ button.company-switcher__company:hover {
   font-size: 12px;
 }
 
+.recurring-cleaner-consent-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.recurring-cleaner-consent {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.recurring-copy .recurring-cleaner-consent strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.recurring-copy .series-consent-chip {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 5px;
+  margin-top: 0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recurring-copy .series-consent-chip--offered {
+  background: var(--color-warning-container);
+  color: var(--color-on-warning-container);
+}
+
+.recurring-copy .series-consent-chip--accepted {
+  background: var(--color-success-container);
+  color: var(--color-on-success-container);
+}
+
+.recurring-cleaner-consent time {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
 .recurring-actions {
   display: flex;
   align-items: center;
@@ -4122,6 +4172,12 @@ button.company-switcher__company:hover {
   color: var(--color-gray-700);
 }
 
+.application-chip--pending {
+  gap: 5px;
+  background: var(--color-warning-container);
+  color: var(--color-on-warning-container);
+}
+
 .job-applicants-empty {
   margin: 0;
   border-block: 1px solid var(--color-gray-200);
@@ -4281,7 +4337,7 @@ button.company-switcher__company:hover {
 }
 
 .application-review-actions label,
-.direct-assignment-list label {
+.directed-offer-form label {
   grid-column: 1 / -1;
   color: var(--color-gray-700);
   font-size: 12px;
@@ -4289,7 +4345,7 @@ button.company-switcher__company:hover {
 }
 
 .application-review-actions select,
-.direct-assignment-list select {
+.directed-offer-form select {
   min-width: 0;
   min-height: 44px;
   border: 1px solid var(--color-gray-300);
@@ -4394,27 +4450,75 @@ button.company-switcher__company:hover {
   padding-top: 4px;
 }
 
-.direct-assignment-section {
+.directed-offers-section {
   border-color: var(--color-gray-300) !important;
 }
 
-.direct-assignment-list {
+.pending-offers {
   display: grid;
-  gap: 14px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
-.direct-assignment-list form {
+.pending-offers h3 {
+  margin: 0;
+  color: var(--color-gray-700);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pending-offers ul {
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 9px;
+  padding: 0;
+  list-style: none;
+}
+
+.pending-offers li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.pending-offers li + li {
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.pending-offers li > div {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pending-offers strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.pending-offers time {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.directed-offer-form {
   display: grid;
   gap: 8px;
   border-top: 1px solid var(--color-gray-200);
   padding-top: 14px;
 }
 
-.direct-assignment-list .button {
+.directed-offer-form .button {
   width: 100%;
 }
 
-.direct-assignment-list .job-operation-error {
+.directed-offers-section .job-operation-error {
   margin: 0;
 }
 
@@ -4892,6 +4996,18 @@ button.company-switcher__company:hover {
   align-items: center;
   gap: 4px;
   color: var(--color-on-danger-container);
+  letter-spacing: 0.03em;
+}
+
+.roster-entry--offered {
+  background: var(--color-warning-container);
+}
+
+.roster-entry--offered strong {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-on-warning-container);
   letter-spacing: 0.03em;
 }
 

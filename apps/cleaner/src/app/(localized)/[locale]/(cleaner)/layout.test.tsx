@@ -92,10 +92,11 @@ beforeEach(() => {
 });
 
 describe("CLE-26 the cleaner app navigation", () => {
-  it("offers the board, jobs, and profile tabs to a signed-in cleaner", () => {
+  it("offers the board, offers, jobs, and profile tabs to a signed-in cleaner", () => {
     renderLayout();
 
     const board = screen.getByRole("link", { name: "Open jobs" });
+    const offers = screen.getByRole("link", { name: "Offers" });
     const myJobs = screen.getByRole("link", { name: "My jobs" });
     const profile = screen.getByRole("link", { name: "Profile" });
 
@@ -103,12 +104,14 @@ describe("CLE-26 the cleaner app navigation", () => {
       "href",
       "/en-AU/board",
     );
+    expect(offers).toHaveAttribute("href", "/en-AU/offers");
     expect(myJobs).toHaveAttribute(
       "href",
       "/en-AU/my-jobs",
     );
     expect(profile).toHaveAttribute("href", "/en-AU/profile");
     expect(board.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(offers.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(myJobs.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(profile.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(screen.getByRole("combobox", { name: "Language" })).toBeInTheDocument();
@@ -141,6 +144,10 @@ describe("CLE-26 the cleaner app navigation", () => {
     expect(screen.getByRole("link", { name: "Serviços disponíveis" })).toHaveAttribute(
       "href",
       "/pt-BR/board",
+    );
+    expect(screen.getByRole("link", { name: "Ofertas" })).toHaveAttribute(
+      "href",
+      "/pt-BR/offers",
     );
     expect(screen.getByRole("link", { name: "Meus serviços" })).toHaveAttribute(
       "href",

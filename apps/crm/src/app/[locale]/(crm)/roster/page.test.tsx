@@ -35,6 +35,8 @@ const defaultResults: Record<string, QueryResult> = {
     error: null,
     count: 1,
   },
+  offers: { data: [], error: null, count: 0 },
+  recurring_assignment_cleaners: { data: [], error: null, count: 0 },
   vacancies: { data: [], error: null, count: 0 },
   sites: {
     data: [{
@@ -250,8 +252,34 @@ describe("CLE-35 roster data integrity", () => {
     );
     expect(harness.query("vacancies").gte).toHaveBeenCalledWith("scheduled_start", startsAt);
     expect(harness.query("vacancies").lt).toHaveBeenCalledWith("scheduled_start", endsAt);
+    expect(harness.query("offers").select).toHaveBeenCalledWith(
+      "id, job_id, cleaner_id, jobs!inner(scheduled_start)",
+      { count: "exact" },
+    );
+    expect(harness.query("offers").eq).toHaveBeenCalledWith("company_id", "company-1");
+    expect(harness.query("offers").eq).toHaveBeenCalledWith("status", "pending");
+    expect(harness.query("offers").gte).toHaveBeenCalledWith(
+      "jobs.scheduled_start",
+      startsAt,
+    );
+    expect(harness.query("offers").lt).toHaveBeenCalledWith(
+      "jobs.scheduled_start",
+      endsAt,
+    );
+    expect(harness.query("recurring_assignment_cleaners").select).toHaveBeenCalledWith(
+      "recurring_assignment_id, cleaner_id, slot_number, recurring_assignments!inner(sites!inner(clients!inner(company_id)))",
+      { count: "exact" },
+    );
+    expect(harness.query("recurring_assignment_cleaners").is).toHaveBeenCalledWith(
+      "accepted_at",
+      null,
+    );
+    expect(harness.query("recurring_assignment_cleaners").eq).toHaveBeenCalledWith(
+      "recurring_assignments.sites.clients.company_id",
+      "company-1",
+    );
     expect(harness.query("jobs").select).toHaveBeenCalledWith(
-      "id, site_id, scheduled_start, crew_size, status",
+      "id, site_id, scheduled_start, crew_size, status, recurring_assignment_id",
       { count: "exact" },
     );
     expect(harness.query("jobs").in).toHaveBeenCalledWith("site_id", ["site-1"]);
@@ -284,5 +312,214 @@ describe("CLE-35 roster data integrity", () => {
       "unassigned_at",
       null,
     );
+  });
+});
+
+describe("CLE-55 roster offered projection", () => {
+  beforeEach(() => {
+    mocks.requireCompanyAdmin.mockReset();
+  });
+
+  it("shows unaccepted series and directed offers without subtracting them from the vacancy count", async () => {
+    const page = await renderPage(immediateSupabase({
+      company_members: {
+        data: [
+          {
+            profile_id: "cleaner-1",
+            profiles: { id: "cleaner-1", full_name: "Ana Costa" },
+          },
+          {
+            profile_id: "cleaner-2",
+            profiles: { id: "cleaner-2", full_name: "Bea Lima" },
+          },
+        ],
+        count: 2,
+      },
+      jobs: {
+        data: [
+          {
+            id: "job-series",
+            site_id: "site-1",
+            scheduled_start: "2026-08-10T00:00:00Z",
+            crew_size: 1,
+            status: "posted",
+            recurring_assignment_id: "series-1",
+          },
+          {
+            id: "job-directed",
+            site_id: "site-1",
+            scheduled_start: "2026-08-11T00:00:00Z",
+            crew_size: 2,
+            status: "posted",
+            recurring_assignment_id: null,
+          },
+        ],
+        count: 2,
+      },
+      offers: {
+        data: [{ id: "offer-1", job_id: "job-directed", cleaner_id: "cleaner-2" }],
+        count: 1,
+      },
+      recurring_assignment_cleaners: {
+        data: [{
+          recurring_assignment_id: "series-1",
+          cleaner_id: "cleaner-1",
+          slot_number: 1,
+          recurring_assignments: {
+            sites: { clients: { company_id: "company-1" } },
+          },
+        }],
+        count: 1,
+      },
+      job_assignments: { data: [], count: 0 },
+      vacancies: {
+        data: [{
+          job_id: "job-directed",
+          site_id: "site-1",
+          site_name: "Harbour Tower",
+          scheduled_start: "2026-08-11T00:00:00Z",
+          crew_slot: 2,
+          crew_size: 2,
+        }],
+        count: 1,
+      },
+    }));
+
+    expect(page.props.model.vacancyCount).toBe(1);
+    expect(page.props.model.rows).toEqual([
+      expect.objectContaining({
+        kind: "gaps",
+        cells: expect.objectContaining({
+          "2026-08-11": [expect.objectContaining({ kind: "gap", key: "job-directed:2" })],
+        }),
+      }),
+      expect.objectContaining({
+        label: "Ana Costa",
+        cells: expect.objectContaining({
+          "2026-08-10": [expect.objectContaining({ kind: "offered", jobId: "job-series" })],
+        }),
+      }),
+      expect.objectContaining({
+        label: "Bea Lima",
+        cells: expect.objectContaining({
+          "2026-08-11": [expect.objectContaining({ kind: "offered", jobId: "job-directed" })],
+        }),
+      }),
+    ]);
+  });
+
+  it("does not show a series cleaner as offered when they are already assigned to the job", async () => {
+    const page = await renderPage(immediateSupabase({
+      jobs: {
+        data: [{
+          id: "job-series",
+          site_id: "site-1",
+          scheduled_start: "2026-08-10T00:00:00Z",
+          crew_size: 3,
+          status: "assigned",
+          recurring_assignment_id: "series-1",
+        }],
+        count: 1,
+      },
+      job_assignments: {
+        data: [{ job_id: "job-series", cleaner_id: "cleaner-1", slot_number: 1 }],
+        count: 1,
+      },
+      recurring_assignment_cleaners: {
+        data: [{
+          recurring_assignment_id: "series-1",
+          cleaner_id: "cleaner-1",
+          slot_number: 2,
+          recurring_assignments: {
+            sites: { clients: { company_id: "company-1" } },
+          },
+        }],
+        count: 1,
+      },
+      vacancies: {
+        data: [{
+          job_id: "job-series",
+          site_id: "site-1",
+          site_name: "Harbour Tower",
+          scheduled_start: "2026-08-10T00:00:00Z",
+          crew_slot: 3,
+          crew_size: 3,
+        }],
+        count: 1,
+      },
+    }));
+
+    const cleanerRow = page.props.model.rows.find(
+      (row: { label: string }) => row.label === "Ana Costa",
+    );
+
+    expect(page.props.model.vacancyCount).toBe(1);
+    expect(page.props.model.rows[0].cells["2026-08-10"]).toEqual([
+      expect.objectContaining({ kind: "gap", jobId: "job-series" }),
+    ]);
+    expect(cleanerRow.cells["2026-08-10"]).toEqual([
+      expect.objectContaining({ kind: "job", jobId: "job-series" }),
+    ]);
+  });
+
+  it("rebuilds an unaccepted series as assigned or vacant from current rows on the next load", async () => {
+    const job = {
+      id: "job-series",
+      site_id: "site-1",
+      scheduled_start: "2026-08-10T00:00:00Z",
+      crew_size: 1,
+      status: "posted",
+      recurring_assignment_id: "series-1",
+    };
+    const offered = await renderPage(immediateSupabase({
+      jobs: { data: [job], count: 1 },
+      job_assignments: { data: [], count: 0 },
+      recurring_assignment_cleaners: {
+        data: [{
+          recurring_assignment_id: "series-1",
+          cleaner_id: "cleaner-1",
+          slot_number: 1,
+          recurring_assignments: {
+            sites: { clients: { company_id: "company-1" } },
+          },
+        }],
+        count: 1,
+      },
+    }));
+    const accepted = await renderPage(immediateSupabase({
+      jobs: { data: [{ ...job, status: "assigned" }], count: 1 },
+      job_assignments: {
+        data: [{ job_id: "job-series", cleaner_id: "cleaner-1", slot_number: 1 }],
+        count: 1,
+      },
+      recurring_assignment_cleaners: { data: [], count: 0 },
+    }));
+    const declined = await renderPage(immediateSupabase({
+      jobs: { data: [job], count: 1 },
+      job_assignments: { data: [], count: 0 },
+      recurring_assignment_cleaners: { data: [], count: 0 },
+      vacancies: {
+        data: [{
+          job_id: "job-series",
+          site_id: "site-1",
+          site_name: "Harbour Tower",
+          scheduled_start: "2026-08-10T00:00:00Z",
+          crew_slot: 1,
+          crew_size: 1,
+        }],
+        count: 1,
+      },
+    }));
+
+    expect(offered.props.model.rows[0].cells["2026-08-10"]).toEqual([
+      expect.objectContaining({ kind: "offered", jobId: "job-series" }),
+    ]);
+    expect(accepted.props.model.rows[0].cells["2026-08-10"]).toEqual([
+      expect.objectContaining({ kind: "job", jobId: "job-series" }),
+    ]);
+    expect(declined.props.model.rows[0].cells["2026-08-10"]).toEqual([
+      expect.objectContaining({ kind: "gap", jobId: "job-series" }),
+    ]);
+    expect(declined.props.model.vacancyCount).toBe(1);
   });
 });

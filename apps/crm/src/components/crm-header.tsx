@@ -7,7 +7,7 @@ import { CompanySwitcher, type CrmMembershipOption } from "./company-switcher";
 import { CrmNavigation } from "./crm-navigation";
 import {
   NotificationBell,
-  type ApplicationNotification,
+  type CrmNotification,
 } from "./notification-bell";
 
 type CrmHeaderProps = {
@@ -15,7 +15,7 @@ type CrmHeaderProps = {
   companyName: string;
   logoUrl: string | null;
   memberships: CrmMembershipOption[];
-  notifications?: ApplicationNotification[];
+  notifications?: CrmNotification[];
   profileEmail?: string;
   profileId?: string;
   profileName: string;

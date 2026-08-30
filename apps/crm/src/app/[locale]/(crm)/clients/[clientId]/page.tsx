@@ -103,14 +103,26 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
   if (recurringError) throw recurringError;
 
   const recurringIds = recurringRows.map((rule) => rule.id);
-  const { data: namedCleanerRows, error: namedCleanerError } = recurringIds.length
-    ? await supabase
-        .from("recurring_assignment_cleaners")
-        .select("recurring_assignment_id, slot_number, cleaner_id")
-        .in("recurring_assignment_id", recurringIds)
-        .order("slot_number")
-    : { data: [], error: null };
+  const [
+    { data: namedCleanerRows, error: namedCleanerError },
+    { data: seriesOfferRows, error: seriesOfferError },
+  ] = recurringIds.length
+    ? await Promise.all([
+        supabase
+          .from("recurring_assignment_cleaners")
+          .select("recurring_assignment_id, slot_number, cleaner_id, accepted_at")
+          .in("recurring_assignment_id", recurringIds)
+          .order("slot_number"),
+        supabase
+          .from("offers")
+          .select("recurring_assignment_id, cleaner_id, created_at")
+          .in("recurring_assignment_id", recurringIds)
+          .eq("status", "pending")
+          .order("created_at"),
+      ])
+    : [{ data: [], error: null }, { data: [], error: null }];
   if (namedCleanerError) throw namedCleanerError;
+  if (seriesOfferError) throw seriesOfferError;
 
   const services: ServiceOption[] = serviceRows.map((service) => ({
     id: service.id,
@@ -142,13 +154,25 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
           active: rule.active,
           namedCleaners: namedCleanerRows
             .filter((named) => named.recurring_assignment_id === rule.id)
-            .map((named) => ({
-              id: named.cleaner_id,
-              name:
-                cleaners.find((cleaner) => cleaner.id === named.cleaner_id)?.name ??
-                common("unknownCleaner"),
-              slotNumber: named.slot_number,
-            })),
+            .map((named) => {
+              const pendingOffer = seriesOfferRows.find((offer) => (
+                offer.recurring_assignment_id === named.recurring_assignment_id
+                && offer.cleaner_id === named.cleaner_id
+              ));
+              const consentState = named.accepted_at === null
+                ? pendingOffer
+                  ? { status: "offered" as const, createdAt: pendingOffer.created_at }
+                  : { status: "offered" as const }
+                : { status: "accepted" as const };
+              return {
+                id: named.cleaner_id,
+                name:
+                  cleaners.find((cleaner) => cleaner.id === named.cleaner_id)?.name ??
+                  common("unknownCleaner"),
+                slotNumber: named.slot_number,
+                consentState,
+              };
+            }),
         })),
     ]),
   );

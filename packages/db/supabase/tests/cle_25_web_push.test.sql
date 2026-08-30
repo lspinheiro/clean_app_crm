@@ -378,15 +378,25 @@ insert into public.jobs (
   );
 
 set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000002', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select lives_ok(
+  $$select public.apply_to_job('25000000-0000-4000-8000-000000000501')$$,
+  'the cleaner applies before the admin approves the assignment'
+);
+reset role;
+delete from net.http_request_queue;
+
+set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select lives_ok(
-  $$select public.assign_job_slot(
+  $$select public.approve_job_application(
       '25000000-0000-4000-8000-000000000501',
       1,
       '10000000-0000-4000-8000-000000000002'
     )$$,
-  'assigning a slot succeeds'
+  'application approval assigns the slot'
 );
 reset role;
 select is(
@@ -520,11 +530,12 @@ insert into public.recurring_assignments (
   'weekly', 1, '2099-08-03', '06:00', 60, 8000, 2
 );
 insert into public.recurring_assignment_cleaners (
-  recurring_assignment_id, slot_number, cleaner_id
+  recurring_assignment_id, slot_number, cleaner_id, accepted_at
 ) values (
   '25000000-0000-4000-8000-000000000701',
   1,
-  '10000000-0000-4000-8000-000000000004'
+  '10000000-0000-4000-8000-000000000004',
+  clock_timestamp()
 );
 select ok(
   public.generate_recurring_jobs_at(

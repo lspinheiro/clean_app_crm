@@ -49,7 +49,7 @@ const defaultResults: Record<string, QueryResult> = {
       cleaner_pay_cents: 15000,
       client_charge_cents: 42000,
       notes: "Internal handover",
-      crew_size: 2,
+      crew_size: 3,
       site_id: "10000000-0000-4000-8000-000000000401",
       service_id: "30000000-0000-4000-8000-000000000002",
       sites: {
@@ -118,7 +118,14 @@ const defaultResults: Record<string, QueryResult> = {
         profile_id: "10000000-0000-4000-8000-000000000007",
         profiles: {
           id: "10000000-0000-4000-8000-000000000007",
-          full_name: "Membership-only Cleaner",
+          full_name: "Offered Cleaner",
+        },
+      },
+      {
+        profile_id: "10000000-0000-4000-8000-000000000008",
+        profiles: {
+          id: "10000000-0000-4000-8000-000000000008",
+          full_name: "Eligible Cleaner",
         },
       },
       {
@@ -138,6 +145,15 @@ const defaultResults: Record<string, QueryResult> = {
         rank: 2,
       },
     ],
+    error: null,
+  },
+  offers: {
+    data: [{
+      id: "51000000-0000-4000-8000-000000000801",
+      cleaner_id: "10000000-0000-4000-8000-000000000007",
+      created_at: "2026-08-11T09:00:00Z",
+      profiles: { full_name: "Offered Cleaner" },
+    }],
     error: null,
   },
 };
@@ -237,13 +253,18 @@ describe("CLE-22 job detail route", () => {
     expect(screen.getByRole("article", { name: "Crew slot 1" })).toHaveTextContent(
       "Demo Cleaner One",
     );
-    const slotTwoChoices = within(screen.getByLabelText("Cleaner for slot 2"))
+    const slotTwoChoices = within(screen.getByLabelText("Cleaner to offer this job"))
       .getAllByRole("option")
       .map((option) => option.textContent);
-    expect(slotTwoChoices).toContain("Membership-only Cleaner");
+    expect(slotTwoChoices).toContain("Eligible Cleaner");
+    expect(slotTwoChoices).not.toContain("Offered Cleaner");
     expect(slotTwoChoices).not.toContain("Demo Cleaner One");
-    expect(slotTwoChoices.filter((choice) => choice === "Membership-only Cleaner"))
+    expect(slotTwoChoices).not.toContain("Preferred Applicant");
+    expect(slotTwoChoices).not.toContain("Unranked Applicant");
+    expect(slotTwoChoices.filter((choice) => choice === "Eligible Cleaner"))
       .toHaveLength(1);
+    expect(screen.getByRole("region", { name: "Pending offers" }))
+      .toHaveTextContent("Offered Cleaner");
 
     expect(harness.query("jobs").select).toHaveBeenCalledWith(
       "id, status, scheduled_start, duration_minutes, cleaner_pay_cents, client_charge_cents, notes, crew_size, site_id, service_id, sites!inner(id, name, address, suburb, access_notes, clients!inner(id, name, company_id)), service_catalogue!inner(name, slug)",
@@ -268,6 +289,11 @@ describe("CLE-22 job detail route", () => {
       "job_id",
       jobId,
     );
+    expect(harness.query("offers").select).toHaveBeenCalledWith(
+      "id, cleaner_id, created_at, profiles!inner(full_name)",
+    );
+    expect(harness.query("offers").eq).toHaveBeenCalledWith("job_id", jobId);
+    expect(harness.query("offers").eq).toHaveBeenCalledWith("status", "pending");
     expect(harness.query("site_preferred_cleaners").eq).toHaveBeenCalledWith(
       "site_id",
       "10000000-0000-4000-8000-000000000401",

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(63);
+select plan(64);
 
 select is(
   (
@@ -196,16 +196,16 @@ values
     'fortnightly', 3, '2026-08-12', '17:30', 90, 9500, 1
   );
 insert into public.recurring_assignment_cleaners (
-  recurring_assignment_id, slot_number, cleaner_id
+  recurring_assignment_id, slot_number, cleaner_id, accepted_at
 )
 values
   (
     '51000000-0000-4000-8000-000000000701', 1,
-    '10000000-0000-4000-8000-000000000002'
+    '10000000-0000-4000-8000-000000000002', clock_timestamp()
   ),
   (
     '51000000-0000-4000-8000-000000000702', 1,
-    '10000000-0000-4000-8000-000000000003'
+    '10000000-0000-4000-8000-000000000003', clock_timestamp()
   );
 
 select lives_ok(
@@ -653,7 +653,30 @@ select lives_ok(
       '15:47', 60, 8300, 1,
       array['10000000-0000-4000-8000-000000000004'::uuid]
     )$$,
-  'a named recurring RPC generates assigned jobs for an active pool member'
+  'a named recurring RPC sends an offer to the active cleaner'
+);
+select set_config(
+  'request.jwt.claim.sub',
+  '10000000-0000-4000-8000-000000000004',
+  true
+);
+select lives_ok(
+  $$select public.accept_offer(
+    (
+      select offer.offer_id
+      from public.cleaner_offers offer
+      where offer.recurring_assignment_id = (
+        select rule_id from cle15_lifecycle_rule
+      )
+        and offer.status = 'pending'
+    )
+  )$$,
+  'the named cleaner accepts the recurring offer before assignment generation'
+);
+select set_config(
+  'request.jwt.claim.sub',
+  '10000000-0000-4000-8000-000000000001',
+  true
 );
 select cmp_ok(
   (
@@ -745,15 +768,15 @@ insert into public.recurring_assignments (
   '19:47', 60, 8400, 2
 );
 insert into public.recurring_assignment_cleaners (
-  recurring_assignment_id, slot_number, cleaner_id
+  recurring_assignment_id, slot_number, cleaner_id, accepted_at
 ) values
   (
     '51000000-0000-4000-8000-000000000704', 1,
-    '10000000-0000-4000-8000-000000000002'
+    '10000000-0000-4000-8000-000000000002', clock_timestamp()
   ),
   (
     '51000000-0000-4000-8000-000000000704', 2,
-    '10000000-0000-4000-8000-000000000003'
+    '10000000-0000-4000-8000-000000000003', clock_timestamp()
   );
 select public.generate_recurring_jobs_at(
   clock_timestamp(),
@@ -839,15 +862,15 @@ insert into public.recurring_assignments (
     'weekly', 1, '2027-02-01', '22:00', 60, 9000, 1
   );
 insert into public.recurring_assignment_cleaners (
-  recurring_assignment_id, slot_number, cleaner_id
+  recurring_assignment_id, slot_number, cleaner_id, accepted_at
 ) values
   (
     '51000000-0000-4000-8000-000000000711', 1,
-    '10000000-0000-4000-8000-000000000003'
+    '10000000-0000-4000-8000-000000000003', clock_timestamp()
   ),
   (
     '51000000-0000-4000-8000-000000000712', 1,
-    '10000000-0000-4000-8000-000000000003'
+    '10000000-0000-4000-8000-000000000003', clock_timestamp()
   );
 select lives_ok(
   $$select public.generate_recurring_jobs_at('2027-01-31T14:30:00Z')$$,

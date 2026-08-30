@@ -39,8 +39,11 @@ select results_eq(
     ('job_posted'::text collate "C"),
     ('job_cancelled'::text collate "C"),
     ('application_received'::text collate "C"),
-    ('payment_marked_paid'::text collate "C")$$,
-  'notification records retain loop, application-review, and settlement events'
+    ('payment_marked_paid'::text collate "C"),
+    ('offer_received'::text collate "C"),
+    ('offer_declined'::text collate "C"),
+    ('job_paid'::text collate "C")$$,
+  'notification records retain loop, application-review, settlement, and offer events'
 );
 select is(
   (
@@ -164,7 +167,7 @@ select ok(
       'public.post_job(uuid)',
       'EXECUTE'
     )
-    and has_function_privilege(
+    and not has_function_privilege(
       'authenticated',
       'public.assign_job_slot(uuid,integer,uuid)',
       'EXECUTE'
@@ -184,7 +187,7 @@ select ok(
       'public.get_cleaner_job_access(uuid)',
       'EXECUTE'
     ),
-  'authenticated callers can execute every narrow loop RPC'
+  'authenticated callers execute public loop RPCs but not the internal assignment helper'
 );
 select ok(
   not has_function_privilege('anon', 'public.apply_to_job(uuid)', 'EXECUTE')
@@ -208,6 +211,11 @@ select ok(
     ),
   'anonymous callers cannot execute loop RPCs'
 );
+
+-- The rest of this legacy suite tests the helper's validation and lifecycle mechanics.
+-- This transaction-local grant is rolled back and does not change the public capability.
+grant execute on function public.assign_job_slot(uuid, integer, uuid) to authenticated;
+
 select hasnt_column(
   'public', 'cleaner_job_board', 'address',
   'the board never exposes a full address'
@@ -1411,17 +1419,19 @@ insert into public.recurring_assignments (
     '2099-08-22', '18:00', 60, 9000, 2, true
   );
 insert into public.recurring_assignment_cleaners (
-  recurring_assignment_id, slot_number, cleaner_id
+  recurring_assignment_id, slot_number, cleaner_id, accepted_at
 ) values
   (
     '49000000-0000-4000-8000-000000000702',
     1,
-    '49000000-0000-4000-8000-000000000003'
+    '49000000-0000-4000-8000-000000000003',
+    clock_timestamp()
   ),
   (
     '49000000-0000-4000-8000-000000000703',
     1,
-    '49000000-0000-4000-8000-000000000002'
+    '49000000-0000-4000-8000-000000000002',
+    clock_timestamp()
   );
 select lives_ok(
   $$select public.generate_recurring_jobs_at(

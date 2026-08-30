@@ -418,21 +418,26 @@ set
 insert into public.recurring_assignment_cleaners (
   recurring_assignment_id,
   slot_number,
-  cleaner_id
+  cleaner_id,
+  accepted_at
 )
 values
   (
     '10000000-0000-4000-8000-000000000701',
     1,
-    '10000000-0000-4000-8000-000000000002'
+    '10000000-0000-4000-8000-000000000002',
+    now()
   ),
   (
     '10000000-0000-4000-8000-000000000702',
     1,
-    '10000000-0000-4000-8000-000000000003'
+    '10000000-0000-4000-8000-000000000003',
+    now()
   )
 on conflict (recurring_assignment_id, slot_number) do update
-set cleaner_id = excluded.cleaner_id;
+set
+  cleaner_id = excluded.cleaner_id,
+  accepted_at = excluded.accepted_at;
 
 -- Jobs are generated from the recurring rules so fresh demo databases exercise
 -- the same 28-day roster path as production data.

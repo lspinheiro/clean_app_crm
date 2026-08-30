@@ -130,18 +130,27 @@ select results_eq(
   'a stored dispatch URL overrides the local gateway default'
 );
 
--- The production path inserts as `authenticated` through an RPC, not as the table owner.
+-- The production path inserts as `authenticated` through the application-approval RPC.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000002', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select lives_ok(
+  $$select public.apply_to_job('25000000-0000-4000-8000-000000000901')$$,
+  'the cleaner applies before the signed-in admin approves the slot'
+);
+reset role;
+
 delete from net.http_request_queue;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select lives_ok(
-  $$select public.assign_job_slot(
+  $$select public.approve_job_application(
       '25000000-0000-4000-8000-000000000901',
       1,
       '10000000-0000-4000-8000-000000000002'
     )$$,
-  'assigning a slot as a signed-in user succeeds'
+  'application approval as a signed-in user succeeds'
 );
 reset role;
 select is(

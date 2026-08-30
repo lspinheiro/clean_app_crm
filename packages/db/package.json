@@ -12,6 +12,6 @@
     "db:types": "supabase --workdir . gen types typescript --local --schema public"
   },
   "devDependencies": {
-    "supabase": "^2.106.0"
+    "supabase": "^2.115.0"
   }
 }

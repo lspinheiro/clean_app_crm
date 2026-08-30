@@ -716,6 +716,68 @@ export type Database = {
           },
         ]
       }
+      offers: {
+        Row: {
+          cleaner_id: string
+          company_id: string
+          created_at: string
+          id: string
+          job_id: string | null
+          recurring_assignment_id: string | null
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["offer_status"]
+        }
+        Insert: {
+          cleaner_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          recurring_assignment_id?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["offer_status"]
+        }
+        Update: {
+          cleaner_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          recurring_assignment_id?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["offer_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_recurring_assignment_id_fkey"
+            columns: ["recurring_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pool_invite_email_batches: {
         Row: {
           authority_confirmed_at: string
@@ -905,18 +967,21 @@ export type Database = {
       }
       recurring_assignment_cleaners: {
         Row: {
+          accepted_at: string | null
           cleaner_id: string
           created_at: string
           recurring_assignment_id: string
           slot_number: number
         }
         Insert: {
+          accepted_at?: string | null
           cleaner_id: string
           created_at?: string
           recurring_assignment_id: string
           slot_number: number
         }
         Update: {
+          accepted_at?: string | null
           cleaner_id?: string
           created_at?: string
           recurring_assignment_id?: string
@@ -1291,6 +1356,61 @@ export type Database = {
           },
         ]
       }
+      cleaner_offers: {
+        Row: {
+          cleaner_pay_cents: number | null
+          company_id: string | null
+          company_name: string | null
+          created_at: string | null
+          crew_size: number | null
+          duration_minutes: number | null
+          frequency: Database["public"]["Enums"]["recurrence_frequency"] | null
+          job_id: string | null
+          local_start_time: string | null
+          offer_id: string | null
+          recurring_assignment_id: string | null
+          resolved_at: string | null
+          scheduled_start: string | null
+          service_id: string | null
+          service_name: string | null
+          service_slug: string | null
+          site_name: string | null
+          status: Database["public"]["Enums"]["offer_status"] | null
+          suburb: string | null
+          target_kind: string | null
+          weekday: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_recurring_assignment_id_fkey"
+            columns: ["recurring_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalogue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_my_jobs: {
         Row: {
           assigned_at: string | null
@@ -1583,6 +1703,7 @@ export type Database = {
       }
     }
     Functions: {
+      accept_offer: { Args: { target_offer_id: string }; Returns: string }
       accept_employee_invitation: {
         Args: {
           full_name: string
@@ -2118,6 +2239,19 @@ export type Database = {
         Args: { target_job_id: string }
         Returns: undefined
       }
+      decline_offer: { Args: { target_offer_id: string }; Returns: undefined }
+      offer_job: {
+        Args: { target_cleaner_id: string; target_job_id: string }
+        Returns: string
+      }
+      offer_series: {
+        Args: {
+          target_cleaner_id: string
+          target_recurring_assignment_id: string
+        }
+        Returns: string
+      }
+      revoke_offer: { Args: { target_offer_id: string }; Returns: undefined }
     }
     Enums: {
       app_locale: "en-AU" | "pt-BR"
@@ -2135,12 +2269,16 @@ export type Database = {
         | "cancelled"
       ledger_status: "owed" | "paid"
       member_status: "active" | "removed"
+      offer_status: "pending" | "accepted" | "declined" | "revoked"
       notification_type:
         | "job_assigned"
         | "job_posted"
         | "job_cancelled"
         | "application_received"
         | "payment_marked_paid"
+        | "offer_received"
+        | "offer_declined"
+        | "job_paid"
       recurrence_frequency: "weekly" | "fortnightly"
     }
     CompositeTypes: {
@@ -2285,12 +2423,16 @@ export const Constants = {
       ],
       ledger_status: ["owed", "paid"],
       member_status: ["active", "removed"],
+      offer_status: ["pending", "accepted", "declined", "revoked"],
       notification_type: [
         "job_assigned",
         "job_posted",
         "job_cancelled",
         "application_received",
         "payment_marked_paid",
+        "offer_received",
+        "offer_declined",
+        "job_paid",
       ],
       recurrence_frequency: ["weekly", "fortnightly"],
     },

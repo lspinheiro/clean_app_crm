@@ -222,7 +222,7 @@ describe("CrmHeader", () => {
     expect(within(companyGroup).getByText("Staff", { exact: true })).toBeInTheDocument();
   });
 
-  it("shows durable application notifications, marks unread rows read, and refreshes live", async () => {
+  it("shows application and decline notifications, marks unread rows read, and refreshes live", async () => {
     const { unmount } = render(
       <CrmHeader
         companyId="company-1"
@@ -233,16 +233,26 @@ describe("CrmHeader", () => {
         ]}
         notifications={[
           {
-            id: "86000000-0000-4000-8000-000000000802",
+            id: "86000000-0000-4000-8000-000000000803",
             jobId: "22000000-0000-4000-8000-000000000502",
             siteName: "Southport Office",
+            type: "application_received",
+            createdAt: "2026-08-25T00:03:00Z",
+            readAt: "2026-08-25T00:04:00Z",
+          },
+          {
+            id: "86000000-0000-4000-8000-000000000802",
+            jobId: "22000000-0000-4000-8000-000000000502",
+            siteName: "Broadbeach Towers",
+            type: "offer_declined",
             createdAt: "2026-08-25T00:02:00Z",
             readAt: null,
           },
           {
             id: "86000000-0000-4000-8000-000000000801",
             jobId: "22000000-0000-4000-8000-000000000501",
-            siteName: "Broadbeach Towers",
+            siteName: "Robina Medical Centre",
+            type: "application_received",
             createdAt: "2026-08-25T00:01:00Z",
             readAt: null,
           },
@@ -261,9 +271,12 @@ describe("CrmHeader", () => {
       .toEqual([
         expect.stringContaining("Southport Office"),
         expect.stringContaining("Broadbeach Towers"),
+        expect.stringContaining("Robina Medical Centre"),
       ]);
-    expect(within(list).getByRole("link", { name: /Broadbeach Towers/ }))
+    expect(within(list).getByRole("link", { name: /New application for Robina Medical Centre/ }))
       .toHaveAttribute("href", "/jobs/22000000-0000-4000-8000-000000000501#applications");
+    expect(within(list).getByRole("link", { name: /Offer declined for Broadbeach Towers/ }))
+      .toHaveAttribute("href", "/jobs/22000000-0000-4000-8000-000000000502");
 
     await vi.waitFor(() => expect(mocks.updateQuery.update).toHaveBeenCalledWith({
       read_at: expect.any(String),
@@ -273,6 +286,9 @@ describe("CrmHeader", () => {
       "86000000-0000-4000-8000-000000000801",
     ]);
     expect(mocks.updateQuery.is).toHaveBeenCalledWith("read_at", null);
+    await vi.waitFor(() => {
+      expect(screen.getByRole("button", { name: "Notifications" })).not.toHaveTextContent("2");
+    });
 
     expect(mocks.channel.on).toHaveBeenCalledWith(
       "postgres_changes",
@@ -280,7 +296,7 @@ describe("CrmHeader", () => {
         event: "INSERT",
         schema: "public",
         table: "notifications",
-        filter: "type=eq.application_received",
+        filter: "type=in.(application_received,offer_declined)",
       },
       expect.any(Function),
     );

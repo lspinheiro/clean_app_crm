@@ -22,6 +22,7 @@ export type RosterJob = {
   siteName: string;
   scheduledStart: string;
   crewSize: number;
+  recurringAssignmentId: string | null;
 };
 
 export type RosterAssignment = {
@@ -38,6 +39,12 @@ export type RosterVacancy = {
   scheduledStart: string;
   crewSlot: number;
   crewSize: number;
+};
+
+export type RosterOffer = {
+  key: string;
+  jobId: string;
+  cleanerId: string;
 };
 
 export type RosterJobItem = {
@@ -60,7 +67,17 @@ export type RosterGapItem = {
   crewSize: number;
 };
 
-export type RosterCellItem = RosterJobItem | RosterGapItem;
+export type RosterOfferedItem = {
+  kind: "offered";
+  key: string;
+  jobId: string;
+  siteName: string;
+  scheduledStart: string;
+  crewSize: number;
+  cleanerName: string;
+};
+
+export type RosterCellItem = RosterJobItem | RosterOfferedItem | RosterGapItem;
 
 export type RosterRow = {
   id: string;

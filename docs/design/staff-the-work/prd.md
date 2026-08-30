@@ -4,7 +4,7 @@
 
 - **Status:** draft
 - **Stage:** alpha (PRODUCT.md §3.4)
-- **Journeys:** [CA-3](../../PRODUCT.md#phase-c--staff-the-work-vacancy--assigned) (fill a
+- **Journeys:** [CA-3](../../PRODUCT.md) (fill a
   vacancy from the pool), CA-4 (assign a known cleaner directly), CL-2 (find work on the
   board)
 - **Features:** F10 (jobs and roster), F11 (cleaner app), F5 (matching signals — only the

@@ -5011,6 +5011,30 @@ button.company-switcher__company:hover {
   letter-spacing: 0.03em;
 }
 
+/* Entries are links to their job, so each variant deepens within its own tint on hover.
+   The warning family has no container step below --color-warning-container, so offered
+   deepens with --color-warning at low alpha instead of a token. */
+.roster-entry--job:hover {
+  background: var(--color-gray-100);
+}
+
+.roster-entry--gap:hover {
+  background: var(--color-danger-container);
+}
+
+.roster-entry--offered:hover {
+  background: rgb(217 119 6 / 0.22);
+}
+
+/* Inset ring, like the view switch: the grid region scrolls, so an outset outline would
+   ride over the neighbouring entry and the cell border. */
+.roster-entry:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
 .roster-no-work {
   position: relative;
   display: block;

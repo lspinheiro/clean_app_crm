@@ -136,6 +136,80 @@ describe("RosterWeek", () => {
     );
   });
 
+  it("links every entry kind to its own job page", () => {
+    const model: RosterModel = {
+      rows: [
+        {
+          id: "gaps",
+          label: "Unfilled slots",
+          kind: "gaps",
+          cells: {
+            "2026-08-11": [{
+              kind: "gap",
+              key: "job-3:2",
+              jobId: "job-3",
+              siteName: "Harbour Tower",
+              scheduledStart: "2026-08-11T00:00:00Z",
+              crewSlot: 2,
+              crewSize: 2,
+            }],
+          },
+        },
+        {
+          id: "cleaner:cleaner-1",
+          label: "Ana Costa",
+          kind: "cleaner",
+          cells: {
+            "2026-08-11": [{
+              kind: "job",
+              key: "job-1",
+              jobId: "job-1",
+              siteName: "Harbour Tower",
+              scheduledStart: "2026-08-11T00:00:00Z",
+              crewSize: 1,
+              cleanerNames: ["Ana Costa"],
+            }],
+            "2026-08-12": [{
+              kind: "offered",
+              key: "offer:offer-1:job-2",
+              jobId: "job-2",
+              siteName: "Quiet Retail",
+              scheduledStart: "2026-08-12T00:00:00Z",
+              crewSize: 1,
+              cleanerName: "Ana Costa",
+            }],
+          },
+        },
+      ],
+      vacancyCount: 1,
+      vacancyKeys: ["job-3:2"],
+      jobIds: ["job-1", "job-2", "job-3"],
+    };
+
+    render(
+      <RosterWeek
+        days={days}
+        hasFoundation
+        model={model}
+        view="cleaner"
+        weekStart="2026-08-10"
+        todayKey="2026-08-12"
+      />,
+    );
+
+    const job = screen.getByTestId("roster-job");
+    expect(job).toHaveRole("link");
+    expect(job).toHaveAttribute("href", "/jobs/job-1");
+
+    const offered = screen.getByTestId("roster-offered");
+    expect(offered).toHaveRole("link");
+    expect(offered).toHaveAttribute("href", "/jobs/job-2");
+
+    const gap = screen.getByTestId("roster-gap");
+    expect(gap).toHaveRole("link");
+    expect(gap).toHaveAttribute("href", "/jobs/job-3");
+  });
+
   it("renders a neutral unscheduled state when the week has no generated jobs", () => {
     const model = buildCleanerRoster({
       days,

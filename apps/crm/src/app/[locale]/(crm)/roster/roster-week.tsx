@@ -51,11 +51,12 @@ function RosterEntry({
 }) {
   if (item.kind === "gap") {
     return (
-      <div
+      <Link
         className="roster-entry roster-entry--gap"
         data-job-id={item.jobId}
         data-testid="roster-gap"
         data-vacancy-key={item.key}
+        href={`/jobs/${item.jobId}`}
       >
         <strong><AlertTriangle aria-hidden="true" size={14} /> {t("gap")}</strong>
         <span>
@@ -65,31 +66,33 @@ function RosterEntry({
           {view === "cleaner" ? `${formatRosterTime(item.scheduledStart, locale)} · ` : null}
           {t("slotOf", { slot: item.crewSlot, crewSize: item.crewSize })}
         </small>
-      </div>
+      </Link>
     );
   }
 
   if (item.kind === "offered") {
     return (
-      <div
+      <Link
         className="roster-entry roster-entry--offered"
         data-job-id={item.jobId}
         data-testid="roster-offered"
+        href={`/jobs/${item.jobId}`}
       >
         <strong><Clock3 aria-hidden="true" size={14} /> {t("offered")}</strong>
         <span>{view === "site" ? item.cleanerName : item.siteName}</span>
         <small className="tabular-numerals">
           {formatRosterTime(item.scheduledStart, locale)}
         </small>
-      </div>
+      </Link>
     );
   }
 
   return (
-    <div
+    <Link
       className="roster-entry roster-entry--job"
       data-job-id={item.jobId}
       data-testid="roster-job"
+      href={`/jobs/${item.jobId}`}
     >
       <strong>
         {view === "site" ? formatRosterTime(item.scheduledStart, locale) : item.siteName}
@@ -100,7 +103,7 @@ function RosterEntry({
           : formatRosterTime(item.scheduledStart, locale)}
       </span>
       {item.crewSize > 1 ? <small>{t("cleanerCount", { count: item.crewSize })}</small> : null}
-    </div>
+    </Link>
   );
 }
 

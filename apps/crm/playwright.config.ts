@@ -28,5 +28,9 @@ export default defineConfig({
     url: `${baseURL}/en-AU/login`,
     reuseExistingServer,
     timeout: 120_000,
+    // Read by next.config.ts to drop the dev-tools badge, which floats over the bottom-left
+    // corner and can intercept clicks meant for the page. Passed through `env` rather than a
+    // `VAR=x` command prefix so the suite still runs on Windows.
+    env: { E2E_DISABLE_DEV_INDICATORS: "1" },
   },
 });

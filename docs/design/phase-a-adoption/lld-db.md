@@ -5,7 +5,7 @@
 The database component of the [Phase A HLD](hld.md): schema, security-definer RPCs,
 views, and the generation job. This file specifies the **new and changed** contracts
 that fill the [gap map](lld.md#gap-map--delivered-vs-design); for delivered behaviour
-the migration set `cle_5`–`cle_49` and its pgTAP suites are the authority, and this file
+the migration set `cle_5`–`cle_59` and its pgTAP suites are the authority, and this file
 repeats delivered detail only where a change touches it.
 
 Constraints from the HLD: all flow mutations are security-definer RPCs with explicit
@@ -14,11 +14,12 @@ decisions 10, 14); amounts are always admin-stated (HLD decision 12); forward
 migrations only (LLD decision 2).
 
 Stories with a db surface in this file: S1 (first-admin invitation and company bootstrap),
-S6 (consent-gated generation), S8 (multi-link
-invites), S9/S10 (join attribution), S16 (board projection changes), S19/S24 (ledger,
+S6 (consent-gated generation), S8–S10 (postings, join requests, applications, and hire),
+S16 (board projection changes), S19/S24 (ledger,
 mark-paid), S23 (pay basis), S20 (push, notification types), S26 (`product_events`),
 S28/S29 (offers), S30 (company-scoped cleaner invitation batches), and S35
-(authenticated additional-company bootstrap).
+(authenticated additional-company bootstrap), S36 (job-filled and posting-closed
+application outcomes), and S37 (one active relationship per person and company).
 
 F15 adds one shared profile preference used by both company admins and cleaners:
 `public.app_locale` has exactly `en-AU` and `pt-BR`; `profiles.preferred_locale` is
@@ -47,8 +48,13 @@ The new and changed entities of this cycle and how they attach to the delivered 
 erDiagram
     FIRST_ADMIN_INVITATIONS |o--o| PROFILES : "accepted by"
     FIRST_ADMIN_INVITATIONS |o--o| COMPANIES : "creates"
-    COMPANIES ||--o{ COMPANY_INVITES : "many links"
-    COMPANY_INVITES |o..o{ COMPANY_MEMBERS : "admitted (attribution)"
+    COMPANIES ||--o{ POSTINGS : "publishes"
+    COMPANIES ||--o{ JOIN_REQUESTS : "receives"
+    PROFILES ||--o{ JOIN_REQUESTS : "requests entry"
+    POSTINGS ||--o{ JOB_APPLICATIONS : "produces"
+    JOIN_REQUESTS ||--o{ JOB_APPLICATIONS : "candidate applications"
+    JOBS |o--o{ POSTINGS : "one-time target"
+    RECURRING_ASSIGNMENTS |o--o{ POSTINGS : "regular target"
     COMPANIES ||--o{ OFFERS : ""
     PROFILES ||--o{ OFFERS : "offered cleaner"
     JOBS |o--o{ OFFERS : "target (job kind)"
@@ -59,19 +65,28 @@ erDiagram
     PROFILES ||--o{ PUSH_SUBSCRIPTIONS : ""
     PROFILES ||--o{ NOTIFICATIONS : "recipient"
     COMPANIES ||--o{ POOL_INVITE_EMAIL_BATCHES : "owns"
-    COMPANY_INVITES ||--o{ POOL_INVITE_EMAIL_BATCHES : "selected link"
+    COMPANY_INVITES ||--o{ POOL_INVITE_EMAIL_BATCHES : "historical selected link"
     POOL_INVITE_EMAIL_BATCHES ||--o{ POOL_INVITE_EMAIL_RECIPIENTS : "contains"
 
-    COMPANY_INVITES {
-        text title "nullable"
-        pay_basis pay_basis "nullable pair"
-        int pay_value_cents "nullable pair"
+    POSTINGS {
+        posting_intent intent "EOI|one_time|regular"
+        uuid job_id "one-time target"
+        uuid recurring_assignment_id "regular target"
+        text public_description
         timestamptz expires_at "nullable"
-        int max_registrations "nullable"
+        int application_cap "nullable"
         timestamptz revoked_at "nullable"
     }
-    COMPANY_MEMBERS {
-        uuid invite_id "nullable FK, new"
+    JOIN_REQUESTS {
+        join_request_state state "waiting|admitted|rejected"
+        timestamptz decided_at "nullable"
+    }
+    JOB_APPLICATIONS {
+        uuid posting_id "candidate source"
+        uuid join_request_id "candidate relationship"
+        uuid job_id "one-time target"
+        uuid recurring_assignment_id "regular target"
+        application_status status
     }
     OFFERS {
         uuid job_id "exactly one target"
@@ -291,42 +306,66 @@ They exclude a reserved cleaner who already has an active assignment on the job.
 views offset open slots by this count, so one cleaner reserves at most one crew place.
 An offered slot is visible only to its offered cleaner.
 
-## Data model — multi-link invites (S8, S9, S10)
+## Data model — postings, join requests, and applications (S8–S10, S36, S37)
 
-Forward migration on `company_invites`:
+`postings` is the public-link object and carries exactly one intent:
 
-- Drop the one-active-per-company partial unique index; a company holds any number of
-  links, each independent.
-- New columns, all nullable (LLD-db decision 3): `title text`, `description text`,
-  `pay_basis public.pay_basis`, `pay_value_cents integer check > 0` (pay pair
-  all-or-none, same idiom as site defaults), `max_registrations integer check > 0`.
-- `expires_at` (existing, never set today) becomes settable at creation.
-- Link state is derived, never stored: `revoked` (revoked_at), `expired` (expires_at),
-  `limit_reached` (registration count ≥ cap), else `active`.
+- `expression_of_interest` has neither work target and uses the admin-written public
+  description.
+- `one_time` has one `job_id`; `regular` has one `recurring_assignment_id`. The database
+  CHECK enforces the intent/target combination and the public page derives schedule,
+  service, suburb, and cleaner pay from the target rather than copying those values.
+- Every posting has a high-entropy code, optional expiry and application cap, optional
+  revocation timestamp, company and creator attribution, and a 2,000-character public
+  description. State is derived as `active` or `dead`, with the dead reason `revoked`,
+  `expired`, `cap_reached`, `filled`, `work_unavailable`, or `start_passed`; no mutable
+  status column can drift from the work. `work_unavailable` covers a cancelled/non-live
+  one-time job or an inactive recurring assignment.
 
-`company_members.invite_id uuid references company_invites on delete set null` —
-nullable; existing members and admin-created memberships have none. The per-link
-registration count is `count(company_members where invite_id = …)`.
+`join_requests` holds the one person–company relationship required by PRD decision #37.
+Unique `(company_id, profile_id)` gives the states `waiting`, `admitted`, and `rejected`;
+the decision timestamp is present exactly when the row has been decided.
+A waiting request grants no membership and therefore no board, vacancy, site-address, or
+access-note visibility.
 
-Changed RPCs:
+The delivered `job_applications` table remains the canonical application ledger for both
+staff and candidates. A work application targets exactly one job or recurring assignment;
+an expression-of-interest response has neither target but uses the same row to attribute
+and count that posting event. A posting-sourced candidate row carries `posting_id` plus
+`join_request_id`. A staff application through a posting carries its posting attribution
+but no join request; a direct board application carries neither source column. In this
+foundation a staff cleaner can use that path for a one-time posting only: regular posting
+applications are refused until a series-level staff review/resolution surface exists, so
+no authenticated write can create an orphaned regular row. Candidate applications are
+unique per posting and person; several applications for the same company share the one
+join request. Terminal statuses add `hired`, `job_filled`, and `posting_closed` to the
+delivered application lifecycle.
 
-- `create_pool_invite(target_company_id uuid, invite_title text default null,
-  invite_description text default null, invite_pay_basis public.pay_basis default
-  null, invite_pay_value_cents integer default null, invite_expires_at timestamptz
-  default null, invite_max_registrations integer default null) → company_invites` —
-  admin only; replaces `rotate_company_invite`, which is dropped (its CRM action and
-  pgTAP/concurrency tests are reworked to the new contract).
-- `revoke_pool_invite(target_invite_id uuid) → void` — admin only; idempotent on an
-  already-dead link.
-- `cleaner_invite_preview` gains the link content: `(state, company_name, pool_size,
-  title, description, pay_basis, pay_value_cents)`; `state` gains `limit_reached`.
-  Stays `anon`-callable — the link is an advertisement; it still exposes no member or
-  client data.
-- `join_company_pool` locks the invite row `for update` (delivered), and now also
-  rejects `limit_reached` (the row lock serialises two joins racing for the last
-  place — concurrency harness required) and stamps `invite_id` on the new membership.
-  Employee and cleaner memberships are independent: an authenticated employee may join
-  the same company's pool, while a removed pool membership remains blocked from rejoining.
+New and changed RPC/view contracts:
+
+- `create_posting` and `revoke_posting` are company-admin-only security-definer
+  mutations. Revocation is idempotent.
+- `posting_preview(code)` is callable by `anon` and `authenticated`. Active pages expose
+  only company name, intent, public description and, for work-bound intents, schedule,
+  service, suburb, and cleaner pay. Dead or unknown links disclose no work detail.
+- `apply_to_posting` locks the posting row, derives its state again under the lock, and
+  atomically creates or reuses the join request and creates the attributed posting row.
+  An application cap counts all application events produced by the posting;
+  the lock gives exactly one winner when two submissions race for the last place.
+- `posting_states` is the company-admin read model with derived state, closing reason,
+  and application count. `cleaner_join_request_state` is the self-only candidate read
+  model and derives `job_filled` or `posting_closed` without rewriting stored rows.
+- `admit_join_request` creates the cleaner membership without assigning work.
+  `reject_join_request` withdraws every still-open application and blocks later
+  submissions until an admin admits the relationship.
+- `hire_posting_application` locks and validates the relationship, posting, application,
+  and work target; creates the cleaner membership and one-time assignment or regular
+  named slot in the same transaction; and records standing consent on a regular hire.
+  Any assignment failure rolls the membership, application, and request changes back.
+
+Legacy `company_invites` rows and their e-mail-batch foreign keys remain for migration
+history, but existing links are revoked and the public preview/join/rotation functions are
+inert. No old link can admit a cleaner alongside the posting model.
 
 ## Data model — cleaner invitation e-mail batches (S8, S30)
 
@@ -375,6 +414,12 @@ explicit authenticated and service-role grants.
 RLS permits a company admin to read batches and recipients for their company only.
 Authenticated users get no direct insert, update, or delete grant. `service_role` gets
 explicit full access. Cleaner roles and other companies see no rows.
+
+**CLE-59 retirement consequence:** all `company_invites` are revoked and rotation is
+inert, so the delivered bulk cleaner-invitation preparation/retry RPCs and the current
+Cleaners-page generate-link action have no usable link to send. That shipped surface is
+deliberately dark until CLE-60 replaces it with posting selection; the historical batch
+tables and RPCs remain only for compatibility and audit data in the interim.
 
 ## Data model — pay basis (S3, S5, S23)
 
@@ -433,10 +478,13 @@ company rows via the job→site→client walk.
 - New RPCs: `save_push_subscription(endpoint text, p256dh text, auth text) → void`
   (upsert for the caller — re-registration replaces the row) and
   `delete_push_subscription(target_endpoint text) → void`.
-- `notification_type` enum gains `offer_received`, `offer_declined`, `job_paid`.
+- `notification_type` enum gains `offer_received`, `offer_declined`, `job_paid`,
+  `hired`, `admitted`, and `rejected`.
   Decline notifications address every active admin member of the company; the
   delivered types (`job_posted` fan-out, `job_assigned`, `job_cancelled`) are reused
-  unchanged.
+  unchanged. A one-time `hired` row carries `job_id`; a regular hire carries
+  `recurring_assignment_id`; the person-level `admitted` and `rejected` rows carry the
+  join request. Derived `job_filled` and `posting_closed` states create no notification.
 - **Dispatch (LLD-db decision 6):** a database webhook on `notifications` insert
   (`pg_net` POST) invokes the Supabase Edge Function `push-dispatch`
   (`packages/db/supabase/functions/push-dispatch/`). The function loads the
@@ -580,28 +628,29 @@ sequenceDiagram
 *The job row lock is the only serialisation point; the invariant (assignments +
 pending offers ≤ crew size) is checked under it on both paths.*
 
-**Join at the cap (S8, S9).** Two cleaners submit with one place left. Both call
-`join_company_pool`; the invite row lock serialises them; the first inserts a
-membership stamped with `invite_id`; the second re-counts, sees the cap met, and gets
-the "invite no longer active" error. The link's state derives to `limit_reached`.
+**Apply at the cap (S8–S10).** Two candidates submit with one application place left.
+Both call `apply_to_posting`; the posting row lock serialises them. The first creates or
+reuses the candidate's join request and inserts an application; the second re-counts,
+sees the cap met, and gets the posting-closed error. No membership is created by either
+application. The posting's state derives to `cap_reached`.
 
 ```mermaid
 sequenceDiagram
     participant C1 as Cleaner 1
     participant C2 as Cleaner 2
-    participant DB as Postgres (invite row lock)
-    Note over DB: cap 10, 9 registered
-    C1->>DB: join_company_pool(code)
-    C2->>DB: join_company_pool(code)
-    DB->>DB: C1 holds the lock; count 9 < 10 ✓<br/>membership + invite_id; commit
-    DB-->>C1: joined
+    participant DB as Postgres (posting row lock)
+    Note over DB: cap 10, 9 applications
+    C1->>DB: apply_to_posting(code, profile fields)
+    C2->>DB: apply_to_posting(code, profile fields)
+    DB->>DB: C1 holds the lock; count 9 < 10 ✓<br/>join request + application; commit
+    DB-->>C1: waiting/application applied
     DB->>DB: C2 acquires the lock; count 10 = cap
-    DB-->>C2: error: "Invite is no longer active"
-    Note over DB: link state derives to limit_reached
+    DB-->>C2: error: "Posting is no longer active"
+    Note over DB: posting state derives to cap_reached
 ```
 
-*Exactly one winner for the last place; the loser sees the same dead-link state a late
-visitor sees.*
+*Exactly one winner for the last application place; the loser sees the same dead-link
+state a late visitor sees, and neither becomes cleaner staff until admit or hire.*
 
 **Completion to settlement (S18, S19, S24).** Ana taps done → `update_job_status`
 `in_progress → completed` → ledger rows born (hourly: rate, no amount) →
@@ -633,8 +682,9 @@ mutation.*
   verbatim. New messages: "Offer is no longer pending" (accept/decline/revoke a
   resolved offer), "Cleaner already has a pending offer for this job", "No open slot
   is available" (defensive; unreachable while the invariant holds), "Revoke the
-  pending offer first" (the internal `assign_job_slot` guard), "Invite is no longer
-  active" (join on revoked/expired/limit-reached), "Amount is required for hourly jobs"
+  pending offer first" (the internal `assign_job_slot` guard), "Posting is no longer
+  active" (apply on revoked/expired/capped/filled/past-start work), "Join request was
+  rejected" (apply before later admission), "Amount is required for hourly jobs"
   / "Amount is not accepted for fixed jobs" (`mark_paid`).
 - First-admin preparation rejects invalid or `NULL` e-mail, actor, locale, or expiry
   before it writes. Acceptance rejects every required `NULL` field before it changes the
@@ -651,7 +701,9 @@ mutation.*
 ## Performance
 
 Alpha scale (a handful of companies, tens of cleaners, hundreds of jobs) makes every
-path cold. The only structural additions: partial index on `offers (job_id) where
+path cold. Posting lookup uses its unique code; cap and candidate reads use indexes on
+`job_applications (posting_id)` and `(join_request_id)`, and relationship lookup uses
+unique `(company_id, profile_id)`. Other structural additions: a partial index on `offers (job_id) where
 status = 'pending'` for the board/vacancy projections, and
 `offers (cleaner_id, status)` for the cleaner's offers surface. The board's
 "minus pending offers" join rides these. `product_events` is insert-only append;
@@ -688,13 +740,15 @@ rejected because timed escalation is the offer cascade (F13, cycle 2) arriving e
 no founder stated a duration, and the alpha rule is admin control over automation. If
 usage shows stale offers hiding work, the cascade cycle owns the fix.
 
-### 3. Invite offer details are optional columns (2026-08-16)
+### 3. Invite offer details were optional columns (superseded 2026-08-30)
 
-Title, description, and the pay pair on `company_invites` are nullable: an admin can
-mint a bare pool link. The known first use is the existing-workforce migration (CA-1),
+This pre-decision-#30 design made title, description, and the pay pair on
+`company_invites` nullable: an admin could mint a bare pool link. The known first use was the existing-workforce migration (CA-1),
 where forced offer text is friction with no reader. The S8 "real offer" intent lives
 in the CRM form's default path, not in a schema constraint. Considered option: require
-the details on every link — rejected for that first-use friction.
+the details on every link — rejected for that first-use friction. PRD decisions #30–#37
+replace this model with intent-specific postings whose work details derive from the job
+record and whose public description is required.
 
 ### 4. Pay value columns are renamed with the basis migration (2026-08-16)
 
@@ -753,3 +807,21 @@ then promotes the profile and creates the approved company and active membership
 transaction. Auth metadata and browser fields cannot choose a role or company. The
 alternative, promotion in the Auth trigger, would trust mutable metadata and could leave
 partial company state after a later failure.
+
+### 10. Applications share one ledger across staff and candidates (2026-08-30)
+
+The existing `job_applications` relation is widened to represent one-time and regular
+work and to attribute the expression-of-interest event that counts against its posting,
+with optional posting and join-request attribution for candidates. A second
+candidate-only table was rejected because it would duplicate the same consent and
+company decision lifecycle and make assignment rules diverge. Staff applications retain
+the delivered direct path and have no join request; candidate reads stay behind their
+self-only view.
+
+### 11. Legacy cleaner invitation links are inert compatibility data (2026-08-30)
+
+The old tables and function signatures remain because delivered e-mail-batch records and
+existing callers still reference them. All legacy links are revoked, preview never
+returns an active state, join always refuses, and rotation cannot create another usable
+link. Deleting the objects in the same migration would break historical foreign keys and
+compile-time clients without strengthening the posting boundary.

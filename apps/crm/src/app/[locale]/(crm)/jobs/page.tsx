@@ -43,7 +43,8 @@ export default async function JobsPage() {
       .from("job_applications")
       .select("job_id, jobs!inner(sites!inner(clients!inner(company_id)))")
       .eq("jobs.sites.clients.company_id", company.id)
-      .eq("status", "applied"),
+      .eq("status", "applied")
+      .is("join_request_id", null),
     supabase
       .from("sites")
       .select("id, client_id, name, clients!inner(company_id)")

@@ -25,6 +25,9 @@ export default async function CrmLayout({ children }: Readonly<{ children: React
   ]);
   if (notificationResult.error) throw notificationResult.error;
   const notifications = notificationResult.data.map((notification): CrmNotification => {
+    if (notification.job_id === null) {
+      throw new Error("The CRM notification query returned a notification without a job.");
+    }
     const notificationBase = {
       id: notification.id,
       jobId: notification.job_id,

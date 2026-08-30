@@ -26,7 +26,10 @@ select results_eq(
     ('applied'::text collate "C"),
     ('assigned'::text collate "C"),
     ('not_selected'::text collate "C"),
-    ('withdrawn'::text collate "C")$$,
+    ('withdrawn'::text collate "C"),
+    ('hired'::text collate "C"),
+    ('job_filled'::text collate "C"),
+    ('posting_closed'::text collate "C")$$,
   'applications have the complete visible lifecycle'
 );
 select results_eq(
@@ -42,7 +45,10 @@ select results_eq(
     ('payment_marked_paid'::text collate "C"),
     ('offer_received'::text collate "C"),
     ('offer_declined'::text collate "C"),
-    ('job_paid'::text collate "C")$$,
+    ('job_paid'::text collate "C"),
+    ('hired'::text collate "C"),
+    ('admitted'::text collate "C"),
+    ('rejected'::text collate "C")$$,
   'notification records retain loop, application-review, settlement, and offer events'
 );
 select is(

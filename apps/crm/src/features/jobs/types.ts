@@ -2,7 +2,10 @@ import type { Database } from "@clean-app/db";
 
 export type JobStatus = Database["public"]["Enums"]["job_status"];
 export type JobApplicationStatus =
-  Database["public"]["Enums"]["application_status"];
+  Exclude<
+    Database["public"]["Enums"]["application_status"],
+    "hired" | "job_filled" | "posting_closed"
+  >;
 export type JobAssignmentSource =
   Database["public"]["Enums"]["assignment_source"];
 

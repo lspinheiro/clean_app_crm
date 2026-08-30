@@ -7,7 +7,8 @@ export type StoredPushSubscription = {
 
 export type StoredNotification = {
   recipientId: string;
-  jobId: string;
+  jobId: string | null;
+  recurringAssignmentId?: string | null;
   type: string;
 };
 
@@ -25,13 +26,22 @@ export type BoardVisibleJob = {
   scheduledStart: string;
 };
 
-export type PushMessage = {
-  type: "job_assigned" | "job_posted" | "job_cancelled";
-  jobId: string;
-  title: string;
-  body: string;
-  url: "/my-jobs" | "/board";
-};
+export type PushMessage =
+  | {
+    type: "job_assigned" | "job_posted" | "job_cancelled" | "hired";
+    jobId: string;
+    title: string;
+    body: string;
+    url: "/my-jobs" | "/board";
+  }
+  | {
+    type: "hired" | "admitted" | "rejected";
+    jobId: null;
+    recurringAssignmentId: string | null;
+    title: string;
+    body: string;
+    url: "/my-jobs" | "/board" | "/";
+  };
 
 export interface DispatchStore {
   getNotification(notificationId: string): Promise<StoredNotification | null>;
@@ -55,19 +65,21 @@ type HandlerDependencies = {
   logger: Pick<Console, "error">;
 };
 
-type DeliveredNotificationType = PushMessage["type"];
+type JobNotificationType = "job_assigned" | "job_posted" | "job_cancelled";
+type DecisionNotificationType = "hired" | "admitted" | "rejected";
+type DeliveredNotificationType = JobNotificationType | DecisionNotificationType;
 
 type WebhookPayload = {
   notificationId: string;
   recipientId: string;
-  jobId: string;
+  jobId: string | null;
   type: string;
 };
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const notificationDestination: Record<DeliveredNotificationType, PushMessage["url"]> = {
+const notificationDestination: Record<JobNotificationType, "/my-jobs" | "/board"> = {
   job_assigned: "/my-jobs",
   job_posted: "/board",
   job_cancelled: "/my-jobs",
@@ -77,7 +89,7 @@ const notificationDestination: Record<DeliveredNotificationType, PushMessage["ur
 // restated here — the same trade the auth e-mail templates make for their subjects.
 const notificationTitle: Record<
   RecipientLocale,
-  Record<DeliveredNotificationType, string>
+  Record<JobNotificationType, string>
 > = {
   "en-AU": {
     job_assigned: "Job assigned",
@@ -88,6 +100,22 @@ const notificationTitle: Record<
     job_assigned: "Serviço atribuído",
     job_posted: "Novo serviço disponível",
     job_cancelled: "Serviço cancelado",
+  },
+};
+
+const decisionCopy: Record<
+  RecipientLocale,
+  Record<DecisionNotificationType, { title: string; body: string }>
+> = {
+  "en-AU": {
+    hired: { title: "You're hired", body: "Your work is ready to view." },
+    admitted: { title: "Join request admitted", body: "You can now view the cleaner board." },
+    rejected: { title: "Join request closed", body: "The company closed your join request." },
+  },
+  "pt-BR": {
+    hired: { title: "Você foi contratado", body: "Seu serviço está pronto para visualizar." },
+    admitted: { title: "Solicitação aprovada", body: "Agora você pode ver o quadro de serviços." },
+    rejected: { title: "Solicitação encerrada", body: "A empresa encerrou sua solicitação." },
   },
 };
 
@@ -146,11 +174,11 @@ function parseWebhookPayload(value: unknown): WebhookPayload | null {
   if (
     typeof notificationId !== "string" ||
     typeof recipientId !== "string" ||
-    typeof jobId !== "string" ||
+    (jobId !== null && typeof jobId !== "string") ||
     typeof type !== "string" ||
     !uuidPattern.test(notificationId) ||
     !uuidPattern.test(recipientId) ||
-    !uuidPattern.test(jobId) ||
+    (jobId !== null && !uuidPattern.test(jobId)) ||
     type.trim() === ""
   ) {
     return null;
@@ -160,6 +188,13 @@ function parseWebhookPayload(value: unknown): WebhookPayload | null {
 }
 
 function isDeliveredType(type: string): type is DeliveredNotificationType {
+  return Object.hasOwn(notificationDestination, type)
+    || type === "hired"
+    || type === "admitted"
+    || type === "rejected";
+}
+
+function isJobType(type: DeliveredNotificationType): type is JobNotificationType {
   return Object.hasOwn(notificationDestination, type);
 }
 
@@ -176,8 +211,8 @@ function formatScheduledStart(value: string, locale: RecipientLocale): string {
     .replaceAll("\u202f", " ");
 }
 
-function buildMessage(
-  type: DeliveredNotificationType,
+function buildJobMessage(
+  type: JobNotificationType | "hired",
   jobId: string,
   job: BoardVisibleJob,
   locale: RecipientLocale,
@@ -185,11 +220,25 @@ function buildMessage(
   return {
     type,
     jobId,
-    title: notificationTitle[locale][type],
+    title: type === "hired" ? decisionCopy[locale].hired.title : notificationTitle[locale][type],
     body: `${localisedServiceLabel(job, locale)} · ${job.siteName}, ${job.suburb} · ${
       formatScheduledStart(job.scheduledStart, locale)
     }`,
-    url: notificationDestination[type],
+    url: type === "hired" ? "/my-jobs" : notificationDestination[type],
+  };
+}
+
+function buildDecisionMessage(
+  type: DecisionNotificationType,
+  recurringAssignmentId: string | null,
+  locale: RecipientLocale,
+): PushMessage {
+  return {
+    type,
+    jobId: null,
+    recurringAssignmentId,
+    ...decisionCopy[locale][type],
+    url: type === "admitted" ? "/board" : type === "hired" ? "/my-jobs" : "/",
   };
 }
 
@@ -253,9 +302,8 @@ export function createPushDispatchHandler(dependencies: HandlerDependencies) {
         return Response.json({ delivered: 0, ignored: true });
       }
 
-      const [subscriptions, job, locale] = await Promise.all([
+      const [subscriptions, locale] = await Promise.all([
         store.listSubscriptions(notification.recipientId),
-        store.getBoardVisibleJob(notification.jobId),
         // The notification row names the recipient, so a forged payload cannot choose
         // somebody else's language any more than it can choose their subscriptions.
         store.getRecipientLocale(notification.recipientId).catch((error) => {
@@ -267,16 +315,27 @@ export function createPushDispatchHandler(dependencies: HandlerDependencies) {
           return null;
         }),
       ]);
-      if (!job || subscriptions.length === 0) {
+      if (subscriptions.length === 0) {
         return Response.json({ delivered: 0 });
       }
 
-      const message = buildMessage(
-        notification.type,
-        notification.jobId,
-        job,
-        locale ?? defaultLocale,
-      );
+      const chosenLocale = locale ?? defaultLocale;
+      let message: PushMessage;
+      if (isJobType(notification.type) || (notification.type === "hired" && notification.jobId)) {
+        if (!notification.jobId) return Response.json({ delivered: 0 });
+        const job = await store.getBoardVisibleJob(notification.jobId);
+        if (!job) return Response.json({ delivered: 0 });
+        message = buildJobMessage(notification.type, notification.jobId, job, chosenLocale);
+      } else {
+        if (notification.type === "hired" && !notification.recurringAssignmentId) {
+          return Response.json({ delivered: 0 });
+        }
+        message = buildDecisionMessage(
+          notification.type,
+          notification.type === "hired" ? notification.recurringAssignmentId ?? null : null,
+          chosenLocale,
+        );
+      }
       let delivered = 0;
       for (const subscription of subscriptions) {
         try {

@@ -162,6 +162,7 @@ function queryBuilder(result: QueryResult) {
   const builder = {
     select: vi.fn(),
     eq: vi.fn(),
+    is: vi.fn(),
     order: vi.fn(),
     maybeSingle: vi.fn(),
     then: <TResult1 = QueryResult, TResult2 = never>(
@@ -172,6 +173,7 @@ function queryBuilder(result: QueryResult) {
   for (const method of [
     builder.select,
     builder.eq,
+    builder.is,
     builder.order,
     builder.maybeSingle,
   ]) {
@@ -289,6 +291,10 @@ describe("CLE-22 job detail route", () => {
       "job_id",
       jobId,
     );
+    expect(harness.query("job_applications").is).toHaveBeenCalledWith(
+      "join_request_id",
+      null,
+    );
     expect(harness.query("offers").select).toHaveBeenCalledWith(
       "id, cleaner_id, created_at, profiles!inner(full_name)",
     );
@@ -297,6 +303,35 @@ describe("CLE-22 job detail route", () => {
     expect(harness.query("site_preferred_cleaners").eq).toHaveBeenCalledWith(
       "site_id",
       "10000000-0000-4000-8000-000000000401",
+    );
+  });
+
+  it("keeps a posting-attributed staff application on the existing job review path", async () => {
+    const harness = trackedSupabase({
+      job_applications: {
+        data: [{
+          cleaner_id: "10000000-0000-4000-8000-000000000008",
+          status: "applied",
+          applied_at: "2026-08-11T10:00:00Z",
+          posting_id: "59000000-0000-4000-8000-00000000050a",
+          join_request_id: null,
+          profiles: { full_name: "Posting Staff Applicant" },
+        }],
+        error: null,
+      },
+    });
+    mocks.requireCompanyAdmin.mockResolvedValue({
+      company: { id: "10000000-0000-4000-8000-000000000010" },
+      supabase: harness.client,
+    });
+
+    render(await JobDetailPage({ params: Promise.resolve({ jobId }) }));
+
+    expect(screen.getByRole("list", { name: "Job applicants" }))
+      .toHaveTextContent("Posting Staff Applicant");
+    expect(harness.query("job_applications").is).toHaveBeenCalledWith(
+      "join_request_id",
+      null,
     );
   });
 });

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(14);
 
 select is((select count(*)::integer from public.companies), 2, 'seed has exactly two companies');
 select is(
@@ -48,12 +48,20 @@ select is(
 );
 select ok(
   (
-    select count(*) = 1 and bool_and(code ~ '^[A-Z0-9]{16}$')
+    select count(*) = 0
     from public.company_invites
     where company_id = '10000000-0000-4000-8000-000000000010'
       and revoked_at is null
   ),
-  'seeded company retains exactly one valid active pool invite'
+  'seeded company retains no active legacy rotating invite'
+);
+select ok(
+  (
+    select count(*) = 3 and bool_and(code ~ '^[A-Z0-9]{16}$')
+    from public.postings
+    where company_id = '10000000-0000-4000-8000-000000000010'
+  ),
+  'seeded company has one high-entropy posting for each intent'
 );
 select is(
   (

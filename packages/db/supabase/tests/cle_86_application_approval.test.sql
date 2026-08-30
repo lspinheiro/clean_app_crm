@@ -80,6 +80,14 @@ select function_privs_are(
   array[]::text[],
   'anonymous callers cannot restore applications'
 );
+select function_privs_are(
+  'public',
+  'assign_job_slot',
+  array['uuid', 'integer', 'uuid'],
+  'authenticated',
+  array[]::text[],
+  'authenticated callers cannot bypass application approval with direct assignment'
+);
 
 select results_eq(
   $$select tablename::text collate "C"
@@ -528,20 +536,23 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
-select lives_ok(
-  $$select public.mark_job_application_not_selected(
-      '86000000-0000-4000-8000-000000000501',
-      '10000000-0000-4000-8000-000000000003'
-    )$$,
-  'the second response can be resolved explicitly'
-);
-select lives_ok(
+select throws_ok(
   $$select public.assign_job_slot(
       '86000000-0000-4000-8000-000000000501',
       2,
       '10000000-0000-4000-8000-000000000004'
     )$$,
-  'the separate non-applicant path can fill the final slot'
+  '42501',
+  'permission denied for function assign_job_slot',
+  'an authenticated employee cannot assign a non-applicant directly'
+);
+select lives_ok(
+  $$select public.approve_job_application(
+      '86000000-0000-4000-8000-000000000501',
+      2,
+      '10000000-0000-4000-8000-000000000003'
+    )$$,
+  'application approval still fills the final slot without the direct-assignment grant'
 );
 select throws_ok(
   $$select public.restore_job_application(

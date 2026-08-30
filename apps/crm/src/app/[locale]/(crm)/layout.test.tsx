@@ -41,6 +41,7 @@ function emptyNotificationQuery() {
   const query = {
     select: vi.fn(),
     eq: vi.fn(),
+    in: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
     then: <TResult1 = typeof result, TResult2 = never>(
@@ -50,6 +51,7 @@ function emptyNotificationQuery() {
   };
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
+  query.in.mockReturnValue(query);
   query.order.mockReturnValue(query);
   query.limit.mockReturnValue(query);
   return query;
@@ -83,26 +85,42 @@ describe("CRM layout accessibility", () => {
     expect(document.querySelector("#main-content")).toHaveAttribute("tabindex", "-1");
   });
 
-  it("loads newest application notifications for the active company into the header", async () => {
+  it("loads newest application and decline notifications for the active company", async () => {
     const result = {
-      data: [{
-        id: "86000000-0000-4000-8000-000000000801",
-        job_id: "22000000-0000-4000-8000-000000000501",
-        type: "application_received",
-        read_at: null,
-        created_at: "2026-08-25T00:01:00Z",
-        jobs: {
-          sites: {
-            name: "Broadbeach Towers",
-            clients: { company_id: "company-1" },
+      data: [
+        {
+          id: "86000000-0000-4000-8000-000000000802",
+          job_id: "22000000-0000-4000-8000-000000000502",
+          type: "offer_declined",
+          read_at: null,
+          created_at: "2026-08-25T00:02:00Z",
+          jobs: {
+            sites: {
+              name: "Southport Office",
+              clients: { company_id: "company-1" },
+            },
           },
         },
-      }],
+        {
+          id: "86000000-0000-4000-8000-000000000801",
+          job_id: "22000000-0000-4000-8000-000000000501",
+          type: "application_received",
+          read_at: null,
+          created_at: "2026-08-25T00:01:00Z",
+          jobs: {
+            sites: {
+              name: "Broadbeach Towers",
+              clients: { company_id: "company-1" },
+            },
+          },
+        },
+      ],
       error: null,
     };
     const query = {
       select: vi.fn(),
       eq: vi.fn(),
+      in: vi.fn(),
       order: vi.fn(),
       limit: vi.fn(),
       then: <TResult1 = typeof result, TResult2 = never>(
@@ -112,6 +130,7 @@ describe("CRM layout accessibility", () => {
     };
     query.select.mockReturnValue(query);
     query.eq.mockReturnValue(query);
+    query.in.mockReturnValue(query);
     query.order.mockReturnValue(query);
     query.limit.mockReturnValue(query);
     const supabase = { from: vi.fn(() => query) };
@@ -137,10 +156,10 @@ describe("CRM layout accessibility", () => {
       "recipient_id",
       "10000000-0000-4000-8000-000000000001",
     );
-    expect(query.eq).toHaveBeenCalledWith("type", "application_received");
+    expect(query.in).toHaveBeenCalledWith("type", ["application_received", "offer_declined"]);
     expect(query.eq).toHaveBeenCalledWith("jobs.sites.clients.company_id", "company-1");
     expect(query.order).toHaveBeenCalledWith("created_at", { ascending: false });
-    expect(screen.getByRole("button", { name: "Notifications, 1 unread" }))
+    expect(screen.getByRole("button", { name: "Notifications, 2 unread" }))
       .toBeInTheDocument();
   });
 });

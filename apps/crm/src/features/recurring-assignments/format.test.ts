@@ -17,7 +17,12 @@ describe("recurring assignment labels", () => {
     expect(
       formatNamedCoverage({
         crewSize: 2,
-        namedCleaners: [{ id: "cleaner-a", name: "Maria Santos", slotNumber: 1 }],
+        namedCleaners: [{
+          id: "cleaner-a",
+          name: "Maria Santos",
+          slotNumber: 1,
+          consentState: { status: "accepted" },
+        }],
       }, labels),
     ).toBe("Maria Santos + 1 open");
 
@@ -40,7 +45,12 @@ describe("recurring assignment labels", () => {
       formatNamedCoverage(
         {
           crewSize: 2,
-          namedCleaners: [{ id: "cleaner-a", name: "Maria", slotNumber: 1 }],
+          namedCleaners: [{
+            id: "cleaner-a",
+            name: "Maria",
+            slotNumber: 1,
+            consentState: { status: "accepted" },
+          }],
         },
         labels,
       ),

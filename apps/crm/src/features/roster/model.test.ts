@@ -19,6 +19,7 @@ describe("cleaner roster projection", () => {
           siteName: "Harbour Tower",
           scheduledStart: "2026-08-09T22:00:00Z",
           crewSize: 2,
+          recurringAssignmentId: null,
         },
         {
           id: "job-open",
@@ -26,6 +27,7 @@ describe("cleaner roster projection", () => {
           siteName: "Ocean Clinic",
           scheduledStart: "2026-08-11T07:30:00Z",
           crewSize: 2,
+          recurringAssignmentId: null,
         },
       ],
       assignments: [{ jobId: "job-crew", cleanerId: "cleaner-1", slotNumber: 1 }],
@@ -88,6 +90,7 @@ describe("cleaner roster projection", () => {
           siteName: "Site",
           scheduledStart: "2026-08-09T22:00:00Z",
           crewSize: 1,
+          recurringAssignmentId: null,
         },
       ],
       assignments: [{ jobId: "job-1", cleanerId: "removed", slotNumber: 1 }],
@@ -114,6 +117,7 @@ describe("cleaner roster projection", () => {
         siteName: "Harbour Tower",
         scheduledStart: "2026-08-09T22:00:00Z",
         crewSize: 2,
+        recurringAssignmentId: null,
       },
       {
         id: "job-open",
@@ -121,6 +125,7 @@ describe("cleaner roster projection", () => {
         siteName: "Ocean Clinic",
         scheduledStart: "2026-08-11T07:30:00Z",
         crewSize: 2,
+        recurringAssignmentId: null,
       },
     ];
     const assignments = [
@@ -189,5 +194,62 @@ describe("cleaner roster projection", () => {
     ]);
     expect(siteModel.rows[1]?.cells["2026-08-11"]).toHaveLength(3);
     expect(Object.values(siteModel.rows[2]?.cells ?? {}).flat()).toEqual([]);
+  });
+
+  it("projects an offered slot in both pivots while preserving the vacancy projection", () => {
+    const days = buildRosterDays("2026-08-10");
+    const cleaners = [{ id: "cleaner-1", name: "Ana" }];
+    const sites = [{
+      id: "site-1",
+      name: "Harbour Tower",
+      clientName: "Oceanview Property Group",
+    }];
+    const jobs = [{
+      id: "job-1",
+      siteId: "site-1",
+      siteName: "Harbour Tower",
+      scheduledStart: "2026-08-11T00:00:00Z",
+      crewSize: 2,
+      recurringAssignmentId: "series-1",
+    }];
+    const offers = [{ key: "series:series-1:1:job-1", jobId: "job-1", cleanerId: "cleaner-1" }];
+    const vacancies = [{
+      key: "job-1:2",
+      jobId: "job-1",
+      siteId: "site-1",
+      siteName: "Harbour Tower",
+      scheduledStart: "2026-08-11T00:00:00Z",
+      crewSlot: 2,
+      crewSize: 2,
+    }];
+
+    const cleanerModel = buildCleanerRoster({
+      days,
+      cleaners,
+      jobs,
+      assignments: [],
+      offers,
+      vacancies,
+    });
+    const siteModel = buildSiteRoster({
+      days,
+      cleaners,
+      sites,
+      jobs,
+      assignments: [],
+      offers,
+      vacancies,
+    });
+
+    expect(cleanerModel.vacancyCount).toBe(1);
+    expect(cleanerModel.rows[1]?.cells["2026-08-11"]).toEqual([
+      expect.objectContaining({ kind: "offered", cleanerName: "Ana" }),
+    ]);
+    expect(siteModel.vacancyCount).toBe(1);
+    expect(siteModel.rows[0]?.cells["2026-08-11"]).toEqual([
+      expect.objectContaining({ kind: "job", cleanerNames: [] }),
+      expect.objectContaining({ kind: "offered", cleanerName: "Ana" }),
+      expect.objectContaining({ kind: "gap", key: "job-1:2" }),
+    ]);
   });
 });

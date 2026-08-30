@@ -2,7 +2,7 @@
 
 **Product name:** The Clean Crew (never translated; the co-founders' reference prototype was
 named "Clean App")
-**Status:** Draft v0.5 — 2026-08-17
+**Status:** Draft v0.6 — 2026-08-26
 **Owners:** Leonardo Pinheiro (product/engineering), Thiago (industry partner); prototype by two
 prospective co-founders (developer + PM), collaboration not yet formalised (Appendix B)
 **Market:** Commercial cleaning companies, Gold Coast QLD (initial), Australia (later)
@@ -54,7 +54,19 @@ approved the proposal without comments):
 - The product name is **The Clean Crew** in both languages. User-authored names, addresses,
   access instructions, and notes remain as written rather than being automatically translated.
 
----
+**Revision v0.6 (2026-08-26)** replans the roadmap around chat and the cleaner profile
+(cycle PRD: [chat-and-profile](design/chat-and-profile/prd.md)):
+
+- The alpha is redefined as the product-market-fit validation stage: its backlog is set cycle
+  by cycle, and MVP starts when internal testing validates product–market fit (§3.2, §3.4).
+- §3.2 phases become **delivery phases**: A — adoption and the operations base (delivered);
+  B — communicate and evaluate (in design); C — run the day and recover (pool); D — grow and
+  trust (MVP); E — deepen and automate (P1). Phase references in earlier revision notes use
+  the old lifecycle grouping.
+- New journeys CL-13, CA-14 (cleaner profile) and CL-14, CA-15 (general thread). F7 gains its
+  in-app core in the alpha; F14 ships free text, photos, and the can't-attend event in
+  Phase B; F5 is renamed to "Cleaner profile, search, and availability" and gains region
+  preference and the merged service-type field.
 
 ## 1. Objective and Purpose
 
@@ -235,27 +247,30 @@ Reading order for the build: F10 → F11 → F12 → F13 → F14 → F1, F4, F5,
 - The platform instruments time-to-backfill from day one (§6.2). This flow is the product's
   showcase moment and the standard demo.
 
-### F14 — Job chat and field events (P0 core, P1 extensions) *(new in v0.4; events enter in alpha)*
+### F14 — Job chat and field events (P0 core, P1 extensions) *(reworked in Phase B — see [chat-and-profile](design/chat-and-profile/prd.md))*
 
-- Every job carries its own **thread** between the assigned cleaner and the company. The thread
-  opens at assignment and becomes read-only a few days after completion. The read-only tail
-  covers lost property and pay follow-ups. The platform logs messages, photos, and events on the
-  job record.
-- **Structured field events come first** — one-tap buttons, with a photo attached where relevant:
-  **can't attend** (the slot becomes an urgent vacancy and triggers F13); **report issue**
-  (damage / missing supplies / access problem); **lost & found**; and the admin-side **extra
-  charge** (a structured amount — the platform updates the ledger entry, notifies the cleaner,
-  and audits the change fully).
+- Every job carries one **job thread** per assigned cleaner, opened when the crew slot is
+  assigned. Participants: that cleaner and the company's admins; crew mates never share a
+  thread. The thread leads with the job context (site, service, time, status, crew slot) and
+  becomes read-only a few days after completion — the read-only tail covers lost property and
+  pay follow-ups; later talk moves to the general thread (F7). A cancelled job or a released
+  slot also closes its thread. The platform logs messages, photos, and events on the job
+  record.
+- **Phase B ships free text, photo messages, and the can't-attend event.** Can't attend
+  releases the slot and alerts the admin; re-posting stays a manual admin action until the F13
+  cascade. **Report issue** (damage / missing supplies / access problem), **lost & found**, and
+  the admin-side **extra charge** (a structured amount — the platform updates the ledger entry,
+  notifies the cleaner, and audits the change fully) follow in Phase C.
 - Design principle: the job card answers logistics (address, time, duration, pay, access notes,
-  instructions); the thread exists for exceptions. Schedule-shaped messages are events that
-  trigger flows — never free text an admin can miss.
-- Guardrails: assignment gates the participants (the assigned cleaner and company admins only).
-  Pay figures are always structured, never negotiated in prose (human-approved per §4.4). Photos
-  go to restricted storage on the job record. Client contact details never appear in the thread.
+  instructions); the job thread answers "what happened on this job". Schedule-shaped messages
+  are events that trigger flows — never free text an admin can miss.
+- Guardrails: assignment gates job-thread participants, and no job thread exists before
+  assignment — applicants and pending-offer recipients use the general thread (F7). Pay figures
+  are always structured, never negotiated in prose (human-approved per §4.4). Photos go to
+  restricted storage on the job record. Client contact details never appear in any thread.
   Abuse reports escalate to the operator queue (OP-3).
-- Staging: structured events land with the alpha dropout cycle (§3.4). The free-text per-job
-  thread is MVP P0. AI assist (drafted replies, translations, inbound "can't come" detection) is
-  P1 and merges with F7's unified view.
+- AI assist (drafted replies, translations, inbound "can't come" detection) is P1 and lands in
+  the F7 inbox.
 
 ### F15 — Bilingual product experience (P0) *(new in v0.5; required from alpha)*
 
@@ -351,22 +366,28 @@ The conversational bot deepens screening in the fast follow.)*
 - Company-side trust: a company account requires an ABN before it can recruit or manage
   cleaners. This prevents arbitrary accounts that collect worker data.
 
-### F5 — Candidate database, search, and availability (P0)
+### F5 — Cleaner profile, search, and availability (P0)
 
-- As a company admin, I can search my cleaners by suburb/radius, availability window, vetting tier,
-  experience, language, and job-type preference *(preference facet v0.4)*.
-- **Availability capture** (v0.2): cleaners maintain a weekly availability grid plus an
-  "available today" toggle. Availability appears in candidate lists, the roster (F10), and the
-  backfill cascade (F13).
-- **Job-type preferences** *(v0.4)*: cleaners set preferred service types (for example
-  residential, bond, hotel/STR, post-construction) on the same profile surface. Preferences order
-  the board (F11) from alpha. They become a search facet and a shortlist signal (F6) from MVP.
-  Cleaners specialise — a match on preference makes an offer feel "perfect for me" instead of
-  noise.
-- Availability is perishable. The platform flags as "stale" any profile whose availability is
-  older than 14 days. Before it shows a stale candidate in a shortlist or cascade, the platform
-  re-confirms availability automatically (Level 3). Freshness comes from re-confirmation at match
-  time, not from trust in stored profiles.
+- **The cleaner profile** (Phase B — see `docs/glossary.md`): service types (one merged
+  field — the work the cleaner does and wants), years of experience, the weekly availability
+  grid, region preference (a multi-select of coarse platform-defined Gold Coast regions),
+  languages, transport, an optional photo and note. One profile per person, shown to every
+  company the person requests to join or works for. Capture is a required tap-only
+  registration step; existing cleaners get a completion prompt on next app open.
+- In Phase B the profile is read on admin-side evaluation surfaces: the join-request review
+  queue (with a completeness signal), the cleaner record in Staff, and applicant lists on job
+  detail. Search by suburb/radius, availability window, vetting tier, experience, language,
+  and service-type preference arrives at MVP scale.
+- **Availability capture:** the weekly availability grid lives on the profile (Phase B); an
+  "available today" toggle for same-day work follows in Phase C. Availability appears in
+  candidate lists, the roster (F10), and the backfill cascade (F13).
+- Service-type preferences order the board (F11) from Phase C. They become a search facet and
+  a shortlist signal (F6) from MVP. Cleaners specialise — a match on preference makes an offer
+  feel "perfect for me" instead of noise.
+- Availability is perishable (MVP). The platform flags as "stale" any profile whose
+  availability is older than 14 days. Before it shows a stale candidate in a shortlist or
+  cascade, the platform re-confirms availability automatically (Level 3). Freshness comes from
+  re-confirmation at match time, not from trust in stored profiles.
 - Candidates control visibility (open to offers / paused) and can delete their account. This is
   APP compliance: a hard delete of the profile, with retention of minimal legal audit records.
 
@@ -386,17 +407,24 @@ The conversational bot deepens screening in the fast follow.)*
   disputed review until operator moderation completes. (This controls the defamation/blacklist
   risk — see §5.2.)
 
-### F7 — Messaging (P1)
+### F7 — Messaging (P0 core from Phase B; WhatsApp delivery and AI P1)
 
-*(v0.2: moved P0 → P1. At launch, communication runs through structured job events and push
-notifications (F11/F13). The unified thread follows.)*
+*(v0.2 moved this P0 → P1; the Phase B cycle —
+[chat-and-profile](design/chat-and-profile/prd.md) — moved the in-app core back into the
+alpha.)*
 
-- A unified per-candidate message thread in the company dashboard. Delivery uses the candidate's
-  channel (WhatsApp) with in-app fallback. *(v0.4: the unified view aggregates the F14 job
-  threads — one communication history with two views — rather than a parallel channel.)*
-- AI assist: drafted replies and translations at **Level 1–2** (the AI drafts; the admin approves
-  and sends). Routine logistics (trial reminders, directions, confirmations) run at **Level 3**
-  within templates.
+- A **counterpart inbox** in both apps: the CRM lists people (cleaners and join-requesters),
+  the cleaner app lists companies, latest activity first. Opening a counterpart shows the
+  **general thread** on top and that counterpart's job threads (F14) under it.
+- The **general thread** is one persistent conversation per company↔person relationship. It
+  opens with the join request — candidacy questions are its first content — survives
+  admission, and carries ad-hoc and relationship talk. Rejection of the join request makes it
+  read-only. Applicants and pending-offer recipients ask job questions here, never in a
+  pre-assignment job thread.
+- Delivery is in-app with push. WhatsApp delivery with in-app fallback is P1. AI assist —
+  drafted replies and translations at **Level 1–2** (the AI drafts; the admin approves and
+  sends), routine logistics (trial reminders, directions, confirmations) at **Level 3** within
+  templates — is P1.
 - The platform logs all messages to the shared comms history.
 
 ### F8 — Trial scheduling and placement (P0 minimal, P1 full)
@@ -454,22 +482,32 @@ Journeys in §3.2 reference these personas by name.
 
 Three release stages structure v1 delivery:
 
-- **Alpha** — internal test. A minimal CRM and cleaner app run entirely on the monorepo apps;
-  the co-founders' prototype is reference material only (decision 0002). Invite-only, run with
-  the founding team's own companies and their real cleaners. Every shipped surface supports
-  `en-AU` and `pt-BR` (F15). A strict subset of P0.
-- **MVP** — public Gold Coast launch; all P0.
+- **Alpha** — the internal validation stage. Invite-only, run with the founding team's own
+  companies and their real cleaners, entirely on the monorepo apps (the co-founders'
+  prototype is reference material only, decision 0002). Its goal is to validate
+  product–market fit in a controlled test environment. The alpha backlog is not a fixed
+  feature subset: each build cycle's PRD (`docs/design/`) defines what that cycle ships,
+  and the phase roadmap below orders the work. Every shipped surface supports `en-AU` and
+  `pt-BR` (F15).
+- **MVP** — public Gold Coast launch; all P0. The product moves to MVP when internal
+  testing has validated product–market fit — not when a feature checklist completes.
 - **P1** — fast follow.
 
 Each journey carries its stage badge.
 
 **Journeys are the roadmap unit.** A build cycle implements one or more journeys end-to-end and
 releases them to the test cohort. Then the next cycle starts. A stage supports a journey
-completely or not at all. The phases below follow the cleaning-job lifecycle — the same chain as
-the research report: demand → assignment → readiness → execution → verification → closure — with
-adoption at the front and relationship growth at the back.
+completely or not at all. The phases below are **delivery phases** — the order the founders
+build and validate, not the job lifecycle. Phase A is delivered; Phase B is the cycle in design
+([chat-and-profile](design/chat-and-profile/prd.md)); Phase C is the pool the next cycle draws
+from; Phases D and E are the MVP and P1 packages. The job lifecycle itself (demand → assignment
+→ readiness → execution → verification → closure) lives inside the journeys.
 
-#### Phase A — Adoption
+#### Phase A — Adoption and the operations base (delivered; closes with Milestones M6–M8)
+
+The operating loop: onboard the company, plan the week, staff the work through both routes,
+work the job, record pay. Designed in [phase-a-adoption](design/phase-a-adoption/prd.md) and
+[staff-the-work](design/staff-the-work/prd.md); the M6–M8 gap-closure Milestones complete it.
 
 **CA-1 · Set up the company** — Alpha (self-serve) —
 *Persona:* Thiago.
@@ -494,7 +532,8 @@ out.
 *What she can do:* ask to join her employer's cleaners from a link in the group chat in under two
 minutes, and see work as soon as they admit her.
 *Stages:* (1) the invite link appears in the company WhatsApp group; (2) one-minute signup (name,
-phone, suburb, optional note); (3) PWA install prompt and push opt-in; (4) a waiting screen while
+phone, suburb, optional note; from Phase B, the tap-only profile step follows — CL-13); (3) PWA
+install prompt and push opt-in; (4) a waiting screen while
 the company reviews the request; (5) push tells her she is in, and the board shows open jobs.
 *Touchpoints:* WhatsApp message, mobile browser → PWA, push notifications.
 *Emotions & pain points:* she is wary of another app and wary of a request for her details. The
@@ -502,8 +541,6 @@ admission gate takes away the immediate reward — no work is visible until the 
 so the company must answer quickly, and the push that tells her she is in is what brings her back.
 Known friction: PWA install and push permissions on iPhone — test these early (§5.3).
 *Features:* F11, F5.
-
-#### Phase B — Plan the work (demand → schedule)
 
 **CA-2 · Plan the week** — Alpha —
 *Persona:* Thiago.
@@ -519,21 +556,6 @@ fill route — the cleaner board (CA-3), direct assignment (CA-4), or, from MVP,
 isn't available") named in discovery. The new-job form must clear the bar in the prototype's own
 tagline: "faster than typing it in the group". If it is slower, he reverts.
 *Features:* F10, F1.
-
-**CL-12 · See my week in one place** — Alpha — *(new in v0.4)*
-*Persona:* Ana.
-*What she can do:* see every assignment from every company she works for in one weekly agenda
-that the app builds for her. She no longer reconstructs her week from three chats.
-*Stages:* (1) accepted jobs from all her companies land in her agenda automatically; (2) the week
-view shows day, time, suburb, and company per entry; (3) gaps sit visibly next to her
-availability (CL-5); (4) a tap on an entry opens the job card (CL-3).
-*Touchpoints:* PWA agenda view, push.
-*Emotions & pain points:* the app repays her for the jobs she takes through it — her schedule
-assembles itself. Cleaners who juggle 2–3 companies rebuild their week by hand today (9 Aug 2026
-conversation). If the agenda is stale or incomplete, she reverts to chat history.
-*Features:* F11, F5.
-
-#### Phase C — Staff the work (vacancy → assigned)
 
 **CA-3 · Fill a vacancy from his cleaners** — Alpha —
 *Persona:* Thiago.
@@ -566,27 +588,209 @@ continuity — the reason clients stay — is honoured.
 *What she can do:* see every open job from every company she belongs to, and apply with one tap,
 instead of a race to reply first in three group chats.
 *Stages:* (1) a push or a board glance shows a job (time, suburb, service, pay) — jobs that match
-her preferences and availability are listed first (v0.4); (2) one-tap "I'll take it"; (3) a
-waiting state — she can withdraw; (4) assigned (or the job closes).
+her profile and availability are listed first (board ordering — Phase C); (2) one-tap "I'll take
+it"; (3) a waiting state — she can withdraw; (4) assigned (or the job closes).
 *Touchpoints:* PWA board, push notifications.
 *Emotions & pain points:* the group-chat scramble becomes a fair queue. The anxious spot is the
 waiting state, so applications must resolve visibly and quickly. If she applies and hears
 nothing, the product loses her fast.
 *Features:* F11, F5.
 
-**CL-5 · Stay available** — Alpha (toggle) / MVP (weekly grid) —
+**CL-3 · Work an assigned job** — Alpha —
+*Persona:* Ana.
+*What she can do:* have everything the job needs — address, buzzer code, parking note, map link,
+special instructions — in one place, revealed when she is assigned.
+*Stages:* (1) assignment push; (2) the job card shows the site address and access notes (visible
+to her only); (3) she navigates via the maps link; (4) she does the work; (5) she taps
+"job done".
+*Touchpoints:* PWA job card, push, Google Maps handoff.
+*Emotions & pain points:* certainty replaces a 6am scroll through chat history for a gate code.
+Client privacy is protected because site details appear only on assignment (§4.3).
+*Features:* F11, F10.
+
+**CL-4 · Get paid, on record** — Alpha —
+*Persona:* Ana.
+*What she can do:* see the agreed amount before she starts, what each company owes her, and what
+has been settled — a neutral record both sides can point to.
+*Stages:* (1) the agreed pay is on the job card before acceptance; (2) completion moves it to
+"to receive"; (3) the company marks it paid; (4) history accumulates per company.
+*Touchpoints:* PWA money screen, push on settlement.
+*Emotions & pain points:* this directly addresses the sector's documented underpayment and
+dispute problem — her biggest fear. The boundary is stated plainly: the app records money, it
+does not move it (v1). A misunderstanding there would damage trust.
+*Features:* F11.
+
+#### Phase B — Communicate and evaluate (in design — [chat-and-profile](design/chat-and-profile/prd.md))
+
+Chat moves work conversations from WhatsApp into the app; the cleaner profile makes people
+evaluable at candidacy review and beyond. The conversation model — a counterpart inbox with
+one general thread per relationship and one job thread per job per assigned cleaner — and the
+profile are defined in the cycle PRD and `docs/glossary.md`.
+
+**CL-13 · Show who I am** — Alpha —
+*Persona:* Ana.
+*What she can do:* present herself once — the work she does and wants, her weekly availability,
+regions, languages, transport — and have every company she approaches see the same profile.
+*Stages:* (1) registration asks for the profile as a second step: tap-only questions, under a
+minute, no typing except an optional note; (2) existing cleaners get a completion prompt on
+their next app open; (3) she edits the profile at any time; (4) every join request and
+applicant row she creates carries her current profile.
+*Touchpoints:* PWA registration flow and profile screen.
+*Emotions & pain points:* she is wary of forms; every question must visibly earn her work. The
+payoff: companies stop asking her the same questions in chat.
+*Features:* F5, F11, F15.
+
+**CA-14 · Evaluate a person from the profile** — Alpha —
+*Persona:* Thiago.
+*What he can do:* decide a join request — and pick between applicants — from a structured
+profile instead of a WhatsApp interrogation.
+*Stages:* (1) the review queue shows each join request with its profile and a completeness
+signal; (2) the cleaner record in Staff shows the same profile after admission; (3) applicant
+lists on job detail carry profile chips — service types, region, availability for the slot;
+(4) when something is unclear, he asks in the general thread (CA-15).
+*Touchpoints:* CRM review queue, Staff records, job detail.
+*Emotions & pain points:* the internal-cohort version of CA-8, without vetting badges (MVP).
+Thin profiles are shown honestly, never hidden — trust comes from evidence.
+*Features:* F5, F11, F15.
+
+**CL-14 · Message the company** — Alpha —
+*Persona:* Ana.
+*What she can do:* ask the company anything — from a candidacy question to day-to-day talk —
+in the app, in one place per company.
+*Stages:* (1) the general thread opens with her join request; she can ask about the work while
+she waits, and no board or site data leaks before admission; (2) after admission the same
+thread carries ad-hoc talk — schedules, documents, questions between jobs; (3) job talk lives
+in job threads (CL-11); (4) push tells her when the company replies.
+*Touchpoints:* PWA inbox and threads, push.
+*Emotions & pain points:* candidacy silence is the killer today — a visible channel makes
+waiting bearable, and answered questions convert to admissions.
+*Features:* F7, F14, F11, F15.
+
+**CA-15 · Message a cleaner** — Alpha —
+*Persona:* Thiago.
+*What he can do:* find every conversation in one inbox grouped by person — the general thread
+for the relationship, job threads for the jobs — and never scroll a group chat for "what
+happened on that job" again.
+*Stages:* (1) the CRM inbox lists people by latest activity; (2) opening a person shows the
+general thread and that person's job threads; (3) he answers candidacy questions from the same
+place; (4) any company admin can reply, and each message shows which admin wrote it.
+*Touchpoints:* CRM inbox and notification bell.
+*Emotions & pain points:* WhatsApp scatter becomes one inbox; job history is findable per job
+instead of buried in one long conversation.
+*Features:* F7, F14, F10, F15.
+
+**CL-11 · Sort it out from the site** — Alpha (Phase B: thread, photos, can't attend · Phase C: remaining events) —
+*Persona:* Ana.
+*What she can do:* when the site does not match the job card — linen missing, a damaged area,
+forgotten valuables — resolve it in the job's own thread. She does not leave the app or fall
+back to WhatsApp.
+*Stages:* (1) she opens the job's thread from the job card; (2) she writes free text, attaches
+a photo, or taps **can't attend** — which releases the slot and alerts the admin; report issue
+and lost & found arrive as structured events in Phase C; (3) the company's reply lands as push
+while she continues the work; (4) any pay change arrives as a structured, audited adjustment,
+with a notification to her — never a promise in prose; (5) the thread stays readable for a few
+days after completion, for follow-ups; later talk moves to the general thread (CL-14).
+*Touchpoints:* PWA job thread, push.
+*Emotions & pain points:* certainty that the message reached the right person and is on the
+record. This replaces a 6am message to a group and hope. "Can't attend" carries guilt, so one
+honest tap must feel safer than silence.
+*Features:* F14, F11, F13.
+
+**CA-13 · Handle the field without the phone-around** — Alpha (Phase B: thread, photos, can't attend · Phase C: remaining events) —
+*Persona:* Thiago.
+*What he can do:* see every on-site exception as a job-scoped message or event instead of a
+WhatsApp scroll; resolve it with a quick reply; keep the whole exchange on the job record.
+*Stages:* (1) a message or event push arrives tied to the job ("can't attend — Emma Brown,
+today 8:00"); (2) he replies in free text, with photos where they help; (3) a can't-attend
+event releases the slot and he re-posts the vacancy manually — the automatic cascade is F13,
+later; (4) extra charges stay out of prose — the structured, audited extra-charge event
+arrives in Phase C (§4.4); (5) weeks later, the job's history — photos, messages, adjustments —
+is still on the job record.
+*Touchpoints:* dashboard inbox and job thread, push.
+*Emotions & pain points:* structured signal, not noise — the 60-messages-in-4-hours problem,
+applied to the job day. The audit trail is what makes pay adjustments feel fair instead of
+contested.
+*Features:* F14, F13, F11, F10.
+
+#### Phase C — Run the day and recover (pool — the founders confirm content and order at cycle start)
+
+The pool the next cycle draws from. Besides the journeys below, it holds the re-homed
+leftovers: the available-today toggle (CL-5), cleaner-side board ordering by profile (F5/F11),
+the remaining field events — report issue, lost & found, extra charge (F14) — the first-job
+marker and completion outcome capture (CA-9's alpha stages, F8), and the urgent re-post with
+push blast inside CA-6 (F13 minimal). Nothing here is committed until its cycle's PRD says so.
+
+**CA-5 · Run the day** — Alpha —
+*Persona:* Thiago.
+*What he can do:* see today's jobs move from scheduled to in-progress to done, from wherever he
+is, without status-check calls.
+*Stages:* (1) the today view lists the day's jobs and assignees; (2) cleaners' "job done" taps
+update status live; (3) completions flow into the ledger (CL-4) and outcome capture (CA-9).
+*Touchpoints:* dashboard today view, push.
+*Emotions & pain points:* visibility without nags. The remaining gap — proof of *quality*, not
+just completion — is deliberately a paid-tier feature (photo verification). The document states
+this so that expectations are set.
+*Features:* F10, F11.
+
+**CA-6 · Recover from a dropout** — Alpha (manual re-post + push blast) / MVP (ordered cascade) —
+*Persona:* Thiago.
+*What he can do:* turn the worst moment of his week — a cleaner who pulls out hours before a
+deadline job — into a two-tap procedure instead of a panicked round of phone calls that consumes
+the margin.
+*Stages:* (1) the cleaner taps "can't attend" on the job (F14, Phase B) — or the message arrives
+on WhatsApp as the unstructured fallback; (2) he marks the cleaner dropped (one tap from the
+event), and the slot becomes an urgent vacancy; (3) alpha: an urgent re-post to the board plus a
+push blast to available cleaners; MVP: an automatic offer cascade ordered by client
+preference, then rating, then confirmed availability — the first cleaner to accept wins, and he
+confirms (Level 2/3); (4) if no cleaner accepts, a one-tap share pack re-opens recruitment
+(CA-7); (5) the platform records time-to-backfill.
+*Touchpoints:* dashboard, push; WhatsApp groups as fallback.
+*Emotions & pain points:* this is the money-loss moment from discovery (a $500 two-cleaner job
+that runs late) and the product's flagship journey. The emotional promise: panic becomes
+routine.
+*Features:* F13, F14, F10, F11, F5, F12.
+
+**CL-6 · Take an urgent job** — Alpha (push + board) / MVP (first-accept offer) —
+*Persona:* Ana.
+*What she can do:* pick up same-day paid work the moment someone else drops out.
+*Stages:* (1) an urgent offer push with pay, time, suburb; (2) one tap to accept (MVP: first
+accept wins, and she sees win/lose immediately); (3) the job card and access details follow.
+*Touchpoints:* push, PWA.
+*Emotions & pain points:* opportunity — extra income today. Fairness matters, so the offer order
+(preferred → rating → availability) is disclosed, not a mystery.
+*Features:* F13, F5, F11.
+
+**CL-12 · See my week in one place** — Alpha — *(new in v0.4)*
+*Persona:* Ana.
+*What she can do:* see every assignment from every company she works for in one weekly agenda
+that the app builds for her. She no longer reconstructs her week from three chats.
+*Stages:* (1) accepted jobs from all her companies land in her agenda automatically; (2) the week
+view shows day, time, suburb, and company per entry; (3) gaps sit visibly next to her
+availability (CL-5); (4) a tap on an entry opens the job card (CL-3).
+*Touchpoints:* PWA agenda view, push.
+*Emotions & pain points:* the app repays her for the jobs she takes through it — her schedule
+assembles itself. Cleaners who juggle 2–3 companies rebuild their week by hand today (9 Aug 2026
+conversation). If the agenda is stale or incomplete, she reverts to chat history.
+*Features:* F11, F5.
+
+**CL-5 · Stay available** — Alpha (weekly grid ships with the profile in Phase B; toggle Phase C) / MVP (staleness) —
 *Persona:* Ana.
 *What she can do:* tell every company she works for, once, when she can work — and receive
 offers that fit.
-*Stages:* (1) alpha: an "available today" toggle and job-type preferences (v0.4); (2) MVP: a
-weekly availability grid; (3) staleness: if availability is untouched for 14 days, the platform
-re-confirms it automatically at match time instead of trusting it.
+*Stages:* (1) her weekly availability and service-type preferences live on the cleaner profile
+(CL-13, Phase B); (2) Phase C adds the "available today" toggle for same-day work; (3)
+staleness: if availability is untouched for 14 days, the platform re-confirms it automatically
+at match time instead of trusting it (MVP).
 *Touchpoints:* PWA profile, push re-confirmation prompts.
 *Emotions & pain points:* control around a study timetable that shifts; annoyance if the app nags
 her. Re-confirmation therefore happens only when a real job is at stake.
 *Features:* F5, F13.
 
-#### Phase D — Grow and trust the cleaners (recruitment & vetting)
+#### Phase D — Grow and trust (MVP — the public-launch package)
+
+Recruitment, vetting, structured reviews, and share links: the package that makes the public
+Gold Coast launch safe for strangers. Entered when internal testing has validated
+product–market fit (§3.2 intro).
 
 **CA-7 · Recruit through his own groups** — MVP —
 *Persona:* Thiago.
@@ -643,6 +847,55 @@ police check with explicit consent (P1).
 status-only storage (never raw records), and zero fees to her answer the privacy worry.
 *Features:* F4, F9.
 
+**CA-9 · Close the loop on a job** — Phase C pool (outcome capture) / MVP (three-tap review) —
+*Persona:* Thiago.
+*What he can do:* record in three taps how the job went — and get that effort back later as
+better shortlists and preferred-cleaner suggestions.
+*Stages:* (1) completion prompts an outcome (done / no-show) — the Phase C pool holds this
+stage; (2) MVP: a three-tap structured review — punctuality, quality, would-rehire; (3) history
+builds per cleaner and per
+client–cleaner pair; (4) a recruit who stays is recorded as a `Placement`.
+*Touchpoints:* dashboard/PWA prompt after completion.
+*Emotions & pain points:* this must feel effortless, or he will skip it. The payoff (smarter
+suggestions) is deferred, so the ask is kept to seconds. No free-text comments, by design — that
+is the defamation boundary (§5.2).
+*Features:* F6, F8, F10.
+
+**CL-9 · See and answer reviews** — MVP —
+*Persona:* Ana.
+*What she can do:* see exactly what was recorded about her work, in structured form, and dispute
+anything unfair before it affects her offers.
+*Stages:* (1) the app notifies her of a new review; (2) she views the structured ratings;
+(3) she can respond or dispute; (4) the platform hides a disputed review until operator
+moderation completes (OP-3).
+*Touchpoints:* PWA, push.
+*Emotions & pain points:* fairness and a right of reply — protection against the informal
+blacklists the current market runs on.
+*Features:* F6, F9.
+
+**OP-2 · Run vetting operations** — MVP —
+*Persona:* the ops teammate.
+*What they can do:* work a queue of submitted IDs and VEVO checks, issue badges, and leave an
+audit trail.
+*Stages:* (1) a queue item arrives; (2) they verify the document and work rights; (3) badge
+issued, or follow-up requested; (4) they log every decision.
+*Touchpoints:* operator console (minimal), VEVO workflow, provider portals (P1).
+*Emotions & pain points:* accuracy over speed — a wrong badge is a liability (§5.2). The queue
+and audit trail exist so this work scales past one person.
+*Features:* F4, F9.
+
+**OP-3 · Moderate disputes and abuse** — MVP —
+*Persona:* the ops teammate.
+*What they can do:* resolve review disputes and act on share-link abuse within the 48-hour
+complaint SLA (§6.5).
+*Stages:* (1) a dispute or report lands in the queue; (2) they review the evidence; (3) they log
+the decision and notify the parties.
+*Touchpoints:* operator console.
+*Emotions & pain points:* consistency and defensibility — every decision is auditable.
+*Features:* F9, F6, F12.
+
+#### Phase E — Deepen and automate (P1)
+
 **CL-10 · Be screened conversationally** — P1 —
 *Persona:* Priya.
 *What she can do:* complete her whole profile in a chat with an assistant on WhatsApp, in her own
@@ -667,154 +920,6 @@ things: the bot identifies itself as an AI assistant, and escalation is real.
 *Emotions & pain points:* time back, control retained through approval. Trust builds gradually —
 which is why this journey follows the share-link journey instead of launching first.
 *Features:* F2, F9.
-
-**OP-2 · Run vetting operations** — MVP —
-*Persona:* the ops teammate.
-*What they can do:* work a queue of submitted IDs and VEVO checks, issue badges, and leave an
-audit trail.
-*Stages:* (1) a queue item arrives; (2) they verify the document and work rights; (3) badge
-issued, or follow-up requested; (4) they log every decision.
-*Touchpoints:* operator console (minimal), VEVO workflow, provider portals (P1).
-*Emotions & pain points:* accuracy over speed — a wrong badge is a liability (§5.2). The queue
-and audit trail exist so this work scales past one person.
-*Features:* F4, F9.
-
-#### Phase E — Run the job day (execution & disruption)
-
-**CA-5 · Run the day** — Alpha —
-*Persona:* Thiago.
-*What he can do:* see today's jobs move from scheduled to in-progress to done, from wherever he
-is, without status-check calls.
-*Stages:* (1) the today view lists the day's jobs and assignees; (2) cleaners' "job done" taps
-update status live; (3) completions flow into the ledger (CL-4) and outcome capture (CA-9).
-*Touchpoints:* dashboard today view, push.
-*Emotions & pain points:* visibility without nags. The remaining gap — proof of *quality*, not
-just completion — is deliberately a paid-tier feature (photo verification). The document states
-this so that expectations are set.
-*Features:* F10, F11.
-
-**CA-6 · Recover from a dropout** — Alpha (manual re-post + push blast) / MVP (ordered cascade) —
-*Persona:* Thiago.
-*What he can do:* turn the worst moment of his week — a cleaner who pulls out hours before a
-deadline job — into a two-tap procedure instead of a panicked round of phone calls that consumes
-the margin.
-*Stages:* (1) the cleaner taps "can't attend" on the job (F14) — or the message arrives on
-WhatsApp as the unstructured fallback; (2) he marks the cleaner dropped (one tap from the
-event), and the slot becomes an urgent vacancy; (3) alpha: an urgent re-post to the board plus a
-push blast to available cleaners; MVP: an automatic offer cascade ordered by client
-preference, then rating, then confirmed availability — the first cleaner to accept wins, and he
-confirms (Level 2/3); (4) if no cleaner accepts, a one-tap share pack re-opens recruitment
-(CA-7); (5) the platform records time-to-backfill.
-*Touchpoints:* dashboard, push; WhatsApp groups as fallback.
-*Emotions & pain points:* this is the money-loss moment from discovery (a $500 two-cleaner job
-that runs late) and the product's flagship journey. The emotional promise: panic becomes
-routine.
-*Features:* F13, F14, F10, F11, F5, F12.
-
-**CL-3 · Work an assigned job** — Alpha —
-*Persona:* Ana.
-*What she can do:* have everything the job needs — address, buzzer code, parking note, map link,
-special instructions — in one place, revealed when she is assigned.
-*Stages:* (1) assignment push; (2) the job card shows the site address and access notes (visible
-to her only); (3) she navigates via the maps link; (4) she does the work; (5) she taps
-"job done".
-*Touchpoints:* PWA job card, push, Google Maps handoff.
-*Emotions & pain points:* certainty replaces a 6am scroll through chat history for a gate code.
-Client privacy is protected because site details appear only on assignment (§4.3).
-*Features:* F11, F10.
-
-**CL-6 · Take an urgent job** — Alpha (push + board) / MVP (first-accept offer) —
-*Persona:* Ana.
-*What she can do:* pick up same-day paid work the moment someone else drops out.
-*Stages:* (1) an urgent offer push with pay, time, suburb; (2) one tap to accept (MVP: first
-accept wins, and she sees win/lose immediately); (3) the job card and access details follow.
-*Touchpoints:* push, PWA.
-*Emotions & pain points:* opportunity — extra income today. Fairness matters, so the offer order
-(preferred → rating → availability) is disclosed, not a mystery.
-*Features:* F13, F5, F11.
-
-**CL-11 · Sort it out from the site** — Alpha (events) / MVP (thread) — *(new in v0.4)*
-*Persona:* Ana.
-*What she can do:* when the site does not match the job card — linen missing, a damaged area,
-forgotten valuables — resolve it in the job's own thread. She does not leave the app or fall
-back to WhatsApp.
-*Stages:* (1) she opens the job's thread from the job card; (2) she taps a structured event
-instead of typed text — report issue (photo + category), lost & found (photo), can't attend;
-(3) the company's reply lands as push while she continues the work; (4) any pay change arrives
-as a structured, audited adjustment, with a notification to her — never a promise in prose;
-(5) the thread stays readable for a few days after completion, for follow-ups.
-*Touchpoints:* PWA job thread, push.
-*Emotions & pain points:* certainty that the message reached the right person and is on the
-record. This replaces a 6am message to a group and hope. "Can't attend" carries guilt, so one
-honest tap must feel safer than silence.
-*Features:* F14, F11, F13.
-
-**CA-13 · Handle the field without the phone-around** — Alpha (events) / MVP (thread) — *(new in v0.4)*
-*Persona:* Thiago.
-*What he can do:* see every on-site exception as a job-scoped event instead of a WhatsApp
-scroll; resolve it with a quick reply; add an audited extra charge that updates the ledger and
-notifies the cleaner.
-*Stages:* (1) an event push arrives tied to the job ("missing supplies — Emma Brown, today
-8:00"); (2) quick-reply templates, with free text from MVP; (3) extras entered as structured
-amounts — never negotiated in prose (§4.4); (4) a "can't attend" event flows straight into the
-dropout procedure (CA-6); (5) weeks later, the job's history — photos, messages, adjustments —
-is still on the job record.
-*Touchpoints:* dashboard event inbox and job thread, push.
-*Emotions & pain points:* structured signal, not noise — the 60-messages-in-4-hours problem,
-applied to the job day. The audit trail is what makes pay adjustments feel fair instead of
-contested.
-*Features:* F14, F13, F11, F10.
-
-#### Phase F — Settlement and closure (verification & closure)
-
-**CL-4 · Get paid, on record** — Alpha —
-*Persona:* Ana.
-*What she can do:* see the agreed amount before she starts, what each company owes her, and what
-has been settled — a neutral record both sides can point to.
-*Stages:* (1) the agreed pay is on the job card before acceptance; (2) completion moves it to
-"to receive"; (3) the company marks it paid; (4) history accumulates per company.
-*Touchpoints:* PWA money screen, push on settlement.
-*Emotions & pain points:* this directly addresses the sector's documented underpayment and
-dispute problem — her biggest fear. The boundary is stated plainly: the app records money, it
-does not move it (v1). A misunderstanding there would damage trust.
-*Features:* F11.
-
-**CA-9 · Close the loop on a job** — Alpha (outcome only) / MVP (three-tap review) —
-*Persona:* Thiago.
-*What he can do:* record in three taps how the job went — and get that effort back later as
-better shortlists and preferred-cleaner suggestions.
-*Stages:* (1) completion prompts an outcome (done / no-show); (2) MVP: a three-tap structured
-review — punctuality, quality, would-rehire; (3) history builds per cleaner and per
-client–cleaner pair; (4) a recruit who stays is recorded as a `Placement`.
-*Touchpoints:* dashboard/PWA prompt after completion.
-*Emotions & pain points:* this must feel effortless, or he will skip it. The payoff (smarter
-suggestions) is deferred, so the ask is kept to seconds. No free-text comments, by design — that
-is the defamation boundary (§5.2).
-*Features:* F6, F8, F10.
-
-**CL-9 · See and answer reviews** — MVP —
-*Persona:* Ana.
-*What she can do:* see exactly what was recorded about her work, in structured form, and dispute
-anything unfair before it affects her offers.
-*Stages:* (1) the app notifies her of a new review; (2) she views the structured ratings;
-(3) she can respond or dispute; (4) the platform hides a disputed review until operator
-moderation completes (OP-3).
-*Touchpoints:* PWA, push.
-*Emotions & pain points:* fairness and a right of reply — protection against the informal
-blacklists the current market runs on.
-*Features:* F6, F9.
-
-**OP-3 · Moderate disputes and abuse** — MVP —
-*Persona:* the ops teammate.
-*What they can do:* resolve review disputes and act on share-link abuse within the 48-hour
-complaint SLA (§6.5).
-*Stages:* (1) a dispute or report lands in the queue; (2) they review the evidence; (3) they log
-the decision and notify the parties.
-*Touchpoints:* operator console.
-*Emotions & pain points:* consistency and defensibility — every decision is auditable.
-*Features:* F9, F6, F12.
-
-#### Phase G — Deepen the relationship (P1)
 
 **CA-11 · One thread per cleaner** — P1 —
 *Persona:* Thiago. *What he can do:* see every exchange with a cleaner in one thread, send
@@ -854,63 +959,40 @@ that journey's stage. A feature is "done" when every journey it touches works en
 | F2 — Group distribution agent (P1) | CA-10, OP-4 |
 | F3 — Screening bot (P1) | CL-10, CA-11, OP-4 |
 | F4 — Vetting pipeline | CL-8, CA-8, CL-7 (consent), OP-2 |
-| F5 — Candidate DB & availability | CL-5, CL-2, CA-3, CA-8, CL-6, CA-6, CL-12 |
+| F5 — Cleaner profile & availability | CL-13, CA-14, CL-5, CL-2, CA-3, CA-8, CL-6, CA-6, CL-12 |
 | F6 — Shortlists & reviews | CA-8, CA-9, CL-9, OP-3 |
-| F7 — Messaging (P1) | CA-11, CA-12, CL-10 |
+| F7 — Messaging | CL-14, CA-15, CA-11, CA-12, CL-10 |
 | F8 — Trials & placement | CA-8, CA-9, CA-12 |
 | F9 — Operator console | OP-2, OP-3, OP-4, CL-8, CL-9 |
 | F10 — Scheduling & client CRM core | CA-1, CA-2, CA-3, CA-4, CA-5, CA-6, CA-9, CL-3 |
-| F11 — Cleaner board | CA-1, CA-3, CA-4, CA-5, CA-6, CL-1, CL-2, CL-3, CL-4, CL-6, CL-7, CL-12 |
+| F11 — Cleaner board | CA-1, CA-3, CA-4, CA-5, CA-6, CL-1, CL-2, CL-3, CL-4, CL-6, CL-7, CL-12, CL-13, CA-14 |
 | F12 — WhatsApp share-link bridge | CA-7, CL-7, CA-6 (fallback), OP-3 |
 | F13 — Urgent backfill | CA-6, CL-6, CL-5, CL-11 |
-| F14 — Job chat & field events | CL-11, CA-13, CA-6 (can't-attend trigger), OP-3 |
+| F14 — Job chat & field events | CL-11, CA-13, CL-14, CA-15, CA-6 (can't-attend trigger), OP-3 |
 | F15 — Bilingual product experience | Every journey at its shipped stage; `en-AU` and `pt-BR` from alpha |
 
 ### 3.4 Alpha release definition (internal test)
 
-**Purpose.** Prove that a cleaning company will run a real week of operations through the app —
-before any acquisition, vetting, or AI is built. The alpha tests the riskiest assumption in §5.1
-(roster migration) with the cheapest possible build.
+**Purpose.** Validate product–market fit inside a controlled test environment: real
+companies run real weeks of operations through the app, and their lived experience decides
+what the next cycle builds. The stage began by testing the riskiest assumption in §5.1
+(roster migration) with the cheapest possible build; it now grows cycle by cycle along the
+§3.2 delivery phases.
 
-**Users.** 2–3 companies from the founding team's network (Thiago's employer, the co-founders'
-employers) and their real cleaners. Invite-only; no public signup.
+**Users.** 2–3 companies from the founding team's network (Thiago's employer, the
+co-founders' employers) and their real cleaners. Invite-only; no public signup.
 
-**Build delta beyond prototype parity.** This list is the entire alpha backlog. The alpha runs
-entirely on the monorepo apps; the prototype is reference material, never runtime (decision
-0002).
+**How alpha work is scoped.** The alpha backlog is not a fixed list. Each build cycle gets a
+PRD under `docs/design/` that defines what the cycle ships; the §3.2 delivery phases order
+the work. Phase A (adoption and the operations base) is delivered and closes with Milestones
+M6–M8; Phase B (communicate and evaluate) is the cycle in design; Phase C holds the pool the
+next cycle draws from. The original Phase A build delta and its prototype-parity baseline
+live in the Phase A design documents ([phase-a-adoption](design/phase-a-adoption/prd.md)).
 
-1. Clients and sites as first-class records — address, access notes, default
-   service/duration/rate, and an ordered preferred-cleaners list (F10). This splits the
-   prototype's merged client/site rows.
-2. Recurring assignments that generate job instances, with crew size ≥ 1 (F10).
-3. The roster week view per cleaner/site, with unfilled slots as vacancies (F10).
-4. The dropout flow: the cleaner-side "can't attend" event (F14) → mark dropped → urgent
-   re-post to the board + a push blast to the company's cleaners (F13 minimal).
-5. The "available today" toggle and job-type preferences on the cleaner profile, shown on
-   applicant lists and used to order the board (F5/F11 minimal).
-6. The first-job marker and completion outcome capture, including no-show (F8 minimal).
-7. Structured field events on the job (the F14 events layer, v0.4): report issue and
-   lost & found with photo; the admin extra charge, which updates the ledger entry and notifies
-   the cleaner. The free-text thread stays MVP.
-8. The cleaner weekly agenda: assignments across the companies she has joined in one week view
-   (F11, v0.4).
-9. Complete `en-AU` and `pt-BR` support across both alpha apps, including the pre-auth language
-   choice, persisted preference, validation and error states, invites, and in-app and push
-   notifications (F15).
-10. Company admission of cleaners: a cleaner invitation link creates a join request instead of a
-   membership, and a company admin admits or rejects each request before that person sees any
-   work (F11).
-
-**Kept at prototype parity.** These capabilities are re-housed in the monorepo apps with visual
-fidelity preserved — not shared code: auth and roles, cleaner invite codes and memberships (with
-admission added by delta item 10), job
-creation and the post/assign/draft flow, one-tap apply, address gating, job-done, the pay
-ledger, PWA push.
-**Explicitly absent from the alpha:** public signup, share links, vetting, structured reviews,
-shortlisting, free-text messaging (structured F14 field events only — the per-job thread arrives
-at MVP), all AI features, all WhatsApp features. No operator journeys and no operator console
-exist in the alpha: company onboarding is self-serve by the founder-admins, and the operator
-journeys start at MVP (OP-2, vetting).
+**Not before MVP.** Public signup, share links, vetting, structured reviews, shortlisting,
+all AI features, all WhatsApp features, and the operator journeys and console (company
+onboarding stays self-serve by the founder-admins). Messaging left this list in Phase B:
+in-app chat ships to the internal cohort ([chat-and-profile](design/chat-and-profile/prd.md)).
 
 **Validation** (product decision 2026-08-10 — replaces the earlier exit-criteria gate): the
 alpha has no metric exit criteria. The partner companies' lived experience validates it:

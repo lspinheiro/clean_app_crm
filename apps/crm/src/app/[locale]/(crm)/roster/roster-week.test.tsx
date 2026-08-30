@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { RosterWeek } from "./roster-week";
 import { buildRosterDays } from "@/features/roster/calendar";
 import { buildCleanerRoster, buildSiteRoster } from "@/features/roster/model";
+import type { RosterModel } from "@/features/roster/types";
 
 const days = buildRosterDays("2026-08-10");
 
@@ -20,6 +21,7 @@ function populatedModel() {
       siteName: "Harbour Tower",
       scheduledStart: "2026-08-09T22:00:00Z",
       crewSize: 2,
+      recurringAssignmentId: null,
     }],
     assignments: [{ jobId: "job-1", cleanerId: "cleaner-1", slotNumber: 1 }],
     vacancies: [{
@@ -70,6 +72,70 @@ describe("RosterWeek", () => {
     );
   });
 
+  it("renders offered work as a distinct state without reducing the delivered gap count", () => {
+    const model: RosterModel = {
+      rows: [
+        {
+          id: "gaps",
+          label: "Unfilled slots",
+          kind: "gaps",
+          cells: {
+            "2026-08-11": [{
+              kind: "gap",
+              key: "job-1:2",
+              jobId: "job-1",
+              siteName: "Harbour Tower",
+              scheduledStart: "2026-08-11T00:00:00Z",
+              crewSlot: 2,
+              crewSize: 2,
+            }],
+          },
+        },
+        {
+          id: "cleaner:cleaner-1",
+          label: "Ana Costa",
+          kind: "cleaner",
+          cells: {
+            "2026-08-11": [{
+              kind: "offered",
+              key: "offer:offer-1:job-1",
+              jobId: "job-1",
+              siteName: "Harbour Tower",
+              scheduledStart: "2026-08-11T00:00:00Z",
+              crewSize: 2,
+              cleanerName: "Ana Costa",
+            }],
+          },
+        },
+      ],
+      vacancyCount: 1,
+      vacancyKeys: ["job-1:2"],
+      jobIds: ["job-1"],
+    };
+
+    render(
+      <RosterWeek
+        days={days}
+        hasFoundation
+        model={model}
+        view="cleaner"
+        weekStart="2026-08-10"
+        todayKey="2026-08-12"
+      />,
+    );
+
+    const offered = screen.getByTestId("roster-offered");
+    expect(offered).toHaveClass("roster-entry--offered");
+    expect(offered).toHaveTextContent("OFFERED");
+    expect(offered).toHaveTextContent("Harbour Tower");
+    expect(offered).not.toHaveClass("roster-entry--job", "roster-entry--gap");
+    expect(screen.getAllByTestId("roster-gap")).toHaveLength(1);
+    expect(screen.getByTestId("roster-gap-count")).toHaveTextContent("1 unfilled slot");
+    expect(screen.getByTestId("roster-footer-gap-count")).toHaveTextContent(
+      "1 unfilled slot this week",
+    );
+  });
+
   it("renders a neutral unscheduled state when the week has no generated jobs", () => {
     const model = buildCleanerRoster({
       days,
@@ -114,6 +180,7 @@ describe("RosterWeek", () => {
         siteName: "Harbour Tower",
         scheduledStart: "2026-08-09T22:00:00Z",
         crewSize: 1,
+        recurringAssignmentId: null,
       }],
       assignments: [{ jobId: "job-1", cleanerId: "cleaner-1", slotNumber: 1 }],
       vacancies: [],
@@ -239,6 +306,7 @@ describe("RosterWeek", () => {
         siteName: "Harbour Tower",
         scheduledStart: "2026-08-09T22:00:00Z",
         crewSize: 2,
+        recurringAssignmentId: null,
       }],
       assignments: [{ jobId: "job-1", cleanerId: "cleaner-1", slotNumber: 1 }],
       vacancies: [{

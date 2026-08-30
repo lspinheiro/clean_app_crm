@@ -5,6 +5,7 @@
     "loginTitle": "Sign in",
     "joinTitle": "Join a company",
     "boardTitle": "Open jobs",
+    "offersTitle": "Offers",
     "myJobsTitle": "My jobs",
     "profileTitle": "Profile"
   },
@@ -26,8 +27,19 @@
   "Navigation": {
     "sections": "Sections",
     "board": "Open jobs",
+    "offers": "Offers",
     "myJobs": "My jobs",
     "profile": "Profile"
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "unread": "Notifications, {count, plural, one {# unread} other {# unread}}",
+    "loadError": "We could not load your news.",
+    "empty": "No news yet.",
+    "jobPosted": "New job on the board",
+    "jobAssigned": "You were given a job",
+    "jobCancelled": "A job was cancelled",
+    "paymentMarkedPaid": "A job was marked paid"
   },
   "PushOptIn": {
     "title": "Get job updates",
@@ -182,6 +194,38 @@
     "errorApply": "We could not send your application. Try again.",
     "errorNoApplication": "You do not have an application to withdraw.",
     "errorWithdraw": "We could not withdraw your application. Try again."
+  },
+  "Offers": {
+    "title": "Offers",
+    "lead": "Review work offered directly to you.",
+    "waitingTitle": "Waiting for you",
+    "waitingCount": "{count, plural, one {# offer} other {# offers}}",
+    "waitingList": "Waiting offers",
+    "historyTitle": "History",
+    "historyList": "Offer history",
+    "loading": "Loading your offers…",
+    "loadErrorTitle": "We could not load your offers.",
+    "loadErrorBody": "Check your connection and try again.",
+    "emptyTitle": "No offers yet.",
+    "emptyBody": "When a cleaning company offers work directly to you, it appears here.",
+    "payLabel": "Pay",
+    "crewSize": "{count, plural, one {1 cleaner} other {# cleaners}}",
+    "jobSchedule": "{date} at {time} · {duration}",
+    "seriesScheduleWeekly": "Every {weekday} at {time} · {duration}",
+    "seriesScheduleFortnightly": "Every second {weekday} at {time} · {duration}",
+    "seriesConsent": "Accepting covers all future jobs in this series.",
+    "accept": "Accept offer",
+    "accepting": "Accepting…",
+    "decline": "Decline offer",
+    "declining": "Declining…",
+    "acceptedNotice": "Offer accepted.",
+    "declinedNotice": "Offer declined.",
+    "viewMyJobs": "View my jobs",
+    "statusAccepted": "Accepted",
+    "statusDeclined": "Declined",
+    "statusRevoked": "Revoked",
+    "errorAccept": "We could not accept this offer. Try again.",
+    "errorDecline": "We could not decline this offer. Try again."
   },
   "MyJobs": {
     "title": "My jobs",

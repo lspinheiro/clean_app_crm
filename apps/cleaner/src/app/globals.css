@@ -1109,6 +1109,164 @@ a {
   gap: 8px;
 }
 
+/* The CRM's bell, remapped onto this app's tokens: it has no surface/container colour
+   scale and no reveal keyframe, so the panel is painted with paper and grey and opens
+   without animation.
+   One thing deliberately did not come across: the CRM anchors the panel to the trigger,
+   because there the bell ends a desktop nav and its right edge is the nav's right edge.
+   Here the bell sits left of the language switcher and Sign out, roughly a third of the
+   way across the phone, so `.notification-menu` is left static and the panel hangs off
+   `.app-header` instead — see `.notification-menu__panel`. */
+.notification-menu__trigger {
+  position: relative;
+  display: grid;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-gray-600);
+  list-style: none;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.notification-menu__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.notification-menu[open] .notification-menu__trigger {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-hover);
+}
+
+.notification-menu__badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid var(--color-paper);
+  border-radius: 999px;
+  padding-inline: 4px;
+  background: var(--color-danger);
+  color: var(--color-paper);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* `.app-header` is sticky, so with the menu itself static the header is the nearest
+   positioned ancestor and every percentage below is measured against it. `100%` is the
+   header's width — the phone's width, capped at the 520px shell — which keeps a 12px
+   inset on the right and a panel that can never reach either edge, at 320px or at a
+   desktop window. `top: 100%` is the header's own bottom, so the panel still clears it
+   on the narrow phones where Sign out wraps to two lines. */
+.notification-menu__panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  right: 12px;
+  display: flex;
+  width: min(340px, calc(100% - 24px));
+  /* The tab bar is sticky at the same z-index as the header and comes later in the
+     document, so anything of this panel that reaches it is painted over rather than
+     scrolled — a notification sliced in half. The header sits at the top of the screen,
+     so the `100%` that placed the panel is also its distance from the top: subtract it,
+     the 8px above, and the tab bar and its safe area below, and what is left is the room
+     between the two bars. 12px of that is kept clear so the panel does not sit flush
+     against the tab bar. On an upright phone the list's own 420px cap still decides;
+     this only bites on a short screen, which usually means one turned sideways. */
+  max-height: calc(100dvh - 100% - 81px - env(safe-area-inset-bottom, 0px));
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+}
+
+.notification-menu__heading {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--color-gray-200);
+  color: var(--color-gray-900);
+  font-size: 14px;
+}
+
+/* Twenty items is one phone screen's worth of history, and 420px is about six of them:
+   past that the list scrolls rather than the panel growing. The panel's own max-height
+   above takes over on a screen too short for even that. */
+.notification-menu__list {
+  max-height: 420px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notification-menu__list li + li {
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.notification-menu__list a {
+  position: relative;
+  display: grid;
+  min-height: 72px;
+  align-content: center;
+  gap: 3px;
+  padding: 12px 16px;
+  color: var(--color-gray-900);
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.notification-menu__list a:hover {
+  background: var(--color-gray-50);
+}
+
+.notification-menu__label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.notification-menu__detail {
+  color: var(--color-gray-700);
+  font-size: 13px;
+}
+
+.notification-menu__item--unread a {
+  padding-left: 28px;
+  background: var(--color-status-info-tint);
+}
+
+.notification-menu__item--unread a::before {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  width: 7px;
+  height: 7px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--color-primary);
+  content: "";
+}
+
+.notification-menu__list time {
+  color: var(--color-gray-600);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.notification-menu__empty {
+  margin: 0;
+  padding: 26px 16px;
+  color: var(--color-gray-600);
+  font-size: 13px;
+  text-align: center;
+}
+
 .app-header__sign-out {
   min-height: 44px;
   padding: 0 4px;
@@ -1153,4 +1311,191 @@ a {
   .board-skeleton__card span {
     animation: none;
   }
+}
+
+.offers-screen {
+  gap: 24px;
+}
+
+.offers-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.offers-section h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.offers-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.offers-section__head span {
+  color: var(--color-gray-600);
+  font-family: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.offers-section--history {
+  padding-top: 8px;
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.offer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+}
+
+.offer-card--resolved {
+  box-shadow: var(--shadow-sm);
+}
+
+.offer-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.offer-card__company,
+.offer-card__site,
+.offer-card__details p,
+.offer-card__consent {
+  margin: 0;
+}
+
+.offer-card__company {
+  color: var(--color-gray-900);
+  font-weight: 700;
+}
+
+.offer-card__site {
+  margin-top: 2px;
+  color: var(--color-gray-600);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.offer-card__pay {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.offer-card__pay span {
+  color: var(--color-gray-600);
+  font-family: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.offer-card__pay strong {
+  color: var(--color-primary);
+  font-size: 22px;
+  line-height: 28px;
+}
+
+.offer-card__details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-gray-200);
+  color: var(--color-gray-700);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.offer-card__consent {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--color-primary-tint);
+  color: var(--color-status-info-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 19px;
+}
+
+.offer-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.offer-status {
+  align-self: flex-start;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-family: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.offer-status--accepted {
+  background: var(--color-status-success-tint);
+  color: var(--color-status-success-text);
+}
+
+.offer-status--declined,
+.offer-status--revoked {
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+}
+
+.offers-notice {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.offers-notice a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin: -12px 0;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.offers-notice--success {
+  background: var(--color-status-success-tint);
+  color: var(--color-status-success-text);
+}
+
+.offers-notice--error {
+  background: var(--color-status-danger-tint);
+  color: var(--color-status-danger-text);
 }

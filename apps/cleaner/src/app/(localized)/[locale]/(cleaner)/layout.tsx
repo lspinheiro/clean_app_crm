@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { Briefcase, ClipboardCheck, UserRound } from "lucide-react";
+import { Briefcase, ClipboardCheck, Inbox, UserRound } from "lucide-react";
 
 import { BrandBubbles } from "@/components/brand-bubbles";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { NotificationBell } from "@/components/notification-bell";
 import type { AppLocale } from "@/i18n/config";
 import { localePath, pathWithoutLocale } from "@/i18n/config";
 import { useCleaner } from "@/lib/auth/use-cleaner";
@@ -15,6 +16,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 
 const tabs = [
   { href: "/board", icon: Briefcase, label: "board" },
+  { href: "/offers", icon: Inbox, label: "offers" },
   { href: "/my-jobs", icon: ClipboardCheck, label: "myJobs" },
   { href: "/profile", icon: UserRound, label: "profile" },
 ] as const;
@@ -71,6 +73,7 @@ export default function CleanerLayout({
           <span>{commonT("brand")}</span>
         </Link>
         <div className="app-header__actions">
+          <NotificationBell profileId={cleaner.profile.id} />
           <LanguageSwitcher authenticated compact />
           <button
             className="app-header__sign-out"

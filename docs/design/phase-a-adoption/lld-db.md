@@ -285,10 +285,11 @@ generate assigned (delivered behaviour); rows without it generate **no** assignm
 the instance's uncovered slots are *offered*, projected from the pending series offer,
 and excluded from the board and the vacancy count.
 
-Board/vacancy projection change (S16): `cleaner_job_board` and `vacancies` emit one row
-per open slot **minus** the count of pending offers on the job (job offers) and minus
-unconsented named-cleaner rows (series), so an offered slot is visible to no one but
-its offered cleaner.
+Board/vacancy projection change (S16): `cleaner_job_board` and `vacancies` count the
+distinct cleaners reserved by pending job offers or unconsented named-cleaner rows.
+They exclude a reserved cleaner who already has an active assignment on the job. The
+views offset open slots by this count, so one cleaner reserves at most one crew place.
+An offered slot is visible only to its offered cleaner.
 
 ## Data model — multi-link invites (S8, S9, S10)
 
@@ -502,9 +503,10 @@ true`, `auth.uid()` predicate in the body, no address/client data):
   date), `pay_basis`, `pay_value_cents`, `amount_cents`, `paid_at`. Backs S19
   ("to receive / received").
 
-Changed delivered RPC: `assign_job_slot` gains the invariant check — the admin cannot
-assign into a slot held by a pending offer (error: revoke the offer first). This
-guarantees `accept_offer` always finds an open slot.
+Changed delivered RPC: `assign_job_slot` is an internal security-definer helper with no
+authenticated execute grant. `approve_job_application` calls it after it validates the
+application. The helper refuses an assignment into a slot that a pending offer reserves
+(error: revoke the offer first). A non-applicant receives a directed offer instead.
 
 ## Internal structure
 
@@ -554,11 +556,10 @@ acceptance itself stands. (Sequence diagram: the HLD's critical-path diagram in 
 [Data flow](hld.md#data-flow) section draws exactly this path.)
 
 **Job offer vs board applicant (S28, S22).** Crew-size-2 job, one pending offer to
-Ana, Ben applies. `assign_job_slot(Ben)` takes the job lock, sees 0 assigned + 1
-pending offer < 2 → assigns slot 1. Ana accepts → lock → lowest open slot 2 →
-assignment; job becomes `assigned`. If Thiago instead tries to assign two applicants,
-the second `assign_job_slot` fails the invariant with "revoke the pending offer
-first".
+Ana, Ben applies. `approve_job_application(Ben)` validates the application and calls
+the internal assignment helper. The helper locks the job and assigns slot 1. Ana accepts
+and receives the lowest open slot, so the job becomes `assigned`. If Thiago tries to
+approve two applicants, the second approval fails with "revoke the pending offer first".
 
 ```mermaid
 sequenceDiagram
@@ -566,13 +567,13 @@ sequenceDiagram
     participant DB as Postgres (job row lock)
     participant A as Ana (cleaner)
     Note over DB: crew_size 2, 0 assigned,<br/>1 pending offer (Ana)
-    T->>DB: assign_job_slot(Ben)
-    DB->>DB: lock job; 0 assigned + 1 pending < 2 ✓
+    T->>DB: approve_job_application(Ben, slot 1)
+    DB->>DB: validate application;<br/>internal assign_job_slot locks job
     DB-->>T: Ben → slot 1
     A->>DB: accept_offer
     DB->>DB: lock job; lowest open slot = 2
     DB-->>A: assigned slot 2; job → assigned
-    T--xDB: assign_job_slot(3rd cleaner)
+    T--xDB: approve_job_application(3rd applicant, slot 2)
     DB-->>T: error: "Revoke the pending offer first" (invariant)
 ```
 
@@ -632,9 +633,9 @@ mutation.*
   verbatim. New messages: "Offer is no longer pending" (accept/decline/revoke a
   resolved offer), "Cleaner already has a pending offer for this job", "No open slot
   is available" (defensive; unreachable while the invariant holds), "Revoke the
-  pending offer first" (`assign_job_slot`), "Invite is no longer active" (join on
-  revoked/expired/limit-reached), "Amount is required for hourly jobs" / "Amount is
-  not accepted for fixed jobs" (`mark_paid`).
+  pending offer first" (the internal `assign_job_slot` guard), "Invite is no longer
+  active" (join on revoked/expired/limit-reached), "Amount is required for hourly jobs"
+  / "Amount is not accepted for fixed jobs" (`mark_paid`).
 - First-admin preparation rejects invalid or `NULL` e-mail, actor, locale, or expiry
   before it writes. Acceptance rejects every required `NULL` field before it changes the
   profile. Acceptance uses one safe "Invitation is no longer available" error for a

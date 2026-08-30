@@ -13,8 +13,10 @@ const mocks = vi.hoisted(() => {
     channel,
     createClient: vi.fn(),
     markJobApplicationNotSelected: vi.fn(),
+    offerJob: vi.fn(),
     refresh: vi.fn(),
     removeChannel: vi.fn(),
+    revokeJobOffer: vi.fn(),
     restoreJobApplication: vi.fn(),
   };
 });
@@ -28,6 +30,10 @@ vi.mock("@/app/actions/jobs", () => ({
   cancelJob: mocks.cancelJob,
   markJobApplicationNotSelected: mocks.markJobApplicationNotSelected,
   restoreJobApplication: mocks.restoreJobApplication,
+}));
+vi.mock("@/app/actions/offers", () => ({
+  offerJob: mocks.offerJob,
+  revokeJobOffer: mocks.revokeJobOffer,
 }));
 vi.mock("@/lib/supabase/browser", () => ({
   createClient: mocks.createClient,
@@ -117,6 +123,7 @@ const job: JobDetail = {
       preferredRank: null,
     },
   ],
+  pendingOffers: [],
 };
 
 function closeSlots(slots: JobDetail["slots"]): JobDetail["slots"] {
@@ -146,6 +153,8 @@ describe("CLE-22 job detail workspace", () => {
     mocks.assignJobSlot.mockResolvedValue({ ok: true, formError: null });
     mocks.cancelJob.mockResolvedValue({ ok: true, formError: null });
     mocks.markJobApplicationNotSelected.mockResolvedValue({ ok: true, formError: null });
+    mocks.offerJob.mockResolvedValue({ ok: true, formError: null });
+    mocks.revokeJobOffer.mockResolvedValue({ ok: true, formError: null });
     mocks.restoreJobApplication.mockResolvedValue({ ok: true, formError: null });
     mocks.channel.on.mockReturnValue(mocks.channel);
     mocks.channel.subscribe.mockReturnValue(mocks.channel);
@@ -198,7 +207,7 @@ describe("CLE-22 job detail workspace", () => {
       expect.stringContaining("Unranked Applicant"),
     ]);
 
-    const options = within(screen.getByLabelText("Cleaner for slot 2"))
+    const options = within(screen.getByLabelText("Cleaner to offer this job"))
       .getAllByRole("option")
       .map((option) => option.textContent);
     expect(options).toEqual([
@@ -399,38 +408,140 @@ describe("CLE-22 job detail workspace", () => {
     );
   });
 
-  it("keeps non-applicant staffing visually separate from application approval", () => {
+  it("keeps non-applicant offers visually separate from application approval", () => {
     render(<JobDetailWorkspace job={job} />);
 
-    const direct = screen.getByRole("region", { name: "Assign a cleaner directly" });
-    expect(within(direct).getByRole("option", { name: "Direct Cleaner" }))
+    const directedOffers = screen.getByRole("region", { name: "Directed offers" });
+    expect(within(directedOffers).getByRole("option", { name: "Direct Cleaner" }))
       .toBeInTheDocument();
-    expect(within(direct).queryByRole("option", { name: "Preferred First — preferred #1" }))
+    expect(within(directedOffers).queryByRole("option", {
+      name: "Preferred First — preferred #1",
+    }))
       .not.toBeInTheDocument();
   });
 
-  it("assigns the chosen non-applicant to the exact open slot without optimistic state", async () => {
+  it("shows a pending directed offer with its age and a revoke control", () => {
+    const pendingCreatedAt = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const offeredJob = {
+      ...job,
+      pendingOffers: [
+        {
+          id: "51000000-0000-4000-8000-000000000801",
+          cleanerId: "10000000-0000-4000-8000-000000000007",
+          cleanerName: "Direct Cleaner",
+          createdAt: pendingCreatedAt,
+        },
+      ],
+    };
+
+    render(<JobDetailWorkspace job={offeredJob} />);
+
+    const pendingOffers = screen.getByRole("region", { name: "Pending offers" });
+    expect(pendingOffers).toHaveTextContent("Direct Cleaner");
+    expect(pendingOffers).toHaveTextContent("5 min ago");
+    expect(within(pendingOffers).getByRole("button", {
+      name: "Revoke offer to Direct Cleaner",
+    })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Direct Cleaner" }))
+      .not.toBeInTheDocument();
+  });
+
+  it("sends a directed offer to the selected eligible cleaner and refreshes", async () => {
+    const user = userEvent.setup();
+    render(<JobDetailWorkspace job={job} />);
+
+    const directedOffers = screen.getByRole("region", { name: "Directed offers" });
+    await user.selectOptions(
+      within(directedOffers).getByLabelText("Cleaner to offer this job"),
+      "10000000-0000-4000-8000-000000000007",
+    );
+    await user.click(within(directedOffers).getByRole("button", {
+      name: "Send offer to Direct Cleaner",
+    }));
+
+    await waitFor(() => expect(mocks.offerJob).toHaveBeenCalledOnce());
+    const formData = mocks.offerJob.mock.calls[0]?.[0] as FormData;
+    expect(Object.fromEntries(formData.entries())).toEqual({
+      jobId: job.id,
+      cleanerId: "10000000-0000-4000-8000-000000000007",
+    });
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("revokes a pending directed offer and refreshes authoritative state", async () => {
+    const user = userEvent.setup();
+    const offeredJob = {
+      ...job,
+      pendingOffers: [{
+        id: "51000000-0000-4000-8000-000000000801",
+        cleanerId: "10000000-0000-4000-8000-000000000007",
+        cleanerName: "Direct Cleaner",
+        createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      }],
+    };
+    render(<JobDetailWorkspace job={offeredJob} />);
+
+    await user.click(screen.getByRole("button", {
+      name: "Revoke offer to Direct Cleaner",
+    }));
+
+    await waitFor(() => expect(mocks.revokeJobOffer).toHaveBeenCalledWith(
+      job.id,
+      "51000000-0000-4000-8000-000000000801",
+    ));
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("does not offer a legacy direct-assignment path to a non-applicant", () => {
+    render(<JobDetailWorkspace job={job} />);
+
+    expect(screen.queryByRole("region", { name: "Assign a cleaner directly" }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Assign Direct Cleaner/ }))
+      .not.toBeInTheDocument();
+  });
+
+  it("surfaces the revoke-first condition verbatim when approving an applicant", async () => {
+    mocks.approveJobApplication.mockResolvedValue({
+      ok: false,
+      formError: "user.revokePendingOfferFirst",
+    });
+    const user = userEvent.setup();
+    render(<JobDetailWorkspace job={job} />);
+
+    await user.click(screen.getByRole("button", {
+      name: "Approve Preferred First for slot 2",
+    }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Revoke the pending offer first",
+    );
+  });
+
+  it("shows offer progress without optimistically changing the open slot", async () => {
+    let finishOffer: ((value: { ok: true; formError: null }) => void) | undefined;
+    mocks.offerJob.mockReturnValue(new Promise((resolve) => {
+      finishOffer = resolve;
+    }));
     const user = userEvent.setup();
     render(<JobDetailWorkspace job={job} />);
 
     await user.selectOptions(
-      screen.getByLabelText("Cleaner for slot 2"),
+      screen.getByLabelText("Cleaner to offer this job"),
       "10000000-0000-4000-8000-000000000007",
     );
-    await user.click(screen.getByRole("button", { name: "Assign Direct Cleaner to slot 2" }));
+    await user.click(screen.getByRole("button", { name: "Send offer to Direct Cleaner" }));
 
-    await waitFor(() => expect(mocks.assignJobSlot).toHaveBeenCalledOnce());
-    const formData = mocks.assignJobSlot.mock.calls[0]?.[0] as FormData;
-    expect(Object.fromEntries(formData.entries())).toEqual({
-      jobId: job.id,
-      slotNumber: "2",
-      cleanerId: "10000000-0000-4000-8000-000000000007",
-    });
-    expect(mocks.refresh).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: "Send offer to Direct Cleaner" }))
+      .toBeDisabled();
+    expect(screen.getByText("Sending offer…")).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Crew slot 2" })).toHaveTextContent("Open");
+
+    finishOffer?.({ ok: true, formError: null });
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
   });
 
-  it("keeps a released slot assignable when the posted job has reopened", async () => {
+  it("keeps a released slot available for a directed offer when the job has reopened", async () => {
     const user = userEvent.setup();
     render(
       <JobDetailWorkspace
@@ -459,38 +570,37 @@ describe("CLE-22 job detail workspace", () => {
     expect(within(reopenedSlot).getByText("Previously assigned to Removed Cleaner"))
       .toBeInTheDocument();
 
-    const directAssignment = screen.getByRole("region", {
-      name: "Assign a cleaner directly",
+    const directedOffers = screen.getByRole("region", {
+      name: "Directed offers",
     });
     await user.selectOptions(
-      within(directAssignment).getByLabelText("Cleaner for slot 2"),
+      within(directedOffers).getByLabelText("Cleaner to offer this job"),
       "10000000-0000-4000-8000-000000000007",
     );
     await user.click(
-      within(directAssignment).getByRole("button", {
-        name: "Assign Direct Cleaner to slot 2",
+      within(directedOffers).getByRole("button", {
+        name: "Send offer to Direct Cleaner",
       }),
     );
 
-    const formData = mocks.assignJobSlot.mock.calls[0]?.[0] as FormData;
+    const formData = mocks.offerJob.mock.calls[0]?.[0] as FormData;
     expect(Object.fromEntries(formData.entries())).toEqual({
       jobId: job.id,
-      slotNumber: "2",
       cleanerId: "10000000-0000-4000-8000-000000000007",
     });
   });
 
-  it("does not carry a cleaner selection into a reopened slot lifecycle", async () => {
+  it("does not carry an offer selection into a reopened slot lifecycle", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<JobDetailWorkspace job={job} />);
 
     await user.selectOptions(
-      screen.getByLabelText("Cleaner for slot 2"),
+      screen.getByLabelText("Cleaner to offer this job"),
       "10000000-0000-4000-8000-000000000007",
     );
     expect(
       screen.getByRole("button", {
-        name: "Assign Direct Cleaner to slot 2",
+        name: "Send offer to Direct Cleaner",
       }),
     ).toBeEnabled();
 
@@ -538,27 +648,29 @@ describe("CLE-22 job detail workspace", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Cleaner for slot 2")).toHaveValue("");
+    expect(screen.getByLabelText("Cleaner to offer this job")).toHaveValue("");
     expect(
-      screen.getByRole("button", { name: "Assign cleaner to slot 2" }),
+      screen.getByRole("button", { name: "Send offer" }),
     ).toBeDisabled();
   });
 
-  it("keeps a safe inline error and refreshes after a losing assignment", async () => {
-    mocks.assignJobSlot.mockResolvedValue({
+  it("keeps a safe inline error and refreshes after a losing offer", async () => {
+    mocks.offerJob.mockResolvedValue({
       ok: false,
-      formError: "user.jobChanged",
+      formError: "user.jobOfferChanged",
     });
     const user = userEvent.setup();
     const { rerender } = render(<JobDetailWorkspace job={job} />);
 
     await user.selectOptions(
-      screen.getByLabelText("Cleaner for slot 2"),
+      screen.getByLabelText("Cleaner to offer this job"),
       "10000000-0000-4000-8000-000000000007",
     );
-    await user.click(screen.getByRole("button", { name: "Assign Direct Cleaner to slot 2" }));
+    await user.click(screen.getByRole("button", { name: "Send offer to Direct Cleaner" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("This job changed");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This offer could not be completed",
+    );
     expect(mocks.refresh).toHaveBeenCalledOnce();
 
     rerender(
@@ -586,7 +698,7 @@ describe("CLE-22 job detail workspace", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("keeps direct assignment available without applicants and explains an empty cleaner list", () => {
+  it("keeps offers available without applicants and explains an empty eligible list", () => {
     const { rerender } = render(
       <JobDetailWorkspace job={{ ...job, applicants: [] }} />,
     );
@@ -598,16 +710,17 @@ describe("CLE-22 job detail workspace", () => {
         job={{ ...job, applicants: [], cleanerCandidates: [] }}
       />,
     );
-    expect(screen.getByText("No active cleaners are available to assign.")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Cleaner for slot 2")).not.toBeInTheDocument();
+    expect(screen.getByText("No eligible cleaners are available for an offer."))
+      .toBeInTheDocument();
+    expect(screen.queryByLabelText("Cleaner to offer this job")).not.toBeInTheDocument();
   });
 
-  it("gates slot assignment and cancellation across the job status matrix", () => {
+  it("gates directed offers and cancellation across the job status matrix", () => {
     const { rerender } = render(<JobDetailWorkspace job={{ ...job, status: "draft" }} />);
 
     for (const status of ["draft", "posted"] as const) {
       rerender(<JobDetailWorkspace job={{ ...job, status }} />);
-      expect(screen.getByLabelText("Cleaner for slot 2")).toBeInTheDocument();
+      expect(screen.getByLabelText("Cleaner to offer this job")).toBeInTheDocument();
     }
     for (const status of [
       "assigned",
@@ -617,7 +730,7 @@ describe("CLE-22 job detail workspace", () => {
       "cancelled",
     ] as const) {
       rerender(<JobDetailWorkspace job={{ ...job, status }} />);
-      expect(screen.queryByLabelText("Cleaner for slot 2")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Cleaner to offer this job")).not.toBeInTheDocument();
     }
 
     for (const status of [
@@ -679,7 +792,7 @@ describe("CLE-22 job detail workspace", () => {
       />,
     );
     expect(screen.queryByRole("button", { name: "Cancel job" })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Cleaner for slot 2")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Cleaner to offer this job")).not.toBeInTheDocument();
     const releasedSlot = screen.getByRole("article", { name: "Crew slot 1" });
     expect(within(releasedSlot).getByText("Closed")).toBeInTheDocument();
     expect(releasedSlot).toHaveTextContent(

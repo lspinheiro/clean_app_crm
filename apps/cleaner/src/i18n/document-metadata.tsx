@@ -19,6 +19,8 @@ export function DocumentMetadata() {
           ? t("joinTitle")
           : route === "/board"
             ? t("boardTitle")
+            : route === "/offers"
+              ? t("offersTitle")
             : route === "/my-jobs"
               ? t("myJobsTitle")
               : t("title");

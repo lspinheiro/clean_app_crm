@@ -11,6 +11,7 @@ import type {
   JobAssignmentRecord,
   JobDetail,
   JobCleanerCandidate,
+  JobPendingOffer,
 } from "@/features/jobs/types";
 import { getServiceLabel } from "@/i18n/service-label";
 import { requireCompanyAdmin } from "@/lib/auth/session";
@@ -46,6 +47,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     { data: applicationRows, error: applicationError },
     { data: membershipRows, error: membershipError },
     { data: preferenceRows, error: preferenceError },
+    { data: offerRows, error: offerError },
   ] = await Promise.all([
     supabase
       .from("job_assignments")
@@ -71,11 +73,18 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       .select("cleaner_id, rank")
       .eq("site_id", jobRow.site_id)
       .order("rank"),
+    supabase
+      .from("offers")
+      .select("id, cleaner_id, created_at, profiles!inner(full_name)")
+      .eq("job_id", jobId)
+      .eq("status", "pending")
+      .order("created_at"),
   ]);
   if (assignmentError) throw assignmentError;
   if (applicationError) throw applicationError;
   if (membershipError) throw membershipError;
   if (preferenceError) throw preferenceError;
+  if (offerError) throw offerError;
 
   const preferredRanks = new Map(
     preferenceRows.map((preference) => [preference.cleaner_id, preference.rank]),
@@ -93,6 +102,12 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       .filter((assignment) => assignment.unassignedAt === null)
       .map((assignment) => assignment.cleanerId),
   );
+  const applicantIds = new Set(
+    applicationRows.map((application) => application.cleaner_id),
+  );
+  const pendingOfferCleanerIds = new Set(
+    offerRows.map((offer) => offer.cleaner_id),
+  );
   const applicants: JobApplicant[] = sortJobApplicants(
     applicationRows.map((application) => ({
       cleanerId: application.cleaner_id,
@@ -104,13 +119,23 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   );
   const cleanerCandidates: JobCleanerCandidate[] = sortCleanerCandidates(
     membershipRows
-      .filter((membership) => !activeCleanerIds.has(membership.profile_id))
+      .filter((membership) => (
+        !activeCleanerIds.has(membership.profile_id)
+        && !applicantIds.has(membership.profile_id)
+        && !pendingOfferCleanerIds.has(membership.profile_id)
+      ))
       .map((membership) => ({
         cleanerId: membership.profile_id,
         cleanerName: membership.profiles.full_name,
         preferredRank: preferredRanks.get(membership.profile_id) ?? null,
       })),
   );
+  const pendingOffers: JobPendingOffer[] = offerRows.map((offer) => ({
+    id: offer.id,
+    cleanerId: offer.cleaner_id,
+    cleanerName: offer.profiles.full_name,
+    createdAt: offer.created_at,
+  }));
   const job: JobDetail = {
     id: jobRow.id,
     status: jobRow.status,
@@ -136,6 +161,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     }),
     applicants,
     cleanerCandidates,
+    pendingOffers,
   };
 
   return (

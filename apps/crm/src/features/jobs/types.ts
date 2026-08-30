@@ -34,6 +34,13 @@ export type JobCleanerCandidate = {
   preferredRank: number | null;
 };
 
+export type JobPendingOffer = {
+  id: string;
+  cleanerId: string;
+  cleanerName: string;
+  createdAt: string;
+};
+
 export type JobAssignmentRecord = {
   cleanerId: string;
   cleanerName: string;
@@ -92,4 +99,5 @@ export type JobDetail = {
   slots: JobSlot[];
   applicants: JobApplicant[];
   cleanerCandidates: JobCleanerCandidate[];
+  pendingOffers: JobPendingOffer[];
 };

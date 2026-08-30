@@ -87,6 +87,18 @@ function authenticatedTransaction(userId, statement) {
   `;
 }
 
+function internalAssignmentTransaction(userId, statement) {
+  return `
+    begin;
+    set local role service_role;
+    select set_config('request.jwt.claim.sub', '${userId}', true);
+    select set_config('request.jwt.claim.role', 'service_role', true);
+    ${statement}
+    select pg_sleep(0.75);
+    commit;
+  `;
+}
+
 const cleanupSql = `
   delete from public.jobs
   where id in ('${applyJobId}', '${finalSlotJobId}', '${membershipRaceJobId}');
@@ -174,20 +186,20 @@ try {
     runSqlConcurrently(
       authenticatedTransaction(
         adminId,
-        `select public.assign_job_slot('${finalSlotJobId}', 2, '${cleanerAId}');`,
+        `select public.approve_job_application('${finalSlotJobId}', 2, '${cleanerAId}');`,
       ),
     ),
     runSqlConcurrently(
       authenticatedTransaction(
         adminId,
-        `select public.assign_job_slot('${finalSlotJobId}', 2, '${cleanerBId}');`,
+        `select public.approve_job_application('${finalSlotJobId}', 2, '${cleanerBId}');`,
       ),
     ),
   ]);
   expectOneWinner(
     finalSlotResults,
     "Concurrent final-slot race",
-    /Job is not open for assignment/,
+    /Application is no longer awaiting review/,
   );
 
   if (
@@ -236,7 +248,7 @@ try {
 
   const membershipRaceResults = await Promise.allSettled([
     runSqlConcurrently(
-      authenticatedTransaction(
+      internalAssignmentTransaction(
         adminId,
         `select public.assign_job_slot('${membershipRaceJobId}', 1, '${membershipRaceCleanerId}');`,
       ),

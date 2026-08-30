@@ -62,7 +62,7 @@ jobs and cleaners.
 
 ```mermaid
 flowchart LR
-    A[Receive founder\ninvitation] --> B[Accept invitation:\naccount + company] --> C[Enter clients\nand sites] --> D[Enter recurring\nassignments] --> E[Invite the\nworkforce] --> F[Admit the cleaners\nwho ask to join] --> G[See the first\nroster week]
+    A[Receive founder\ninvitation] --> B[Accept invitation:\naccount + company] --> C[Enter clients\nand sites] --> D[Enter recurring\nassignments] --> E[Create\npostings] --> F[Hire, admit, or reject\nthe people who apply] --> G[See the first\nroster week]
 ```
 
 - **S1** — A founder invites the first company admin through a trusted repository command.
@@ -98,65 +98,98 @@ flowchart LR
   `email` and an optional `name`. Both paths produce one case-insensitive, deduplicated
   send list, not accounts or cleaner memberships. Each recipient still registers and joins
   through the invite link. The alpha accepts at most 500 unique recipients in one send.
-- **S8** — Create a Cleaner staff invitation, ready to post into the company's WhatsApp group.
-  The invitation carries the details of what the cleaner applies for — the work on offer
-  and its pay shape (hourly rate or fixed amount), described so the link is a real offer,
-  not a bare signup URL. A person who accepts the invitation asks to join the company's Cleaner staff;
-  the company admits that person before they become one of its cleaners (S36).
-  When the admin creates a link, they can optionally set an expiry time and a maximum
-  number of registrations — the count of people who may ask to join through that link,
-  whether the company admits them or not; the admin can revoke a link at any time. The flow is: generate
-  → send → watch who joins. There is no in-place regeneration — a revoked link is dead,
-  and the admin creates a new link when needed. For each link the admin sees its state
-  (active / expired / revoked / limit reached) and its registration count; each
-  registration attributes to the link that admitted it. No tap tracking in alpha — link
-  performance analytics are F12 (MVP). For an existing workforce, the admin can also
-  send the selected active link to the S30 cleaner send list. The browser shows the
-  exact recipient count and recipient-facing copy before the admin confirms the send.
-  The admin must confirm that the recipients are existing workers who expect the
-  invitation.
-- **S36** — Review the join requests the company's links produced. The Staff screen lists
-  each waiting request with the person's name, phone, suburb, the optional note they
-  wrote, the time of the request, and the invitation link that carried it. The Staff
-  navigation item shows a count of waiting requests; the CRM sends no other alert. The
-  admin admits or rejects each request. Admission creates the cleaner membership and
-  attributes it to the link. Rejection closes the request and records no reason, and that
-  person cannot ask the same company again from any link. The screen keeps rejected
-  requests, so the admin can admit a person rejected by mistake. Both owner and staff can
-  admit and reject: the company's cleaners are day-to-day operations, not employee
-  administration (decision #17). Each decision notifies the person by push (S20). The
-  admin can select several waiting requests and decide them together; no control admits
-  or rejects every waiting request at once. The list can be filtered by the invitation
-  link that carried each request, which separates the workers the admin invited by e-mail
-  from people who arrived through a forwarded link.
+- **S8** — Create postings, ready to share into the company's WhatsApp group. A posting
+  is a public page plus its link, and carries exactly one intent: an
+  **expression-of-interest posting** (entry to the Cleaner staff, free-typed
+  description), a **one-time posting** (bound to one job with an unfilled crew slot), or
+  a **regular posting** (bound to one recurring assignment) (#30). Creation starts
+  record-first from the job or series page ("post publicly", record pre-filled) or
+  intent-first from the Staff invitation workspace (record picker for the job-bound
+  kinds); both paths open the same composer (#34). The composer takes one public
+  description and the optional controls: an expiry time and an application cap — the
+  count of applications the posting may produce, whatever the company later decides
+  (#27, #35). The admin can revoke a posting at any time; nothing regenerates in place —
+  a new need means a new posting (#8). A job-bound posting renders its page from the
+  record — schedule, service type, suburb, pay — and closes by itself when its last slot
+  fills or the job's start time passes (#31, #34). The Staff workspace lists every
+  posting with its state (active, or closed with the reason: expired, revoked, cap
+  reached, filled, start passed) and its application count; each application attributes
+  to its posting. No tap tracking in alpha — link performance analytics stay at MVP
+  (F12, #30). For an existing workforce, the admin can also send a selected active
+  posting to the S30 cleaner send list. The browser shows the exact recipient count and
+  recipient-facing copy before the admin confirms the send. The admin must confirm that
+  the recipients are existing workers who expect the invitation.
+- **S36** — Review the people the company's postings brought in. The Staff review queue
+  is the master list of every waiting join request: one row per person, with that
+  person's applications badged by posting (#35). Each row shows the person's name,
+  phone, suburb, the optional note they wrote, the time of the request, and the posting
+  that carried it; the list filters by posting, which separates the workers the admin
+  invited by e-mail from people who arrived through a forwarded link. The Staff
+  navigation item shows a count of waiting requests; the CRM sends no other alert. Both
+  owner and staff decide: the company's cleaners are day-to-day operations, not employee
+  administration (decision #17). The admin can select several waiting requests and admit
+  or reject them together; no control decides every request at once (#29). Admission
+  creates the cleaner membership and attributes it to the posting. Rejection is
+  person-level: it closes the request, records no reason, withdraws the person's open
+  applications, and that person cannot ask the same company again from any posting
+  (#26, #35). The screen keeps rejected requests, so the admin can admit a person
+  rejected by mistake. Each decision notifies the person by push (S20).
+- **S37** — Fill a job from one applicant list. The job's applicant list (S22) shows
+  staff applicants from the board and posting candidates side by side; a candidate row
+  is marked as new to the staff and opens that person's join-request details (#33).
+  Picking a staff applicant assigns the slot as today (S22). Picking a candidate
+  **hires**: one transaction admits the person to the Cleaner staff and assigns the
+  slot — for a regular posting, the application is the standing consent for the series
+  (#32). When the last slot fills, the posting stops accepting applications; the
+  candidates not hired stay ordinary waiting join requests in the S36 queue (#33, #35).
 
 ### CL-1 · Join a company (Ana) — designed end-to-end
 
 ```mermaid
 flowchart LR
-    A[Tap the invite link] --> B[One-minute registration] --> C[Join request sent] --> D[PWA install prompt\n+ push opt-in] --> E[Wait for the company\nto admit] --> F[See open jobs\non the board]
+    A[Tap a posting link] --> B[See the application\ndetails] --> C[One-minute registration\n+ apply] --> D[PWA install prompt\n+ push opt-in] --> E[Wait: request and\napplication states] --> F[Hired: the job details\nAdmitted: the board]
 ```
 
-From the WhatsApp invite link to a sent join request in under two minutes, all inside
-`apps/cleaner`. Open jobs follow when the company admits the request. This surface is the
-seed of F12's magic-link registration (MVP).
+From a WhatsApp posting link, through the application details, to a sent application in
+under two minutes, all inside `apps/cleaner`. The job (on a hire) or the board (on
+admission) follows when the company decides. This surface delivers the F12 magic-link
+registration pattern in this cycle; F12's tap tracking and funnel analytics stay at MVP
+(#30).
 
-- **S9** — Register from the invite link with Google social login or email + password.
-  Name, phone, and suburb are required profile fields regardless of credential. The flow
-  detects an in-app browser (the link opens inside WhatsApp's webview, where Google
-  blocks OAuth) and steers OAuth users to the system browser; email + password is the
-  path that always works in the webview. A link that is expired, revoked, or at its
-  registration limit shows an "invite no longer active" state instead of the form.
-  Registration also offers one optional free-text note, which the person uses to say
-  where they saw the link or anything else the company should know. The note is part of
-  the join request and is not a profile field.
-- **S10** — Registration creates a join request, not a cleaner membership. The person
-  then waits for the company to admit them. A waiting screen names the company the person
-  asked to join and shows the state of the request. Before admission there is no board and
-  no vacancy data. The person sees three states: waiting, admitted, and rejected. A
-  rejected request shows that the company closed it, with no reason given. The state
-  belongs to one company, not to the account: a cleaner who is already admitted at one
-  company keeps that company's board while a request at a second company waits.
+- **S9** — Open a posting and apply. The posting's public page shows what the person
+  applies for before any registration: a job-bound posting renders the schedule, service
+  type, suburb, pay, and the admin's description from the record (#31); an
+  expression-of-interest posting shows the company's name and its free-typed
+  description. The full site address and access notes stay assignment-gated. Then the
+  person registers with Google social login or email + password; name, phone, and
+  suburb are required profile fields regardless of credential. The flow detects an
+  in-app browser (the link opens inside WhatsApp's webview, where Google blocks OAuth)
+  and steers OAuth users to the system browser; email + password is the path that
+  always works in the webview. Registration offers one optional free-text note — part
+  of the join request, not a profile field — and creates the join request, plus, on a
+  job-bound posting, the application (#35). Repeat visitors branch: a signed-in cleaner
+  who already belongs to this company's staff sees the job page and applies as a plain
+  board application; a person with a waiting join request at this company adds an
+  application under it without registering again — a repeat visit to an
+  expression-of-interest posting instead shows the request state, because there is no
+  job to apply for; a person this company rejected sees
+  the page but cannot apply (#26, #35). A closed posting — expired, revoked, at its
+  cap, filled, or past its start time — shows an "invite no longer active" state
+  instead of the form, and with one place left under the cap, exactly one of two racing
+  applications succeeds.
+- **S10** — Registration creates a join request, not a cleaner membership. The waiting
+  screen names the company, shows the join-request state — waiting, admitted, or
+  rejected — and lists the person's applications, each with its own state: applied,
+  hired, job filled, or posting closed (#35, #37). Application end states show at
+  sign-in and send no push; push stays reserved for the decisions about the person:
+  hired, admitted, rejected (#28, #32, #37). A hire lands on the job: the push
+  deep-links to the job details page, and the first sign-in after a hire opens that
+  job's details (the series details for a regular posting), never only the board (#32).
+  Admission without a hire opens the board (S12). Before either decision there is no
+  board and no vacancy data. A rejected request shows that the company closed it, with
+  no reason given. The state belongs to one company, not to the account: a cleaner who
+  is already admitted at one company keeps that company's board while a request at a
+  second company waits.
 - **S11** — PWA install prompt and push opt-in. Both are skippable: a cleaner who
   declines still reaches the board — "the PWA is an upgrade, not a gate" (PRODUCT.md
   §3.7).
@@ -187,7 +220,9 @@ The prototype's cleaner loop, re-housed at capability parity with visual fidelit
   instances — decision #2); a directed offer notifies its cleaner (S28); an accepted
   application notifies the assigned cleaner (PRODUCT.md CA-3); mark-paid notifies the
   cleaner (PRODUCT.md CL-4, "push on settlement"); an admitted or a rejected join request
-  notifies the person who asked (S36).
+  notifies the person who asked (S36); a hire notifies the hired person with a deep link
+  to the job details (S37, decision #32). Application end states — job filled, posting
+  closed — send no push (decision #37).
 - **S21** — Profile with joined companies.
 
 ### Parity port · `apps/crm` dispatch (serves CA-2…CA-5 and CL-4 at prototype parity)
@@ -329,7 +364,8 @@ Approved Stitch references:
 | Does any alpha company need daily-frequency recurring assignments? Weekly/fortnightly covers the known cohort. | Leonardo | Extend on evidence (feeds Appendix B q3 sizing) |
 | What does cleaner e-mail entry or CSV import produce, given cleaners must register themselves (credential + consent)? | Leonardo | Resolved 2026-08-18: both produce one send list. Direct entry accepts multiple addresses; CSV accepts `email` and optional `name`. Neither creates an account or cleaner membership. |
 | Facebook login for cleaners: enable when the cohort shows demand (decision log #9 defers it) | Leonardo | Open |
-| PRODUCT.md CL-7 (MVP, register from a group post) says the person "joins the company's cleaners with the job open, and applies". The admission gate makes that sequence impossible: without a membership there is no board and no application. The MVP share-link cycle must redesign the journey. | Leonardo | Open — CL-7 left unedited on 2026-08-25 so the cycle that owns it can grill it |
+| PRODUCT.md CL-7 (MVP, register from a group post) says the person "joins the company's cleaners with the job open, and applies". The admission gate makes that sequence impossible: without a membership there is no board and no application. The MVP share-link cycle must redesign the journey. | Leonardo | Resolved 2026-08-30: decisions #30–#37 pull the journey into this cycle — a candidate applies through a job-bound posting before any membership, and a hire admits and assigns in one act. PRODUCT.md CL-7, CA-7, and F12 must be restated to match; coordinate with the PRODUCT.md v0.6 rewrite on PR #62. |
+| The delivered M1 surface — one rotating invite code, `join_company_pool`, and the shipped Staff screen — must migrate to postings. What happens to a live shared link at cutover? | Leonardo | Resolved 2026-08-30: a live rotating-code link answers with the dead state ("invite no longer active") after cutover, and the admin creates fresh postings. No auto-migration into a posting (CLE-59). |
 | CA-1 order: S5 recurring assignments carry named cleaners, but nobody is a cleaner until the company admits them, and the backbone puts "Enter recurring assignments" before "Invite the workforce". The gate adds a review step between the two. Does the admin enter the workforce first, or create assignments without named cleaners and add the names after admission? Found by the validation walk on 2026-08-25. | Leonardo | Open |
 | Decision #28 gives the CRM a count on the Staff navigation item because the CRM had no notification surface. The `codex/cle-86-application-approval-flow` branch adds one — a header notification bell on a realtime subscription to `application_received`, with unread counts. If that branch merges, does the join request reuse the bell instead of a count? | Leonardo | Open |
 | The `staff-the-work` PRD states its delivered baseline as "cleaner invitations and join". The admission gate changes what that sentence describes, so the CA-3/CA-4/CL-2 cycle must restate it when this document merges. | Leonardo | Open |
@@ -353,9 +389,11 @@ Not in this cycle (cycle 2, same stage):
 
 Not in the alpha (MVP/P1 per PRODUCT.md §3.4):
 
-- Structured reviews, public share links, vetting, general messaging, AI, and WhatsApp
-  automation. The one-time S30 e-mail invitation is the only provider-backed alpha
-  message. It has no reminders, contact list, delivery tracking, or funnel analytics.
+- Structured reviews, vetting, general messaging, AI, and WhatsApp automation. The
+  one-time S30 e-mail invitation is the only provider-backed alpha message. It has no
+  reminders, contact list, delivery tracking, or funnel analytics. Job-bound public
+  postings were pulled forward from F12 by decision #30; F12's tap tracking and funnel
+  analytics stay at MVP.
 - Public company signup: a person's first CRM company remains founder-invited. S35 permits
   an existing authenticated CRM employee to create another approved company from inside
   the product; onboarding itself remains self-serve.
@@ -678,3 +716,131 @@ cost about the same as a decision on one person.
 - **Consequence:** the request list can be filtered by the invitation link that carried
   each request. This is what separates a workforce invited by e-mail from people who
   arrived through a forwarded link.
+
+### 30. A cleaner invitation carries one of three intents and shows an application page (2026-08-30)
+
+A company seeks candidates in three ways, and each cleaner invitation carries exactly one
+of them: an **expression of interest** (entry to the Cleaner staff, no specific work), a
+**one-time opportunity** (one job to fill), or a **regular opportunity** (a recurring
+assignment to fill). Every invitation link opens a public application page that shows the
+details of what the person applies for before registration — the Airtasker/Upwork
+pattern — never a bare signup URL.
+
+- **Roadmap note:** this pulls job-bound public links forward from F12 (recorded at MVP)
+  into this cycle, on founder direction in the 2026-08-30 session: expressed feature
+  intent overrides the recorded staging. F12's tap tracking and funnel analytics stay
+  out of this cycle.
+- **Consequence:** M7's "the link describes the work on offer" (S8) is superseded for
+  the two job-bound intents — their postings bind to work instead of describing it
+  (decision #31).
+
+### 31. Job-bound postings render from real records; the expression of interest is free-typed (2026-08-30)
+
+A one-time posting is created from a job with an unfilled crew slot; a regular posting is
+created from a recurring assignment. The application page renders the record's schedule,
+service type, suburb, and pay, plus one admin-written public description. Only the
+expression of interest carries free text alone, because no work record backs it.
+
+- **Considered option:** free-typed standalone postings for all three intents — rejected
+  because pay and schedule drift from the roster, hiring then needs a disconnected second
+  step to create and offer the real job, and distribution would bypass the vacancy model
+  (product law: all distribution consumes vacancies).
+- **Consequence:** the public page shows the suburb only; the full site address and
+  access notes stay assignment-gated.
+
+### 32. Hiring a job-bound applicant is one act, and the outcome lands on the job (2026-08-30)
+
+On a one-time or regular posting, the company's positive decision is a **hire**: one
+transaction admits the person to the Cleaner staff and assigns the slot. For a series,
+the application is the standing consent — the same rule board applications use — so no
+separate offer/acceptance round-trip follows. Applicants the company does not hire stay
+ordinary waiting join requests: the admin can still admit them (staff entry without the
+job) or reject them. When the backing slot fills first, the posting stops accepting
+applications and the waiting applicants remain plain join requests.
+
+- **Considered option:** two acts — admit to staff first, then offer the job — rejected
+  because the person who applied for a specific job would have to say yes twice, and
+  could land on a board where "their" job still sits open.
+- **UI rule (founder-stated):** the hire outcome is shown as the job, not as staff
+  entry. The hire push notification deep-links to the job details page, and the first
+  sign-in after a hire opens that job's details (the series details for a regular
+  posting) — never only the board or a generic "you are admitted" state.
+
+### 33. One applicant list per job; the Staff queue stays the master list (2026-08-30)
+
+The per-job applicant list is the hiring surface: it shows the job's staff applicants
+(from the board) and its posting candidates side by side, with candidates marked as new
+to the staff. Choosing a staff applicant assigns only; choosing a candidate runs the
+one-act hire (#32). The Staff review queue remains the master list of every waiting join
+request — expression-of-interest and job-bound alike, filterable by posting — because it
+is also where "admit without the job" and rejection recovery live. One person, one
+request, visible in both places, decided once.
+
+- **Considered option:** keep the two surfaces separate (board review for staff, Staff
+  queue for candidates) — rejected because the admin would fill one slot from two
+  screens and could hire an outsider while a better-known staff applicant waits unseen.
+- **Consequence:** one posting covers all unfilled slots of its job; each hire fills one
+  slot, and the posting stops accepting applications when the last slot fills. The
+  delivered board-application review extends to show posting candidates rather than
+  staying staff-only.
+
+### 34. Two creation entry points, one composer; job-bound postings close themselves (2026-08-30)
+
+The admin creates a posting from either of two entry points. Record-first: the job or
+recurring-assignment page offers "post publicly", with the record pre-filled and the
+intent implied. Intent-first: the Staff invitation workspace offers the three intents,
+with a record picker for the two job-bound kinds. Both paths open the same composer, and
+the Staff workspace stays the management home — the link list with state, registration
+count, and revoke. The M7 controls carry over unchanged: one public description,
+optional expiry, optional registration cap, revocable, never regenerated (#8).
+
+- **Lifecycle rule:** a job-bound posting also closes by itself when its last slot fills
+  (#33) or when the job's start time passes. A shared link never advertises work that no
+  longer exists; a closed posting shows the "no longer active" state (S9).
+
+### 35. Many applications under one join request (2026-08-30)
+
+One person can hold applications to several postings of the same company at the same
+time. The join request stays the single company↔person relationship state — waiting,
+admitted, or rejected — and each apply adds one application under it that points at its
+posting. Hiring one application admits and assigns (#32); the person's other
+applications survive as ordinary applications from a now-staff cleaner. Rejecting the
+person closes the relationship and withdraws all their open applications — rejection
+stays person-level and final (#26). An already-admitted staff cleaner who opens a
+posting link applies as a plain board application; no join request is involved.
+
+- **Refines #27:** a link's cap counts the applications the link produced, not only
+  first registrations. For an expression of interest, registration and application are
+  the same event, so the shipped meaning does not change.
+- **Consequence:** the Staff master queue shows one row per person with their
+  applications badged; the per-job applicant list (#33) renders applications. The join
+  request stays the anchor the chat-and-profile cycle's general thread expects.
+
+### 36. The vocabulary is posting, application, and hire (2026-08-30)
+
+The object the admin creates — the public page plus its link — is a **posting**,
+qualified by intent: an expression-of-interest posting, a one-time posting, a regular
+posting. It absorbs *cleaner invitation*: the invitation link is a posting's link. An
+**application** is a request for one specific job — a staff cleaner applies from the
+board, a candidate applies through a job-bound posting; both are the same kind of thing,
+and the application is itself the consent. **Hire** is the company's positive decision
+on a candidate's application (#32). Staff entry keeps *join request / admit / reject*
+(#24) unchanged.
+
+- **Considered options:** *position* — rejected because the glossary already uses it
+  for a crew slot; *opening* — an already-rejected vacancy synonym. The employment
+  shading of *hire* was raised and the founders accepted the word.
+
+### 37. An ended application shows its state and sends no push (2026-08-30)
+
+When a candidate's application ends without a hire — the job filled with someone else,
+or the posting closed — the waiting screen shows the end state on that application:
+*applied*, *hired*, *job filled*, or *posting closed*, under the person-level join
+request state (S10). No push is sent for these application end states. Push stays
+reserved for the three decisions about the person: hired (#32), admitted, and rejected
+(#28). A non-hired candidate remains a waiting join request, so *job filled* is not a
+rejection.
+
+- **Considered option:** push on *job filled* — deferred, not rejected: a push with no
+  next action is the notification most likely to make a candidate mute the app. If
+  partner feedback asks for it, it is a small later addition.

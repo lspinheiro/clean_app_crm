@@ -4,6 +4,21 @@ Canonical vocabulary for The Clean Crew. When code, docs, issues, or conversatio
 with this file, either this file wins or this file gets fixed — never both meanings at
 once.
 
+## Application
+
+A request for one specific [job](#job) or [recurring assignment](#recurring-assignment).
+A cleaner on the staff applies from the board; a candidate applies through a job-bound
+[posting](#posting). Both are the same kind of thing, and the application is itself the
+consent to the work — no separate acceptance follows. A candidate's applications live
+under that person's [join request](#join-request); one person can hold applications to
+several postings of the same company at the same time.
+
+- **Not:** a [join request](#join-request) (entry to the [Cleaner staff](#cleaner-staff),
+  not a request for one job), and not an [offer](#offer) (company-initiated, needs the
+  cleaner's acceptance).
+- **See:** [Posting](#posting) · [Hire](#hire) · [Join request](#join-request) ·
+  [Vacancy](#vacancy).
+
 ## Cleaner profile
 
 The structured description of one person as a cleaner: service types (one merged field —
@@ -21,8 +36,8 @@ profile.
 
 The set of cleaners attached to one [company](#company) — the people it can offer work to.
 **Cleaner staff** is the collection, **Staff** is the CRM navigation label, and the Staff screen
-is where a company admin manages it. A person registers through a **cleaner invitation** (an invite
-link), which creates a **join request**; the **cleaner membership** exists only after a
+is where a company admin manages it. A person registers through a [posting](#posting)'s
+link, which creates a **join request**; the **cleaner membership** exists only after a
 company admin admits that request. The company-side screen listing vacancies and who
 is covering them is the **cleaner board**; on the cleaner app the same surface is simply the
 *board*.
@@ -117,6 +132,18 @@ makes it read-only.
 - **See:** [Job thread](#job-thread) · [Join request](#join-request) ·
   [Membership](#membership).
 
+## Hire
+
+The company's positive decision on a candidate's [application](#application): one act
+that admits the person to the [Cleaner staff](#cleaner-staff) and assigns the applied-for
+work. The outcome is shown to the person as the job, not as staff entry. A candidate the
+company does not hire keeps an ordinary waiting [join request](#join-request).
+
+- **Not:** *admit* (staff entry without a job) and not an [offer](#offer) acceptance —
+  the application already carried the cleaner's consent.
+- **See:** [Application](#application) · [Join request](#join-request) ·
+  [Posting](#posting).
+
 ## Job
 
 A scheduled piece of work at a [site](#site): start time, duration, crew size ≥ 1, cleaner
@@ -147,14 +174,18 @@ each assigned cleaner has a separate job thread.
 
 ## Join request
 
-A person's request to become one of a [company](#company)'s cleaners. The request is
-created when the person registers from a cleaner invitation link. A
-[company admin](#company-admin) then **admits** or **rejects** it, and only admission
-creates the [cleaner membership](#membership). A request that waits gives the person no
-access to the company's work: no board, no vacancies, no site details.
+A person's request to become one of a [company](#company)'s cleaners — the single
+relationship state (waiting, admitted, or rejected) between one person and one company.
+The request is created when the person registers from a [posting](#posting)'s link. A
+[company admin](#company-admin) then **admits** or **rejects** it, and only admission —
+or a [hire](#hire) on one of the person's applications — creates the
+[cleaner membership](#membership). A request that waits gives the person no access to
+the company's work: no board, no vacancies, no site details. A candidate's
+[applications](#application) to the company's job-bound postings live under this one
+request.
 
-- **Not:** a board *application* (a cleaner who already holds a membership applies to a
-  [job](#job)), not an [offer](#offer) (work the company gives to one named cleaner), and
+- **Not:** an [application](#application) (a request for one specific job), not an
+  [offer](#offer) (work the company gives to one named cleaner), and
   not a recruitment *candidate* (PRODUCT.md F4/F6, MVP). Say *admit* and *reject* — never
   "approve/deny", and never "accept/decline", which belong to offers.
 - **See:** [Cleaner staff](#cleaner-staff) · [Membership](#membership) ·
@@ -199,6 +230,25 @@ founder-invited first admin holds the first owner membership.
 
 - **Not:** the platform operator (internal `admin` role), and not the [client](#client).
 - **See:** [Staff](#staff) · [Membership](#membership) · [Company](#company).
+
+## Posting
+
+The object a [company admin](#company-admin) creates to seek candidates: a public page
+plus its link. A posting carries exactly one intent — an **expression-of-interest
+posting** (entry to the [Cleaner staff](#cleaner-staff), free-typed description), a
+**one-time posting** (bound to one [job](#job) with an unfilled crew slot), or a
+**regular posting** (bound to one [recurring assignment](#recurring-assignment)).
+Job-bound postings render their page from the record — schedule, service type, suburb,
+pay — plus one admin-written description; they close by themselves when the work fills
+or its start time passes. A posting is revocable and never regenerated. The word absorbs
+*cleaner invitation*: the invitation link is a posting's link.
+
+- **Not:** the [vacancy](#vacancy) itself — a posting distributes a vacancy to people
+  outside the staff, while the board shows vacancies to the staff. Also not a
+  *position* (that word means one crew slot) and not an *opening* (rejected vacancy
+  synonym).
+- **See:** [Application](#application) · [Join request](#join-request) ·
+  [Vacancy](#vacancy) · [Hire](#hire).
 
 ## Recurring assignment
 

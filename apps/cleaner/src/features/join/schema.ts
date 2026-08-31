@@ -14,7 +14,8 @@ export type JoinValidationKey =
   | "validationPassword"
   | "validationPhone"
   | "validationPhoneDigits"
-  | "validationSuburb";
+  | "validationSuburb"
+  | "validationNote";
 
 const joinValidationKeys: readonly JoinValidationKey[] = [
   "validationEmail",
@@ -23,6 +24,7 @@ const joinValidationKeys: readonly JoinValidationKey[] = [
   "validationPhone",
   "validationPhoneDigits",
   "validationSuburb",
+  "validationNote",
 ];
 
 export function isJoinValidationKey(value: string | undefined): value is JoinValidationKey {
@@ -51,10 +53,14 @@ const validationKeys: ValidationMessages = {
   validationPhone: "validationPhone",
   validationPhoneDigits: "validationPhoneDigits",
   validationSuburb: "validationSuburb",
+  validationNote: "validationNote",
 };
 
 export const cleanerDetailsKeySchema = cleanerDetailsSchemaWith(validationKeys);
-export const registrationKeySchema = cleanerDetailsKeySchema.extend({
+const noteSchema = z.string().trim().max(1000, validationKeys.validationNote).default("");
+
+export const applicationKeySchema = cleanerDetailsKeySchema.extend({ note: noteSchema });
+export const registrationKeySchema = applicationKeySchema.extend({
   email: z.email(validationKeys.validationEmail),
   password: z.string().min(8, validationKeys.validationPassword),
 });

@@ -1,26 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { formatCleanerPay, formatJobDate, formatJobDuration, formatJobTime } from "@/features/board/format";
+import { normaliseInviteCode, joinFailureKey, type JoinFailureKey } from "@/features/join/invite";
 import {
-  cleanerCountCopy,
-  inviteProblem,
-  isInviteState,
-  joinFailureKey,
-  normaliseInviteCode,
-  type JoinFailureKey,
-  type InvitePreview,
-} from "@/features/join/invite";
+  parsePostingPreview,
+  parseVisitorRelationship,
+  type ActivePosting,
+  type PostingPreview,
+  type VisitorRelationship,
+} from "@/features/join/posting";
 import {
-  cleanerDetailsKeySchema,
+  applicationKeySchema,
   isJoinValidationKey,
   registrationKeySchema,
   type JoinValidationKey,
 } from "@/features/join/schema";
+import { formatSeriesTime, formatSeriesWeekday } from "@/features/offers/format";
 import { useHydrated } from "@/hooks/use-hydrated";
 import {
   isAppLocale,
@@ -30,16 +31,19 @@ import {
   type AppLocale,
 } from "@/i18n/config";
 import { isMissingSessionError, isStaleSessionError } from "@/lib/auth/session-error";
+import { isInAppBrowser } from "@/lib/auth/in-app-browser";
 import { markPushPromptAfterJoin } from "@/lib/push";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { getServiceLabel } from "@/i18n/service-label";
 
-const unknownInvite: InvitePreview = { state: "unknown", companyName: null, cleanerCount: 0 };
+const unknownPosting: PostingPreview = { closingReason: "unknown", state: "dead" };
 
 type Screen =
   | { status: "loading" }
   | { status: "no-code" }
-  | { status: "problem"; invite: InvitePreview }
-  | { status: "ready"; invite: InvitePreview; code: string };
+  | { status: "unknown" }
+  | { status: "inactive" }
+  | { status: "ready"; posting: ActivePosting; code: string };
 
 type AccountState =
   | { status: "loading" }
@@ -70,47 +74,45 @@ type JoinErrorKey =
   | "checkDetails"
   | "confirmEmail"
   | "createAccountError"
+  | "googleSignInError"
   | "signOutError";
 
 export function JoinScreen() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const locale = useLocale() as AppLocale;
   const t = useTranslations("Join");
   const commonT = useTranslations("Common");
   const code = normaliseInviteCode(searchParams.get("code") ?? "");
 
-  const [invite, setInvite] = useState<InvitePreview | null>(null);
+  const [posting, setPosting] = useState<PostingPreview | null>(null);
   const [account, setAccount] = useState<AccountState>({ status: "loading" });
   const [accountAttempt, setAccountAttempt] = useState(0);
+  const [relationship, setRelationship] = useState<VisitorRelationship | "error" | "loading">("loading");
+  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<JoinErrorKey | null>(null);
   const [signUpAccountExists, setSignUpAccountExists] = useState(false);
   const [pending, setPending] = useState(false);
   const hydrated = useHydrated();
+  const inAppBrowser = hydrated && isInAppBrowser(window.navigator.userAgent);
   const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!code) return;
     let active = true;
 
-    async function loadInvite(): Promise<InvitePreview> {
+    async function loadPosting(): Promise<PostingPreview> {
       const { data, error: previewError } = await getSupabaseClient().rpc(
-        "cleaner_invite_preview",
-        { invite_code: code },
+        "posting_preview",
+        { posting_code: code },
       );
-      if (previewError) return unknownInvite;
+      if (previewError) return unknownPosting;
 
       const row = data?.[0];
-      if (!row || !isInviteState(row.state)) return unknownInvite;
-      return {
-        state: row.state,
-        companyName: row.company_name ?? null,
-        cleanerCount: row.pool_size,
-      };
+      return row ? parsePostingPreview(row) : unknownPosting;
     }
 
-    void loadInvite().then((result) => {
-      if (active) setInvite(result);
+    void loadPosting().then((result) => {
+      if (active) setPosting(result);
     });
 
     return () => {
@@ -158,27 +160,78 @@ export function JoinScreen() {
   }, [accountAttempt, code]);
 
   useEffect(() => {
+    if (account.status !== "authenticated" || posting?.state !== "active") return;
+    let active = true;
+    const companyName = posting.companyName;
+
+    async function loadRelationship() {
+      const supabase = getSupabaseClient();
+      const [requests, memberships] = await Promise.all([
+        supabase
+          .from("cleaner_join_request_state")
+          .select("company_id, company_name, join_request_state")
+          .eq("company_name", companyName),
+        supabase
+          .from("cleaner_pool_memberships")
+          .select("company_id, company_name, status")
+          .eq("company_name", companyName),
+      ]);
+      if (requests.error || memberships.error) return "error" as const;
+      return parseVisitorRelationship(
+        requests.data,
+        memberships.data,
+        companyName,
+      ) ?? "error";
+    }
+
+    void loadRelationship().then((result) => {
+      if (active) setRelationship(result);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [account, posting]);
+
+  useEffect(() => {
     if (error) errorRef.current?.focus();
   }, [error]);
 
   const screen: Screen = !code
     ? { status: "no-code" }
-    : invite === null
+    : posting === null
       ? { status: "loading" }
-      : invite.state === "active"
-        ? { status: "ready", invite, code }
-        : { status: "problem", invite };
+      : posting.state === "active"
+        ? { status: "ready", posting, code }
+        : posting.closingReason === "unknown"
+          ? { status: "unknown" }
+          : { status: "inactive" };
 
-  async function completeJoin(details: CleanerDetails, savedLocale?: string | null) {
+  async function completeApplication(
+    details: CleanerDetails,
+    note: string,
+    savedLocale?: string | null,
+  ) {
     const supabase = getSupabaseClient();
-    const { error: joinError } = await supabase.rpc("join_company_pool", {
-      invite_code: code,
+    const { error: applicationError } = await supabase.rpc("apply_to_posting", {
+      posting_code: code,
       full_name: details.fullName,
       phone: details.phone,
       suburb: details.suburb,
+      ...(note ? { note } : {}),
     });
-    if (joinError) {
-      setError(joinFailureKey(joinError.message));
+    if (applicationError) {
+      if (applicationError.message === "Posting is no longer active") {
+        setPosting({ closingReason: "closed_during_application", state: "dead" });
+      } else if (applicationError.message === "This company rejected your join request") {
+        setRelationship("rejected");
+      } else if (applicationError.message === "This company removed you from its cleaner staff") {
+        setRelationship("removed");
+      } else if (applicationError.message === "Person can apply only once per posting") {
+        setSubmitted(true);
+      } else {
+        setError(joinFailureKey(applicationError.message));
+      }
       setPending(false);
       return;
     }
@@ -190,7 +243,9 @@ export function JoinScreen() {
     // cleaner on an invitation she has successfully accepted.
     await supabase.rpc("set_preferred_locale", { target_locale: targetLocale });
     persistLocaleCookie(targetLocale);
-    router.replace(localePath(targetLocale, "/board"));
+    if (relationship !== "staff") setRelationship("waiting");
+    setSubmitted(true);
+    setPending(false);
   }
 
   async function registerAndJoin(formData: FormData) {
@@ -204,6 +259,7 @@ export function JoinScreen() {
       password: String(formData.get("password") ?? ""),
       phone: String(formData.get("phone") ?? ""),
       suburb: String(formData.get("suburb") ?? ""),
+      note: String(formData.get("note") ?? ""),
     });
     if (!parsed.success) {
       const key = parsed.error.issues[0]?.message;
@@ -236,17 +292,34 @@ export function JoinScreen() {
       return;
     }
 
-    await completeJoin(parsed.data, locale);
+    await completeApplication(parsed.data, parsed.data.note, locale);
+  }
+
+  async function continueWithGoogle() {
+    setPending(true);
+    setError(null);
+    const next = `${localePath(locale, "/join")}?code=${encodeURIComponent(code)}`;
+    const callback = new URL(localePath(locale, "/callback"), window.location.origin);
+    callback.searchParams.set("next", next);
+    const { error: oauthError } = await getSupabaseClient().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: callback.toString() },
+    });
+    if (oauthError) {
+      setError("googleSignInError");
+      setPending(false);
+    }
   }
 
   async function joinExistingAccount(formData: FormData) {
     setPending(true);
     setError(null);
 
-    const parsed = cleanerDetailsKeySchema.safeParse({
+    const parsed = applicationKeySchema.safeParse({
       fullName: String(formData.get("fullName") ?? ""),
       phone: String(formData.get("phone") ?? ""),
       suburb: String(formData.get("suburb") ?? ""),
+      note: String(formData.get("note") ?? ""),
     });
     if (!parsed.success) {
       const key = parsed.error.issues[0]?.message;
@@ -255,7 +328,7 @@ export function JoinScreen() {
       return;
     }
 
-    await completeJoin(parsed.data, account.status === "authenticated"
+    await completeApplication(parsed.data, parsed.data.note, account.status === "authenticated"
       ? account.profile.preferred_locale
       : null);
   }
@@ -271,6 +344,8 @@ export function JoinScreen() {
     }
 
     setAccount({ status: "anonymous" });
+    setRelationship("loading");
+    setSubmitted(false);
     setPending(false);
   }
 
@@ -289,17 +364,7 @@ export function JoinScreen() {
     );
   }
 
-  if (screen.status === "no-code" || screen.status === "problem") {
-    const problem =
-      screen.status === "no-code"
-        ? null
-        : inviteProblem(screen.invite);
-    const message = screen.status === "no-code"
-      ? t("missingCode")
-      : problem?.values
-        ? t(problem.key, problem.values)
-        : t(problem?.key ?? "inviteUnknown");
-
+  if (screen.status === "no-code" || screen.status === "unknown" || screen.status === "inactive") {
     return (
       <>
         <div className="auth-toolbar">
@@ -309,9 +374,17 @@ export function JoinScreen() {
             disabled={pending || !hydrated}
           />
         </div>
-        <h1 className="screen-title">{t("cannotOpenTitle")}</h1>
+        <h1 className="screen-title">
+          {screen.status === "inactive" ? t("inactiveTitle") : t("cannotOpenTitle")}
+        </h1>
         <div className="invite-problem" role="alert">
-          <p>{message}</p>
+          <p>
+            {screen.status === "no-code"
+              ? t("missingCode")
+              : screen.status === "inactive"
+                ? t("inactiveBody")
+                : t("inviteUnknown")}
+          </p>
         </div>
       </>
     );
@@ -326,19 +399,7 @@ export function JoinScreen() {
           disabled={pending || !hydrated}
         />
       </div>
-      <div>
-        <h1 className="screen-title">{t("title")}</h1>
-        <p className="screen-lead">{t("lead")}</p>
-      </div>
-      <div className="invite-card">
-        <span className="invite-card__company">{screen.invite.companyName}</span>
-        <span className="invite-card__cleaners">
-          {(() => {
-            const count = cleanerCountCopy(screen.invite.cleanerCount);
-            return count.values ? t(count.key, count.values) : t(count.key);
-          })()}
-        </span>
-      </div>
+      <PostingCard posting={screen.posting} />
       {account.status === "loading" ? (
         <p className="screen-lead" role="status">
           {t("checkingAccount")}
@@ -361,7 +422,7 @@ export function JoinScreen() {
         </div>
       ) : null}
 
-      {account.status === "anonymous" ? (
+      {account.status === "anonymous" && !submitted ? (
         <>
           <div className="auth-choice">
             <p>{t("alreadyHaveAccount")}</p>
@@ -372,8 +433,23 @@ export function JoinScreen() {
               {t("signInToJoin")}
             </Link>
           </div>
+          {inAppBrowser ? (
+            <div className="webview-guidance" role="note">
+              <strong>{t("googleBlockedTitle")}</strong>
+              <p>{t("googleBlockedBody")}</p>
+            </div>
+          ) : (
+            <button
+              className="button button--secondary"
+              disabled={pending || !hydrated}
+              onClick={() => void continueWithGoogle()}
+              type="button"
+            >
+              {t("continueWithGoogle")}
+            </button>
+          )}
           <div className="auth-divider" role="separator">
-            <span>{t("createAccountDivider")}</span>
+            <span>{t("emailAccountDivider")}</span>
           </div>
           <form
             className="form-stack"
@@ -399,6 +475,7 @@ export function JoinScreen() {
               <p className="field-hint">{t("passwordHint")}</p>
             </div>
             <CleanerDetailsFields />
+            <NoteField />
             {error ? (
               <div className="form-error" ref={errorRef} role="alert" tabIndex={-1}>
                 <p>{t(error)}</p>
@@ -413,7 +490,11 @@ export function JoinScreen() {
               </div>
             ) : null}
             <button className="button" disabled={pending || !hydrated} type="submit">
-              {pending ? t("joining") : t("joinStaff")}
+              {pending
+                ? t("sending")
+                : screen.posting.intent === "expression_of_interest"
+                  ? t("sendRequest")
+                  : t("applyForJob")}
             </button>
             <p className="consent-caption">
               {t("newAccountConsent")}
@@ -422,7 +503,42 @@ export function JoinScreen() {
         </>
       ) : null}
 
-      {account.status === "authenticated" ? (
+      {account.status === "authenticated" && relationship === "loading" ? (
+        <p className="screen-lead" role="status">{t("checkingRequest")}</p>
+      ) : null}
+
+      {account.status === "authenticated" && relationship === "error" ? (
+        <div className="invite-problem" role="alert">
+          <p>{t("requestCheckError")}</p>
+          <button
+            className="button button--secondary"
+            onClick={() => setAccountAttempt((attempt) => attempt + 1)}
+            type="button"
+          >
+            {commonT("retry")}
+          </button>
+        </div>
+      ) : null}
+
+      {account.status === "authenticated" && relationship !== "loading" && relationship !== "error" && !submitted ? (
+        <RelationshipNotice relationship={relationship} />
+      ) : null}
+
+      {submitted ? (
+        <div className="request-state request-state--success" role="status">
+          <h2>{screen.posting.intent === "expression_of_interest" ? t("requestSentTitle") : t("applicationSentTitle")}</h2>
+          <p>{screen.posting.intent === "expression_of_interest" ? t("requestSentBody") : t("applicationSentBody")}</p>
+        </div>
+      ) : null}
+
+      {account.status === "authenticated"
+        && relationship !== "loading"
+        && relationship !== "error"
+        && relationship !== "rejected"
+        && relationship !== "removed"
+        && !submitted
+        && !(screen.posting.intent === "expression_of_interest" && relationship !== "none")
+        && !(screen.posting.intent === "regular" && relationship === "staff") ? (
         <form
           className="form-stack"
           noValidate
@@ -450,13 +566,18 @@ export function JoinScreen() {
             phone={account.profile.phone ?? ""}
             suburb={account.profile.suburb ?? ""}
           />
+          {relationship === "none" ? <NoteField /> : null}
           {error ? (
             <div className="form-error" ref={errorRef} role="alert" tabIndex={-1}>
               <p>{t(error)}</p>
             </div>
           ) : null}
           <button className="button" disabled={pending || !hydrated} type="submit">
-            {pending ? t("joining") : t("joinStaff")}
+            {pending
+              ? t("sending")
+              : screen.posting.intent === "expression_of_interest"
+                ? t("sendRequest")
+                : t("applyForJob")}
           </button>
           <p className="consent-caption">
             {t("existingAccountConsent")}
@@ -464,6 +585,124 @@ export function JoinScreen() {
         </form>
       ) : null}
     </>
+  );
+}
+
+function RelationshipNotice({ relationship }: Readonly<{ relationship: VisitorRelationship }>) {
+  const t = useTranslations("Join");
+  if (relationship === "none") return null;
+
+  let body: string;
+  let title: string;
+  switch (relationship) {
+    case "waiting":
+      title = t("requestWaitingTitle");
+      body = t("requestWaitingBody");
+      break;
+    case "admitted":
+    case "staff":
+      title = t("alreadyStaffTitle");
+      body = t("alreadyStaffBody");
+      break;
+    case "rejected":
+      title = t("requestClosedTitle");
+      body = t("requestClosedBody");
+      break;
+    case "removed":
+      title = t("accessClosedTitle");
+      body = t("accessClosedBody");
+      break;
+  }
+
+  return (
+    <div className="request-state">
+      <h2>{title}</h2>
+      <p>{body}</p>
+    </div>
+  );
+}
+
+function NoteField() {
+  const t = useTranslations("Join");
+  return (
+    <div className="field">
+      <label htmlFor="note">{t("note")}</label>
+      <textarea id="note" maxLength={1000} name="note" rows={4} />
+      <p className="field-hint">{t("noteHint")}</p>
+    </div>
+  );
+}
+
+function PostingCard({ posting }: Readonly<{ posting: ActivePosting }>) {
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("Join");
+  const servicesT = useTranslations("Services");
+
+  let title: string;
+  let schedule: string | null = null;
+  let service: string | null = null;
+  let pay: string | null = null;
+
+  switch (posting.intent) {
+    case "expression_of_interest":
+      title = t("expressionTitle", { company: posting.companyName });
+      break;
+    case "one_time":
+      title = t("oneTimeTitle");
+      schedule = t("oneTimeSchedule", {
+        date: formatJobDate(posting.scheduledStart, locale),
+        duration: formatJobDuration(posting.durationMinutes, locale),
+        time: formatJobTime(posting.scheduledStart, locale),
+      });
+      service = getServiceLabel(
+        { name: posting.serviceName, slug: posting.serviceSlug },
+        servicesT,
+      );
+      pay = formatCleanerPay(posting.cleanerPayCents, locale);
+      break;
+    case "regular":
+      title = t("regularTitle");
+      schedule = t(posting.frequency === "weekly" ? "weeklySchedule" : "fortnightlySchedule", {
+        duration: formatJobDuration(posting.durationMinutes, locale),
+        time: formatSeriesTime(posting.localStartTime, locale),
+        weekday: formatSeriesWeekday(posting.weekday, locale),
+      });
+      service = getServiceLabel(
+        { name: posting.serviceName, slug: posting.serviceSlug },
+        servicesT,
+      );
+      pay = formatCleanerPay(posting.cleanerPayCents, locale);
+      break;
+  }
+
+  return (
+    <article className="posting-card">
+      <div className="posting-card__heading">
+        <p className="posting-card__company">{posting.companyName}</p>
+        <h1 className="screen-title">{title}</h1>
+      </div>
+      {service && schedule && pay && posting.intent !== "expression_of_interest" ? (
+        <dl className="posting-card__facts">
+          <div>
+            <dt>{t("serviceLabel")}</dt>
+            <dd>{service}</dd>
+          </div>
+          <div>
+            <dt>{t("scheduleLabel")}</dt>
+            <dd>{schedule}</dd>
+          </div>
+          <div>
+            <dt>{t("suburbLabel")}</dt>
+            <dd>{posting.suburb}</dd>
+          </div>
+          <div>
+            <dt>{t("payLabel")}</dt>
+            <dd>{pay}</dd>
+          </div>
+        </dl>
+      ) : null}
+      <p className="posting-card__description">{posting.publicDescription}</p>
+    </article>
   );
 }
 

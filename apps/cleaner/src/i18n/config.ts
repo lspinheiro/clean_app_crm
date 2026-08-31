@@ -9,6 +9,7 @@ export const localeCookieMaxAgeSeconds = 60 * 60 * 24 * 365;
 export type CleanerPath =
   | "/"
   | "/login"
+  | "/callback"
   | "/join"
   | "/board"
   | "/offers"

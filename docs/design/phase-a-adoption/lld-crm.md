@@ -117,10 +117,10 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   cap are optional. Full address, access notes, client phone and charge, and internal notes
   are absent from the query and component contract. A new need creates a new posting;
   no rotate, regenerate, or replace control remains. Link URL format is unchanged
-  (`<CLEANER_APP_URL>/join?code=…`). Until CLE-61 ships, the cleaner `/join` route still
-  resolves that code through the retired `cleaner_invite_preview` contract instead of
-  `posting_preview`, so posting links will appear unavailable there. The restored bulk
-  e-mail send must not be pointed at real cleaners until CLE-61 completes that hand-off.
+  (`<CLEANER_APP_URL>/join?code=…`). The cleaner `/join` route resolves that code through
+  `posting_preview`, renders the public posting before registration, and calls
+  `apply_to_posting` only after sign-up or sign-in. The copy-link, WhatsApp share, and
+  bulk e-mail paths therefore all land on the same privacy-bounded application page.
 - **Cleaner e-mail send list (`(crm)/cleaners`, `actions/cleaner-email.ts`,
   `features/cleaners/email-csv.ts`, `lib/resend.ts`)** — the admin can enter one or more
   e-mail addresses directly, adding or removing form rows, and can optionally upload a

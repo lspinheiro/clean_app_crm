@@ -112,6 +112,7 @@
     "checkDetails": "Confira seus dados.",
     "incorrectCredentials": "E-mail ou senha incorretos.",
     "cleanerOnly": "Este aplicativo é para profissionais de limpeza. Administradores da empresa usam o CRM.",
+    "requestWaiting": "Seu pedido para entrar na equipe da {company} está aguardando a decisão da empresa. Avisaremos quando houver uma decisão.",
     "oauthCompleting": "Concluindo a entrada com o Google…",
     "oauthCallbackError": "Não foi possível concluir a entrada com o Google. Volte à publicação e tente novamente.",
     "oauthRetry": "Tentar novamente"

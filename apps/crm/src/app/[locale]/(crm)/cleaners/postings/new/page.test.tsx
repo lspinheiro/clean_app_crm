@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -37,6 +37,16 @@ const prefillCases: Array<{
     expectedIntent: "regular",
     expectedTargetId: recurringAssignmentId,
     searchParams: { intent: "regular", recurringAssignmentId },
+  },
+];
+const unavailablePrefillCases: Array<Record<string, string>> = [
+  {
+    intent: "one_time",
+    jobId: "22000000-0000-4000-8000-000000000599",
+  },
+  {
+    intent: "regular",
+    recurringAssignmentId: "10000000-0000-4000-8000-000000000799",
   },
 ];
 
@@ -125,8 +135,14 @@ async function renderPage(searchParams: Record<string, string> = {}) {
 }
 
 describe("CLE-60 posting composer route", () => {
-  beforeEach(() => vi.clearAllMocks());
-  afterEach(cleanup);
+  beforeEach(() => {
+    vi.clearAllMocks();
+    delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
+  });
+  afterEach(() => {
+    cleanup();
+    delete (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__;
+  });
 
   it("loads only the public job and recurring-assignment preview projections", async () => {
     const harness = await renderPage();
@@ -160,15 +176,31 @@ describe("CLE-60 posting composer route", () => {
     );
   });
 
-  it("does not prefill an unknown or foreign-company record", async () => {
+  it.each(unavailablePrefillCases)(
+    "explains when the supplied work record is not eligible",
+    async (searchParams) => {
+      await renderPage(searchParams);
+
+      expect(mocks.postingComposer).toHaveBeenCalledWith(
+        expect.objectContaining({ initialIntent: null, initialTargetId: null }),
+        undefined,
+      );
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        /is not currently postable, so it cannot be shared publicly/i,
+      );
+    },
+  );
+
+  it("translates the ineligible-record notice into Brazilian Portuguese", async () => {
+    (globalThis as { __CRM_TEST_LOCALE__?: string }).__CRM_TEST_LOCALE__ = "pt-BR";
+
     await renderPage({
       intent: "one_time",
       jobId: "22000000-0000-4000-8000-000000000599",
     });
 
-    expect(mocks.postingComposer).toHaveBeenCalledWith(
-      expect.objectContaining({ initialIntent: null, initialTargetId: null }),
-      undefined,
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Este serviço não pode receber um anúncio no momento e, por isso, não pode ser compartilhado publicamente.",
     );
   });
 });

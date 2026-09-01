@@ -112,6 +112,7 @@
     "checkDetails": "Check your details.",
     "incorrectCredentials": "Email or password is incorrect.",
     "cleanerOnly": "This app is for cleaners. Company admins use the CRM.",
+    "requestWaiting": "Your request to join {company} is waiting for the company's decision. We'll notify you when they decide.",
     "oauthCompleting": "Finishing Google sign-in…",
     "oauthCallbackError": "We could not finish Google sign-in. Return to the posting and try again.",
     "oauthRetry": "Try again"

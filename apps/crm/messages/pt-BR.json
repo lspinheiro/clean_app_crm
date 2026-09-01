@@ -724,6 +724,7 @@
     "eyebrow": "Divulgação pública",
     "composerTitle": "Criar um anúncio",
     "composerDescription": "Escolha o que você procura e confira os dados públicos exatos antes de compartilhar.",
+    "targetNotPostable": "{target, select, job {Este serviço não pode receber um anúncio no momento e, por isso, não pode ser compartilhado publicamente.} series {Esta série não pode receber um anúncio no momento e, por isso, não pode ser compartilhada publicamente.} other {Este cadastro não pode receber um anúncio no momento e, por isso, não pode ser compartilhado publicamente.}}",
     "stepIntent": "Etapa 1",
     "intentTitle": "Escolha a finalidade do anúncio",
     "intentDescription": "Cada anúncio tem uma finalidade. Uma nova necessidade sempre recebe um novo anúncio.",

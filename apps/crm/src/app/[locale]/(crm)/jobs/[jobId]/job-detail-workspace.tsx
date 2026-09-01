@@ -397,7 +397,7 @@ export function JobDetailWorkspace({ job }: { job: JobDetail }) {
           </p>
         </div>
         <div className="job-detail-header__actions">
-        {canAssign && openSlots.length > 0 ? (
+        {job.status === "posted" && openSlots.length > 0 ? (
           <Link
             className="button button--secondary"
             href={`/cleaners/postings/new?intent=one_time&jobId=${job.id}`}

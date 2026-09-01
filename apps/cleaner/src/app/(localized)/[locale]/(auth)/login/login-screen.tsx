@@ -29,8 +29,10 @@ export function LoginScreen() {
     | "incorrectCredentials"
     | "invalidEmail"
     | "missingPassword"
+    | "requestWaiting"
     | null
   >(null);
+  const [waitingCompanyName, setWaitingCompanyName] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const hydrated = useHydrated();
 
@@ -40,6 +42,7 @@ export function LoginScreen() {
   async function signIn(formData: FormData) {
     setPending(true);
     setError(null);
+    setWaitingCompanyName(null);
 
     const parsed = z
       .object({
@@ -86,12 +89,36 @@ export function LoginScreen() {
         .limit(1)
         .maybeSingle();
 
-      if (
-        membershipError ||
-        evaluateCleanerAccess({ userId: data.user.id, profile, membership }).kind === "denied"
-      ) {
+      if (membershipError) {
         await supabase.auth.signOut();
         setError("cleanerOnly");
+        setPending(false);
+        return;
+      }
+
+      const access = evaluateCleanerAccess({ userId: data.user.id, profile, membership });
+      if (access.kind === "denied") {
+        let waitingCompany: string | null = null;
+        if (access.reason === "missing_membership") {
+          const { data: request, error: requestError } = await supabase
+            .from("cleaner_join_request_state")
+            .select("company_name")
+            .eq("join_request_state", "waiting")
+            .order("requested_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (!requestError && request?.company_name) {
+            waitingCompany = request.company_name;
+          }
+        }
+
+        await supabase.auth.signOut();
+        if (waitingCompany) {
+          setWaitingCompanyName(waitingCompany);
+          setError("requestWaiting");
+        } else {
+          setError("cleanerOnly");
+        }
         setPending(false);
         return;
       }
@@ -156,7 +183,11 @@ export function LoginScreen() {
         </div>
         {error ? (
           <p className="form-error" role="alert">
-            {t(error)}
+            {error === "requestWaiting"
+              ? waitingCompanyName
+                ? t("requestWaiting", { company: waitingCompanyName })
+                : t("cleanerOnly")
+              : t(error)}
           </p>
         ) : null}
         <button className="button" disabled={pending || !hydrated} type="submit">

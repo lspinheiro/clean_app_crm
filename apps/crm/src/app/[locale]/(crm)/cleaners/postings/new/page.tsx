@@ -74,11 +74,14 @@ export default async function PostingComposerPage({ searchParams }: PostingCompo
 
   let initialIntent: PostingIntent | null = null;
   let initialTargetId: string | null = null;
+  let unavailableTarget: "job" | "series" | null = null;
   if (parsedQuery.success && parsedQuery.data.intent === "one_time") {
     const selected = jobs.find((job) => job.id === parsedQuery.data.jobId);
     if (selected) {
       initialIntent = "one_time";
       initialTargetId = selected.id;
+    } else if (parsedQuery.data.jobId) {
+      unavailableTarget = "job";
     }
   } else if (parsedQuery.success && parsedQuery.data.intent === "regular") {
     const selected = recurringAssignments.find(
@@ -87,6 +90,8 @@ export default async function PostingComposerPage({ searchParams }: PostingCompo
     if (selected) {
       initialIntent = "regular";
       initialTargetId = selected.id;
+    } else if (parsedQuery.data.recurringAssignmentId) {
+      unavailableTarget = "series";
     }
   }
 
@@ -101,6 +106,11 @@ export default async function PostingComposerPage({ searchParams }: PostingCompo
         <h1 className="page-heading">{t("composerTitle")}</h1>
         <p className="page-description">{t("composerDescription")}</p>
       </header>
+      {unavailableTarget ? (
+        <p className="form-error" role="alert">
+          {t("targetNotPostable", { target: unavailableTarget })}
+        </p>
+      ) : null}
       <PostingComposer
         initialIntent={initialIntent}
         initialTargetId={initialTargetId}

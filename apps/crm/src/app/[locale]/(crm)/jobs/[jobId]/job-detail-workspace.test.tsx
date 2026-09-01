@@ -220,6 +220,12 @@ describe("CLE-22 job detail workspace", () => {
     ]);
   });
 
+  it("does not offer public posting for a draft job with an open slot", () => {
+    render(<JobDetailWorkspace job={{ ...job, status: "draft" }} />);
+
+    expect(screen.queryByRole("link", { name: "Post publicly" })).not.toBeInTheDocument();
+  });
+
   it("leads with an awaiting-review queue while keeping crew progress in context", () => {
     render(<JobDetailWorkspace job={job} />);
 

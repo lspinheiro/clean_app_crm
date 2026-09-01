@@ -724,6 +724,7 @@
     "eyebrow": "Public outreach",
     "composerTitle": "Create a posting",
     "composerDescription": "Choose what you are seeking, then check the exact public details before sharing.",
+    "targetNotPostable": "{target, select, job {This job is not currently postable, so it cannot be shared publicly.} series {This series is not currently postable, so it cannot be shared publicly.} other {This work record is not currently postable, so it cannot be shared publicly.}}",
     "stepIntent": "Step 1",
     "intentTitle": "Choose the posting intent",
     "intentDescription": "Every posting has one purpose. A new need always gets a new posting.",

@@ -3,8 +3,9 @@ import { getTranslations } from "next-intl/server";
 
 import { CleanersWorkspace } from "./cleaners-workspace";
 
-import { isInviteActive, normaliseCleanerAppUrl } from "@/features/cleaners/invite";
+import { normaliseCleanerAppUrl } from "@/features/cleaners/invite";
 import type { CleanerMember } from "@/features/cleaners/types";
+import { parsePostingRows } from "@/features/postings/model";
 import { requireCompanyAdmin } from "@/lib/auth/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,15 +25,14 @@ export default async function CleanersPage() {
 
   const { company, supabase } = await requireCompanyAdmin();
   const [
-    { data: activeInvite, error: inviteError },
+    { data: postingRows, error: postingError },
     { data: membershipRows, error: membershipError },
   ] = await Promise.all([
     supabase
-      .from("company_invites")
-      .select("id, code, expires_at")
+      .from("posting_states")
+      .select("id, code, intent, public_description, created_at, state, closing_reason, application_count")
       .eq("company_id", company.id)
-      .is("revoked_at", null)
-      .maybeSingle(),
+      .order("created_at", { ascending: false }),
     supabase
       .from("company_members")
       .select("profile_id, joined_at")
@@ -40,11 +40,9 @@ export default async function CleanersPage() {
       .eq("status", "active")
       .order("joined_at"),
   ]);
-  if (inviteError) throw inviteError;
+  if (postingError) throw postingError;
   if (membershipError) throw membershipError;
-  const displayedInvite = activeInvite && isInviteActive(activeInvite.expires_at)
-    ? activeInvite
-    : null;
+  const postings = parsePostingRows(postingRows);
 
   const memberIds = membershipRows.map((membership) => membership.profile_id);
   const { data: profileRows, error: profileError } = memberIds.length
@@ -74,14 +72,9 @@ export default async function CleanersPage() {
       <CleanersWorkspace
         cleanerAppUrl={cleanerAppOrigin}
         companyName={company.name}
-        initialCode={displayedInvite?.code ?? null}
-        initialInviteId={displayedInvite?.id ?? null}
-        // Keyed on the company, not the invite: a rotation changes the code, and keying on
-        // it tore the workspace down mid-rotation, shutting the details panel over the
-        // replacement link the admin had just generated to hand out. Switching company is
-        // the case that genuinely warrants a fresh workspace.
         key={company.id}
         members={members}
+        postings={postings}
       />
     </main>
   );

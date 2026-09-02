@@ -27,7 +27,10 @@ select results_eq(
     ('payment_marked_paid'::text collate "C"),
     ('offer_received'::text collate "C"),
     ('offer_declined'::text collate "C"),
-    ('job_paid'::text collate "C")$$,
+    ('job_paid'::text collate "C"),
+    ('hired'::text collate "C"),
+    ('admitted'::text collate "C"),
+    ('rejected'::text collate "C")$$,
   'notification records include settlement and offers without replacing job events'
 );
 select ok(

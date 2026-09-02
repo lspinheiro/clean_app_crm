@@ -191,6 +191,10 @@ describe("CLE-22 job detail workspace", () => {
     expect(screen.getByText("Duration", { selector: "dt" })).toBeInTheDocument();
     expect(screen.queryByText("Job date", { selector: "dt" })).not.toBeInTheDocument();
     expect(screen.queryByText("Duration (hours)", { selector: "dt" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Post publicly" })).toHaveAttribute(
+      "href",
+      `/cleaners/postings/new?intent=one_time&jobId=${job.id}`,
+    );
 
     const slotOne = screen.getByRole("article", { name: "Crew slot 1" });
     expect(within(slotOne).getByText("Assigned")).toBeInTheDocument();
@@ -214,6 +218,12 @@ describe("CLE-22 job detail workspace", () => {
       "Choose a cleaner",
       "Direct Cleaner",
     ]);
+  });
+
+  it("does not offer public posting for a draft job with an open slot", () => {
+    render(<JobDetailWorkspace job={{ ...job, status: "draft" }} />);
+
+    expect(screen.queryByRole("link", { name: "Post publicly" })).not.toBeInTheDocument();
   });
 
   it("leads with an awaiting-review queue while keeping crew progress in context", () => {

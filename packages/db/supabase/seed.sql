@@ -200,17 +200,19 @@ values
   ('10000000-0000-4000-8000-000000000105', '10000000-0000-4000-8000-000000000010', '10000000-0000-4000-8000-000000000005', 'removed', '2026-08-05T00:00:00+10')
 on conflict (company_id, profile_id) do nothing;
 
-insert into public.company_invites (id, company_id, code)
+insert into public.company_invites (id, company_id, code, revoked_at)
 values
 (
   '10000000-0000-4000-8000-000000000201',
   '10000000-0000-4000-8000-000000000010',
-  'CLEAN1DEMOJOIN99'
+  'CLEAN1DEMOJOIN99',
+  '2026-08-30T00:00:00+10'
 ),
 (
   '10000000-0000-4000-8000-000000000203',
   '10000000-0000-4000-8000-000000000020',
-  'HARBR2DEMOJOIN99'
+  'HARBR2DEMOJOIN99',
+  '2026-08-30T00:00:00+10'
 )
 on conflict (id) do nothing;
 
@@ -472,6 +474,59 @@ on conflict (id) do nothing;
 -- Broadbeach crew-two vacancy has two real applicants while slot one stays assigned
 -- intact. Applications are inserted as seed state, so no manual-notification record is
 -- created and the generation path remains silent.
+insert into public.postings (
+  id, company_id, code, intent, public_description,
+  recurring_assignment_id, created_by
+)
+values
+  (
+    '10000000-0000-4000-8000-000000000901',
+    '10000000-0000-4000-8000-000000000010',
+    'DEMOEOIPOST00001',
+    'expression_of_interest',
+    'Register your interest in joining our cleaner staff.',
+    null,
+    '10000000-0000-4000-8000-000000000001'
+  ),
+  (
+    '10000000-0000-4000-8000-000000000902',
+    '10000000-0000-4000-8000-000000000010',
+    'DEMOREGPOST00001',
+    'regular',
+    'A regular weekday clean with an ongoing crew place.',
+    '10000000-0000-4000-8000-000000000701',
+    '10000000-0000-4000-8000-000000000001'
+  )
+on conflict (id) do nothing;
+
+with dispatch_job as (
+  select job.id
+  from public.jobs job
+  where job.status = 'posted'
+    and job.recurring_assignment_id = '10000000-0000-4000-8000-000000000701'
+    and job.scheduled_start > now()
+    and exists (
+      select 1
+      from public.vacancies vacancy
+      where vacancy.job_id = job.id
+    )
+  order by job.scheduled_start, job.id
+  limit 1
+)
+insert into public.postings (
+  id, company_id, code, intent, public_description, job_id, created_by
+)
+select
+  '10000000-0000-4000-8000-000000000903',
+  '10000000-0000-4000-8000-000000000010',
+  'DEMOJOBPOST00001',
+  'one_time',
+  'A one-time crew place on the upcoming roster.',
+  dispatch_job.id,
+  '10000000-0000-4000-8000-000000000001'
+from dispatch_job
+on conflict (id) do nothing;
+
 with dispatch_job as (
   select job.id
   from public.jobs job

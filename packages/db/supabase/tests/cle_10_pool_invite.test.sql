@@ -1,335 +1,171 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select no_plan();
 
-select is(
-  (
-    select count(*)::integer
-    from information_schema.routines
-    where routine_schema = 'public' and routine_name = 'rotate_company_invite'
-  ),
-  1,
-  'invite rotation exists as a narrow RPC'
+-- CLE-59 retires rotation but preserves the old API as an inert compatibility surface
+-- until the posting UI replaces it. The historical row and tenant boundary remain covered.
+select has_function(
+  'public', 'rotate_company_invite', array['uuid'],
+  'the retired rotation API remains an explicit compatibility surface'
 );
 select ok(
-  (
-    select position('extensions.gen_random_bytes' in pg_get_functiondef(procedure.oid)) > 0
+  position('extensions.gen_random_bytes' in (
+    select pg_get_functiondef(procedure.oid)
     from pg_proc procedure
     join pg_namespace namespace on namespace.oid = procedure.pronamespace
-    where namespace.nspname = 'public'
-      and procedure.proname = 'rotate_company_invite'
-  ),
-  'invite codes use the cryptographic random-byte source'
+    where namespace.nspname = 'public' and procedure.proname = 'create_posting'
+  )) > 0,
+  'replacement posting codes use the cryptographic random-byte source'
 );
 select ok(
-  (
-    select position('for update' in lower(pg_get_functiondef(procedure.oid))) > 0
-    from pg_proc procedure
-    join pg_namespace namespace on namespace.oid = procedure.pronamespace
-    where namespace.nspname = 'public'
-      and procedure.proname = 'rotate_company_invite'
-  ),
-  'invite rotation locks the company before replacing its active code'
+  has_function_privilege('authenticated', 'public.create_posting(uuid, posting_intent, text, uuid, uuid, timestamptz, integer)', 'EXECUTE'),
+  'authenticated employees receive the posting creation capability'
 );
 select ok(
-  has_function_privilege('authenticated', 'public.rotate_company_invite(uuid)', 'EXECUTE'),
-  'authenticated users can execute invite rotation subject to RPC authorisation'
-);
-select ok(
-  not has_function_privilege('anon', 'public.rotate_company_invite(uuid)', 'EXECUTE'),
-  'anonymous users cannot execute invite rotation'
-);
-select ok(
-  has_function_privilege('service_role', 'public.rotate_company_invite(uuid)', 'EXECUTE'),
-  'service role has an explicit invite rotation grant'
-);
-select is(
-  (
-    select count(*)::integer
-    from pg_indexes
-    where schemaname = 'public'
-      and tablename = 'company_invites'
-      and indexname = 'company_invites_one_active_idx'
-      and indexdef ilike '%where (revoked_at is null)%'
-  ),
-  1,
-  'the baseline still enforces one active invite per company'
+  not has_function_privilege('anon', 'public.create_posting(uuid, posting_intent, text, uuid, uuid, timestamptz, integer)', 'EXECUTE'),
+  'anonymous visitors cannot create postings'
 );
 
 delete from public.company_invites;
 insert into public.company_invites (company_id, code)
-values ('10000000-0000-4000-8000-000000000010', 'ZTEST1FIXTURE001');
+values ('10000000-0000-4000-8000-000000000010', 'LEGACYLIVE000001');
 
-select is(
-  (
-    select count(*)::integer
-    from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and revoked_at is null
-  ),
-  1,
-  'the deterministic fixture starts with one active invite'
-);
 select results_eq(
-  $$select code from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and revoked_at is null$$,
-  $$values ('ZTEST1FIXTURE001'::text)$$,
-  'the deterministic fixture exposes its active sixteen-character code'
-);
-select is(
-  (
-    select count(*)::integer
-    from public.company_members membership
-    where membership.company_id = '10000000-0000-4000-8000-000000000010'
-      and membership.status = 'active'
-  ),
-  3,
-  'the demo pool contains exactly three active cleaners'
-);
-select results_eq(
-  $$select
-      profile.full_name,
-      (membership.joined_at at time zone 'Australia/Brisbane')::date
-    from public.company_members membership
-    join public.profiles profile on profile.id = membership.profile_id
-    where membership.company_id = '10000000-0000-4000-8000-000000000010'
-      and membership.status = 'active'
-    order by membership.joined_at$$,
-  $$values
-    ('Demo Cleaner One'::text, '2026-08-02'::date),
-    ('Demo Cleaner Two'::text, '2026-08-03'::date),
-    ('Demo Cleaner Three'::text, '2026-08-04'::date)$$,
-  'the active pool carries stable member names and joined dates'
-);
-select is(
-  (
-    select count(*)::integer
-    from public.company_members membership
-    join public.profiles profile on profile.id = membership.profile_id
-    where membership.company_id = '10000000-0000-4000-8000-000000000010'
-      and membership.status = 'removed'
-      and profile.full_name = 'Demo Removed Cleaner'
-  ),
-  1,
-  'the demo fixture includes a removed cleaner outside the active pool'
+  $$select state, company_name, pool_size
+      from public.cleaner_invite_preview('LEGACYLIVE000001')$$,
+  $$values ('revoked'::text, null::text, 0)$$,
+  'a formerly live old link answers with the dead no-longer-active state and no tenant data'
 );
 
-insert into auth.users (
-  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
-  confirmation_token, recovery_token, email_change, email_change_token_new
-) values (
-  '20000000-0000-4000-8000-000000000001',
-  '00000000-0000-0000-0000-000000000000',
-  'authenticated', 'authenticated', 'tenant-b-invite-admin@example.test',
-  crypt('local-test-only', gen_salt('bf')), now(),
-  '{"provider":"email","providers":["email"]}',
-  '{"full_name":"Tenant B Invite Admin"}', now(), now(), '', '', '', ''
-);
-insert into public.companies (id, name, abn, status)
-values ('20000000-0000-4000-8000-000000000010', 'Tenant B Invite Demo', '22222222222', 'approved');
-insert into public.employee_memberships (company_id, profile_id, role)
-values ('20000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000001', 'owner');
-
-create temp table cle_10_invite_state (
-  state text primary key,
-  code text not null
-) on commit drop;
-grant select, insert on table cle_10_invite_state to authenticated;
+create temp table cle_10_postings (id uuid primary key) on commit drop;
+grant select, insert on table cle_10_postings to authenticated;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
-select lives_ok(
-  $$select public.rotate_company_invite('10000000-0000-4000-8000-000000000010')$$,
-  'company admin can generate a new active invite'
-);
-select is(
-  (
-    select count(*)::integer
-    from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and revoked_at is null
-  ),
-  1,
-  'first rotation leaves exactly one active invite'
-);
-select ok(
-  (
-    select code <> 'ZTEST1FIXTURE001' and code ~ '^[A-Z0-9]{16}$'
-    from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and revoked_at is null
-  ),
-  'first rotation produces a distinct sixteen-character code'
-);
-select is(
-  (
-    select count(*)::integer
-    from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and code = 'ZTEST1FIXTURE001'
-      and revoked_at is not null
-  ),
-  1,
-  'first rotation retains and revokes the old invite row'
-);
-insert into cle_10_invite_state (state, code)
-select 'first', code
-from public.company_invites
-where company_id = '10000000-0000-4000-8000-000000000010'
-  and revoked_at is null;
-
-select lives_ok(
-  $$select public.rotate_company_invite('10000000-0000-4000-8000-000000000010')$$,
-  'company admin can rotate the invite again'
-);
-select is(
-  (
-    select count(*)::integer
-    from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and revoked_at is null
-  ),
-  1,
-  'second rotation also leaves exactly one active invite'
-);
-select is(
-  (
-    select count(*)::integer
-    from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and revoked_at is not null
-  ),
-  2,
-  'second rotation retains both superseded invite rows'
-);
-select ok(
-  (
-    select invite.code <> first_rotation.code and invite.code ~ '^[A-Z0-9]{16}$'
-    from public.company_invites invite
-    cross join cle_10_invite_state first_rotation
-    where invite.company_id = '10000000-0000-4000-8000-000000000010'
-      and invite.revoked_at is null
-      and first_rotation.state = 'first'
-  ),
-  'second rotation produces another distinct valid code'
-);
-select is(
-  (
-    select count(*)::integer
-    from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-  ),
-  3,
-  'two rotations preserve the complete three-row invite history'
-);
-select results_eq(
-  $$select
-      membership.profile_id,
-      membership.status,
-      (membership.joined_at at time zone 'Australia/Brisbane')::date
-    from public.company_members membership
-    where membership.company_id = '10000000-0000-4000-8000-000000000010'
-      and membership.status = 'active'
-    order by membership.joined_at$$,
-  $$values
-    ('10000000-0000-4000-8000-000000000002'::uuid, 'active'::public.member_status, '2026-08-02'::date),
-    ('10000000-0000-4000-8000-000000000003'::uuid, 'active'::public.member_status, '2026-08-03'::date),
-    ('10000000-0000-4000-8000-000000000004'::uuid, 'active'::public.member_status, '2026-08-04'::date)$$,
-  'invite rotation leaves cleaner identities, status, and joined dates unchanged'
-);
-insert into cle_10_invite_state (state, code)
-select 'second', code
-from public.company_invites
-where company_id = '10000000-0000-4000-8000-000000000010'
-  and revoked_at is null;
-reset role;
-
-set local role authenticated;
-select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000001', true);
-select set_config('request.jwt.claim.role', 'authenticated', true);
-select is(
-  (select count(*)::integer from public.company_invites),
-  0,
-  'another company admin cannot read foreign invite history'
-);
 select throws_ok(
   $$select public.rotate_company_invite('10000000-0000-4000-8000-000000000010')$$,
-  '42501',
-  'Company admin access required',
-  'another company admin cannot rotate the foreign invite'
+  '23514',
+  'Cleaner invitation rotation is retired',
+  'an active employee cannot rotate the legacy singleton code'
+);
+insert into cle_10_postings (id)
+values
+  (public.create_posting(
+    '10000000-0000-4000-8000-000000000010',
+    'expression_of_interest',
+    'Join our cleaner staff.', null, null, null, null
+  )),
+  (public.create_posting(
+    '10000000-0000-4000-8000-000000000010',
+    'expression_of_interest',
+    'Join our weekend cleaner staff.', null, null, null, 5
+  ));
+
+select is(
+  (select count(*)::integer from public.posting_states
+    where state = 'active' and id in (select id from cle_10_postings)),
+  2,
+  'two replacement postings coexist instead of rotating one another'
+);
+select is(
+  (select count(distinct code)::integer from public.posting_states
+    where id in (select id from cle_10_postings)),
+  2,
+  'each replacement posting has an independent link'
+);
+select ok(
+  (select bool_and(code ~ '^[A-Z0-9]{16}$') from public.posting_states
+    where id in (select id from cle_10_postings)),
+  'replacement posting codes remain high-entropy URL-safe capabilities'
+);
+select lives_ok(
+  $$select public.revoke_posting(
+    (select id from cle_10_postings order by id limit 1)
+  )$$,
+  'an employee can revoke one selected posting'
+);
+select results_eq(
+  $$select state, count(*)::bigint from public.posting_states
+     where id in (select id from cle_10_postings)
+     group by state order by state$$,
+  $$values ('active'::text, 1::bigint), ('dead'::text, 1::bigint)$$,
+  'revocation closes only the selected posting'
 );
 reset role;
+
+create function public.cle_10_force_posting_collision()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if current_setting('cle_10.force_posting_collision', true) = 'on' then
+    raise unique_violation using message = 'Forced posting collision';
+  end if;
+  return new;
+end;
+$$;
+create trigger cle_10_force_posting_collision
+before insert on public.postings
+for each row execute function public.cle_10_force_posting_collision();
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('cle_10.force_posting_collision', 'on', true);
+select throws_ok(
+  $$select public.create_posting(
+    '10000000-0000-4000-8000-000000000010',
+    'expression_of_interest', 'Collision retry.', null, null, null, null
+  )$$,
+  '23505',
+  'Unable to generate a unique posting code',
+  'ten exhausted posting-code collisions fail without creating a posting'
+);
+reset role;
+select is(
+  (select count(*)::integer from public.postings
+    where id in (select id from cle_10_postings)),
+  2,
+  'an exhausted code retry leaves the existing postings unchanged'
+);
+
+drop trigger cle_10_force_posting_collision on public.postings;
+drop function public.cle_10_force_posting_collision();
+
 select results_eq(
-  $$select code from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and revoked_at is null$$,
-  $$select code from cle_10_invite_state where state = 'second'$$,
-  'a rejected foreign rotation leaves the active invite unchanged'
+  $$select count(*)::integer, count(*) filter (where revoked_at is null)::integer
+      from public.company_invites
+     where company_id = '10000000-0000-4000-8000-000000000010'$$,
+  $$values (1, 1)$$,
+  'a rejected rotation neither deletes history nor manufactures another old code'
 );
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000002', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select is(
-  (select count(*)::integer from public.company_invites),
+  (select count(*)::integer from public.postings),
   0,
-  'cleaner cannot read raw company invites'
+  'a cleaner cannot read raw posting records'
+);
+select throws_ok(
+  $$select public.create_posting(
+    '10000000-0000-4000-8000-000000000010',
+    'expression_of_interest', 'Unauthorised posting.', null, null, null, null
+  )$$,
+  '42501',
+  'Company admin access required',
+  'a cleaner cannot create a posting'
 );
 select throws_ok(
   $$select public.rotate_company_invite('10000000-0000-4000-8000-000000000010')$$,
   '42501',
   'Company admin access required',
-  'cleaner cannot rotate the company invite'
+  'a cleaner cannot call even the inert company-scoped rotation capability'
 );
 reset role;
-select results_eq(
-  $$select code from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and revoked_at is null$$,
-  $$select code from cle_10_invite_state where state = 'second'$$,
-  'a rejected cleaner rotation leaves the active invite unchanged'
-);
-
-create function public.cle_10_force_invite_collision()
-returns trigger
-language plpgsql
-set search_path = ''
-as $$
-begin
-  if current_setting('cle_10.force_collision', true) = 'on' then
-    raise unique_violation using message = 'Forced invite collision';
-  end if;
-  return new;
-end;
-$$;
-create trigger cle_10_force_invite_collision
-before insert on public.company_invites
-for each row execute function public.cle_10_force_invite_collision();
-
-set local role authenticated;
-select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
-select set_config('request.jwt.claim.role', 'authenticated', true);
-select set_config('cle_10.force_collision', 'on', true);
-select throws_ok(
-  $$select public.rotate_company_invite('10000000-0000-4000-8000-000000000010')$$,
-  '23505',
-  'Unable to generate a unique invite code',
-  'exhausted invite-code collisions fail without completing a replacement'
-);
-reset role;
-select results_eq(
-  $$select code from public.company_invites
-    where company_id = '10000000-0000-4000-8000-000000000010'
-      and revoked_at is null$$,
-  $$select code from cle_10_invite_state where state = 'second'$$,
-  'a failed replacement rolls back revocation of the prior active invite'
-);
-
-drop trigger cle_10_force_invite_collision on public.company_invites;
-drop function public.cle_10_force_invite_collision();
 
 select * from finish();
 rollback;

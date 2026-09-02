@@ -357,7 +357,10 @@ export type Database = {
           applied_at: string
           cleaner_id: string
           id: string
-          job_id: string
+          job_id: string | null
+          join_request_id: string | null
+          posting_id: string | null
+          recurring_assignment_id: string | null
           resolved_at: string | null
           status: Database["public"]["Enums"]["application_status"]
           withdrawn_at: string | null
@@ -366,7 +369,10 @@ export type Database = {
           applied_at?: string
           cleaner_id: string
           id?: string
-          job_id: string
+          job_id?: string | null
+          join_request_id?: string | null
+          posting_id?: string | null
+          recurring_assignment_id?: string | null
           resolved_at?: string | null
           status?: Database["public"]["Enums"]["application_status"]
           withdrawn_at?: string | null
@@ -375,7 +381,10 @@ export type Database = {
           applied_at?: string
           cleaner_id?: string
           id?: string
-          job_id?: string
+          job_id?: string | null
+          join_request_id?: string | null
+          posting_id?: string | null
+          recurring_assignment_id?: string | null
           resolved_at?: string | null
           status?: Database["public"]["Enums"]["application_status"]
           withdrawn_at?: string | null
@@ -408,6 +417,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vacancies"
             referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "job_applications_join_request_id_fkey"
+            columns: ["join_request_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_join_request_state"
+            referencedColumns: ["join_request_id"]
+          },
+          {
+            foreignKeyName: "job_applications_join_request_id_fkey"
+            columns: ["join_request_id"]
+            isOneToOne: false
+            referencedRelation: "join_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: false
+            referencedRelation: "posting_states"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: false
+            referencedRelation: "postings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_recurring_assignment_id_fkey"
+            columns: ["recurring_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_assignments"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -552,6 +596,13 @@ export type Database = {
             foreignKeyName: "jobs_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
+            referencedRelation: "cleaner_offers"
+            referencedColumns: ["service_id"]
+          },
+          {
+            foreignKeyName: "jobs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
             referencedRelation: "service_catalogue"
             referencedColumns: ["id"]
           },
@@ -560,6 +611,51 @@ export type Database = {
             columns: ["site_id"]
             isOneToOne: false
             referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      join_requests: {
+        Row: {
+          company_id: string
+          created_at: string
+          decided_at: string | null
+          id: string
+          note: string | null
+          profile_id: string
+          state: Database["public"]["Enums"]["join_request_state"]
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          profile_id: string
+          state?: Database["public"]["Enums"]["join_request_state"]
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          profile_id?: string
+          state?: Database["public"]["Enums"]["join_request_state"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "join_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -640,28 +736,37 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          job_id: string
+          job_id: string | null
+          join_request_id: string | null
           ledger_entry_id: string | null
+          posting_id: string | null
           read_at: string | null
           recipient_id: string
+          recurring_assignment_id: string | null
           type: Database["public"]["Enums"]["notification_type"]
         }
         Insert: {
           created_at?: string
           id?: string
-          job_id: string
+          job_id?: string | null
+          join_request_id?: string | null
           ledger_entry_id?: string | null
+          posting_id?: string | null
           read_at?: string | null
           recipient_id: string
+          recurring_assignment_id?: string | null
           type: Database["public"]["Enums"]["notification_type"]
         }
         Update: {
           created_at?: string
           id?: string
-          job_id?: string
+          job_id?: string | null
+          join_request_id?: string | null
           ledger_entry_id?: string | null
+          posting_id?: string | null
           read_at?: string | null
           recipient_id?: string
+          recurring_assignment_id?: string | null
           type?: Database["public"]["Enums"]["notification_type"]
         }
         Relationships: [
@@ -687,6 +792,20 @@ export type Database = {
             referencedColumns: ["job_id"]
           },
           {
+            foreignKeyName: "notifications_join_request_id_fkey"
+            columns: ["join_request_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_join_request_state"
+            referencedColumns: ["join_request_id"]
+          },
+          {
+            foreignKeyName: "notifications_join_request_id_fkey"
+            columns: ["join_request_id"]
+            isOneToOne: false
+            referencedRelation: "join_requests"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_ledger_entry_id_fkey"
             columns: ["ledger_entry_id"]
             isOneToOne: false
@@ -708,10 +827,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: false
+            referencedRelation: "posting_states"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: false
+            referencedRelation: "postings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recurring_assignment_id_fkey"
+            columns: ["recurring_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_assignments"
             referencedColumns: ["id"]
           },
         ]
@@ -766,8 +906,22 @@ export type Database = {
             foreignKeyName: "offers_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: false
+            referencedRelation: "cleaner_job_board"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["job_id"]
           },
           {
             foreignKeyName: "offers_recurring_assignment_id_fkey"
@@ -882,6 +1036,94 @@ export type Database = {
             columns: ["batch_id"]
             isOneToOne: false
             referencedRelation: "pool_invite_email_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      postings: {
+        Row: {
+          application_cap: number | null
+          code: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          intent: Database["public"]["Enums"]["posting_intent"]
+          job_id: string | null
+          public_description: string
+          recurring_assignment_id: string | null
+          revoked_at: string | null
+        }
+        Insert: {
+          application_cap?: number | null
+          code: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          intent: Database["public"]["Enums"]["posting_intent"]
+          job_id?: string | null
+          public_description: string
+          recurring_assignment_id?: string | null
+          revoked_at?: string | null
+        }
+        Update: {
+          application_cap?: number | null
+          code?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          intent?: Database["public"]["Enums"]["posting_intent"]
+          job_id?: string | null
+          public_description?: string
+          recurring_assignment_id?: string | null
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "postings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_job_board"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "postings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "postings_recurring_assignment_id_fkey"
+            columns: ["recurring_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_assignments"
             referencedColumns: ["id"]
           },
         ]
@@ -1054,6 +1296,13 @@ export type Database = {
           weekday?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "recurring_assignments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_offers"
+            referencedColumns: ["service_id"]
+          },
           {
             foreignKeyName: "recurring_assignments_service_id_fkey"
             columns: ["service_id"]
@@ -1291,6 +1540,13 @@ export type Database = {
             foreignKeyName: "sites_default_service_id_fkey"
             columns: ["default_service_id"]
             isOneToOne: false
+            referencedRelation: "cleaner_offers"
+            referencedColumns: ["service_id"]
+          },
+          {
+            foreignKeyName: "sites_default_service_id_fkey"
+            columns: ["default_service_id"]
+            isOneToOne: false
             referencedRelation: "service_catalogue"
             referencedColumns: ["id"]
           },
@@ -1330,7 +1586,88 @@ export type Database = {
             foreignKeyName: "jobs_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
+            referencedRelation: "cleaner_offers"
+            referencedColumns: ["service_id"]
+          },
+          {
+            foreignKeyName: "jobs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
             referencedRelation: "service_catalogue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_join_request_state: {
+        Row: {
+          application_id: string | null
+          application_state:
+            | Database["public"]["Enums"]["application_status"]
+            | null
+          applied_at: string | null
+          company_id: string | null
+          company_name: string | null
+          decided_at: string | null
+          intent: Database["public"]["Enums"]["posting_intent"] | null
+          job_id: string | null
+          join_request_id: string | null
+          join_request_state:
+            | Database["public"]["Enums"]["join_request_state"]
+            | null
+          note: string | null
+          posting_id: string | null
+          recurring_assignment_id: string | null
+          requested_at: string | null
+          resolved_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_job_board"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "job_applications_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: false
+            referencedRelation: "posting_states"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: false
+            referencedRelation: "postings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_recurring_assignment_id_fkey"
+            columns: ["recurring_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1352,61 +1689,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cleaner_offers: {
-        Row: {
-          cleaner_pay_cents: number | null
-          company_id: string | null
-          company_name: string | null
-          created_at: string | null
-          crew_size: number | null
-          duration_minutes: number | null
-          frequency: Database["public"]["Enums"]["recurrence_frequency"] | null
-          job_id: string | null
-          local_start_time: string | null
-          offer_id: string | null
-          recurring_assignment_id: string | null
-          resolved_at: string | null
-          scheduled_start: string | null
-          service_id: string | null
-          service_name: string | null
-          service_slug: string | null
-          site_name: string | null
-          status: Database["public"]["Enums"]["offer_status"] | null
-          suburb: string | null
-          target_kind: string | null
-          weekday: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "offers_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "offers_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "offers_recurring_assignment_id_fkey"
-            columns: ["recurring_assignment_id"]
-            isOneToOne: false
-            referencedRelation: "recurring_assignments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobs_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "service_catalogue"
             referencedColumns: ["id"]
           },
         ]
@@ -1463,6 +1745,13 @@ export type Database = {
             foreignKeyName: "jobs_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
+            referencedRelation: "cleaner_offers"
+            referencedColumns: ["service_id"]
+          },
+          {
+            foreignKeyName: "jobs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
             referencedRelation: "service_catalogue"
             referencedColumns: ["id"]
           },
@@ -1503,6 +1792,68 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vacancies"
             referencedColumns: ["job_id"]
+          },
+        ]
+      }
+      cleaner_offers: {
+        Row: {
+          cleaner_pay_cents: number | null
+          company_id: string | null
+          company_name: string | null
+          created_at: string | null
+          crew_size: number | null
+          duration_minutes: number | null
+          frequency: Database["public"]["Enums"]["recurrence_frequency"] | null
+          job_id: string | null
+          local_start_time: string | null
+          offer_id: string | null
+          recurring_assignment_id: string | null
+          resolved_at: string | null
+          scheduled_start: string | null
+          service_id: string | null
+          service_name: string | null
+          service_slug: string | null
+          site_name: string | null
+          status: Database["public"]["Enums"]["offer_status"] | null
+          suburb: string | null
+          target_kind: string | null
+          weekday: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_job_board"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "offers_recurring_assignment_id_fkey"
+            columns: ["recurring_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_assignments"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1653,6 +2004,103 @@ export type Database = {
           },
         ]
       }
+      posting_states: {
+        Row: {
+          application_cap: number | null
+          application_count: number | null
+          closing_reason: string | null
+          code: string | null
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string | null
+          intent: Database["public"]["Enums"]["posting_intent"] | null
+          job_id: string | null
+          public_description: string | null
+          recurring_assignment_id: string | null
+          revoked_at: string | null
+          state: string | null
+        }
+        Insert: {
+          application_cap?: number | null
+          application_count?: never
+          closing_reason?: never
+          code?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          intent?: Database["public"]["Enums"]["posting_intent"] | null
+          job_id?: string | null
+          public_description?: string | null
+          recurring_assignment_id?: string | null
+          revoked_at?: string | null
+          state?: never
+        }
+        Update: {
+          application_cap?: number | null
+          application_count?: never
+          closing_reason?: never
+          code?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          intent?: Database["public"]["Enums"]["posting_intent"] | null
+          job_id?: string | null
+          public_description?: string | null
+          recurring_assignment_id?: string | null
+          revoked_at?: string | null
+          state?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "postings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_job_board"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "postings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "postings_recurring_assignment_id_fkey"
+            columns: ["recurring_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vacancies: {
         Row: {
           cleaner_pay_cents: number | null
@@ -1682,6 +2130,13 @@ export type Database = {
             foreignKeyName: "jobs_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
+            referencedRelation: "cleaner_offers"
+            referencedColumns: ["service_id"]
+          },
+          {
+            foreignKeyName: "jobs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
             referencedRelation: "service_catalogue"
             referencedColumns: ["id"]
           },
@@ -1703,7 +2158,6 @@ export type Database = {
       }
     }
     Functions: {
-      accept_offer: { Args: { target_offer_id: string }; Returns: string }
       accept_employee_invitation: {
         Args: {
           full_name: string
@@ -1722,7 +2176,22 @@ export type Database = {
         }
         Returns: string
       }
+      accept_offer: { Args: { target_offer_id: string }; Returns: string }
+      admit_join_request: {
+        Args: { target_join_request_id: string }
+        Returns: string
+      }
       apply_to_job: { Args: { target_job_id: string }; Returns: string }
+      apply_to_posting: {
+        Args: {
+          full_name: string
+          note?: string
+          phone: string
+          posting_code: string
+          suburb: string
+        }
+        Returns: string
+      }
       approve_job_application: {
         Args: {
           target_cleaner_id: string
@@ -1829,6 +2298,18 @@ export type Database = {
         }
         Returns: string
       }
+      create_posting: {
+        Args: {
+          posting_application_cap?: number
+          posting_expires_at?: string
+          public_description: string
+          target_company_id: string
+          target_intent: Database["public"]["Enums"]["posting_intent"]
+          target_job_id?: string
+          target_recurring_assignment_id?: string
+        }
+        Returns: string
+      }
       create_recurring_assignment: {
         Args: {
           named_cleaner_ids: string[]
@@ -1872,6 +2353,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      decline_offer: { Args: { target_offer_id: string }; Returns: undefined }
       delete_push_subscription: {
         Args: { target_endpoint: string }
         Returns: undefined
@@ -1943,6 +2425,10 @@ export type Database = {
           locale: Database["public"]["Enums"]["app_locale"]
         }[]
       }
+      hire_posting_application: {
+        Args: { target_application_id: string }
+        Returns: string
+      }
       is_company_admin: {
         Args: { target_company_id: string }
         Returns: boolean
@@ -1975,7 +2461,41 @@ export type Database = {
         Args: { target_ledger_entry_id: string; target_payment_note?: string }
         Returns: undefined
       }
+      offer_job: {
+        Args: { target_cleaner_id: string; target_job_id: string }
+        Returns: string
+      }
+      offer_series: {
+        Args: {
+          target_cleaner_id: string
+          target_recurring_assignment_id: string
+        }
+        Returns: string
+      }
       post_job: { Args: { target_job_id: string }; Returns: undefined }
+      posting_closing_reason: {
+        Args: { target_posting_id: string }
+        Returns: string
+      }
+      posting_preview: {
+        Args: { posting_code: string }
+        Returns: {
+          cleaner_pay_cents: number
+          closing_reason: string
+          company_name: string
+          duration_minutes: number
+          frequency: Database["public"]["Enums"]["recurrence_frequency"]
+          intent: Database["public"]["Enums"]["posting_intent"]
+          local_start_time: string
+          public_description: string
+          scheduled_start: string
+          service_name: string
+          service_slug: string
+          state: string
+          suburb: string
+          weekday: number
+        }[]
+      }
       prepare_employee_invitation: {
         Args: {
           target_company_id: string
@@ -2060,6 +2580,10 @@ export type Database = {
           status: string
         }[]
       }
+      reject_join_request: {
+        Args: { target_join_request_id: string }
+        Returns: undefined
+      }
       release_cleaner_loop_state: {
         Args: { target_cleaner_id: string; target_company_id: string }
         Returns: undefined
@@ -2090,6 +2614,11 @@ export type Database = {
       }
       revoke_first_admin_invitation: {
         Args: { target_invitation_id: string }
+        Returns: undefined
+      }
+      revoke_offer: { Args: { target_offer_id: string }; Returns: undefined }
+      revoke_posting: {
+        Args: { target_posting_id: string }
         Returns: undefined
       }
       rotate_company_invite: {
@@ -2239,23 +2768,17 @@ export type Database = {
         Args: { target_job_id: string }
         Returns: undefined
       }
-      decline_offer: { Args: { target_offer_id: string }; Returns: undefined }
-      offer_job: {
-        Args: { target_cleaner_id: string; target_job_id: string }
-        Returns: string
-      }
-      offer_series: {
-        Args: {
-          target_cleaner_id: string
-          target_recurring_assignment_id: string
-        }
-        Returns: string
-      }
-      revoke_offer: { Args: { target_offer_id: string }; Returns: undefined }
     }
     Enums: {
       app_locale: "en-AU" | "pt-BR"
-      application_status: "applied" | "assigned" | "not_selected" | "withdrawn"
+      application_status:
+        | "applied"
+        | "assigned"
+        | "not_selected"
+        | "withdrawn"
+        | "hired"
+        | "job_filled"
+        | "posting_closed"
       assignment_source: "manual" | "recurring"
       company_status: "pending" | "approved" | "suspended"
       employee_role: "owner" | "staff"
@@ -2267,9 +2790,9 @@ export type Database = {
         | "in_progress"
         | "completed"
         | "cancelled"
+      join_request_state: "waiting" | "admitted" | "rejected"
       ledger_status: "owed" | "paid"
       member_status: "active" | "removed"
-      offer_status: "pending" | "accepted" | "declined" | "revoked"
       notification_type:
         | "job_assigned"
         | "job_posted"
@@ -2279,6 +2802,11 @@ export type Database = {
         | "offer_received"
         | "offer_declined"
         | "job_paid"
+        | "hired"
+        | "admitted"
+        | "rejected"
+      offer_status: "pending" | "accepted" | "declined" | "revoked"
+      posting_intent: "expression_of_interest" | "one_time" | "regular"
       recurrence_frequency: "weekly" | "fortnightly"
     }
     CompositeTypes: {
@@ -2408,7 +2936,15 @@ export const Constants = {
   public: {
     Enums: {
       app_locale: ["en-AU", "pt-BR"],
-      application_status: ["applied", "assigned", "not_selected", "withdrawn"],
+      application_status: [
+        "applied",
+        "assigned",
+        "not_selected",
+        "withdrawn",
+        "hired",
+        "job_filled",
+        "posting_closed",
+      ],
       assignment_source: ["manual", "recurring"],
       company_status: ["pending", "approved", "suspended"],
       employee_role: ["owner", "staff"],
@@ -2421,9 +2957,9 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      join_request_state: ["waiting", "admitted", "rejected"],
       ledger_status: ["owed", "paid"],
       member_status: ["active", "removed"],
-      offer_status: ["pending", "accepted", "declined", "revoked"],
       notification_type: [
         "job_assigned",
         "job_posted",
@@ -2433,9 +2969,13 @@ export const Constants = {
         "offer_received",
         "offer_declined",
         "job_paid",
+        "hired",
+        "admitted",
+        "rejected",
       ],
+      offer_status: ["pending", "accepted", "declined", "revoked"],
+      posting_intent: ["expression_of_interest", "one_time", "regular"],
       recurrence_frequency: ["weekly", "fortnightly"],
     },
   },
 } as const
-

@@ -120,7 +120,7 @@ select throws_ok(
 );
 
 -- ---------------------------------------------------------------------------
--- The cleaner invite code is a high-entropy capability
+-- Posting links replace the retired cleaner-invite singleton with high entropy
 -- ---------------------------------------------------------------------------
 
 select is(
@@ -150,27 +150,45 @@ select set_config(
 select set_config('request.jwt.claim.role', 'authenticated', true);
 
 select set_config(
-  'test.hardening_rotated_code',
-  (public.rotate_company_invite('10000000-0000-4000-8000-000000000010')).code,
+  'test.hardening_posting_id',
+  public.create_posting(
+    '10000000-0000-4000-8000-000000000010',
+    'expression_of_interest',
+    'Security regression posting.',
+    null, null, null, null
+  )::text,
   true
 );
 select is(
-  char_length(current_setting('test.hardening_rotated_code')),
+  (
+    select char_length(code)
+    from public.postings
+    where id = current_setting('test.hardening_posting_id')::uuid
+  ),
   16,
-  'rotation issues a sixteen-character code (80 bits, not 30)'
+  'posting creation issues a sixteen-character code (80 bits, not 30)'
 );
 select ok(
-  current_setting('test.hardening_rotated_code') ~ '^[A-Z0-9]{16}$',
-  'the rotated code stays URL and link safe'
+  (
+    select code ~ '^[A-Z0-9]{16}$'
+    from public.postings
+    where id = current_setting('test.hardening_posting_id')::uuid
+  ),
+  'the posting code stays URL and link safe'
 );
 
 reset role;
 
--- The preview must name the company for a live link, and for nothing else.
+-- The posting preview names the company for a live link, and for nothing else.
 select is(
-  (select company_name from public.cleaner_invite_preview(current_setting('test.hardening_rotated_code'))),
+  (
+    select preview.company_name
+    from public.postings posting
+    cross join lateral public.posting_preview(posting.code) preview
+    where posting.id = current_setting('test.hardening_posting_id')::uuid
+  ),
   'Coastal Demo Cleaning',
-  'an active code still names the company for the join screen'
+  'an active posting names the company for the public application page'
 );
 select is(
   (select state from public.cleaner_invite_preview('ZOLD01')),
@@ -188,9 +206,9 @@ select is(
   'a revoked code no longer discloses the cleaner count'
 );
 select is(
-  (select company_name from public.cleaner_invite_preview('NOSUCHCODE000000')),
+  (select company_name from public.posting_preview('NOSUCHCODE000000')),
   null,
-  'an unknown code discloses nothing'
+  'an unknown posting code discloses nothing'
 );
 
 select * from finish();

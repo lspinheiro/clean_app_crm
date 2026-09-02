@@ -156,6 +156,62 @@ a {
   line-height: 18px;
 }
 
+.posting-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 16px;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-sm);
+}
+
+.posting-card__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.posting-card__company,
+.posting-card__description {
+  margin: 0;
+}
+
+.posting-card__company,
+.posting-card__facts dt {
+  color: var(--color-gray-600);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.posting-card__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin: 0;
+}
+
+.posting-card__facts div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.posting-card__facts dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.posting-card__description {
+  padding-top: 16px;
+  border-top: 1px solid var(--color-gray-200);
+  color: var(--color-gray-700);
+  white-space: pre-wrap;
+}
+
 .form-stack {
   display: flex;
   flex-direction: column;
@@ -192,6 +248,23 @@ a {
   flex: 1;
   background: var(--color-gray-200);
   content: "";
+}
+
+.webview-guidance {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  background: var(--color-gray-100);
+}
+
+.webview-guidance p {
+  margin: 0;
+  color: var(--color-gray-700);
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .auth-account {
@@ -262,6 +335,19 @@ a {
   border-radius: 8px;
   background: var(--color-paper);
   color: var(--color-ink);
+}
+
+.field textarea {
+  min-height: 96px;
+  padding-right: 14px;
+  padding-left: 14px;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 8px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  resize: vertical;
 }
 
 .field input:focus-visible {
@@ -362,6 +448,34 @@ a {
   color: var(--color-gray-600);
   font-size: 13px;
   line-height: 18px;
+}
+
+.request-state {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  background: var(--color-gray-100);
+}
+
+.request-state--success {
+  border-color: var(--color-status-success-border);
+  background: var(--color-status-success-tint);
+}
+
+.request-state h2,
+.request-state p {
+  margin: 0;
+}
+
+.request-state h2 {
+  font-size: 18px;
+}
+
+.request-state p {
+  color: var(--color-gray-700);
 }
 
 .vacancy-list {

@@ -16,7 +16,8 @@ const secret = "test-webhook-secret";
 
 type NotificationRecord = {
   recipientId: string;
-  jobId: string;
+  jobId: string | null;
+  recurringAssignmentId?: string | null;
   type: string;
 };
 
@@ -209,6 +210,87 @@ Deno.test("job_cancelled sends a safe payload that opens My jobs", async () => {
     body: "Office clean · Palm Grove Practice, Robina · 1 Sept 2099, 8:00 am",
     url: "/my-jobs",
   });
+});
+
+Deno.test("hired carries a one-time job reference for the client deep link", async () => {
+  const store = new FakeStore([subscription], safeJob, {
+    recipientId,
+    jobId,
+    type: "hired",
+  });
+  const { sender } = await dispatch("hired", store);
+
+  assert.deepEqual(sender.sent[0]?.message, {
+    type: "hired",
+    jobId,
+    title: "You're hired",
+    body: "Office clean · Palm Grove Practice, Robina · 1 Sept 2099, 8:00 am",
+    url: "/my-jobs",
+  });
+});
+
+Deno.test("hired carries a regular-work reference without reading private job data", async () => {
+  const recurringAssignmentId = "25000000-0000-4000-8000-000000000601";
+  const store = new FakeStore([subscription], safeJob, {
+    recipientId,
+    jobId: null,
+    recurringAssignmentId,
+    type: "hired",
+  });
+  const { sender } = await dispatch("hired", store);
+
+  assert.deepEqual(store.jobLookups, []);
+  assert.deepEqual(sender.sent[0]?.message, {
+    type: "hired",
+    jobId: null,
+    recurringAssignmentId,
+    title: "You're hired",
+    body: "Your work is ready to view.",
+    url: "/my-jobs",
+  });
+});
+
+Deno.test("hired without a one-time or regular work reference is not delivered", async () => {
+  const store = new FakeStore([subscription], safeJob, {
+    recipientId,
+    jobId: null,
+    recurringAssignmentId: null,
+    type: "hired",
+  });
+  const { response, sender } = await dispatch("hired", store);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(sender.sent, []);
+  assert.deepEqual(await response.json(), { delivered: 0 });
+});
+
+Deno.test("admitted and rejected deliver only their person-level decisions", async () => {
+  for (const [type, expected] of [
+    ["admitted", {
+      title: "Join request admitted",
+      body: "You can now view the cleaner board.",
+      url: "/board",
+    }],
+    ["rejected", {
+      title: "Join request closed",
+      body: "The company closed your join request.",
+      url: "/",
+    }],
+  ] as const) {
+    const store = new FakeStore([subscription], safeJob, {
+      recipientId,
+      jobId: null,
+      type,
+    });
+    const { sender } = await dispatch(type, store);
+    assert.deepEqual(store.jobLookups, []);
+    assert.deepEqual(sender.sent[0]?.message, {
+      type,
+      jobId: null,
+      recurringAssignmentId: null,
+      ...expected,
+    });
+  }
 });
 
 Deno.test("payload construction ignores private job fields even when the store returns them", async () => {

@@ -47,12 +47,12 @@ is covering them is the **cleaner board**; on the cleaner app the same surface i
   cleaner membership, cleaner board); a single person is a *cleaner*, never a "pool member" or
   "pool cleaner". Internal identifiers may retain `pool` where renaming them would change a
   database or API contract.
-- **Database note:** the schema still carries the legacy `pool_*` names —
-  `cleaner_pool_memberships`, `join_company_pool`, `prepare_pool_invite_email_batch`,
-  `prepare_pool_invite_email_retry`, `record_pool_invite_email_results`, and the
-  `pool_size` column. These map one-to-one onto the cleaner-membership and cleaner-invite
-  concepts here. Migrations are immutable and `database.types.ts` is generated, so the
-  mismatch is deliberate: keep SQL identifiers exact in code and only rename the app layer.
+- **Database note:** the membership table retains the legacy name
+  `cleaner_pool_memberships`, and historical invitation/e-mail-batch objects retain
+  `pool_*` identifiers. Those old links are inert; new entry starts through `postings`,
+  `join_requests`, and `apply_to_posting`. Migrations are immutable and
+  `database.types.ts` is generated, so keep SQL identifiers exact in code and use this
+  vocabulary at the app layer.
 - **See:** [Membership](#membership) · [Company](#company) · [Vacancy](#vacancy).
 
 ## Client

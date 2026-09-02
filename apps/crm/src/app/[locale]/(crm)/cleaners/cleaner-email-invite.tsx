@@ -17,13 +17,15 @@ import {
   type CleanerInviteEmailCsvPreview,
 } from "@/features/cleaners/email-csv";
 import { buildCleanerInviteEmail } from "@/features/cleaners/email";
+import type { PostingIntent } from "@/features/postings/types";
 import type { AppLocale } from "@/i18n/config";
 import { localiseUserMessage } from "@/i18n/user-message";
 
 type CleanerEmailInviteProps = {
   companyName: string;
-  inviteId: string | null;
-  joinUrl: string | null;
+  joinUrl: string;
+  postingId: string;
+  postingIntent: PostingIntent;
 };
 
 type ManualRecipientInput = {
@@ -41,8 +43,9 @@ function emptyPreview(): CleanerInviteEmailCsvPreview {
 
 export function CleanerEmailInvite({
   companyName,
-  inviteId,
   joinUrl,
+  postingId,
+  postingIntent,
 }: CleanerEmailInviteProps) {
   const currentLocale = useLocale() as AppLocale;
   const t = useTranslations("Cleaners");
@@ -60,9 +63,9 @@ export function CleanerEmailInvite({
 
   const emailPreview = useMemo(
     () => joinUrl
-      ? buildCleanerInviteEmail({ companyName, joinUrl, locale: selectedLocale })
+      ? buildCleanerInviteEmail({ companyName, intent: postingIntent, joinUrl, locale: selectedLocale })
       : null,
-    [companyName, joinUrl, selectedLocale],
+    [companyName, joinUrl, postingIntent, selectedLocale],
   );
   const manualRecipientRows = useMemo(() => {
     const seen = new Set(
@@ -96,7 +99,7 @@ export function CleanerEmailInvite({
   const hasManualIssues = manualRecipientRows.some((recipient) => recipient.issue !== null);
   const exceedsRecipientLimit = recipients.length > CLEANER_INVITE_EMAIL_RECIPIENT_LIMIT;
   const canSend = Boolean(
-    inviteId
+    postingId
     && joinUrl
     && authorityConfirmed
     && recipients.length
@@ -105,7 +108,6 @@ export function CleanerEmailInvite({
     && !exceedsRecipientLimit
     && !submitting,
   );
-  const previouslyQueued = result ? result.accepted.length - result.newlyQueued : 0;
 
   function csvMessage(key: CleanerInviteEmailCsvMessageKey) {
     return t(`emailCsv.${key}`);
@@ -172,14 +174,14 @@ export function CleanerEmailInvite({
   }
 
   async function sendInvitations() {
-    if (!canSend || !inviteId) return;
+    if (!canSend) return;
     setSubmitting(true);
     setError("");
     try {
       const actionResult = await sendCleanerInviteEmails({
         authorityConfirmed,
-        inviteId,
         locale: selectedLocale,
+        postingId,
         recipients,
       });
       if (actionResult.ok) setResult(actionResult);
@@ -197,10 +199,21 @@ export function CleanerEmailInvite({
     setError("");
     try {
       const actionResult = await retryFailedCleanerInviteEmails({
-        batchId: result.batchId,
+        authorityConfirmed: true,
+        locale: selectedLocale,
+        postingId,
+        recipients: result.failed.map((recipient) => ({
+          email: recipient.email,
+          name: recipient.name,
+        })),
         retryKey: crypto.randomUUID(),
       });
-      if (actionResult.ok) setResult(actionResult);
+      if (actionResult.ok) {
+        setResult({
+          ...actionResult,
+          accepted: [...result.accepted, ...actionResult.accepted],
+        });
+      }
       else showActionError(actionResult);
     } catch {
       setError(t("emailSendFailed"));
@@ -220,7 +233,7 @@ export function CleanerEmailInvite({
           aria-controls="cleaner-email-invite-flow"
           aria-expanded={expanded}
           className="button button--secondary"
-          disabled={!inviteId || !joinUrl}
+          disabled={!postingId || !joinUrl}
           onClick={() => setExpanded((value) => !value)}
           type="button"
         >
@@ -434,14 +447,7 @@ export function CleanerEmailInvite({
             <section aria-label={t("emailResults")} className="cleaners-email-invite__results">
               <div>
                 <CheckCircle2 aria-hidden="true" size={19} />
-                <strong>
-                  {result.reusedExisting
-                    ? t("emailNoNewSend")
-                    : t("emailQueuedNowCount", { count: result.newlyQueued })}
-                </strong>
-                {previouslyQueued > 0 ? (
-                  <span>{t("emailPreviouslyQueuedCount", { count: previouslyQueued })}</span>
-                ) : null}
+                <strong>{t("emailProviderAcceptedCount", { count: result.accepted.length })}</strong>
                 <span>{t("emailFailedCount", { count: result.failed.length })}</span>
               </div>
               <p className="cleaners-email-invite__provider-note">

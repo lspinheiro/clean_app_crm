@@ -1,7 +1,9 @@
 import type { AppLocale } from "@/i18n/config";
+import type { PostingIntent } from "@/features/postings/types";
 
 type CleanerInviteEmailInput = {
   companyName: string;
+  intent: PostingIntent;
   joinUrl: string;
   locale: AppLocale;
 };
@@ -23,39 +25,51 @@ function escapeHtml(value: string) {
 
 export function buildCleanerInviteEmail({
   companyName,
+  intent,
   joinUrl,
   locale,
 }: CleanerInviteEmailInput): CleanerInviteEmail {
-  const safeCompanyName = escapeHtml(companyName);
   const safeJoinUrl = escapeHtml(joinUrl);
 
   if (locale === "pt-BR") {
-    const subject = `Entre para a equipe de limpeza da empresa ${companyName}`;
+    const isExpressionOfInterest = intent === "expression_of_interest";
+    const subject = isExpressionOfInterest
+      ? `Entre para a equipe de limpeza da empresa ${companyName}`
+      : `Oportunidade de trabalho com ${companyName}`;
+    const introduction = isExpressionOfInterest
+      ? `${companyName} convidou você para manifestar interesse em entrar na equipe de limpeza da empresa no The Clean Crew.`
+      : `${companyName} convidou você para ver e se candidatar a uma oportunidade de limpeza no The Clean Crew.`;
     return {
       subject,
       text: [
-        `${companyName} convidou você para entrar na equipe de limpeza da empresa no The Clean Crew.`,
+        introduction,
         "",
-        `Abra o convite: ${joinUrl}`,
+        `Abra o anúncio: ${joinUrl}`,
         "",
-        "Este é um convite único para um profissional que já trabalha com a empresa.",
-        "Se você não esperava este convite, ignore este e-mail ou responda à empresa.",
+        "Este anúncio foi enviado a um profissional atual que espera recebê-lo.",
+        "Se você não esperava esta mensagem, ignore este e-mail ou responda à empresa.",
       ].join("\n"),
-      html: `<p><strong>${safeCompanyName}</strong> convidou você para entrar na equipe de limpeza da empresa no The Clean Crew.</p><p><a href="${safeJoinUrl}">Abrir convite</a></p><p>Este é um convite único para um profissional que já trabalha com a empresa.</p><p>Se você não esperava este convite, ignore este e-mail ou responda à empresa.</p>`,
+      html: `<p>${escapeHtml(introduction)}</p><p><a href="${safeJoinUrl}">Abrir anúncio</a></p><p>Este anúncio foi enviado a um profissional atual que espera recebê-lo.</p><p>Se você não esperava esta mensagem, ignore este e-mail ou responda à empresa.</p>`,
     };
   }
 
-  const subject = `Join ${companyName}'s Cleaner staff`;
+  const isExpressionOfInterest = intent === "expression_of_interest";
+  const subject = isExpressionOfInterest
+    ? `Join ${companyName}'s Cleaner staff`
+    : `Cleaning opportunity with ${companyName}`;
+  const introduction = isExpressionOfInterest
+    ? `${companyName} invited you to express interest in joining its Cleaner staff in The Clean Crew.`
+    : `${companyName} invited you to view and apply for a cleaning opportunity in The Clean Crew.`;
   return {
     subject,
     text: [
-      `${companyName} invited you to join its Cleaner staff in The Clean Crew.`,
+      introduction,
       "",
-      `Open the invitation: ${joinUrl}`,
+      `Open the posting: ${joinUrl}`,
       "",
-      "This is a one-time invitation for an existing worker of the company.",
-      "If you were not expecting this invitation, ignore this email or reply to the company.",
+      "This posting was sent to an existing worker who expects it.",
+      "If you were not expecting this message, ignore this email or reply to the company.",
     ].join("\n"),
-    html: `<p><strong>${safeCompanyName}</strong> invited you to join its Cleaner staff in The Clean Crew.</p><p><a href="${safeJoinUrl}">Open invitation</a></p><p>This is a one-time invitation for an existing worker of the company.</p><p>If you were not expecting this invitation, ignore this email or reply to the company.</p>`,
+    html: `<p>${escapeHtml(introduction)}</p><p><a href="${safeJoinUrl}">Open posting</a></p><p>This posting was sent to an existing worker who expects it.</p><p>If you were not expecting this message, ignore this email or reply to the company.</p>`,
   };
 }

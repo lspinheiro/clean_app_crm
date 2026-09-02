@@ -42,8 +42,8 @@ select results_eq(
 );
 select is(
   (select count(*)::integer from public.company_invites where revoked_at is null),
-  1,
-  'company admin sees exactly one active invite'
+  0,
+  'company admin sees no active legacy rotating invite'
 );
 reset role;
 

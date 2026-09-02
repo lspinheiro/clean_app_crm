@@ -62,29 +62,34 @@ flowchart LR
 *The PKCE singleton is the only auth surface; the service worker's push handler routes
 by notification type (offers → `/offers`, otherwise `/jobs` or `/board`).*
 
-- **Join (`app/join`)** — renders the link content from the extended
-  `cleaner_invite_preview` (title, description, pay shape) with the bare-link
-  fallback (company name + `pool_size`); new `limit_reached` dead state joins
-  revoked/expired. The delivered e-mail path offers two explicit modes: create an
-  account, or sign in to an existing account and return to the same invite. A signed-in
-  account sees its identity and only the cleaner profile fields required to join; this
-  applies to employee accounts, including an employee joining the same company's pool.
-  The later credential block adds "Continue with Google" beside those paths. New
-  `lib/webview.ts` detects an in-app browser
+- **Join (`app/join`)** — renders the public application page from `posting_preview`:
+  company description for an expression of interest, or the record-backed schedule,
+  service, suburb, cleaner pay, and public description for job-bound postings. The full
+  address, access notes, client phone and charge, and internal notes never enter the
+  component contract. Every dead reason renders one invitation-inactive state. The
+  e-mail path offers two explicit modes: create an account, or sign in to an existing
+  account and return to the same posting. A signed-in account sees its identity and only
+  the cleaner profile fields required to apply; `apply_to_posting` runs only after auth
+  and reuses waiting requests, while rejected people see the posting without an apply
+  control. The client partially guards duplicate company display names by reading
+  `company_id` from both cleaner relationship views and treating multiple distinct IDs
+  under one name as no known relationship, leaving `apply_to_posting` to adjudicate. This
+  cannot distinguish a single same-named relationship because `posting_preview` omits
+  `company_id`; CLE-111 must add that field and replace display-name matching with identity
+  matching. "Continue with Google" sits beside those paths.
+  `lib/auth/in-app-browser.ts` detects an in-app browser
   (user-agent heuristic); inside one, the Google button becomes "open in your
-  browser" guidance and email + password stays primary. The invite code always
+  browser" guidance and email + password stays primary. The posting code always
   travels in the URL, so the system-browser hop and the OAuth redirect both land on
   `/join?code=…` with context intact.
-- **Login (`(auth)/login`)** — accepts the pending invite code and returns to
+- **Login (`(auth)/login`)** — accepts the pending posting code and returns to
   `/join?code=…` immediately after password authentication, before the normal board
-  membership gate. It later gains "Continue with Google" beside the delivered e-mail +
-  password form (S27: return sign-in with the same credential), and the standard
-  e-mail-based password reset.
+  membership gate. The standard e-mail-based password reset remains follow-up work.
 - **OAuth callback (`app/(auth)/callback`)** — client component; the PKCE exchange
   is handled by the singleton (`detectSessionInUrl`), then it routes back to the
-  pending join (code from the redirect URL) or to the board. After a first Google
+  pending posting (the validated `next` query preserves its code). After a first Google
   sign-in, the join screen still collects phone and suburb (required profile fields,
-  PRD decision #9) before calling `join_company_pool`; the name prefills from the
+  PRD decision #9) before calling `apply_to_posting`; the name prefills from the
   Google profile and stays editable.
 - **Board (`(cleaner)/board`)** — wires the delivered `apply_to_job` /
   `withdraw_application` into the vacancy card with the visible waiting state
@@ -114,36 +119,37 @@ by notification type (offers → `/offers`, otherwise `/jobs` or `/board`).*
 **Webview join (S9).** WhatsApp opens `/join?code=X` in the in-app browser → preview
 renders the offer. A new user creates an account; an existing user signs in and returns
 to the same code. Both paths collect any missing name, phone, and suburb before
-`join_company_pool` → board. Had she wanted Google: guidance opens the same URL in the
-system browser; the flow restarts there with the code intact.
+`apply_to_posting` → request/application confirmation. For Google, the page explains
+that WhatsApp blocks OAuth and asks the person to open the same URL in Safari or Chrome;
+the e-mail path remains available in the webview.
 
 ```mermaid
 sequenceDiagram
     participant W as WhatsApp webview
     participant SYS as System browser
     participant SB as Supabase Auth
-    participant DB as join_company_pool
+    participant DB as apply_to_posting
     Note over W: /join?code=X — webview detected
     alt new account
         W->>SB: signUp(email, password)
-        W->>DB: join(code, name, phone, suburb)
-        DB-->>W: pool joined → board
+        W->>DB: apply(code, name, phone, suburb, note)
+        DB-->>W: request + application → waiting state
     else existing account
         W->>SB: signInWithPassword(email, password)
         SB-->>W: /join?code=X
-        W->>DB: join(code, name, phone, suburb)
-        DB-->>W: pool joined → board
+        W->>DB: apply(code, name, phone, suburb, note)
+        DB-->>W: reused request + application → waiting state
     else Google (blocked in the webview)
         W-->>SYS: "open in your browser" — same URL, code intact
-        SYS->>SB: signInWithOAuth(google) → /callback?code=X
+        SYS->>SB: signInWithOAuth(google) → /callback?next=/join?code=X
         SYS->>SYS: join screen: phone + suburb<br/>(name prefilled from Google)
-        SYS->>DB: join(code, phone, suburb)
-        DB-->>SYS: membership created → board
+        SYS->>DB: apply(code, phone, suburb, note)
+        DB-->>SYS: request + application → waiting state
     end
 ```
 
-*The invite code lives in the URL on every hop, so no state survives-the-browser-switch
-machinery is needed; a dead link shows its state instead of either form.*
+*The posting code lives in the URL on every hop; a dead link shows its state instead of
+either form.*
 
 **Offer from the lock screen (S29, S20).** Push `offer_received` → tap →
 `/offers` → accept → `accept_offer` → my jobs shows the assignment. Failure: offer

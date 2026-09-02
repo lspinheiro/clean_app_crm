@@ -12,10 +12,7 @@ import {
 import { buildCleanerJoinUrl } from "@/features/cleaners/invite";
 import { userMessage } from "@/i18n/user-message";
 import { requireCompanyAdmin } from "@/lib/auth/session";
-import {
-  sendResendEmailBatches,
-  type ResendEmailOutcome,
-} from "@/lib/resend";
+import { sendResendEmailBatches, type ResendEmailOutcome } from "@/lib/resend";
 
 const recipientSchema = z.object({
   email: z.string().trim().pipe(z.email().max(320)),
@@ -24,40 +21,19 @@ const recipientSchema = z.object({
 
 const sendInputSchema = z.object({
   authorityConfirmed: z.literal(true),
-  inviteId: z.uuid(),
   locale: z.enum(["en-AU", "pt-BR"]),
+  postingId: z.uuid(),
   recipients: z.array(recipientSchema).min(1).max(CLEANER_INVITE_EMAIL_RECIPIENT_LIMIT),
 });
 
-const retryInputSchema = z.object({
-  batchId: z.uuid(),
-  retryKey: z.uuid(),
-});
+const retryInputSchema = sendInputSchema.extend({ retryKey: z.uuid() });
 
-const preparedRecipientSchema = z.object({
-  attempt_number: z.number().int().nonnegative(),
-  batch_id: z.uuid(),
-  email: z.email(),
-  failure_reason: z.string().nullable(),
-  invite_code: z.string(),
-  locale: z.enum(["en-AU", "pt-BR"]),
-  name: z.string().nullable(),
-  provider_message_id: z.string().nullable(),
-  recipient_id: z.uuid(),
-  status: z.enum(["pending", "accepted", "failed"]),
+const activePostingSchema = z.object({
+  code: z.string().regex(/^[A-Z0-9]{16}$/),
+  id: z.uuid(),
+  intent: z.enum(["expression_of_interest", "one_time", "regular"]),
+  state: z.literal("active"),
 });
-
-const recordedRecipientSchema = z.object({
-  email: z.email(),
-  failure_reason: z.string().nullable(),
-  name: z.string().nullable(),
-  provider_message_id: z.string().nullable(),
-  recipient_id: z.uuid(),
-  status: z.enum(["pending", "accepted", "failed"]),
-});
-
-type PreparedRecipient = z.infer<typeof preparedRecipientSchema>;
-type RecordedRecipient = z.infer<typeof recordedRecipientSchema>;
 
 export type CleanerInviteEmailResultRecipient = {
   email: string;
@@ -70,9 +46,7 @@ export type CleanerInviteEmailActionResult =
       accepted: CleanerInviteEmailResultRecipient[];
       batchId: string;
       failed: CleanerInviteEmailResultRecipient[];
-      newlyQueued: number;
       ok: true;
-      reusedExisting: boolean;
     }
   | { error: string; ok: false };
 
@@ -108,23 +82,25 @@ function loadConfiguration(userEmail: string | undefined): EmailConfiguration | 
   return parsed.success ? parsed.data : null;
 }
 
-function confirmationKey(
-  inviteId: string,
-  locale: "en-AU" | "pt-BR",
-  recipients: CleanerInviteEmailRecipient[],
-) {
-  const digest = createHash("sha256")
-    .update(JSON.stringify({
-      inviteId,
-      locale,
-      recipients: recipients.map(({ email }) => email).sort(),
-    }))
-    .digest();
+function uuidFromParts(parts: unknown[]) {
+  const digest = createHash("sha256").update(JSON.stringify(parts)).digest();
   const bytes = Uint8Array.from(digest.subarray(0, 16));
   bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x50;
   bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
   const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function confirmationKey(
+  postingId: string,
+  locale: "en-AU" | "pt-BR",
+  recipients: CleanerInviteEmailRecipient[],
+) {
+  return uuidFromParts([
+    postingId,
+    locale,
+    recipients.map(({ email }) => email).sort(),
+  ]);
 }
 
 function senderAddress(companyName: string, fromEmail: string) {
@@ -137,169 +113,129 @@ function senderAddress(companyName: string, fromEmail: string) {
   return `"${displayName}" <${fromEmail}>`;
 }
 
-function resultFromRows(
-  batchId: string,
-  rows: RecordedRecipient[],
-  delivery: { newlyQueued: number; reusedExisting: boolean },
-): CleanerInviteEmailActionResult {
-  const mapRow = (row: RecordedRecipient): CleanerInviteEmailResultRecipient => ({
-    email: row.email,
-    failureReason: row.failure_reason,
-    name: row.name,
-  });
+function resultRecipient(
+  recipient: CleanerInviteEmailRecipient,
+  outcome: ResendEmailOutcome,
+): CleanerInviteEmailResultRecipient {
   return {
-    accepted: rows.filter((row) => row.status === "accepted").map(mapRow),
-    batchId,
-    failed: rows.filter((row) => row.status === "failed").map(mapRow),
-    newlyQueued: delivery.newlyQueued,
-    ok: true,
-    reusedExisting: delivery.reusedExisting,
+    email: recipient.email,
+    failureReason: outcome.status === "failed" ? outcome.failureReason : null,
+    name: recipient.name,
   };
 }
 
-function providerResults(outcomes: ResendEmailOutcome[]) {
-  return outcomes.map((outcome) =>
-    outcome.status === "accepted"
-      ? {
-          failure_reason: null,
-          provider_message_id: outcome.providerMessageId,
-          recipient_id: outcome.recipientId,
-          status: outcome.status,
-        }
-      : {
-          failure_reason: outcome.failureReason,
-          provider_message_id: null,
-          recipient_id: outcome.recipientId,
-          status: outcome.status,
-        },
-  );
+async function activePosting(
+  supabase: Awaited<ReturnType<typeof requireCompanyAdmin>>["supabase"],
+  companyId: string,
+  postingId: string,
+) {
+  try {
+    const { data, error } = await supabase
+      .from("posting_states")
+      .select("id, code, intent, state")
+      .eq("id", postingId)
+      .eq("company_id", companyId)
+      .eq("state", "active")
+      .maybeSingle();
+    const parsed = activePostingSchema.safeParse(data);
+    return error || !parsed.success ? null : parsed.data;
+  } catch {
+    return null;
+  }
 }
 
-async function deliverPreparedRecipients(
-  preparedRows: PreparedRecipient[],
-  companyName: string,
-  configuration: EmailConfiguration,
-  supabase: Awaited<ReturnType<typeof requireCompanyAdmin>>["supabase"],
+async function deliverMessage({
+  attemptNumber,
+  batchId,
+  companyName,
+  configuration,
+  message,
+  recipients,
+}: {
+  attemptNumber: number;
+  batchId: string;
+  companyName: string;
+  configuration: EmailConfiguration;
+  message: ReturnType<typeof buildCleanerInviteEmail>;
+  recipients: CleanerInviteEmailRecipient[];
+}): Promise<CleanerInviteEmailActionResult> {
+  const messages = recipients.map((recipient) => ({
+    ...message,
+    recipientId: uuidFromParts([batchId, recipient.email]),
+    to: recipient.email,
+  }));
+  const recipientsById = new Map(
+    messages.map((outbound, index) => [outbound.recipientId, recipients[index]]),
+  );
+  const outcomes = await sendResendEmailBatches({
+    apiKey: configuration.apiKey,
+    attemptNumber,
+    batchId,
+    from: senderAddress(companyName, configuration.fromEmail),
+    idempotencyNamespace: "cleaner-posting",
+    messages,
+    replyTo: configuration.replyTo,
+  });
+  const accepted: CleanerInviteEmailResultRecipient[] = [];
+  const failed: CleanerInviteEmailResultRecipient[] = [];
+  outcomes.forEach((outcome) => {
+    const recipient = recipientsById.get(outcome.recipientId);
+    if (!recipient) throw new Error("Email provider outcome did not match a prepared recipient");
+    const result = resultRecipient(recipient, outcome);
+    if (outcome.status === "accepted") accepted.push(result);
+    else failed.push(result);
+  });
+  return {
+    accepted,
+    batchId,
+    failed,
+    ok: true,
+  };
+}
+
+async function send(
+  input: z.infer<typeof sendInputSchema>,
+  attemptNumber: number,
+  retryKey?: string,
 ): Promise<CleanerInviteEmailActionResult> {
-  const first = preparedRows[0];
-  if (!first) return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
+  const { company, supabase, user } = await requireCompanyAdmin();
+  const configuration = loadConfiguration(user.email);
+  if (!configuration) return { error: userMessage("cleanerEmailNotConfigured"), ok: false };
+  const posting = await activePosting(supabase, company.id, input.postingId);
+  if (!posting) return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
 
-  const pending = preparedRows.filter((row) => row.status === "pending");
-  if (pending.length === 0) {
-    return resultFromRows(first.batch_id, preparedRows, {
-      newlyQueued: 0,
-      reusedExisting: true,
-    });
-  }
-
+  const recipients = uniqueRecipients(input.recipients);
+  const batchId = retryKey ?? confirmationKey(posting.id, input.locale, recipients);
   let joinUrl: string;
   try {
-    joinUrl = buildCleanerJoinUrl(configuration.cleanerAppUrl, first.invite_code);
+    joinUrl = buildCleanerJoinUrl(configuration.cleanerAppUrl, posting.code);
   } catch {
     return { error: userMessage("cleanerEmailNotConfigured"), ok: false };
   }
   const message = buildCleanerInviteEmail({
-    companyName,
+    companyName: company.name,
+    intent: posting.intent,
     joinUrl,
-    locale: first.locale,
+    locale: input.locale,
   });
-  const outcomes = await sendResendEmailBatches({
-    apiKey: configuration.apiKey,
-    attemptNumber: first.attempt_number,
-    batchId: first.batch_id,
-    from: senderAddress(companyName, configuration.fromEmail),
-    idempotencyNamespace: "cleaner-invite",
-    messages: pending.map((recipient) => ({
-      ...message,
-      recipientId: recipient.recipient_id,
-      to: recipient.email,
-    })),
-    replyTo: configuration.replyTo,
+  return deliverMessage({
+    attemptNumber,
+    batchId,
+    companyName: company.name,
+    configuration,
+    message,
+    recipients,
   });
-
-  try {
-    const { data, error } = await supabase.rpc("record_pool_invite_email_results", {
-      attempt_number: first.attempt_number,
-      provider_results: providerResults(outcomes),
-      selected_batch_id: first.batch_id,
-    });
-    const parsed = z.array(recordedRecipientSchema).safeParse(data);
-    if (error || !parsed.success) {
-      return { error: userMessage("cleanerEmailRecordFailed"), ok: false };
-    }
-    return resultFromRows(first.batch_id, parsed.data, {
-      newlyQueued: outcomes.filter((outcome) => outcome.status === "accepted").length,
-      reusedExisting: false,
-    });
-  } catch {
-    return { error: userMessage("cleanerEmailRecordFailed"), ok: false };
-  }
 }
 
 export async function sendCleanerInviteEmails(input: unknown): Promise<CleanerInviteEmailActionResult> {
   const parsed = sendInputSchema.safeParse(input);
-  if (!parsed.success) {
-    return { error: userMessage("cleanerEmailInvalidInput"), ok: false };
-  }
-
-  const { company, supabase, user } = await requireCompanyAdmin();
-  const configuration = loadConfiguration(user.email);
-  if (!configuration) {
-    return { error: userMessage("cleanerEmailNotConfigured"), ok: false };
-  }
-  const recipients = uniqueRecipients(parsed.data.recipients);
-  const derivedConfirmationKey = confirmationKey(
-    parsed.data.inviteId,
-    parsed.data.locale,
-    recipients,
-  );
-  let preparedRows: PreparedRecipient[];
-  try {
-    const { data, error } = await supabase.rpc("prepare_pool_invite_email_batch", {
-      authority_confirmed: parsed.data.authorityConfirmed,
-      confirmation_key: derivedConfirmationKey,
-      recipients,
-      selected_invite_id: parsed.data.inviteId,
-      selected_locale: parsed.data.locale,
-      target_company_id: company.id,
-    });
-    const prepared = z.array(preparedRecipientSchema).safeParse(data);
-    if (error || !prepared.success) {
-      return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
-    }
-    preparedRows = prepared.data;
-  } catch {
-    return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
-  }
-  return deliverPreparedRecipients(preparedRows, company.name, configuration, supabase);
+  if (!parsed.success) return { error: userMessage("cleanerEmailInvalidInput"), ok: false };
+  return send(parsed.data, 0);
 }
 
-export async function retryFailedCleanerInviteEmails(
-  input: unknown,
-): Promise<CleanerInviteEmailActionResult> {
+export async function retryFailedCleanerInviteEmails(input: unknown): Promise<CleanerInviteEmailActionResult> {
   const parsed = retryInputSchema.safeParse(input);
-  if (!parsed.success) {
-    return { error: userMessage("cleanerEmailInvalidInput"), ok: false };
-  }
-
-  const { company, supabase, user } = await requireCompanyAdmin();
-  const configuration = loadConfiguration(user.email);
-  if (!configuration) {
-    return { error: userMessage("cleanerEmailNotConfigured"), ok: false };
-  }
-  let preparedRows: PreparedRecipient[];
-  try {
-    const { data, error } = await supabase.rpc("prepare_pool_invite_email_retry", {
-      retry_key: parsed.data.retryKey,
-      selected_batch_id: parsed.data.batchId,
-    });
-    const prepared = z.array(preparedRecipientSchema).safeParse(data);
-    if (error || !prepared.success) {
-      return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
-    }
-    preparedRows = prepared.data;
-  } catch {
-    return { error: userMessage("cleanerEmailPrepareFailed"), ok: false };
-  }
-  return deliverPreparedRecipients(preparedRows, company.name, configuration, supabase);
+  if (!parsed.success) return { error: userMessage("cleanerEmailInvalidInput"), ok: false };
+  return send(parsed.data, 1, parsed.data.retryKey);
 }

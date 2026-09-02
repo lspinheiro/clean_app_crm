@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const cleanerEmail = "cleaner.two@clean-app.example.test";
 const demoPassword = "local-demo-only";
+const postingCode = "DEMOEOIPOST00001";
 
 async function setSavedLocale(locale: "en-AU" | "pt-BR") {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -27,13 +28,13 @@ test.describe("@F15 bilingual Cleaner app", () => {
   test("switches before sign-in without losing the invite task or entered values", async ({
     page,
   }) => {
-    await page.goto("/en-AU/login?code=CLEAN1DEMOJOIN99");
+    await page.goto(`/en-AU/login?code=${postingCode}`);
     await page.getByLabel("Email").fill(cleanerEmail);
     await page.getByLabel("Password").fill(demoPassword);
 
     await page.getByRole("combobox", { name: "Language" }).selectOption("pt-BR");
 
-    await expect(page).toHaveURL(/\/pt-BR\/login\?code=CLEAN1DEMOJOIN99$/);
+    await expect(page).toHaveURL(new RegExp(`/pt-BR/login\\?code=${postingCode}$`));
     await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
     await expect(page).toHaveTitle("Entrar · The Clean Crew");
     await expect(page.getByLabel("E-mail")).toHaveValue(cleanerEmail);
@@ -47,7 +48,7 @@ test.describe("@F15 bilingual Cleaner app", () => {
 
     await page.getByLabel("E-mail").fill(cleanerEmail);
     await page.getByRole("button", { name: "Entrar" }).click();
-    await expect(page).toHaveURL(/\/pt-BR\/join\?code=CLEAN1DEMOJOIN99$/);
+    await expect(page).toHaveURL(new RegExp(`/pt-BR/join\\?code=${postingCode}$`));
 
     await page.goto("/pt-BR/rota-inexistente");
     await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();

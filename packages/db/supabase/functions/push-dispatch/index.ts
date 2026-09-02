@@ -46,7 +46,7 @@ class SupabaseDispatchStore implements DispatchStore {
   ): Promise<StoredNotification | null> {
     const { data, error } = await this.client
       .from("notifications")
-      .select("recipient_id, job_id, type")
+      .select("recipient_id, job_id, recurring_assignment_id, type")
       .eq("id", notificationId)
       .maybeSingle();
     if (error) throw error;
@@ -54,6 +54,7 @@ class SupabaseDispatchStore implements DispatchStore {
     return {
       recipientId: data.recipient_id,
       jobId: data.job_id,
+      recurringAssignmentId: data.recurring_assignment_id,
       type: data.type,
     };
   }

@@ -62,6 +62,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         "cleaner_id, status, applied_at, profiles!inner(full_name)",
       )
       .eq("job_id", jobId)
+      .is("join_request_id", null)
       .order("applied_at"),
     supabase
       .from("company_members")
@@ -109,13 +110,22 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     offerRows.map((offer) => offer.cleaner_id),
   );
   const applicants: JobApplicant[] = sortJobApplicants(
-    applicationRows.map((application) => ({
-      cleanerId: application.cleaner_id,
-      cleanerName: application.profiles.full_name,
-      status: application.status,
-      appliedAt: application.applied_at,
-      preferredRank: preferredRanks.get(application.cleaner_id) ?? null,
-    })),
+    applicationRows.map((application) => {
+      if (
+        application.status === "hired"
+        || application.status === "job_filled"
+        || application.status === "posting_closed"
+      ) {
+        throw new Error("The staff application query returned a candidate-only status.");
+      }
+      return {
+        cleanerId: application.cleaner_id,
+        cleanerName: application.profiles.full_name,
+        status: application.status,
+        appliedAt: application.applied_at,
+        preferredRank: preferredRanks.get(application.cleaner_id) ?? null,
+      };
+    }),
   );
   const cleanerCandidates: JobCleanerCandidate[] = sortCleanerCandidates(
     membershipRows

@@ -5,7 +5,7 @@
 The company-admin app of the [Phase A HLD](hld.md), against the db contract in
 [lld-db.md](lld-db.md). Stories: S1–S8 (the public first-admin acceptance path plus
 delivered screens gaining pay basis and the
-new cleaners screen), S22 (job detail + offers), S23 (pay basis picker), S24 (money), S25
+Staff posting workspace), S22 (job detail + offers), S23 (pay basis picker), S24 (money), S25
 (cancel — delivered), S28 (send/revoke offers), S30 (bulk import), S31 (jobs list —
 delivered). Delivered internals (route layout, server-action pattern, zod convention,
 `requireCompanyAdmin`) are the authority for anything this file does not change. S30
@@ -15,20 +15,24 @@ outside this implementation slice.
 
 ## Interfaces
 
-Consumes the new/changed RPCs from [lld-db.md](lld-db.md): `create_pool_invite`,
-`revoke_pool_invite`, `offer_job`, `offer_series`, `revoke_offer`, `mark_paid`, the
+Consumes the new/changed RPCs from [lld-db.md](lld-db.md): `create_posting`,
+`revoke_posting`, `offer_job`, `offer_series`, `revoke_offer`, `mark_paid`, the
 pay-basis parameters on the job/rule RPCs, and the changed `assign_job_slot` error
 ("Revoke the pending offer first"). Every call follows the delivered server-action
 pattern: zod `safeParse` → `requireCompanyAdmin` → `supabase.rpc` → verbatim error
 mapping → `revalidatePath` → discriminated result.
 
-The cleaner e-mail flow adds `prepare_pool_invite_email_batch` and
-`record_pool_invite_email_results`. `sendCleanerInviteEmails` and
-`retryFailedCleanerInviteEmails` call these RPCs around the server-only Resend Batch API.
-Both actions call `requireCompanyAdmin` before they resolve the selected active invite.
+The cleaner e-mail flow sends a selected posting through the server-only Resend Batch API.
+`sendCleanerInviteEmails` and `retryFailedCleanerInviteEmails` call
+`requireCompanyAdmin`, then resolve that posting from the company-scoped `posting_states`
+read model and require its derived state to be `active` before provider delivery.
 The request contains `en-AU` or `pt-BR`, the normalised recipients, and the accepted
-authority statement. The server derives a stable confirmation key from the invite,
+authority statement. The server derives a stable provider idempotency key from the posting,
 locale, and sorted unique recipient e-mails. The request never contains an API key.
+The invite-keyed batch RPCs cannot be reused because CLE-59 retired every legacy invite;
+with CLE-60 constrained to the app layer, posting sends do not persist batch history and a
+reload cannot reconstruct failed recipients. The in-page result retains failed recipients
+for an explicitly confirmed retry, and the retry re-authorises and re-checks the posting.
 
 The repository command loads `.env.first-admin.local` from the repository root. Next.js
 does not load this command-only file. The command requires an explicit `SUPABASE_URL` and
@@ -57,6 +61,7 @@ delivered pattern is unchanged, plain boxes are delivered modules gaining behavi
 flowchart LR
     subgraph routes["app/(crm) routes"]
         RCLEANERS["cleaners"]
+        RPOST["cleaners/postings/new<br/>shared composer"]
         RJOB["jobs/[jobId]"]
         RROSTER["roster"]
         RMONEY["money"]
@@ -69,7 +74,7 @@ flowchart LR
     end
     FCLI["scripts/invite-first-admin.mjs"]
     subgraph actions["app/actions (server)"]
-        ACLEANERS["cleaners.ts<br/>(reworked)"]
+        APOST["postings.ts (new)"]
         AOFF["offers.ts (new)"]
         AMONEY["money.ts (new)"]
         AIMP["import.ts (new)"]
@@ -78,21 +83,21 @@ flowchart LR
         AADMIN["first-admin.ts<br/>(accept)"]
     end
     subgraph rpcs["packages/db RPCs"]
-        R1["create_pool_invite<br/>revoke_pool_invite"]
+        R1["create_posting<br/>revoke_posting"]
         R2["offer_job / offer_series<br/>revoke_offer"]
         R3["mark_paid"]
         R4["existing create RPCs<br/>(clients, sites, rules)"]
-        R5["prepare batch<br/>record results"]
         R6["prepare/revoke/context/accept<br/>first-admin invitation"]
     end
     FCLI -->|"secret key"| SAUTH["Supabase Auth Admin"]
     FCLI --> R6
     SAUTH -->|"invite token hash"| RCONF --> RACCEPT --> AADMIN --> R6
-    RCLEANERS --> ACLEANERS --> R1
+    RCLEANERS --> RPOST --> APOST --> R1
+    RCLEANERS -->|"company-scoped read"| PSTATE[("posting_states")]
     RJOB --> AOFF --> R2
     RMONEY --> AMONEY --> R3
     RIMP --> AIMP --> R4
-    RCLEANERS --> AEMAIL --> R5
+    RCLEANERS --> AEMAIL
     AEMAIL -->|"batches <= 100"| RESEND["Resend Batch API"]
     RBELL --> ANOTIF -->|read + mark read| NDB[("notifications<br/>(RLS reads)")]
     RROSTER -->|company-scoped reads<br/>+ offers join| VDB[("tables + views")]
@@ -101,12 +106,21 @@ flowchart LR
 *Reads keep the delivered pattern (company-scoped selects under RLS, the roster gaining
 the pending-offers join); every mutation stays a server action calling one RPC.*
 
-- **Cleaners (`(crm)/cleaners`, `actions/cleaners.ts`)** — reworked: a link list (state chip,
-  registration count, age, revoke button) and a creation form. The form leads with the
-  offer-details path (title, description, pay basis + value) and offers "bare link" as
-  the secondary path (LLD-db decision 3); optional expiry and registration cap.
-  `rotate` action is deleted with its RPC. Link URL format is unchanged
-  (`<CLEANER_APP_URL>/join?code=…`).
+- **Staff postings (`(crm)/cleaners`, `(crm)/cleaners/postings/new`,
+  `actions/postings.ts`)** — the Staff management home lists every posting with intent,
+  derived active/closed state, validated closing reason, application count, link actions,
+  and direct revoke. One shared composer serves intent-first creation and record-first
+  links from a job or recurring assignment. Expression-of-interest postings have no work
+  target; the other intents select an eligible vacancy or active series with an unfilled
+  named slot. Their preview selects and renders only schedule, service type, suburb,
+  duration, and cleaner pay. One public description is required; expiry and application
+  cap are optional. Full address, access notes, client phone and charge, and internal notes
+  are absent from the query and component contract. A new need creates a new posting;
+  no rotate, regenerate, or replace control remains. Link URL format is unchanged
+  (`<CLEANER_APP_URL>/join?code=…`). The cleaner `/join` route resolves that code through
+  `posting_preview`, renders the public posting before registration, and calls
+  `apply_to_posting` only after sign-up or sign-in. The copy-link, WhatsApp share, and
+  bulk e-mail paths therefore all land on the same privacy-bounded application page.
 - **Cleaner e-mail send list (`(crm)/cleaners`, `actions/cleaner-email.ts`,
   `features/cleaners/email-csv.ts`, `lib/resend.ts`)** — the admin can enter one or more
   e-mail addresses directly, adding or removing form rows, and can optionally upload a
@@ -114,8 +128,8 @@ the pending-offers join); every mutation stays a server action calling one RPC.*
   empty CSV `name`, reports address errors, and deduplicates the combined send list
   case-insensitively. It then shows
   the exact unique-recipient count, the selected `en-AU` or `pt-BR` copy, and the
-  authority statement. Confirm sends the selected active invite only. The server
-  repeats schema validation, authorisation, invite-state checks, and deduplication.
+  authority statement. Confirm sends the selected active posting only. The server
+  repeats schema validation, authorisation, posting company/state checks, and deduplication.
   It rejects more than 500 unique recipients and calls
   `https://api.resend.com/emails/batch` with at most 100 messages per call.
   `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are server-only. From uses
@@ -268,8 +282,8 @@ sequenceDiagram
 *Nothing is written before confirm; a mid-batch failure is a per-row outcome, never an
 abort.*
 
-**Cleaner staff e-mail send list (S8/S30).** Enter addresses and add further rows, or choose an
-optional CSV → validate and deduplicate → choose locale → preview exact e-mail and
+**Cleaner staff e-mail send list (S8/S30).** Select an active posting, enter addresses and
+add further rows, or choose an optional CSV → validate and deduplicate → choose locale → preview exact e-mail and
 recipient count → confirm authority →
 submit once → show accepted and failed recipients. Retry creates a new confirmed attempt
 for failed recipients only. It never resends an accepted recipient.
@@ -279,18 +293,17 @@ sequenceDiagram
     participant T as Thiago
     participant B as Browser
     participant S as CRM server
-    participant DB as Batch RPCs
+    participant DB as posting_states
     participant R as Resend
     T->>B: type addresses or choose cleaner CSV
     B->>B: validate + deduplicate
     B-->>T: exact count + localised preview + authority statement
     T->>S: confirm normalised list + locale + authority
-    S->>S: require company admin + validate + derive stable confirmation key
-    S->>DB: prepare batch for active invite
+    S->>S: require company admin + validate + deduplicate
+    S->>DB: resolve selected company posting; require active
     loop chunks of at most 100
-        S->>R: send with stable provider idempotency key
+        S->>R: send posting URL with stable provider idempotency key
         R-->>S: accepted IDs or safe failure
-        S->>DB: record recipient outcomes
     end
     S-->>T: accepted and failed recipients
     T->>S: retry failed only
@@ -310,7 +323,8 @@ The e-mail action maps missing configuration to one actionable admin message. It
 provider failure to a safe recipient failure reason. It never returns credentials,
 response bodies, or raw provider errors. It honours Resend rate-limit reset headers and
 retries a 429 with the same provider idempotency key. A failed provider chunk does not
-stop later chunks. Retry reads failed recipients from company-scoped batch state.
+stop later chunks. Retry receives only the failed recipients retained by the current
+browser result, then re-authorises and re-checks the selected posting before delivery.
 
 The founder command fails before an Auth call if configuration or input is invalid. A
 repeated pending invitation reports that it sent no e-mail. A confirmed Auth user receives
@@ -334,7 +348,8 @@ or membership.
 Alpha scale; nothing hot. The company-data import submits sequentially by design
 (LLD-db decision — free-tier discipline; a 40-row import is 40 fast calls). Cleaner
 e-mail sends use provider batches of at most 100 messages and stop at 500 unique
-recipients per confirmed send.
+recipients per confirmed send. Posting option queries select only the public preview
+projection and deduplicate vacancy rows by job id.
 The first-admin command and acceptance form each handle one invitation. No queue or bulk
 path exists.
 
@@ -390,3 +405,15 @@ one authenticated RPC that derives the verified e-mail and grants the company ro
 atomically. A platform operator screen and a browser Auth Admin client are rejected: the
 first adds an unrequested alpha application, and the second would expose the secret and
 privileged API.
+
+### 6. Posting e-mail delivery uses app-layer idempotency, not retired invite batches (2026-08-30)
+
+CLE-59 deliberately left the invite-keyed e-mail batch RPCs unusable by revoking every
+legacy company invite. CLE-60 is app-layer only, so S30 binds directly to one selected,
+company-scoped active posting and derives stable Resend idempotency keys from that posting
+and the confirmed recipient set. Failed recipients can be retried while the result remains
+open, with authority and posting state checked again. Durable send history and retry after
+reload are not claimed: they require a later posting-keyed database contract. Reusing the
+dead invite RPCs was rejected because it would make the restored UI unreachable again;
+direct unscoped provider delivery was rejected because it would not enforce active-company
+posting ownership immediately before the send.

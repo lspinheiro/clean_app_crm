@@ -106,5 +106,9 @@ describe("CLE-23 jobs entry point", () => {
       "status",
       "applied",
     );
+    expect(queries.get("job_applications")?.is).toHaveBeenCalledWith(
+      "join_request_id",
+      null,
+    );
   });
 });

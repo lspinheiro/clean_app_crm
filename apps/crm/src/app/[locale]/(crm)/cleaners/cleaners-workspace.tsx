@@ -1,19 +1,19 @@
 "use client";
 
-import { Check, Copy, Link2, MessageCircle, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
+import { Copy, Mail, MessageCircle, Plus, UserRound, XCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
-import { rotateCleanerInvite } from "@/app/actions/cleaners";
+import { revokePosting } from "@/app/actions/postings";
 import {
   buildCleanerJoinUrl,
-  buildInviteMessage,
   buildWhatsAppShareUrl,
   formatJoinedDate,
 } from "@/features/cleaners/invite";
 import type { CleanerMember } from "@/features/cleaners/types";
+import type { PostingIntent, PostingSummary } from "@/features/postings/types";
 import type { AppLocale } from "@/i18n/config";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { localiseUserMessage } from "@/i18n/user-message";
 
 import { CleanerEmailInvite } from "./cleaner-email-invite";
@@ -21,9 +21,8 @@ import { CleanerEmailInvite } from "./cleaner-email-invite";
 type CleanersWorkspaceProps = {
   cleanerAppUrl: string;
   companyName: string;
-  initialCode: string | null;
-  initialInviteId: string | null;
   members: CleanerMember[];
+  postings: PostingSummary[];
 };
 
 function memberInitials(name: string) {
@@ -34,324 +33,196 @@ function memberInitials(name: string) {
   return `${first}${last}`.toUpperCase();
 }
 
-export function CleanersWorkspace({
-  cleanerAppUrl,
-  companyName,
-  initialCode,
-  initialInviteId,
-  members,
-}: CleanersWorkspaceProps) {
+export function CleanersWorkspace({ cleanerAppUrl, companyName, members, postings }: CleanersWorkspaceProps) {
   const locale = useLocale() as AppLocale;
-  const t = useTranslations("Cleaners");
+  const t = useTranslations("Postings");
+  const cleanersT = useTranslations("Cleaners");
   const router = useRouter();
-  const replaceDialogRef = useRef<HTMLDialogElement>(null);
-  const [activeCode, setActiveCode] = useState(initialCode);
-  const [activeInviteId, setActiveInviteId] = useState(initialInviteId);
-  const [detailsVisible, setDetailsVisible] = useState(false);
-  // A rotation updates the code locally and then calls router.refresh(), so the server
-  // re-renders this workspace with the replacement invite. Adopt whatever invite the
-  // server last reported — that also picks up a rotation performed by another admin —
-  // without discarding what the admin has open in front of them.
-  const [reportedCode, setReportedCode] = useState(initialCode);
-  const [reportedInviteId, setReportedInviteId] = useState(initialInviteId);
-  if (reportedCode !== initialCode || reportedInviteId !== initialInviteId) {
-    setReportedCode(initialCode);
-    setReportedInviteId(initialInviteId);
-    setActiveCode(initialCode);
-    setActiveInviteId(initialInviteId);
-  }
-  const [copying, setCopying] = useState<"link" | "message" | null>(null);
-  const [rotating, setRotating] = useState(false);
+  const [emailPostingId, setEmailPostingId] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [hasError, setHasError] = useState(false);
-  const joinUrl = activeCode ? buildCleanerJoinUrl(cleanerAppUrl, activeCode) : null;
-  const inviteMessage = activeCode && joinUrl
-    ? buildInviteMessage(companyName, joinUrl, activeCode, (values) =>
-        t("inviteMessage", values))
-    : null;
-  const whatsAppShareUrl = inviteMessage
-    ? buildWhatsAppShareUrl(inviteMessage)
-    : null;
 
-  async function copyToClipboard(value: string, kind: "link" | "message") {
-    setCopying(kind);
+  function intentLabel(intent: PostingIntent) {
+    return t(`intent.${intent}.label`);
+  }
+
+  async function copyPostingLink(posting: PostingSummary) {
     setHasError(false);
-    setStatus(kind === "link" ? t("copyingSignup") : t("copyingInvite"));
     try {
-      await navigator.clipboard.writeText(value);
-      setStatus(kind === "link" ? t("signupCopied") : t("inviteCopied"));
+      await navigator.clipboard.writeText(buildCleanerJoinUrl(cleanerAppUrl, posting.code));
+      setStatus(t("copied"));
     } catch {
       setHasError(true);
-      setStatus(
-        kind === "link"
-          ? t("signupCopyFailed")
-          : t("inviteCopyFailed"),
-      );
-    } finally {
-      setCopying(null);
+      setStatus(t("copyFailed"));
     }
   }
 
-  async function generateNewCode() {
-    setRotating(true);
+  function sharePosting(posting: PostingSummary) {
+    const postingUrl = buildCleanerJoinUrl(cleanerAppUrl, posting.code);
+    const message = t("shareMessage", {
+      companyName,
+      intent: intentLabel(posting.intent),
+      postingUrl,
+    });
+    window.open(buildWhatsAppShareUrl(message), "_blank", "noopener,noreferrer");
+  }
+
+  async function handleRevoke(posting: PostingSummary) {
+    setRevokingId(posting.id);
     setHasError(false);
-    setStatus(t("generatingCode"));
+    setStatus("");
     try {
-      const result = await rotateCleanerInvite();
+      const result = await revokePosting(posting.id);
       if (!result.ok) {
         setHasError(true);
-        setStatus(
-          t("reloadingInvite", {
-            error: localiseUserMessage(result.error, locale) ?? result.error,
-          }),
-        );
-        window.location.reload();
-        return;
+        setStatus(localiseUserMessage(result.error, locale) ?? t("revokeFailed"));
+      } else {
+        if (emailPostingId === posting.id) setEmailPostingId(null);
+        router.refresh();
       }
-      setActiveCode(result.code);
-      setActiveInviteId(result.inviteId);
-      setDetailsVisible(true);
-      setStatus(t("newCodeGenerated"));
-      replaceDialogRef.current?.close();
-      router.refresh();
     } catch {
       setHasError(true);
-      setStatus(t("activeCodeNotConfirmed"));
-      window.location.reload();
+      setStatus(t("revokeFailed"));
     } finally {
-      setRotating(false);
+      setRevokingId(null);
     }
-  }
-
-  function shareOnWhatsApp() {
-    if (!whatsAppShareUrl) return;
-    window.open(whatsAppShareUrl, "_blank", "noopener,noreferrer");
   }
 
   return (
     <div className="cleaners-workspace">
-      <section aria-label={t("inviteStatusLabel")} className="cleaners-invite-status">
-        <div className="cleaners-invite-status__state">
-          <span
-            aria-hidden="true"
-            className={`cleaners-invite-status__dot${activeCode ? " cleaners-invite-status__dot--active" : ""}`}
-          />
-          <strong>{activeCode ? t("activeInvitation") : t("noActiveInvitation")}</strong>
-          {activeCode ? <code data-testid="invite-code">{activeCode}</code> : null}
-        </div>
-        <div className="cleaners-invite-status__actions">
-          {activeCode && joinUrl ? (
-            <>
-              <button
-                className="text-action"
-                disabled={copying !== null || rotating}
-                onClick={() => void copyToClipboard(joinUrl, "link")}
-                type="button"
-              >
-                <Copy aria-hidden="true" size={15} />
-                {copying === "link" ? t("copying") : t("copyLink")}
-              </button>
-              <button
-                aria-controls="cleaner-invite-details"
-                aria-expanded={detailsVisible}
-                className="text-action"
-                onClick={() => setDetailsVisible((value) => !value)}
-                type="button"
-              >
-                <ShieldCheck aria-hidden="true" size={15} />
-                {detailsVisible ? t("hideInviteDetails") : t("inviteDetails")}
-              </button>
-            </>
-          ) : (
-            <button
-              className="button"
-              disabled={rotating}
-              onClick={() => void generateNewCode()}
-              type="button"
-            >
-              <Link2 aria-hidden="true" size={17} />
-              {rotating ? t("generating") : t("createInvitation")}
-            </button>
-          )}
-        </div>
-      </section>
-
-      <div className="cleaners-layout">
-      <section className="cleaners-invite-card" aria-labelledby="cleaners-invite-heading">
-        <header className="cleaners-card-heading">
-          <span aria-hidden="true" className="cleaners-card-icon"><Link2 size={20} /></span>
+      <section className="postings-workspace" aria-labelledby="postings-heading">
+        <div className="postings-workspace__heading">
           <div>
-            <h2 id="cleaners-invite-heading">{t("inviteTitle")}</h2>
-            <p>{t("inviteDescription")}</p>
+            <h2 id="postings-heading">{t("workspaceTitle")}</h2>
+            <p>{t("workspaceDescription")}</p>
           </div>
-        </header>
-
-        <div className={`cleaners-message-preview${inviteMessage ? "" : " cleaners-message-preview--empty"}`}>
-          <span className="cleaners-message-preview__label">{t("inviteMessagePreview")}</span>
-          <p>{inviteMessage ?? t("generateBeforeSharing")}</p>
+          <Link className="button" href="/cleaners/postings/new">
+            <Plus aria-hidden="true" size={17} />
+            {t("createAction")}
+          </Link>
         </div>
 
-        {detailsVisible && activeCode && joinUrl ? (
-          <div className="invite-display" id="cleaner-invite-details">
-            <div className="invite-url-row">
-              <span>{t("signupLink")}</span>
-              <div className="invite-url-value">
-                <a aria-label={t("signupLink")} href={joinUrl} rel="noreferrer" target="_blank">
-                  {joinUrl}
-                </a>
-                <button
-                  aria-label={t("copySignupLink")}
-                  className="icon-button"
-                  disabled={copying !== null || rotating}
-                  onClick={() => void copyToClipboard(joinUrl, "link")}
-                  type="button"
+        {postings.length ? (
+          <div aria-label={t("listLabel")} className="posting-list" role="list">
+            {postings.map((posting) => {
+              const postingUrl = buildCleanerJoinUrl(cleanerAppUrl, posting.code);
+              const isActive = posting.state === "active";
+              const emailOpen = emailPostingId === posting.id;
+              return (
+                <article
+                  aria-label={posting.publicDescription}
+                  className="posting-card"
+                  key={posting.id}
+                  role="listitem"
                 >
-                  {copying === "link" ? (
-                    <RefreshCw aria-hidden="true" className="button-spinner" size={17} />
-                  ) : status === t("signupCopied") ? (
-                    <Check aria-hidden="true" size={17} />
-                  ) : (
-                    <Copy aria-hidden="true" size={17} />
-                  )}
-                </button>
-              </div>
-            </div>
-            <div className="invite-code-block">
-              <span>{t("inviteCode")}</span>
-              <strong>{activeCode}</strong>
-            </div>
+                  <div className="posting-card__summary">
+                    <div className="posting-card__main">
+                      <div className="posting-card__meta">
+                        <span className="posting-intent-chip">{intentLabel(posting.intent)}</span>
+                        <span className={`status-chip posting-state-chip posting-state-chip--${posting.state}`}>
+                          {isActive
+                            ? t("stateActive")
+                            : t("stateClosed", {
+                                reason: posting.closingReason
+                                  ? t(`closingReason.${posting.closingReason}`)
+                                  : "",
+                              })}
+                        </span>
+                      </div>
+                      <h3>{posting.publicDescription}</h3>
+                      <div className="posting-card__facts">
+                        <span className="tabular-numerals">{t("applications", { count: posting.applicationCount })}</span>
+                        <span>{t("created", { date: formatJoinedDate(posting.createdAt, locale) })}</span>
+                        <a href={postingUrl} rel="noreferrer" target="_blank">{postingUrl}</a>
+                      </div>
+                    </div>
+                    {isActive ? (
+                      <div className="posting-card__actions">
+                        <button
+                          aria-label={t("copyLinkFor", { description: posting.publicDescription })}
+                          className="button button--secondary button--small"
+                          onClick={() => void copyPostingLink(posting)}
+                          type="button"
+                        ><Copy aria-hidden="true" size={15} />{t("copyLink")}</button>
+                        <button
+                          aria-label={t("shareWhatsAppFor", { description: posting.publicDescription })}
+                          className="button button--secondary button--small"
+                          onClick={() => sharePosting(posting)}
+                          type="button"
+                        ><MessageCircle aria-hidden="true" size={15} />{t("shareWhatsApp")}</button>
+                        <button
+                          aria-expanded={emailOpen}
+                          aria-label={t("sendEmailFor", { description: posting.publicDescription })}
+                          className="button button--secondary button--small"
+                          onClick={() => setEmailPostingId(emailOpen ? null : posting.id)}
+                          type="button"
+                        ><Mail aria-hidden="true" size={15} />{t("sendEmail")}</button>
+                        <button
+                          aria-label={t("revokeFor", { description: posting.publicDescription })}
+                          className="button button--secondary button--danger button--small"
+                          disabled={revokingId !== null}
+                          onClick={() => void handleRevoke(posting)}
+                          type="button"
+                        >
+                          <XCircle aria-hidden="true" size={15} />
+                          {revokingId === posting.id ? t("revoking") : t("revoke")}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                  {emailOpen ? (
+                    <CleanerEmailInvite
+                      companyName={companyName}
+                      joinUrl={postingUrl}
+                      postingId={posting.id}
+                      postingIntent={posting.intent}
+                    />
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
-        ) : null}
-
-        <p className="cleaners-share-hint">{t("sharedInviteHint")}</p>
-        <div className="cleaners-invite-actions">
-          <button
-            className="button"
-            disabled={!whatsAppShareUrl || copying !== null || rotating}
-            onClick={shareOnWhatsApp}
-            type="button"
-          >
-            <MessageCircle aria-hidden="true" size={17} />
-            {t("shareOnWhatsApp")}
-          </button>
-          <button
-            className="button button--secondary"
-            disabled={!inviteMessage || copying !== null || rotating}
-            onClick={() => inviteMessage && void copyToClipboard(inviteMessage, "message")}
-            type="button"
-          >
-            {copying === "message" ? (
-              <RefreshCw aria-hidden="true" className="button-spinner" size={17} />
-            ) : status === t("inviteCopied") ? (
-              <Check aria-hidden="true" size={17} />
-            ) : (
-              <Copy aria-hidden="true" size={17} />
-            )}
-            {copying === "message" ? t("copying") : t("copyInvite")}
-          </button>
-        </div>
-        <p
-          aria-live="polite"
-          className={`cleaners-action-status${hasError ? " cleaners-action-status--error" : ""}`}
-          role="status"
-        >
+        ) : (
+          <div className="records-empty postings-empty">
+            <h3>{t("emptyTitle")}</h3>
+            <p>{t("emptyDescription")}</p>
+          </div>
+        )}
+        <p aria-live="polite" className={`cleaners-action-status${hasError ? " cleaners-action-status--error" : ""}`} role="status">
           {status}
         </p>
-        {detailsVisible && activeCode ? (
-          <div className="cleaners-invite-details__replacement">
-            <p>{t("rotationNote")}</p>
-            <button
-              className="button button--danger"
-              disabled={rotating || copying !== null}
-              onClick={() => replaceDialogRef.current?.showModal()}
-              type="button"
-            >
-              <RefreshCw aria-hidden="true" size={17} />
-              {t("replaceInvitation")}
-            </button>
-          </div>
-        ) : null}
-        <CleanerEmailInvite
-          companyName={companyName}
-          inviteId={activeInviteId}
-          joinUrl={joinUrl}
-          key={activeInviteId ?? "no-active-invitation"}
-        />
       </section>
 
       <section className="cleaners-members-card" aria-labelledby="cleaners-members-heading">
         <header className="cleaners-card-heading cleaners-members-heading">
           <span aria-hidden="true" className="cleaners-card-icon"><UserRound size={20} /></span>
           <div>
-            <h2 id="cleaners-members-heading">{t("activeCleaners")}</h2>
-            <p>{t("memberCount", { count: members.length })}</p>
+            <h2 id="cleaners-members-heading">{cleanersT("activeCleaners")}</h2>
+            <p>{cleanersT("memberCount", { count: members.length })}</p>
           </div>
         </header>
-
         {members.length ? (
-          <ul aria-label={t("members")} className="cleaners-member-list">
+          <ul aria-label={cleanersT("members")} className="cleaners-member-list">
             {members.map((member, index) => (
               <li key={member.id}>
-                <span
-                  aria-hidden="true"
-                  className={`member-initial member-initial--tone-${index % 3}`}
-                >
+                <span aria-hidden="true" className={`member-initial member-initial--tone-${index % 3}`}>
                   {memberInitials(member.name)}
                 </span>
                 <div>
                   <strong>{member.name}</strong>
-                  <span>
-                    {t("joined", {
-                      date: formatJoinedDate(member.joinedAt, locale),
-                    })}
-                  </span>
+                  <span>{cleanersT("joined", { date: formatJoinedDate(member.joinedAt, locale) })}</span>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
           <div className="cleaners-members-empty">
-            <p>{t("noMembers")}</p>
-            <span>{t("shareToBuild")}</span>
+            <p>{cleanersT("noMembers")}</p>
+            <span>{cleanersT("shareToBuild")}</span>
           </div>
         )}
       </section>
-      </div>
-
-      <dialog
-        aria-describedby="replace-invitation-description"
-        aria-labelledby="replace-invitation-title"
-        className="record-dialog cleaners-replace-dialog"
-        ref={replaceDialogRef}
-      >
-        <div>
-          <h2 id="replace-invitation-title">{t("replaceInviteTitle")}</h2>
-          <p id="replace-invitation-description">{t("replaceInviteDescription")}</p>
-          <div className="dialog-actions">
-            <button
-              className="button button--secondary"
-              disabled={rotating}
-              onClick={() => replaceDialogRef.current?.close()}
-              type="button"
-            >
-              {t("keepInvitation")}
-            </button>
-            <button
-              className="button button--danger-solid"
-              disabled={rotating}
-              onClick={() => void generateNewCode()}
-              type="button"
-            >
-              <RefreshCw
-                aria-hidden="true"
-                className={rotating ? "button-spinner" : undefined}
-                size={17}
-              />
-              {rotating ? t("generating") : t("confirmReplaceInvitation")}
-            </button>
-          </div>
-        </div>
-      </dialog>
     </div>
   );
 }

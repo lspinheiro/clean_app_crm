@@ -34,15 +34,17 @@ vi.mock("@/lib/supabase/client", () => ({
 
 import { LoginScreen } from "./login-screen";
 
-function profileQuery(result: typeof mocks.profile | typeof mocks.membership) {
+function profileQuery<T>(result: { data: T; error: Error | null }) {
   const query = {
     eq: vi.fn(),
     limit: vi.fn(),
     maybeSingle: vi.fn().mockResolvedValue(result),
+    order: vi.fn(),
     select: vi.fn(),
   };
   query.eq.mockReturnValue(query);
   query.limit.mockReturnValue(query);
+  query.order.mockReturnValue(query);
   query.select.mockReturnValue(query);
   return query;
 }
@@ -152,6 +154,82 @@ describe("Cleaner sign in language behavior", () => {
     await waitFor(() => expect(mocks.signOut).toHaveBeenCalled());
     expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it("explains that a returning candidate is waiting for the company's decision", async () => {
+    const user = userEvent.setup();
+    const waitingRequestQuery = profileQuery({
+      data: {
+        company_name: "Sparkle Co",
+      },
+      error: null,
+    });
+    mocks.from.mockImplementation((table: string) => {
+      if (table === "profiles") return profileQuery(mocks.profile);
+      if (table === "cleaner_pool_memberships") {
+        return profileQuery({ data: null, error: null });
+      }
+      if (table === "cleaner_join_request_state") return waitingRequestQuery;
+      throw new Error(`Unexpected table ${table}`);
+    });
+    renderLogin();
+
+    await user.type(screen.getByLabelText("Email"), "candidate@example.test");
+    await user.type(screen.getByLabelText("Password"), "local-demo-only");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Your request to join Sparkle Co is waiting for the company's decision. We'll notify you when they decide.",
+    );
+    expect(screen.queryByText("This app is for cleaners. Company admins use the CRM."))
+      .not.toBeInTheDocument();
+    expect(mocks.signOut).toHaveBeenCalledOnce();
+    expect(waitingRequestQuery.select).toHaveBeenCalledWith("company_name");
+    expect(waitingRequestQuery.eq).toHaveBeenCalledWith("join_request_state", "waiting");
+    expect(waitingRequestQuery.order).toHaveBeenCalledWith("requested_at", {
+      ascending: false,
+    });
+    expect(waitingRequestQuery.limit).toHaveBeenCalledWith(1);
+    expect(waitingRequestQuery.maybeSingle.mock.invocationCallOrder[0])
+      .toBeLessThan(mocks.signOut.mock.invocationCallOrder[0]);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Language" }), "pt-BR");
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Seu pedido para entrar na equipe da Sparkle Co está aguardando a decisão da empresa. Avisaremos quando houver uma decisão.",
+      );
+    });
+  });
+
+  it.each([
+    {
+      name: "the waiting-request read fails",
+      requestResult: { data: null, error: new Error("request state unavailable") },
+    },
+    {
+      name: "the account has rejected requests only",
+      requestResult: { data: null, error: null },
+    },
+  ])("keeps the generic cleaner-only message when $name", async ({ requestResult }) => {
+    const user = userEvent.setup();
+    mocks.from.mockImplementation((table: string) => {
+      if (table === "profiles") return profileQuery(mocks.profile);
+      if (table === "cleaner_pool_memberships") {
+        return profileQuery({ data: null, error: null });
+      }
+      if (table === "cleaner_join_request_state") return profileQuery(requestResult);
+      throw new Error(`Unexpected table ${table}`);
+    });
+    renderLogin();
+
+    await user.type(screen.getByLabelText("Email"), "candidate@example.test");
+    await user.type(screen.getByLabelText("Password"), "local-demo-only");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This app is for cleaners. Company admins use the CRM.",
+    );
+    expect(mocks.signOut).toHaveBeenCalledOnce();
   });
 
   it("finishes sign in when saving the selected locale fails", async () => {

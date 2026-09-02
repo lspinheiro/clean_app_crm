@@ -13,7 +13,7 @@ async function signIn(page: Page) {
 }
 
 test.describe("@CLE-26 cleaner profile and company membership", () => {
-  test("persists profile edits, joins a second company, merges its vacancies, and signs out", async ({
+  test("persists profile edits, refuses a retired self-join code, and signs out", async ({
     page,
   }) => {
     await signIn(page);
@@ -37,15 +37,17 @@ test.describe("@CLE-26 cleaner profile and company membership", () => {
 
     await page.getByLabel("Cleaner invitation code").fill(secondCompanyCode);
     await page.getByRole("button", { name: "Join company" }).click();
-    await expect(page.getByRole("status")).toContainText("Harbour Demo Cleaning");
-    await expect(page.getByText("Harbour Demo Cleaning", { exact: true })).toBeVisible();
+    // CLE-59 retired direct cleaner admission. Keep this legacy caller covered until its
+    // profile surface is removed: an old code must not recreate membership.
+    await expect(page.locator(".form-error")).toContainText("no longer in use");
+    await expect(page.getByText("Harbour Demo Cleaning", { exact: true })).toHaveCount(0);
 
-    await page.getByRole("link", { name: "Open jobs" }).click();
+    await page.goto("/en-AU/board");
     const cards = page.getByRole("list", { name: "Open jobs" }).getByRole("listitem");
     await expect(cards.filter({ hasText: "Coastal Demo Cleaning" }).first()).toBeVisible();
-    await expect(cards.filter({ hasText: "Harbour Demo Cleaning" }).first()).toBeVisible();
+    await expect(cards.filter({ hasText: "Harbour Demo Cleaning" })).toHaveCount(0);
 
-    await page.getByRole("link", { name: "Profile" }).click();
+    await page.goto("/en-AU/profile");
     await page.getByRole("button", { name: "Sign out" }).last().click();
     await expect(page).toHaveURL(/\/en-AU\/login$/);
     await expect(page.getByRole("heading", { name: "Sign in", level: 1 })).toBeVisible();

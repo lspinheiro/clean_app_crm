@@ -1,10 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
-// Runs against the seeded local database (`pnpm db:reset`). CLEAN1DEMOJOIN99 is the demo company's
-// active invite; ZOLD01 is a superseded one kept in the seed so the error state is testable
-// without rotating the live code out from under the other suites.
-const activeCode = "CLEAN1DEMOJOIN99";
-const supersededCode = "ZOLD01";
+// Runs against the seeded local database (`pnpm db:reset`). Posting codes replaced the
+// retired rotating company-invite codes in CLE-59.
+const activeCode = "DEMOEOIPOST00001";
+const oneTimeCode = "DEMOJOBPOST00001";
+const retiredInviteCode = "ZOLD01";
 const unknownCode = "NOPE12";
 const companyName = "Coastal Demo Cleaning";
 const sameCompanyEmployeeEmail = "owner.harbour@clean-app.example.test";
@@ -35,37 +36,58 @@ async function signIn(page: Page, email: string, password: string) {
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
-test.describe("@CLE-19 joining a company from the invite link", () => {
-  test("registers a cleaner and lands on the board", async ({ page }) => {
+async function readJoinEvidence(fullName: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY;
+  if (!url || !key) throw new Error("Supabase acceptance environment is not configured.");
+  const supabase = createClient(url, key, { auth: { persistSession: false } });
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, phone, suburb")
+    .eq("full_name", fullName)
+    .single();
+  if (profileError) throw profileError;
+  const { data: request, error: requestError } = await supabase
+    .from("join_requests")
+    .select("id, note, state")
+    .eq("profile_id", profile.id)
+    .single();
+  if (requestError) throw requestError;
+  const { count, error: applicationError } = await supabase
+    .from("job_applications")
+    .select("id", { count: "exact", head: true })
+    .eq("join_request_id", request.id);
+  if (applicationError) throw applicationError;
+  return {
+    applicationCount: count,
+    note: request.note,
+    phone: profile.phone,
+    state: request.state,
+    suburb: profile.suburb,
+  };
+}
+
+test.describe("@CLE-19 @CLE-61 requesting to join from a posting", () => {
+  test("registers a cleaner, sends the request note, and shows the persisted waiting state", async ({ page }) => {
     await page.goto(`${localizedPath("/join")}?code=${activeCode}`);
 
-    await expect(page.getByText(companyName)).toBeVisible();
-    await expect(page.getByText(/\d+ cleaners? (?:is|are) already on their staff\./)).toBeVisible();
+    await expect(page.getByText(companyName, { exact: true })).toBeVisible();
+    await expect(page.getByText("Register your interest in joining our cleaner staff.")).toBeVisible();
 
     await page.getByLabel("Full name").fill("Ana Silva");
     await page.getByLabel("Email").fill(newCleanerEmail());
     await page.getByLabel("Password").fill(demoPassword);
     await page.getByLabel("Phone").fill("0400 000 111");
     await page.getByLabel("Suburb").fill("Southport");
-    await page.getByRole("button", { name: "Join the Cleaner staff" }).click();
+    await page.getByLabel("Note to the cleaning company (optional)").fill("Available from Monday");
+    await page.getByRole("button", { name: "Send request" }).click();
 
-    await expect(page).toHaveURL(new RegExp(`/${locale}/board$`));
-    await expect(page.getByRole("heading", { name: "Open jobs", level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Get job updates" })).toBeVisible();
-
-    // Push is offered after this successful join, but it is never a gate to the board.
-    await page.getByRole("button", { name: "Not now" }).click();
-    await expect(page.getByRole("heading", { name: "Get job updates" })).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Open jobs", level: 1 })).toBeVisible();
-
-    // Reloading proves the name and suburb were written to the profile, not just rendered
-    // once from the submitted form. It also proves declining push is remembered rather than
-    // prompting on every board visit. The cleaner membership itself is asserted in pgTAP.
+    await expect(page.getByRole("heading", { name: "Request sent" })).toBeVisible();
+    await expect(page.getByLabel("Email")).toHaveCount(0);
     await page.reload();
-    await expect(page).toHaveURL(new RegExp(`/${locale}/board$`));
-    await expect(page.getByRole("heading", { name: "Open jobs", level: 1 })).toBeVisible();
-    await expect(page.getByText("Ana Silva · Southport")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Get job updates" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Request waiting" })).toBeVisible();
+    await expect(page.getByText("Your request to join is waiting for the cleaning company.")).toBeVisible();
+    await expect(page.getByLabel("Full name")).toHaveCount(0);
   });
 
   test("an existing employee signs in and joins the same company's Cleaner staff", async ({ page }) => {
@@ -83,10 +105,9 @@ test.describe("@CLE-19 joining a company from the invite link", () => {
     await expect(page.getByLabel("Full name")).toHaveValue("Harbour Demo Owner");
     await page.getByLabel("Phone").fill("0400 000 606");
     await page.getByLabel("Suburb").fill("Robina");
-    await page.getByRole("button", { name: "Join the Cleaner staff" }).click();
+    await page.getByRole("button", { name: "Send request" }).click();
 
-    await expect(page).toHaveURL(new RegExp(`/${locale}/board$`));
-    await expect(page.getByRole("heading", { name: "Open jobs", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Request sent" })).toBeVisible();
   });
 
   test("invalid existing-account credentials preserve the invitation", async ({ page }) => {
@@ -106,26 +127,60 @@ test.describe("@CLE-19 joining a company from the invite link", () => {
     await expect(page).toHaveURL(new RegExp(`/${locale}/login\\?code=${activeCode}$`));
   });
 
-  test("explains a superseded link instead of failing", async ({ page }) => {
-    await page.goto(`${localizedPath("/join")}?code=${supersededCode}`);
+  test("does not resolve a retired legacy invite through the posting page", async ({ page }) => {
+    await page.goto(`${localizedPath("/join")}?code=${retiredInviteCode}`);
 
-    await expect(page.locator(".invite-problem")).toContainText("no longer in use");
-    // A dead code must not answer "which company was this?" for whoever holds it.
+    await expect(page.locator(".invite-problem")).toContainText("We do not know this posting link");
     await expect(page.locator(".invite-problem")).not.toContainText(companyName);
     await expect(page.getByLabel("Full name")).toHaveCount(0);
+  });
+
+  test("shows a job-bound posting from public fields without leaking assignment-gated details", async ({ page }) => {
+    await page.goto(`${localizedPath("/join")}?code=${oneTimeCode}`);
+
+    await expect(page.getByRole("heading", { name: "One-time cleaning opportunity" })).toBeVisible();
+    await expect(page.getByText("Broadbeach")).toBeVisible();
+    await expect(page.getByText("$120")).toBeVisible();
+    await expect(page.getByText("A one-time crew place on the upcoming roster.")).toBeVisible();
+    await expect(page.getByText("10 Surf Parade")).toHaveCount(0);
+    await expect(page.getByText("Demo access notes — company admin only")).toHaveCount(0);
+    await expect(page.getByText("07 5555 0101")).toHaveCount(0);
+  });
+
+  test("registration from a job-bound posting persists one request, its note, and the application", async ({ page }) => {
+    const fullName = `Job Posting Candidate ${Date.now()}`;
+    await page.goto(`${localizedPath("/join")}?code=${oneTimeCode}`);
+
+    await page.getByLabel("Full name").fill(fullName);
+    await page.getByLabel("Email").fill(newCleanerEmail());
+    await page.getByLabel("Password").fill(demoPassword);
+    await page.getByLabel("Phone").fill("0400 000 222");
+    await page.getByLabel("Suburb").fill("Miami");
+    await page.getByLabel("Note to the cleaning company (optional)").fill("Available for this shift");
+    await page.getByRole("button", { name: "Apply for this job" }).click();
+
+    await expect(page.getByRole("heading", { name: "Application sent" })).toBeVisible();
+    await expect(page.getByText("The cleaning company can now review your application.")).toBeVisible();
+    expect(await readJoinEvidence(fullName)).toEqual({
+      applicationCount: 1,
+      note: "Available for this shift",
+      phone: "0400 000 222",
+      state: "waiting",
+      suburb: "Miami",
+    });
   });
 
   test("explains a link it does not know", async ({ page }) => {
     await page.goto(`${localizedPath("/join")}?code=${unknownCode}`);
 
-    await expect(page.locator(".invite-problem")).toContainText("We do not know this invite link");
+    await expect(page.locator(".invite-problem")).toContainText("We do not know this posting link");
     await expect(page.getByLabel("Full name")).toHaveCount(0);
   });
 
   test("explains a link with no code at all", async ({ page }) => {
     await page.goto(localizedPath("/join"));
 
-    await expect(page.locator(".invite-problem")).toContainText("invite link");
+    await expect(page.locator(".invite-problem")).toContainText("posting link");
     await expect(page.getByLabel("Full name")).toHaveCount(0);
   });
 });

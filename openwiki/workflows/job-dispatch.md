@@ -62,7 +62,7 @@ stateDiagram-v2
 
 The projection has two important boundaries: it does not invent a new slot beyond `crewSize`, and it only marks an empty slot `open` while the job status is `draft` or `posted`; empty slots on another status are `closed`. The detail page reads assignment history, applications, active company-pool cleaners, and site preference ranks; it removes currently assigned cleaners from the pool candidates and deterministically orders applicants/candidates by preferred rank, then time/name/id as appropriate.
 
-`assignJobSlot` validates `jobId`, slot number, and cleaner UUID, authorizes with `requireCompanyAdmin`, then calls `assign_job_slot`. It maps known database outcomes—unavailable cleaner, already-assigned slot/cleaner, or non-open job—to a refreshed-conflict message. The database must remain the authority on time overlap, slot availability, and status under concurrent calls; application sorting/presentation cannot enforce those rules.
+`assignJobSlot` validates `jobId`, slot number, and cleaner UUID, authorizes with `requireCompanyAdmin`, then calls `assign_job_slot`. It maps known database outcomes—unavailable cleaner, already-assigned slot/cleaner, or non-open job—to a refreshed-conflict message. The database must remain the authority on time overlap, slot availability, and status under concurrent calls; application sorting/presentation cannot enforce those rules. CRM review can also fill a named slot through the distinct `approve_job_application` flow, and directed offers can result in assignment; those recruitment routes are documented in [cleaner recruitment](recruitment.md) rather than being alternative implementations of direct dispatch.
 
 ## Cache and failure handling
 

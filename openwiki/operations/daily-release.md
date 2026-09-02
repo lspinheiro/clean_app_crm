@@ -32,7 +32,7 @@ This is the workflow-owned release order when the decision selects deployment: n
 
 ## Validation and deployment boundary
 
-The `checks` job pins its setup actions and CLI versions, installs the locked pnpm workspace, starts local Supabase, runs `pnpm check` and `pnpm test:e2e`, then attempts local Supabase shutdown even if a preceding step fails. These are deliberately broad release checks, not the default command for ordinary application changes; use the focused commands in [workspace guidance](../workspace.md#focused-validation-guidance) during development.
+The `checks` job pins its setup actions and CLI versions, installs the locked pnpm workspace, starts local Supabase, runs `pnpm check` and `pnpm test:e2e`, then attempts local Supabase shutdown even if a preceding step fails. `pnpm check` includes the read-only `check-hosted-auth` guard: it detects dashboard-managed Supabase Auth drift but does not push `config.toml`, apply credentials, or expose provider values. These are deliberately broad release checks, not the default command for ordinary application changes; use the focused commands in [workspace guidance](../workspace.md#focused-validation-guidance) during development.
 
 When deployment is selected, the workflow performs these provider writes in sequence:
 

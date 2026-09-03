@@ -49,7 +49,7 @@ test.describe("@F15 bilingual CRM", () => {
   }) => {
     // This test walks every CRM route in pt-BR. Under the repo runner
     // (scripts/run-local-e2e.mjs, workers: 1, alphabetical) it lands last, after roughly
-    // twenty specs have already compiled those routes, and it passed comfortably within a 60s
+    // twenty specs have already compiled those routes, and it passed within a 60s
     // ceiling. Run this file on its own against a cold `next dev` and it compiles most of
     // those routes itself, which is the likely reason an isolated run can exhaust the ceiling
     // and surface as a teardown error on whichever assertion the deadline lands in. Run the

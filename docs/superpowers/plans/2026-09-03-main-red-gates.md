@@ -390,11 +390,13 @@ Note whether `f15-crm-i18n.spec.ts:46` passes, and the reported wall-clock of th
 
 ```ts
     // This test walks every CRM route in pt-BR. Under the repo runner
-    // (scripts/run-local-e2e.mjs, workers: 1, alphabetical) roughly twenty earlier specs
-    // have already compiled those routes, and it finishes well inside the budget. Run this
-    // file on its own against a cold `next dev` and most routes compile for the first time
-    // here, which can exhaust the ceiling and surface as a teardown error on whichever
-    // assertion the deadline lands in. Run the whole suite before treating that as a defect.
+    // (scripts/run-local-e2e.mjs, workers: 1, alphabetical) it lands last, after roughly
+    // twenty specs have already compiled those routes, and it passed within a 60s
+    // ceiling. Run this file on its own against a cold `next dev` and it compiles most of
+    // those routes itself, which is the likely reason an isolated run can exhaust the ceiling
+    // and surface as a teardown error on whichever assertion the deadline lands in. Run the
+    // whole suite before treating that as a defect. The line below restates the 60s default
+    // already set in playwright.config.ts.
 ```
 
 Note that `test.setTimeout(60_000)` on the next line is now redundant with `timeout: 60_000` in `apps/crm/playwright.config.ts` — leave it, since removing it changes nothing and this task is not a tidy-up.

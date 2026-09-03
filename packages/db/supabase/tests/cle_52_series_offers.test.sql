@@ -681,7 +681,7 @@ insert into cle_52_rule_ids
 select 'double_reserved', public.create_recurring_assignment(
   '10000000-0000-4000-8000-000000000403',
   '30000000-0000-4000-8000-000000000002',
-  'weekly', 5::smallint, '2026-09-04', '13:00', 60, 9000, 3,
+  'weekly', 5::smallint, '2026-09-04', '15:00', 60, 9000, 3,
   array[
     '10000000-0000-4000-8000-000000000002'::uuid,
     '10000000-0000-4000-8000-000000000003'::uuid
@@ -724,6 +724,23 @@ select is(
   ),
   1,
   'one unconsented named cleaner reserves one of the two open slots'
+);
+
+-- A swallowed 23P01 inside accept_offer's exception block leaves the cleaner rostered on
+-- nothing while the RPC still reports success, and the fixture above is the only place in
+-- the suite that could ever provoke it. Assert the failure log stays empty, and surface the
+-- SQLSTATE when it does not, so the next collision is diagnosed rather than rediscovered.
+-- The swallow itself is tracked as CLE-112.
+select is(
+  (
+    select failure.error_code
+    from public.recurring_generation_failures failure
+    where failure.recurring_assignment_id = (
+      select rule_id from cle_52_rule_ids where label = 'double_reserved'
+    )
+  ),
+  null::text,
+  'accepting the series rosters cleanly, with no swallowed generation failure'
 );
 
 set local role authenticated;

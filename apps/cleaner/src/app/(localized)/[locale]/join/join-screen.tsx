@@ -162,7 +162,7 @@ export function JoinScreen() {
   useEffect(() => {
     if (account.status !== "authenticated" || posting?.state !== "active") return;
     let active = true;
-    const companyName = posting.companyName;
+    const companyId = posting.companyId;
 
     async function loadRelationship() {
       const supabase = getSupabaseClient();
@@ -170,17 +170,17 @@ export function JoinScreen() {
         supabase
           .from("cleaner_join_request_state")
           .select("company_id, company_name, join_request_state")
-          .eq("company_name", companyName),
+          .eq("company_id", companyId),
         supabase
           .from("cleaner_pool_memberships")
           .select("company_id, company_name, status")
-          .eq("company_name", companyName),
+          .eq("company_id", companyId),
       ]);
       if (requests.error || memberships.error) return "error" as const;
       return parseVisitorRelationship(
         requests.data,
         memberships.data,
-        companyName,
+        companyId,
       ) ?? "error";
     }
 

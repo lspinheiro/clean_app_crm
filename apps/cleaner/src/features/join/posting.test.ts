@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { parsePostingPreview, parseVisitorRelationship } from "./posting";
 
+const coastalId = "10000000-0000-4000-8000-000000000001";
+const harbourId = "20000000-0000-4000-8000-000000000002";
+const sharedName = "Shared Cleaning Name";
+
 describe("CLE-61 posting preview boundary", () => {
   it("keeps only public posting fields when the response is wider than the contract", () => {
     const posting = parsePostingPreview({
@@ -9,6 +13,7 @@ describe("CLE-61 posting preview boundary", () => {
       address: "14 Ocean Avenue, Southport",
       cleaner_pay_cents: 14000,
       client_charge_cents: 22000,
+      company_id: coastalId,
       company_name: "Coastal Demo Cleaning",
       duration_minutes: 120,
       intent: "one_time",
@@ -31,20 +36,70 @@ describe("CLE-61 posting preview boundary", () => {
   });
 });
 
-describe("CLE-61 visitor relationship matching", () => {
-  it("returns none when one company name spans more than one company id", () => {
+describe("CLE-111 company identity in the posting preview", () => {
+  it("carries the company id so a relationship can be matched by identity", () => {
+    const posting = parsePostingPreview({
+      company_id: coastalId,
+      company_name: "Coastal Demo Cleaning",
+      intent: "expression_of_interest",
+      public_description: "Join our trusted cleaner staff.",
+      state: "active",
+    });
+
+    expect(posting).toMatchObject({ companyId: coastalId, state: "active" });
+  });
+});
+
+describe("CLE-111 visitor relationship matching", () => {
+  it("lets a cleaner rejected by one company apply to a same-named other company", () => {
     expect(parseVisitorRelationship(
       [{
-        company_id: "10000000-0000-4000-8000-000000000001",
-        company_name: "Shared Cleaning Name",
+        company_id: coastalId,
+        company_name: sharedName,
+        join_request_state: "rejected",
+      }],
+      [],
+      harbourId,
+    )).toBe("none");
+  });
+
+  it("keeps the rejection on the posting of the company that rejected her", () => {
+    expect(parseVisitorRelationship(
+      [{
+        company_id: coastalId,
+        company_name: sharedName,
+        join_request_state: "rejected",
+      }],
+      [],
+      coastalId,
+    )).toBe("rejected");
+  });
+
+  it("does not read staff at a same-named company as staff here", () => {
+    expect(parseVisitorRelationship(
+      [],
+      [{
+        company_id: harbourId,
+        company_name: sharedName,
+        status: "active",
+      }],
+      coastalId,
+    )).toBe("none");
+  });
+
+  it("resolves rows at two same-named companies to the one whose posting is open", () => {
+    expect(parseVisitorRelationship(
+      [{
+        company_id: coastalId,
+        company_name: sharedName,
         join_request_state: "rejected",
       }],
       [{
-        company_id: "20000000-0000-4000-8000-000000000002",
-        company_name: "Shared Cleaning Name",
+        company_id: harbourId,
+        company_name: sharedName,
         status: "active",
       }],
-      "Shared Cleaning Name",
-    )).toBe("none");
+      coastalId,
+    )).toBe("rejected");
   });
 });

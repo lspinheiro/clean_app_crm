@@ -48,11 +48,13 @@ test.describe("@F15 bilingual CRM", () => {
     page,
   }) => {
     // This test walks every CRM route in pt-BR. Under the repo runner
-    // (scripts/run-local-e2e.mjs, workers: 1, alphabetical) roughly twenty earlier specs
-    // have already compiled those routes, and it finishes well inside the budget. Run this
-    // file on its own against a cold `next dev` and most routes compile for the first time
-    // here, which can exhaust the ceiling and surface as a teardown error on whichever
-    // assertion the deadline lands in. Run the whole suite before treating that as a defect.
+    // (scripts/run-local-e2e.mjs, workers: 1, alphabetical) it lands last, after roughly
+    // twenty specs have already compiled those routes, and it passed comfortably within a 60s
+    // ceiling. Run this file on its own against a cold `next dev` and it compiles most of
+    // those routes itself, which is the likely reason an isolated run can exhaust the ceiling
+    // and surface as a teardown error on whichever assertion the deadline lands in. Run the
+    // whole suite before treating that as a defect. The line below restates the 60s default
+    // already set in playwright.config.ts.
     test.setTimeout(60_000);
     await page.goto("/en-AU/login?return=roster");
     await page.getByLabel("Email").fill(adminEmail);

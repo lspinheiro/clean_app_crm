@@ -728,8 +728,9 @@ select is(
 
 -- A swallowed 23P01 inside accept_offer's exception block leaves the cleaner rostered on
 -- nothing while the RPC still reports success, and the fixture above is the only place in
--- the suite that would ever provoke it. Assert the failure log stays empty, and surface the
+-- the suite that could ever provoke it. Assert the failure log stays empty, and surface the
 -- SQLSTATE when it does not, so the next collision is diagnosed rather than rediscovered.
+-- The swallow itself is tracked as CLE-112.
 select is(
   (
     select failure.error_code

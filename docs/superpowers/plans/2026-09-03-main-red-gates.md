@@ -14,14 +14,14 @@
 
 - Prose in docs and test descriptions is en-GB / Australian spelling; never respell code identifiers.
 - No production behaviour changes in this plan. If a task appears to need one, stop and report — it belongs to the separate `accept_offer` work (see Out of Scope).
-- Each task is its own commit on `main`. Do not bundle tasks together, and do not bundle any of them into the CLE-111 branch (`dottoleao/cle-111-posting-preview-company-id`, commit `58f9c7b`).
+- Each task is its own commit on the `dottoleao/main-red-gates` branch, which merges to `main`. Do not bundle tasks together, and do not bundle any of them into the CLE-111 branch (`dottoleao/cle-111-posting-preview-company-id`, commit `58f9c7b`).
 - Never weaken, delete, skip or broadly mock a test to reach green. Where a task narrows an assertion's scope, it must state why in a code comment and keep every other assertion live.
 - Commit messages carry no AI attribution of any kind — no `Co-Authored-By`, no session trailer, no "generated with" note.
 - The local Supabase stack must be running (`docker ps` shows `supabase_db_clean_app_crm`). Timezone for every date calculation is `Australia/Brisbane`.
 
 ## Out of Scope
 
-A **P1 product defect** was found while diagnosing Task 1 and is deliberately excluded: `accept_offer` (`packages/db/supabase/migrations/20260829092000_cle_52_series_offers.sql:918-940`) wraps series reconciliation in `begin … exception when others`, so a single overlapping instance raises 23P01 against the `job_assignments_no_cleaner_overlap` GiST exclusion, the whole reconcile rolls back, and the RPC still reports success — the cleaner's consent is recorded while she is rostered onto nothing. That is an RPC on a product-law surface (consent and rostering) and needs its own design decision between an anti-join on the exclusion predicate and per-instance savepoints. **Task 1 adds a canary for it; the canary is not coverage.**
+A **P1 product defect** was found while diagnosing Task 1 and is deliberately excluded: `accept_offer` (`packages/db/supabase/migrations/20260829092000_cle_52_series_offers.sql:917-940`) wraps series reconciliation in `begin … exception when others`, so a single overlapping instance raises 23P01 against the `job_assignments_no_cleaner_overlap` GiST exclusion, the whole reconcile rolls back, and the RPC still reports success — the cleaner's consent is recorded while she is rostered onto nothing. That is an RPC on a product-law surface (consent and rostering) and needs its own design decision between an anti-join on the exclusion predicate and per-instance savepoints. **Task 1 adds a canary for it; the canary is not coverage.** Now tracked as CLE-112.
 
 ---
 
@@ -29,7 +29,7 @@ A **P1 product defect** was found while diagnosing Task 1 and is deliberately ex
 
 | File | Change | Responsibility after the change |
 | --- | --- | --- |
-| `packages/db/supabase/tests/cle_52_series_offers.test.sql` | Modify line 684; insert a probe after line 727 | Fixture no longer collides with the seed calendar; a new assertion fails loudly if series acceptance ever swallows a generation failure |
+| `packages/db/supabase/tests/cle_52_series_offers.test.sql` | Modify line 684; insert a probe after line 727 | Fixture no longer collides with the seed calendar; a new assertion fails loudly if the double_reserved rule's acceptance ever swallows a generation failure |
 | `apps/cleaner/vitest.config.ts` | Modify the `test` block | Carries the same timeout budget the CRM app already documents |
 | `apps/crm/tests/acceptance/cle-42-performance.spec.ts` | Modify the final assertion | Font-preload tag asserted on the platforms where Next can emit it; the other eight assertions stay live everywhere |
 | `apps/crm/tests/acceptance/f15-crm-i18n.spec.ts` | Modify line 50, only if Task 4's measurement says so | Budget matched to the suite's real cost, or left alone with a recorded reason |
@@ -38,7 +38,7 @@ A **P1 product defect** was found while diagnosing Task 1 and is deliberately ex
 
 ## Task 1: Un-collide the `cle_52` series fixture and add the swallow canary
 
-**The finding.** `packages/db/supabase/tests/cle_52_series_offers.test.sql` TAP 46, 48 and 49 fail with `have: 2, want: 1`. The `double_reserved` fixture (line 684) hard-codes a Friday **13:00–14:00** slot for cleaner `…0002`. The seed's demo jobs are pinned to **12:00 Brisbane** on `today+1` (120 min), `today+2` (90 min) and `today+3` (60 min), with cleaners `…0002` and `…0003` assigned (`packages/db/supabase/seed.sql:660-717`). When the fixture's generated Friday lands on one of those, the roster insert inside `reconcile_recurring_assignment_jobs` raises 23P01 against the non-deferrable GiST exclusion `job_assignments_no_cleaner_overlap` — which `on conflict (job_id, slot_number)` cannot absorb, because a conflict target only arbitrates a unique index. `accept_offer` swallows it, nobody is rostered, and the job keeps 3 free slots minus 1 reservation = 2.
+**The finding.** `packages/db/supabase/tests/cle_52_series_offers.test.sql` TAP 46, 48 and 49 fail with `have: 2, want: 1`. The `double_reserved` fixture (line 684) hard-codes a Friday **13:00–14:00** slot for cleaner `…0002`. The seed's demo jobs are pinned to **12:00 Brisbane** on `today+1` (120 min), `today+2` (90 min) and `today+3` (60 min), with cleaners `…0002` and `…0003` assigned (`packages/db/supabase/seed.sql:660-717`). The seed also calls `generate_recurring_jobs()` (`seed.sql:446`), which creates further assignments for the same cleaner inside the horizon; none of the three seeded rules produces a Friday job for `…0002`, so 15:00 stays clear of those too. When the fixture's generated Friday lands on one of those, the roster insert inside `reconcile_recurring_assignment_jobs` raises 23P01 against the non-deferrable GiST exclusion `job_assignments_no_cleaner_overlap` — which `on conflict (job_id, slot_number)` cannot absorb, because a conflict target only arbitrates a unique index. `accept_offer` swallows it, nobody is rostered, and the job keeps 3 free slots minus 1 reservation = 2.
 
 **The `vacancies` view is correct and the test's expectation is correct.** Only the fixture's time of day is wrong. The structurally identical `assigned_named` block at line 562 passes solely because it starts at 11:00.
 
@@ -485,4 +485,4 @@ State, per task: the RED evidence you observed, the command that turned it green
 
 ## Follow-up
 
-With all four tasks landed on `main`, the CLE-111 branch (`58f9c7b`) can be rebased and merged demonstrating a green gate. The P1 `accept_offer` swallow described in **Out of Scope** remains open and is the only genuine product defect found in this set — it needs a design decision, a failing test, and full delivery discipline, in its own cycle.
+This branch must merge to `main` first; once it has, the CLE-111 branch (`58f9c7b`) can be rebased onto it and merged demonstrating a green gate. The P1 `accept_offer` swallow described in **Out of Scope** remains open and is the only genuine product defect found in this set — it needs a design decision, a failing test, and full delivery discipline, in its own cycle.

@@ -2,10 +2,10 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(14);
 
-select is((select count(*)::integer from public.companies), 2, 'seed has exactly two companies');
+select is((select count(*)::integer from public.companies), 3, 'seed has exactly three companies');
 select is(
   (select count(*)::integer from public.companies where status = 'approved' and abn ~ '^[0-9]{11}$'),
-  2,
+  3,
   'seeded companies are approved with 11-digit ABNs'
 );
 select is(
@@ -21,7 +21,7 @@ select cmp_ok(
 );
 select is(
   (select count(*)::integer from auth.users where email like '%@clean-app.example.test'),
-  7,
+  8,
   'seed accounts are deterministic and explicitly local-only'
 );
 select results_eq(

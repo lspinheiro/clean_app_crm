@@ -10,6 +10,10 @@ const unknownCode = "NOPE12";
 const companyName = "Coastal Demo Cleaning";
 const sameCompanyEmployeeEmail = "owner.harbour@clean-app.example.test";
 const noCleanerMembershipEmail = "new.employee@clean-app.example.test";
+// CLE-111: a second company trades under `companyName` too; this candidate was rejected by
+// the first one and must stay free to apply to the second.
+const twinCompanyCode = "DEMOTWINPOST0001";
+const rejectedCandidateEmail = "twin.candidate@clean-app.example.test";
 const demoPassword = "local-demo-only";
 const locale = "en-AU";
 
@@ -108,6 +112,40 @@ test.describe("@CLE-19 @CLE-61 requesting to join from a posting", () => {
     await page.getByRole("button", { name: "Send request" }).click();
 
     await expect(page.getByRole("heading", { name: "Request sent" })).toBeVisible();
+  });
+
+  test("a candidate rejected by one company can still apply to a same-named other company", async ({ page }) => {
+    await page.goto(`${localizedPath("/join")}?code=${twinCompanyCode}`);
+    await page.getByRole("link", { name: "Sign in to join" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/${locale}/login\\?code=${twinCompanyCode}$`));
+    await waitForLoginFormHydration(page);
+    await page.getByLabel("Email").fill(rejectedCandidateEmail);
+    await page.getByLabel("Password").fill(demoPassword);
+    await page.getByRole("button", { name: "Sign in" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/${locale}/join\\?code=${twinCompanyCode}$`));
+
+    // The rejection belongs to the other company that trades under this same display name.
+    // Matching on the name would suppress the form and lose the candidate silently.
+    await expect(page.getByText("This cleaning company closed your request.")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Send request" })).toBeVisible();
+    await expect(page.getByLabel("Note to the cleaning company (optional)")).toBeVisible();
+  });
+
+  test("the company that rejected a candidate still shows her the closed request", async ({ page }) => {
+    await page.goto(`${localizedPath("/join")}?code=${activeCode}`);
+    await page.getByRole("link", { name: "Sign in to join" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/${locale}/login\\?code=${activeCode}$`));
+    await waitForLoginFormHydration(page);
+    await page.getByLabel("Email").fill(rejectedCandidateEmail);
+    await page.getByLabel("Password").fill(demoPassword);
+    await page.getByRole("button", { name: "Sign in" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/${locale}/join\\?code=${activeCode}$`));
+    await expect(page.getByText("This cleaning company closed your request.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send request" })).toHaveCount(0);
   });
 
   test("invalid existing-account credentials preserve the invitation", async ({ page }) => {

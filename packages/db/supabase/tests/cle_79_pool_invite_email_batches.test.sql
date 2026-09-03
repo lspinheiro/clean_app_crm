@@ -128,7 +128,7 @@ select is(
   'a repeated confirmation does not create another batch'
 );
 reset role;
-select is((select count(*)::integer from auth.users), 7,
+select is((select count(*)::integer from auth.users), 8,
   'preparing a send list does not create an Auth user');
 select is(
   (select count(*)::integer from public.company_members

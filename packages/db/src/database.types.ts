@@ -2482,6 +2482,7 @@ export type Database = {
         Returns: {
           cleaner_pay_cents: number
           closing_reason: string
+          company_id: string
           company_name: string
           duration_minutes: number
           frequency: Database["public"]["Enums"]["recurrence_frequency"]

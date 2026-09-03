@@ -65,6 +65,7 @@ function postingRow(
   overrides: Partial<{
     cleaner_pay_cents: number | null;
     closing_reason: string | null;
+    company_id: string | null;
     company_name: string | null;
     duration_minutes: number | null;
     frequency: "weekly" | "fortnightly" | null;
@@ -82,6 +83,7 @@ function postingRow(
   return {
     cleaner_pay_cents: null,
     closing_reason: null,
+    company_id: coastalCompanyId,
     company_name: "Coastal Demo Cleaning",
     duration_minutes: null,
     frequency: null,
@@ -529,7 +531,7 @@ describe("CLE-61 registration and repeat visitors", () => {
     expect(screen.getByRole("alert")).not.toHaveTextContent("Please try again");
   });
 
-  it("keeps the form and note when a shared company name spans multiple company ids", async () => {
+  it("shows the closed request on the posting of the company that actually rejected her", async () => {
     mocks.requestRows = [{
       company_id: coastalCompanyId,
       company_name: "Coastal Demo Cleaning",
@@ -542,10 +544,30 @@ describe("CLE-61 registration and repeat visitors", () => {
     }];
     renderJoin();
 
+    expect(await screen.findByText("This cleaning company closed your request.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Send request" })).not.toBeInTheDocument();
+  });
+
+  it("still lets her apply to a different company that happens to share the name", async () => {
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === "posting_preview") {
+        return Promise.resolve({
+          data: [postingRow({ company_id: harbourCompanyId })],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+    mocks.requestRows = [{
+      company_id: coastalCompanyId,
+      company_name: "Coastal Demo Cleaning",
+      join_request_state: "rejected",
+    }];
+    renderJoin();
+
     expect(await screen.findByRole("button", { name: "Send request" })).toBeVisible();
     expect(screen.getByLabelText("Note to the cleaning company (optional)")).toBeVisible();
     expect(screen.queryByText("This cleaning company closed your request.")).not.toBeInTheDocument();
-    expect(screen.queryByText("You are already on this cleaning company’s staff.")).not.toBeInTheDocument();
   });
 
   it("lets a person with a waiting request add a job application without registering again", async () => {
@@ -599,7 +621,7 @@ describe("CLE-61 registration and repeat visitors", () => {
     expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();
   });
 
-  it("selects relationship company ids and filters both cleaner views by company name", async () => {
+  it("filters both cleaner views by the posting's company id, never by its display name", async () => {
     useOneTimePosting();
     renderJoin();
 
@@ -616,14 +638,14 @@ describe("CLE-61 registration and repeat visitors", () => {
     ]);
     expect(mocks.relationshipFilters).toEqual([
       {
-        column: "company_name",
+        column: "company_id",
         table: "cleaner_join_request_state",
-        value: "Coastal Demo Cleaning",
+        value: coastalCompanyId,
       },
       {
-        column: "company_name",
+        column: "company_id",
         table: "cleaner_pool_memberships",
-        value: "Coastal Demo Cleaning",
+        value: coastalCompanyId,
       },
     ]);
   });

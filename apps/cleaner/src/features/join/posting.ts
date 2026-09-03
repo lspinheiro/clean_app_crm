@@ -6,6 +6,7 @@ const deadPostingSchema = z.object({
 });
 
 const activePostingBaseSchema = z.object({
+  company_id: z.uuid(),
   company_name: z.string().trim().min(1),
   public_description: z.string().trim().min(1),
   state: z.literal("active"),
@@ -36,6 +37,7 @@ const regularPostingSchema = workPostingSchema.extend({
 });
 
 export type ExpressionOfInterestPosting = {
+  companyId: string;
   companyName: string;
   intent: "expression_of_interest";
   publicDescription: string;
@@ -44,6 +46,7 @@ export type ExpressionOfInterestPosting = {
 
 type WorkPostingBase = {
   cleanerPayCents: number;
+  companyId: string;
   companyName: string;
   durationMinutes: number;
   publicDescription: string;
@@ -87,6 +90,7 @@ const unknownPosting: PostingPreview = { closingReason: "unknown", state: "dead"
 function workFields(row: z.infer<typeof workPostingSchema>): WorkPostingBase {
   return {
     cleanerPayCents: row.cleaner_pay_cents,
+    companyId: row.company_id,
     companyName: row.company_name,
     durationMinutes: row.duration_minutes,
     publicDescription: row.public_description,
@@ -106,6 +110,7 @@ export function parsePostingPreview(value: unknown): PostingPreview {
   const expressionOfInterest = expressionOfInterestSchema.safeParse(value);
   if (expressionOfInterest.success) {
     return {
+      companyId: expressionOfInterest.data.company_id,
       companyName: expressionOfInterest.data.company_name,
       intent: "expression_of_interest",
       publicDescription: expressionOfInterest.data.public_description,
@@ -151,23 +156,17 @@ const membershipRowsSchema = z.array(z.object({
 export function parseVisitorRelationship(
   requestValue: unknown,
   membershipValue: unknown,
-  companyName: string,
+  companyId: string,
 ): VisitorRelationship | null {
   const requests = joinRequestRowsSchema.safeParse(requestValue);
   const memberships = membershipRowsSchema.safeParse(membershipValue);
   if (!requests.success || !memberships.success) return null;
 
-  const matchingRequests = requests.data.filter((row) => row.company_name === companyName);
-  const matchingMemberships = memberships.data.filter((row) => row.company_name === companyName);
-  const companyIds = new Set([
-    ...matchingRequests.map((row) => row.company_id),
-    ...matchingMemberships.map((row) => row.company_id),
-  ]);
-
-  // PARTIAL guard only: it removes nondeterminism when this visitor has rows for multiple
-  // same-named companies. A single row can still be misattributed because posting_preview
-  // omits company_id; CLE-111 carries the complete identity-based fix.
-  if (companyIds.size > 1) return "none";
+  // Match on identity, never on the display name: `companies.name` has no uniqueness
+  // constraint, so a name match can attribute one company's rejection to another and
+  // silently hide the apply control from a candidate the company has never heard of.
+  const matchingRequests = requests.data.filter((row) => row.company_id === companyId);
+  const matchingMemberships = memberships.data.filter((row) => row.company_id === companyId);
 
   const membership = matchingMemberships[0];
   if (membership?.status === "active") return "staff";

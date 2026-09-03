@@ -22,7 +22,8 @@ from (values
   ('10000000-0000-4000-8000-000000000004'::uuid, 'cleaner.three@clean-app.example.test', 'Demo Cleaner Three'),
   ('10000000-0000-4000-8000-000000000005'::uuid, 'removed.cleaner@clean-app.example.test', 'Demo Removed Cleaner'),
   ('10000000-0000-4000-8000-000000000006'::uuid, 'owner.harbour@clean-app.example.test', 'Harbour Demo Owner'),
-  ('10000000-0000-4000-8000-000000000007'::uuid, 'new.employee@clean-app.example.test', 'New cleaner')
+  ('10000000-0000-4000-8000-000000000007'::uuid, 'new.employee@clean-app.example.test', 'New cleaner'),
+  ('10000000-0000-4000-8000-000000000008'::uuid, 'twin.candidate@clean-app.example.test', 'Twin Name Candidate')
 ) as fixture(id, email, full_name)
 on conflict (id) do nothing;
 
@@ -51,6 +52,16 @@ values
     '10000000-0000-4000-8000-000000000020',
     'Harbour Demo Cleaning',
     '53004085616',
+    'approved'
+  ),
+  -- CLE-111: a second, unrelated company trading under the first one's display name.
+  -- `companies.name` has no uniqueness constraint, and generic Gold Coast trading names
+  -- collide in practice. Nothing else in the demo data references this company; it exists
+  -- so the join page can be proven to tell companies apart by id rather than by name.
+  (
+    '10000000-0000-4000-8000-000000000030',
+    'Coastal Demo Cleaning',
+    '29002589460',
     'approved'
   )
 on conflict (id) do nothing;
@@ -496,7 +507,29 @@ values
     'A regular weekday clean with an ongoing crew place.',
     '10000000-0000-4000-8000-000000000701',
     '10000000-0000-4000-8000-000000000001'
+  ),
+  -- CLE-111: the same-named other company's opening. A candidate the first company
+  -- rejected must still be able to apply here.
+  (
+    '10000000-0000-4000-8000-000000000904',
+    '10000000-0000-4000-8000-000000000030',
+    'DEMOTWINPOST0001',
+    'expression_of_interest',
+    'Register your interest with our newly formed team.',
+    null,
+    null
   )
+on conflict (id) do nothing;
+
+-- CLE-111: the rejection lives at the first Coastal, never at the same-named other one.
+insert into public.join_requests (id, company_id, profile_id, state, decided_at)
+values (
+  '10000000-0000-4000-8000-000000000951',
+  '10000000-0000-4000-8000-000000000010',
+  '10000000-0000-4000-8000-000000000008',
+  'rejected',
+  now()
+)
 on conflict (id) do nothing;
 
 with dispatch_job as (
